@@ -36,13 +36,15 @@ var tray_title: Label
 var eco_site="microbe"
 var eco_widgets: Dictionary={}
 var replay_index=-1
+var material_mode="same_size"
+var material_details=false
 
 func setup(model) -> void:
 	state=model; state.planet.observing=true; state.planet.observer_id=get_instance_id()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var heading=UI.label("材料试验星球",30,UI.MINT); heading.position=Vector2(32,21); add_child(heading)
-	var subtitle=UI.label("EXPERIMENT 02    /    同一份材料，不同的生命故事",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
+	var subtitle=UI.label("EXPERIMENT 03    /    给材料一个任务，让世界作出回应",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1285,27); close.size=Vector2(122,46); add_child(close)
 	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(600,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
 	var scenes=HBoxContainer.new(); scenes.position=Vector2(672,107); add_child(scenes)
@@ -71,12 +73,13 @@ func setup(model) -> void:
 	var choices=UI.row(hint,8)
 	for item in [["standard_water_crate","水箱"],["oxygen_station","供氧器"],["oxygen_cartridge","补给盒"]]:
 		choices.add_child(UI.button(item[1],_choose_recipe.bind(item[0])))
+	choices.add_child(UI.button("导热芯",_open_materials))
 	caption=UI.paragraph("",15,UI.MUTED); hint.add_child(caption)
 	var panel=UI.box(self,Rect2(1024,107,392,737))
 	var right=UI.column(panel,12)
 	var tabs=UI.row(right,8)
-	tabs.add_child(UI.button("生产工坊",func(): section="workshop"; _redraw()))
-	tabs.add_child(UI.button("观察 / 对照",func(): section="observe"; _redraw()))
+	tabs.add_child(UI.button("生产工坊",func(): section="workshop"; _choose_recipe(selected_recipe)))
+	tabs.add_child(UI.button("观察 / 对照",func(): section="observe"; _choose_recipe(selected_recipe)))
 	var scroll=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; right.add_child(scroll)
 	body=UI.column(scroll,12); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	status=UI.paragraph("",15,UI.GOLD); status.position=Vector2(32,859); status.size=Vector2(1370,36); add_child(status)
@@ -87,7 +90,7 @@ func _fingerprint() -> String:
 	var batches=[]
 	for item in state.storage.batches: batches.append([item.id,item.quantity])
 	var p=state.planet; var w=p.worlds.get_world()
-	return str([p.joined,p.qualified,p.extra_qualifications.keys(),p.feed,p.supplies,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.eco_allowance,w.zones,w.event_serial,int(w.seconds)/5,p.worlds.worlds.size(),batches])
+	return str([p.joined,p.qualified,p.extra_qualifications.keys(),p.reports.keys(),p.feed,p.supplies,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.eco_allowance,w.zones,w.event_serial,int(w.seconds)/5,p.worlds.worlds.size(),batches])
 
 func _redraw() -> void:
 	if state==null: return
@@ -96,14 +99,22 @@ func _redraw() -> void:
 	for w in p.worlds.worlds:
 		var button=UI.button(w.name,func(): _do("select",{"world_id":str(w.id)}),w.id==p.worlds.active_id)
 		button.custom_minimum_size.x=185; world_tabs.add_child(button)
-	if section=="workshop": _workshop()
+	if section=="materials": preload("res://scripts/material_lab_panel.gd").build(self)
+	elif section=="workshop": _workshop()
 	elif view.display_mode=="ecology": EcologyPanel.build(self)
 	else: _observations()
 	fingerprint=_fingerprint()
 	view.sync(display_snapshot())
 
+func _open_materials() -> void:
+	_cancel_gesture(); replay_index=-1; section="materials"
+	if not state.planet.worlds.get_world().paused: state.planet.command(state,"pause")
+	view.set_mode("materials"); view.reset_camera(); view.material_view.set_mode(material_mode)
+	_redraw(); _live()
+
 func _choose_recipe(id: String) -> void:
 	_cancel_gesture(); selected_recipe=id; replay_index=-1
+	if section=="materials": section="workshop"
 	view.set_mode("water" if id=="standard_water_crate" else "ecology")
 	_redraw(); _live()
 
@@ -140,6 +151,10 @@ func _workshop() -> void:
 		_button("领取合作与首次供料",func(): _do("join"),true)
 		return
 	_text(str(info.name),23,UI.MINT); _text(str(info.description),16,UI.TEXT)
+	if ref.begins_with("fixture:") and not p.qualified_for(ref):
+		_text("先到材料对照台选择约束，记录计算结果。",17,UI.GOLD)
+		_button("打开材料对照",_open_materials,true)
+		return
 	if not p.qualified_for(ref):
 		var sample_name="水样" if ref=="water" else "氧气 O₂ 样品"
 		_text("① 提交%s" % sample_name,21,UI.MINT)
@@ -161,10 +176,11 @@ func _workshop() -> void:
 	var input_info={"name":"标准水供料","price":int(rules.feed_cost)} if ref=="water" else p.config.supplies[info.input]
 	_text("%s · 库存%d份" % [input_info.name,p.input_count(info.input)],16,UI.MINT)
 	_button("补充1份供料 · %d金币" % int(input_info.price),func(): _do("buy_feed",{"input":info.input}))
-	_text("结构身份不等于宏观纯度。标准组件、气源与已充能模块由合作方供给。",14)
+	_text("工业构件采用295 K参考物性和已对照几何；供料包含对应预切件。它不是玩家分子的实测性能。" if ref.begins_with("fixture:") else "结构身份不等于宏观纯度。标准组件、气源与已充能模块由合作方供给。",14)
+	if ref.begins_with("fixture:"): _button("更换设计 · 材料对照",_open_materials)
 	_text("③ 选择落点",21,UI.MINT)
-	_text("深槽集中蓄水，浅台水面更宽。\n主世界总容量3箱。" if ref=="water" else "先放供氧器，再拖入补给盒。\n同样的氧气会影响不同生命。\n每个舱独立供氧，互不串气。",16,UI.TEXT)
-	_button("查看观察记录与实验副本",func(): section="observe"; _redraw())
+	_text("深槽集中蓄水，浅台水面更宽。\n主世界总容量3箱。" if ref=="water" else "先安装供氧器，再放补给或导热芯。\n厌氧池窄槽：截面≤1 cm²。\n鱼湾轻量：材料≤54 g。换件退旧件。",16,UI.TEXT)
+	_button("查看观察记录与实验副本",func(): section="observe"; _choose_recipe(selected_recipe))
 
 func _observations() -> void:
 	var p=state.planet; var w=p.worlds.get_world()
@@ -212,6 +228,9 @@ func _live() -> void:
 	tray_title.text="▣  "+str(p.recipe(selected_recipe).name).replace("氧气动力补给盒","氧气补给盒")
 	tray_label.text="%s %d件 · 按住拖放" % ["主仓库" if w.mode=="career" else "实验配给",count]
 	caption.text="%s · %s\n拖动左侧成品到落点；点选后也可点击放置。" % [w.name,"历史回看" if replay_index>=0 else ("暂停中" if w.paused else "观察中")]
+	if section=="materials":
+		tray_title.text="◈  材料对照台"; tray_label.text="选约束 → 记录 → 制作"
+		caption.text="橙端296 K → 青端294 K · 一维稳态导热估算\n光点表示热流；同尺寸与同重量是两道不同的设计题。"
 	if is_instance_valid(progress) and not p.job.is_empty():
 		progress.value=100*(1-float(p.job.left)/float(p.job.duration))
 		progress_text.text="%s · 剩余%d秒" % [p.recipe(str(p.job.recipe)).name,ceili(float(p.job.left))]
@@ -220,6 +239,7 @@ func _live() -> void:
 
 func _begin_drag(at: Vector2) -> void:
 	var p=state.planet; var w=p.worlds.get_world()
+	if section=="materials": status.text="先在右侧记录对照，再选择制作导热芯"; return
 	if replay_index>=0: status.text="回看中的世界不可投放，请先回到当前时刻"; return
 	var count=p.available_in(w,selected_recipe)
 	if not p.joined or count<1:

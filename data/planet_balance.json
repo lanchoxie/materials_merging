@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "note": "Gameplay units and timings; no physical planetary cooling or purity prediction.",
   "workshop": {
     "samples_required": 2,
@@ -51,6 +51,16 @@
       "name": "氧气动力供料包",
       "price": 24,
       "description": "合作方标准氧气与已充能动力模块；不是玩家样品的宏观纯度测量。"
+    },
+    "copper_kit": {
+      "name": "铜构件供料包",
+      "price": 36,
+      "description": "合作方预切工业材料与安装件；每包用于一个设计，工费另计。"
+    },
+    "aluminum_kit": {
+      "name": "铝构件供料包",
+      "price": 30,
+      "description": "合作方预切工业材料与安装件；每包用于一个设计，工费另计。"
     }
   },
   "recipes": {
@@ -73,6 +83,54 @@
       "fee": 10,
       "seconds": 25,
       "description": "封装标准氧气和动力模块。正常流量运行60秒；气源和动力都有限。"
+    },
+    "copper_compact": {
+      "id": "copper_compact",
+      "version": 1,
+      "name": "铜芯·紧凑",
+      "reference": "fixture:same_size",
+      "input": "copper_kit",
+      "fee": 16,
+      "seconds": 24,
+      "description": "按已对照的几何方案组装导热芯。拖到已安装的供氧器；换下的构件回到原世界库存。"
+    },
+    "aluminum_compact": {
+      "id": "aluminum_compact",
+      "version": 1,
+      "name": "铝芯·紧凑",
+      "reference": "fixture:same_size",
+      "input": "aluminum_kit",
+      "fee": 16,
+      "seconds": 24,
+      "description": "按已对照的几何方案组装导热芯。拖到已安装的供氧器；换下的构件回到原世界库存。"
+    },
+    "copper_light": {
+      "id": "copper_light",
+      "version": 1,
+      "name": "铜芯·等重",
+      "reference": "fixture:same_mass",
+      "input": "copper_kit",
+      "fee": 16,
+      "seconds": 24,
+      "description": "按已对照的几何方案组装导热芯。拖到已安装的供氧器；换下的构件回到原世界库存。"
+    },
+    "aluminum_light": {
+      "id": "aluminum_light",
+      "version": 1,
+      "name": "铝芯·等重",
+      "reference": "fixture:same_mass",
+      "input": "aluminum_kit",
+      "fee": 16,
+      "seconds": 24,
+      "description": "按已对照的几何方案组装导热芯。拖到已安装的供氧器；换下的构件回到原世界库存。"
     }
+  },
+  "trial_products": {
+    "oxygen_station": 2,
+    "oxygen_cartridge": 4,
+    "copper_compact": 2,
+    "aluminum_compact": 2,
+    "copper_light": 2,
+    "aluminum_light": 2
   }
 }

@@ -12,6 +12,7 @@ var distance=9.6
 var highlighted=""
 var highlight_valid=true
 var snapshot: Dictionary={}
+var material_view
 var ecology_view
 var display_mode="water"
 
@@ -35,6 +36,7 @@ func _ready() -> void:
 	_make_site("deep",Vector3(-1.12,1.35,2.14),false)
 	_make_site("shelf",Vector3(1.13,0.65,2.53),true)
 	ecology_view=EcologyView.new(); globe.add_child(ecology_view); ecology_view.setup(self); ecology_view.hide()
+	material_view=preload("res://scripts/material_lab_view.gd").new(); add_child(material_view); material_view.setup(self); material_view.scale=Vector3.ONE*1.22; material_view.hide()
 	var moon=Node3D.new(); moon.position=Vector3(3.4,1.6,-1.7); add_child(moon)
 	_sphere(moon,0.23,Vector3.ZERO,"edc58c")
 
@@ -129,10 +131,12 @@ func sync(world: Dictionary) -> void:
 
 func set_mode(mode: String) -> void:
 	display_mode=mode
+	globe.visible=mode!="materials"; material_view.visible=mode=="materials"
 	for info in sites.values(): info.root.visible=mode=="water"
 	ecology_view.visible=mode=="ecology"
 
 func active_sites() -> Dictionary:
+	if display_mode=="materials": return {}
 	return sites if display_mode=="water" else ecology_view.sites
 
 func project_site(id: String) -> Vector2:
@@ -166,7 +170,10 @@ func _process(dt: float) -> void:
 	time+=dt
 	globe.rotation.y=lerp_angle(globe.rotation.y,target_yaw,minf(1,dt*12))
 	globe.rotation.x=lerpf(globe.rotation.x,target_pitch,minf(1,dt*12))
-	camera.position.z=lerpf(camera.position.z,distance,minf(1,dt*10)); camera.look_at(Vector3.ZERO)
+	camera.position.z=lerpf(camera.position.z,distance,minf(1,dt*10))
+	camera.position.y=lerpf(camera.position.y,6.0 if display_mode=="materials" else 2.0,minf(1,dt*10)); camera.look_at(Vector3.ZERO)
+	material_view.rotation=globe.rotation
+	if display_mode=="materials": return
 	if display_mode=="ecology":
 		for id in ecology_view.sites:
 			var marker=ecology_view.sites[id].marker; marker.visible=id==highlighted

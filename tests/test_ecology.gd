@@ -58,7 +58,7 @@ func _initialize() -> void:
 	var slow=e.fresh(); supply(e,slow,"fish"); slow.regions.fish.flow=0.5; run_for(e,slow,60)
 	check(slow.regions.fish.gas==30,"low flow prolongs finite supply")
 	var fast=e.fresh(); supply(e,fast,"fish"); fast.regions.fish.flow=2.0; run_for(e,fast,30)
-	check(fast.regions.fish.gas==0 and fast.regions.fish.oxygen>slow.regions.fish.oxygen,"high flow trades duration for faster local oxygen transfer")
+	check(fast.regions.fish.gas>0 and fast.regions.fish.trips>0 and fast.regions.fish.loaded==fast.regions.fish.used+fast.regions.fish.gas,"high flow now needs thermal management and preserves remaining supply")
 	check(not e.can_deploy(slow,"fish","oxygen_station") and not e.can_deploy(slow,"fish","oxygen_cartridge"),"no duplicate device or unneeded refill")
 	check(not e.can_deploy(e.fresh(),"fish","oxygen_cartridge"),"cartridge requires installed equipment")
 	run_for(e,control,650,60)

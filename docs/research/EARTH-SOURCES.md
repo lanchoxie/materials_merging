@@ -45,3 +45,9 @@
 以上缺口不靠自动线性插值填平。先将用途做成可配置的教学场景，在面向玩家的档案里标明证据状态，再分批引入真实参考。
 
 0.12实现核对（2026-09-19）：[NOAA What is a dead zone?](https://oceanservice.noaa.gov/facts/deadzone.html) 支持低氧时可移动动物离开或发生损失的方向；[Smithsonian 早期生命](https://naturalhistory.si.edu/education/teaching-resources/life-science/early-life-earth-animal-origins) 支持氧敏感微生物受到环境压力。运行配置只采用定性方向，没有采纳其地质年代或任何真实物种致死浓度；生态阈值和动力单位是游戏规则。
+
+## 0.12.1实际接入复核 · 2026-09-19
+
+[NIST NCNR Reference Tables](https://www.nist.gov/ncnr/neutron-instruments/sample-environment/sample-mounting/reference-tables)：仅选铜/铝295 K密度、导热率四个数值，密度换算为SI，自有JSON模式与中文说明。原表引用White 1979和CRC 1975；未复制整表或图像，不声称第三方书籍获得开放许可。电导率、比热、毒性与误差不在本次运行数据中。
+
+[NASA TFAWS 2012课件](https://tfaws.nasa.gov/TFAWS12/Proceedings/Form%20Factors%20Grey%20Bodies%20and%20Radks%20Course.pdf)，第25页：核对一维热流与构件热导关系。几何、边界温度、接触/外部热阻均是本项目夹具条件；不将295 K资料外推到高温，不把热流光点当瞬态温度求解。设备负载与保护阈值在独立游戏规则中配置。

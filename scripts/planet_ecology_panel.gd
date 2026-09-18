@@ -30,6 +30,10 @@ static func build(p) -> void:
 	if p.eco_site=="fish": intervention="关闭外湾通道" if r.gate_open else "开放外湾通道"
 	p._button(intervention,func(): p._do("ecology",{"site":p.eco_site,"control":"refuge" if p.eco_site=="microbe" else "gate"}),false,p.replay_index>=0)
 	p._text("粉色菌毯退缩，绿色耐受群体扩张。小池隔离保种；主池恢复低氧后，接通可重新定殖。" if p.eco_site=="microbe" else "鱼群可以游到外湾，通道关闭就无法逃离。失去的鱼不会凭空补回。",14)
+	p._text("窄槽支架 · 截面≤1 cm²，材料≤100 g" if p.eco_site=="microbe" else "轻量支架 · 材料≤54 g，截面≤2 cm²",14,UI.GOLD)
+	p._button("比较与制作导热芯",func(): p._open_materials())
+	var heat_rules=program.lab.data.thermal_game
+	p._text("热负载为游戏指标：达到%.0f暂停，降至%.0f恢复。打开材料对照台会暂停当前世界。" % [heat_rules.cutoff,heat_rules.restart],13)
 	p._text("世界与对照",21,UI.MINT); p._world_controls(w)
 	for other in program.worlds.worlds:
 		var m=other.ecology.regions.microbe; var f=other.ecology.regions.fish
@@ -46,7 +50,9 @@ static func live(p) -> void:
 	var total=float(rules.fish.initial_bay)+float(rules.fish.initial_outer)
 	var machine="尚未安装供氧器"
 	if r.device:
-		machine="已关闭" if not r.enabled else ("补给耗尽" if r.gas<=0 else "运行 %.1f倍 · 剩余%.0f秒" % [r.flow,ceil(r.gas/r.flow)])
+		machine="已关闭" if not r.enabled else ("补给耗尽" if r.gas<=0 else ("保护冷却中" if r.cooling else "运行 %.1f倍 · 可供%.0f秒" % [r.flow,ceil(r.gas/r.flow)]))
+	if r.device:
+		machine+="\n热负载 %.1f/100 · 停机%d次\n导热芯：%s" % [r.heat,int(r.trips),"基础散热" if r.component.is_empty() else p.state.planet.recipe(str(r.component.recipe)).name]
 	var life="敏感菌毯 %.0f%% · 耐受群落 %.0f%%\n避难池幸存覆盖 %.0f%%" % [r.get("sensitive",0),r.get("tolerant",0),float(r.get("refuge",0))/float(rules.microbe.refuge_capacity)*100.0]
 	if p.eco_site=="fish": life="湾内 %.1f · 外湾 %.1f\n累计损失 %.1f · 总群体 %.0f" % [r.bay,r.outer,r.dead,total]
 	p.eco_widgets.stats.text="%d秒 · 氧指标 %.1f / 100\n%s\n供氧器：%s" % [int(w.seconds),r.oxygen,life,machine]

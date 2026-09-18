@@ -26,9 +26,11 @@ func _make_region(id: String,normal: Vector3) -> void:
 	var gas=b._cylinder(station,0.055,0.25,Vector3(0.16,0.17,0),"a5efd1")
 	var light=b._sphere(station,0.055,Vector3(0,0.46,0),"ffd18c")
 	b._box(station,Vector3(0.52,0.045,0.045),Vector3(-0.24,0.04,-0.08),"ebc996")
+	var core=b._box(station,Vector3(0.08,0.27,0.19),Vector3(-0.18,0.22,0),"d99367")
+	var heat=b._cylinder(station,0.023,0.26,Vector3(-0.28,0.20,0),"eea177")
 	var bubbles=[]
 	for i in range(7): bubbles.append(b._sphere(root,0.024,Vector3.ZERO,"b9ede2"))
-	var info={"root":root,"marker":marker,"station":station,"gas":gas,"light":light,"bubbles":bubbles}
+	var info={"root":root,"marker":marker,"station":station,"gas":gas,"light":light,"bubbles":bubbles,"core":core,"heat":heat}
 	if id=="microbe":
 		var sensitive=[]; var tolerant=[]
 		for i in range(13):
@@ -70,8 +72,14 @@ func _process(dt: float) -> void:
 	for id in sites:
 		var info=sites[id]; var r=snapshot.ecology.regions[id]
 		info.station.visible=r.device
-		var running=r.device and r.enabled and r.gas>0 and r.energy>0
-		info.light.material_override=builder._mat("a5efd1" if running else "edb386")
+		var running=r.device and r.enabled and r.gas>0 and r.energy>0 and not r.cooling
+		info.light.material_override=builder._mat("ef7e6e" if r.cooling else ("a5efd1" if running else "edb386"))
+		info.heat.scale.y=maxf(0.02,float(r.heat)/100.0)
+		info.core.visible=not r.component.is_empty()
+		if info.core.visible:
+			var lab=builder.material_view.lab; var d=lab.data.designs[r.component.recipe]; var design=lab.design(str(r.component.recipe))
+			info.core.material_override=builder._mat(str(lab.data.materials[d.material].color))
+			info.core.scale.x=sqrt(float(design.area_m2)/float(lab.data.fixture.area_m2))
 		info.gas.scale.y=maxf(0.02,float(r.gas)/float(rules.device.cartridge_units))
 		for i in range(info.bubbles.size()):
 			var bubble=info.bubbles[i]; bubble.visible=running

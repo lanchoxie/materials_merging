@@ -4,11 +4,13 @@ const Worlds=preload("res://scripts/planet_worlds.gd")
 const Count=preload("res://scripts/island_storage.gd")
 var config: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_balance.json"))
 var worlds=Worlds.new(config)
+var lab=preload("res://scripts/material_lab.gd").new()
+var reports: Dictionary={}
 var joined=false
 var qualified=false
 var qualification: Dictionary={}
 var extra_qualifications: Dictionary={}
-var supplies: Dictionary={"station_parts":0,"oxygen_feed":0}
+var supplies: Dictionary={"station_parts":0,"oxygen_feed":0,"copper_kit":0,"aluminum_kit":0}
 var feed=0
 var products: Array=[]
 var job: Dictionary={}
@@ -28,9 +30,11 @@ func recipe(id: String) -> Dictionary:
 	return config.recipes.get(id,{})
 
 func qualified_for(reference: String) -> bool:
+	if reference.begins_with("fixture:"): return reports.has(reference.trim_prefix("fixture:"))
 	return qualified if reference=="water" else extra_qualifications.has(reference)
 
 func evidence(reference: String) -> Dictionary:
+	if reference.begins_with("fixture:"): return reports.get(reference.trim_prefix("fixture:"),{})
 	return qualification if reference=="water" else extra_qualifications.get(reference,{})
 
 func input_count(id: String) -> int:
@@ -69,6 +73,12 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			if joined: return "合作补给已领取"
 			joined=true; feed=int(config.workshop.starter_feed)
 			return "已加入试验湾合作，收到%d份标准供料" % feed
+		"compare_materials":
+			if not joined: return "先领取试验湾合作"
+			var mode=str(payload.get("mode","")); var proof=lab.proof(mode)
+			if proof.is_empty(): return "未知对照条件"
+			reports[mode]=proof
+			return "已记录%s计算对照；对应导热芯可在工坊制作。" % ("同尺寸" if mode=="same_size" else "同重量")
 		"qualify":
 			if not joined: return "先在邮箱领取试验湾合作"
 			var ref=str(payload.get("reference","water"))
@@ -96,9 +106,9 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 		"pack":
 			var info=recipe(str(payload.get("recipe","standard_water_crate")))
 			if info.is_empty(): return "未知工艺"
-			if not qualified_for(str(info.reference)): return "先提交对应的结构样品解锁工艺"
+			if not qualified_for(str(info.reference)): return "先完成材料对照或提交对应结构样品解锁工艺"
 			if not job.is_empty(): return "装罐台正在工作"
-			if products.size()>=int(config.workshop.product_limit): return "成品仓已满，请先部署水箱"
+			if products.size()>=int(config.workshop.product_limit): return "成品仓已满，请先部署成品"
 			if input_count(str(info.input))<1 or state.coins<float(info.fee): return "需要1份对应供料与%d金币工费" % int(info.fee)
 			_input_add(str(info.input),-1); state.coins-=float(info.fee)
 			job={"id":serial,"recipe":str(info.id),"recipe_version":int(info.version),"left":float(info.seconds),"duration":float(info.seconds),"fee":int(info.fee),"source_batch":str(evidence(str(info.reference)).batch_id)}
@@ -114,17 +124,24 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			var recipe_id=str(payload.get("recipe","standard_water_crate"))
 			if recipe(recipe_id).is_empty(): return "未知成品"
 			if not Count.count_ok(payload.get("token")) or int(payload.token)!=shipment_serial: return "这次投放已处理或已过期，请重新选择水箱"
-			if not joined or not worlds.can_deploy(id,site,recipe_id): return "落点不适用：设备不可重复安装，补给需等上一盒耗尽"
-			var w=worlds.get_world(id)
+			if not joined or not worlds.can_deploy(id,site,recipe_id): return "落点不适用：请检查支架的尺寸/重量限制、已有设备或剩余补给"
+			var w=worlds.get_world(id); var component: Dictionary={}; var old: Dictionary={}
+			if lab.is_component(recipe_id): old=w.ecology.regions[site].component.duplicate(true)
 			if w.mode=="career":
 				if available_products(recipe_id)<=0: return "主仓库暂无这个成品，请先制作"
 				for i in range(products.size()):
-					if products[i].recipe==recipe_id: products.remove_at(i); break
+					if products[i].recipe==recipe_id:
+						if lab.is_component(recipe_id): component=products[i].duplicate(true)
+						products.remove_at(i); break
+				if not old.is_empty(): products.append(old)
 			else:
 				if available_in(w,recipe_id)<=0: return "本次实验配给已用完，可以重置实验"
 				if recipe_id=="standard_water_crate": w.allowance=int(w.allowance)-1
 				else: w.eco_allowance[recipe_id]=int(w.eco_allowance[recipe_id])-1
-			worlds.deploy(id,site,shipment_serial,recipe_id); shipment_serial+=1
+				if lab.is_component(recipe_id):
+					component={"id":0,"recipe":recipe_id,"recipe_version":1,"source_batch":lab.proof(str(lab.data.designs[recipe_id].mode)).batch_id}
+					if not old.is_empty(): w.eco_allowance[old.recipe]=int(w.eco_allowance[old.recipe])+1
+			worlds.deploy(id,site,shipment_serial,recipe_id,component); shipment_serial+=1
 			return "%s已交付%s%s" % [recipe(recipe_id).name,w.name,"；开始观察后运行" if w.paused else ""]
 		"select":
 			var id=str(payload.get("world_id",""))
@@ -156,12 +173,18 @@ func tick(dt: float) -> void:
 	if observing: worlds.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":2,"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
+	return {"version":3,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2]: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3]: return false
 	data=data.duplicate(true)
 	if data.version==1: data.extra_qualifications={}; data.supplies={"station_parts":0,"oxygen_feed":0}
+	if data.version<3:
+		if not data.get("supplies") is Dictionary or data.supplies.size()!=2: return false
+		data.reports={}; data.supplies.copper_kit=0; data.supplies.aluminum_kit=0
+	if not data.get("reports") is Dictionary or data.reports.size()>2: return false
+	for mode in data.reports:
+		if not lab.valid_report(data.reports[mode],str(mode)) or data.get("joined")!=true: return false
 	if not data.get("joined") is bool or not data.get("qualified") is bool or (data.qualified and not data.joined): return false
 	if not Count.count_ok(data.get("feed")) or int(data.feed)>int(config.workshop.inventory_limit): return false
 	for key in ["serial","shipment_serial"]:
@@ -200,12 +223,18 @@ func restore(data,state) -> bool:
 		if float(data.job.duration)<=0 or float(data.job.duration)>86400 or float(data.job.left)<=0 or float(data.job.left)>float(data.job.duration): return false
 		if not Count.count_ok(data.job.get("fee")) or int(data.job.fee)>1000000: return false
 	var restored=Worlds.new(config)
-	if int(data.version)==2 and (not data.get("worlds") is Dictionary or data.worlds.get("version")!=2): return false
+	if int(data.version)>=2 and (not data.get("worlds") is Dictionary or data.worlds.get("version")!=data.version): return false
 	if not restored.restore(data.get("worlds")): return false
+	if not data.job.is_empty(): ids.append(int(data.job.id))
+	for r in restored.get_world("home").ecology.regions.values():
+		if not r.component.is_empty():
+			if not _valid_product(r.component,data,ids): return false
+			ids.append(int(r.component.id))
 	if not data.joined and (int(data.feed)>0 or not data.products.is_empty() or not data.job.is_empty() or restored.worlds.size()>1): return false
 	if not data.joined:
 		for n in data.supplies.values():
 			if int(n)>0: return false
+	reports=data.reports.duplicate(true)
 	joined=data.joined; qualified=data.qualified; qualification=data.qualification.duplicate(true)
 	feed=int(data.feed); products=data.products.duplicate(true); job=data.job.duplicate(true)
 	extra_qualifications=data.extra_qualifications.duplicate(true); supplies=data.supplies.duplicate(true)
@@ -218,5 +247,6 @@ func _valid_product(product,data,ids: Array) -> bool:
 	var info=recipe(str(product.get("recipe","")))
 	if info.is_empty(): return false
 	var q=data.qualification if info.reference=="water" else data.extra_qualifications.get(info.reference,{})
+	if str(info.reference).begins_with("fixture:"): q=data.reports.get(str(info.reference).trim_prefix("fixture:"),{})
 	if q.is_empty() or (info.reference=="water" and not data.qualified): return false
 	return product.get("recipe_version")==int(info.version) and product.get("source_batch")==str(q.batch_id)

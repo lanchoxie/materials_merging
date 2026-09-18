@@ -1,27 +1,32 @@
 extends RefCounted
 ## Deterministic one-second teaching model. No island inventory, rendering or RNG.
+const Thermal=preload("res://scripts/planet_thermal.gd")
+var thermal=Thermal.new()
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_ecology.json"))
 
 func fresh(at: int=0) -> Dictionary:
 	var regions={}
 	for id in ["microbe","fish"]:
 		regions[id]={"oxygen":float(rules[id].initial_oxygen),"device":false,"enabled":true,"flow":1.0,"gas":0.0,"energy":0.0,"loaded":0.0,"used":0.0,"flags":[]}
+	for r in regions.values(): thermal.initialize_region(r)
 	regions.microbe.merge({"sensitive":float(rules.microbe.initial_sensitive),"tolerant":float(rules.microbe.initial_tolerant),"refuge":float(rules.microbe.initial_refuge),"sealed":true})
 	regions.fish.merge({"bay":float(rules.fish.initial_bay),"outer":float(rules.fish.initial_outer),"dead":0.0,"stress":0,"gate_open":true})
-	var result={"model":rules.model,"regions":regions,"history":[]}
+	var result={"model":rules.model,"thermal_model":thermal.lab.data.thermal_game.model,"regions":regions,"history":[]}
 	_record(result,at)
 	return result
 
 func can_deploy(eco: Dictionary,site: String,recipe: String) -> bool:
 	if not eco.regions.has(site): return false
 	var r=eco.regions[site]
+	if thermal.lab.is_component(recipe): return r.device and r.component.get("recipe","")!=recipe and thermal.lab.fits(recipe,site)
 	if recipe=="oxygen_station": return not r.device
 	if recipe=="oxygen_cartridge": return r.device and r.gas<=0 and r.energy<=0
 	return false
 
-func deploy(eco: Dictionary,site: String,recipe: String) -> void:
+func deploy(eco: Dictionary,site: String,recipe: String,component: Dictionary={}) -> void:
 	var r=eco.regions[site]
-	if recipe=="oxygen_station": r.device=true
+	if thermal.lab.is_component(recipe): r.component=component.duplicate(true)
+	elif recipe=="oxygen_station": r.device=true
 	elif recipe=="oxygen_cartridge":
 		r.gas=float(rules.device.cartridge_units); r.energy=r.gas; r.loaded=float(r.loaded)+r.gas
 		r.flags.erase("empty")
@@ -51,9 +56,10 @@ func _once(r: Dictionary,flag: String,message: String,messages: Array) -> void:
 func step(eco: Dictionary,at: int) -> Array:
 	var messages=[]
 	for id in ["microbe","fish"]:
-		var r=eco.regions[id]; var dose=0.0
-		if r.device and r.enabled and r.gas>0 and r.energy>0:
-			dose=minf(float(r.flow),minf(r.gas,r.energy))
+		var r=eco.regions[id]; var run=thermal.step(r); var dose=float(run.dose)
+		if run.stopped: messages.append(str(rules[id].name)+"：热负载触发保护，暂缓供氧；冷却后自动恢复。")
+		if run.resumed: messages.append(str(rules[id].name)+"：设备冷却完毕，恢复供氧。")
+		if dose>0:
 			r.gas-=dose; r.energy-=dose; r.used+=dose
 			if r.gas<=0: _once(r,"empty",str(rules[id].name)+"：氧气与动力补给耗尽，供氧器停机。",messages)
 		r.oxygen=clampf(float(r.oxygen)+dose*float(rules.device.transfer_per_unit)-float(rules[id].oxygen_sink),0,100)
@@ -96,11 +102,19 @@ func _record(eco: Dictionary,at: int) -> void:
 func _num(value,lo: float,hi: float,integer: bool=false) -> bool:
 	return (value is int or value is float) and is_finite(float(value)) and value>=lo and value<=hi and (not integer or floor(float(value))==float(value))
 
-func valid(eco,at: int) -> bool:
+func valid(eco,at: int,legacy: bool=false) -> bool:
 	if not eco is Dictionary or eco.get("model")!=rules.model or not eco.get("regions") is Dictionary or eco.regions.size()!=2: return false
+	if legacy:
+		if eco.has("thermal_model"): return false
+	elif eco.get("thermal_model")!=thermal.lab.data.thermal_game.model: return false
 	for id in ["microbe","fish"]:
 		var r=eco.regions.get(id)
 		if not r is Dictionary or not _num(r.get("oxygen"),0,100): return false
+		if legacy:
+			for key in ["component","heat","cooling","trips"]:
+				if r.has(key): return false
+		elif not thermal.valid(r): return false
+		elif not r.component.is_empty() and not thermal.lab.fits(str(r.component.recipe),id): return false
 		for key in ["device","enabled"]:
 			if not r.get(key) is bool: return false
 		if not _num(r.get("flow"),0.5,2.0) or r.flow not in rules.device.flows: return false
@@ -128,8 +142,16 @@ func valid(eco,at: int) -> bool:
 	for h in eco.history:
 		if not h is Dictionary or not _num(h.get("at"),last+1,at,true): return false
 		last=int(h.at)
-		if not valid({"model":rules.model,"regions":h.get("regions"),"history":[]},int(h.at)): return false
+		var slice={"model":rules.model,"regions":h.get("regions"),"history":[]}
+		if not legacy: slice.thermal_model=eco.thermal_model
+		if not valid(slice,int(h.at),legacy): return false
 	return true
+
+func migrate_thermal(eco: Dictionary) -> void:
+	eco.thermal_model=thermal.lab.data.thermal_game.model
+	for r in eco.regions.values(): thermal.initialize_region(r)
+	for h in eco.history:
+		for r in h.regions.values(): thermal.initialize_region(r)
 
 func canonical(value) -> String:
 	if value is Dictionary:

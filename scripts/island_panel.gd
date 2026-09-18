@@ -85,7 +85,9 @@ func _industrial() -> void:
 		var info=p.recipe(id); var card=_card("%s · 主仓库 %d件" % [info.name,p.available_products(id)])
 		card.add_child(UI.label("对应供料 %d份" % p.input_count(info.input),18,UI.GOLD))
 		for product in p.products:
-			if product.recipe==id: card.add_child(UI.paragraph("成品 #%d · 来源样品批次 %s" % [int(product.id),str(product.source_batch)],15))
+			if product.recipe==id:
+				var origin="工业参考对照" if p.lab.is_component(id) else "来源样品批次"
+				card.add_child(UI.paragraph("成品 #%d · %s %s" % [int(product.id),origin,str(product.source_batch)],15))
 
 func _materials() -> void:
 	body.add_child(UI.paragraph("建材用于向浮岛边缘开拓；催化晶用于反应炉升级。它们与摆件、小路和生活补给分别存放。",19))

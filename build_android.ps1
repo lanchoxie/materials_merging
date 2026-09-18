@@ -1,4 +1,4 @@
-param([switch]$SkipImport, [string]$Version = '0.12.0')
+param([switch]$SkipImport, [string]$Version = '0.12.1')
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 foreach ($relative in @('.runtime/AppData','.runtime/LocalAppData','.runtime/Temp','.runtime/android','builds','artifacts')) {

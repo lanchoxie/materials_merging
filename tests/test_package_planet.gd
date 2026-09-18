@@ -11,7 +11,7 @@ func _initialize() -> void:
 func run() -> void:
 	var game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var s=game.state
-	check(str(ProjectSettings.get_setting("application/config/version"))=="0.12.0","packaged application version")
+	check(str(ProjectSettings.get_setting("application/config/version"))=="0.12.1","packaged application version")
 	game._show_planet(); await process_frame
 	check(game.modal.view.sites.size()==2,"packaged planet scene builds both sites")
 	var batch=s.product_snapshot(s.reactors[0]); s.storage.add_product(batch,2)
@@ -34,6 +34,14 @@ func run() -> void:
 	check(game.modal.view.ecology_view.sites.size()==2 and game.modal.eco_widgets.has("chart"),"packaged 3D ecology and observation chart construct")
 	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
 	check(game.modal.view.snapshot.seconds==0 and s.planet.worlds.get_world().seconds>0,"packaged replay leaves live model at present")
+	game.modal._replay()
+	s.planet.command(s,"compare_materials",{"mode":"same_mass"})
+	var info=s.planet.recipe("aluminum_light")
+	s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":info.id}); s.planet.tick(info.seconds)
+	s.planet.command(s,"deploy",{"world_id":"home","site_id":"fish","recipe":info.id,"token":s.planet.shipment_serial})
+	check(s.planet.worlds.get_world().ecology.regions.fish.component.recipe=="aluminum_light","packaged material evidence, recipe and installed slot work")
+	game.modal._open_materials(); await process_frame
+	check(game.modal.view.material_view.parts.size()==2 and s.planet.lab.design("aluminum_light").conductance_W_K>s.planet.lab.design("copper_light").conductance_W_K,"packaged reference data and procedural comparison work")
 	game._close_modal(); s.close_science()
 	print("PACKAGE PLANET SMOKE: ",checks," checks, ",failures.size()," failures")
 	quit(0 if failures.is_empty() else 1)
