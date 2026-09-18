@@ -1,0 +1,9 @@
+.godot/
+tools/
+.runtime/
+.local_runtime/
+saves/
+artifacts/
+builds/
+.agents/
+*.tmp
