@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "status": "design_only",
+  "runtime_import_enabled": false,
+  "units": "gameplay parameters, not measured ecological rates or physical efficiencies",
+  "worlds": {"slots": 3, "career_slots": 1, "experiment_slots": 2, "paused_when_inactive": true, "experiment_export_to_career": false, "max_events_per_world": 200, "max_manual_snapshots_per_world": 8},
+  "simulation": {"fixed_tick_seconds": 1, "settlement_planner_seconds": 5, "initial_regions": 1, "initial_drop_sites": 2, "ecology_regions": 6, "max_cohorts_per_scenario": 4, "max_major_project_per_region": 1, "max_candidates_per_planning_cycle": 3},
+  "onboarding": {"first_visible_change_minutes_existing_save": [3, 5], "first_comparison_minutes_existing_save": [10, 15], "ordinary_process_seconds": [20, 45], "ecology_story_minutes": [2, 4], "requires_academician": false},
+  "water_tutorial": {"sample_qualification_count": 2, "qualification_consumes_samples": true, "initial_feedstock_grant_once": 2, "feedstock_cost_coins": 18, "packing_cost_coins": 12, "packing_seconds": 25, "basin_capacity_crates": 3, "currency_reward_cap_coins": 0, "reward_kind": "observation_and_decoration"},
+  "transactions": {"commit_at_drop_confirmation": true, "cancel_preview_cost": 0, "reward_idempotent": true, "snapshot_copies_global_wallet": false},
+  "performance_targets_not_measurements": {"android_fps": 30, "desktop_fps": 60, "web_fps": 60, "concurrently_rendered_worlds": 1, "offline_ecological_catchup": false}
+}
