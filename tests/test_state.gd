@@ -16,7 +16,7 @@ func _initialize():
 	_test_element_workflow()
 	state.rng.seed = 9182026
 	check(state.coins == 220.0 and state.reactors.size() == 1, "new island initial state")
-	check(state.plots.size() > 9 and state.plots[4].rid == 0 and state.unlocked_plot_count() == 4, "island has central reactor and adjacent expansion frontier")
+	check(state.plots.size() > 9 and state.plots[4].rid == 0 and state.unlocked_plot_count() == 5, "island has central reactor and adjacent expansion frontier")
 	var original_coordinates = true
 	for i in range(9):
 		original_coordinates = original_coordinates and state.plot_at(i % 3 - 1, int(i / 3) - 1) == i
@@ -96,13 +96,17 @@ func _initialize():
 	check(state.deliveries == 3 and state.upgrades == 1, "nonmatching template has ordinary sale but no catalyst")
 	state.place_reactor(3, "hydrogen")
 	var building = state.reactors[1]
-	state.tick(2.0)
-	check(building.build_left == 10.0 and building.stock == 0, "construction blocks production")
+	state.campus_build(5,"engineer_house")
 	state.hire_engineer()
-	state.tick(2.0)
-	check(building.build_left < 8.0, "engineers accelerate construction")
-	state.research()
-	check(state.scientists == 1, "research unlocks scientist")
+	check(state.engineers==2,"housing permits engineer recruitment")
+	state.tick(1.0)
+	check(building.build_left>0 and building.stock==0,"travel and construction block production")
+	for n in range(40): state.tick(1.0)
+	check(building.build_left==0 and building.stock>0,"on-site engineers complete construction")
+	# This test checks the old science API; recruitment is covered by campus integration.
+	state.campus.setup(2,1)
+	state._sync_campus_counts()
+	check(state.scientists == 1, "legacy research count maps to a doctor")
 	var shifted = r.positions.duplicate(true)
 	shifted[1][0] += 0.22
 	state.apply_edit(0, shifted)
@@ -155,7 +159,7 @@ func _initialize():
 	valid_file.plots[0].rid = 0
 	check(not loaded._validate_save(valid_file), "save rejects inconsistent plot ownership")
 	var baseline = JSON.parse_string(FileAccess.get_file_as_string(save_path + ".bak"))
-	check(int(baseline.version) == 7, "new saves use version three")
+	check(int(baseline.version) == 8, "new saves use version eight")
 	valid_file = baseline.duplicate(true)
 	valid_file.plots[9].x = valid_file.plots[4].x
 	valid_file.plots[9].z = valid_file.plots[4].z
@@ -208,25 +212,26 @@ func _initialize():
 		var plot = frontier.plot_at(x, 0)
 		identities[x] = plot
 		frontier.buy_plot(plot)
-	check(frontier.unlocked_plot_count() == 15 and frontier.plot_at(13, 0) >= 0, "successive purchases extend far beyond original nine plots")
+	check(frontier.unlocked_plot_count() == 16 and frontier.plot_at(13, 0) >= 0, "successive purchases extend far beyond original nine plots")
 	var stable = frontier.plot_at(0, 0) == 4
 	for x in identities:
 		stable = stable and frontier.plot_at(x, 0) == identities[x]
 	check(stable, "appending frontier keeps every existing plot identity stable")
 	var distant_plot = frontier.plot_at(10, 0)
 	frontier.place_reactor(distant_plot, "hydrogen")
-	frontier.tick(25.0)
+	for x in range(2,11): frontier.campus_road(frontier.plot_at(x,0))
+	for n in range(90): frontier.tick(1.0)
 	check(frontier.plots[distant_plot].rid == 1 and frontier.reactors[1].plot == distant_plot and frontier.reactors[1].stock > 0, "distant plots support normal construction and production")
 	check(frontier.save_game(expanded_path).begins_with("已保存"), "expanded island saves")
 	var restored_frontier = State.new()
 	check(restored_frontier.load_game(expanded_path), "expanded island reloads")
 	check(restored_frontier.plot_at(10, 0) == distant_plot and restored_frontier.plots[distant_plot].rid == 1 and restored_frontier.reactors[1].plot == distant_plot, "expanded save preserves distant reactor links")
 	check(restored_frontier.plots == frontier.plots and restored_frontier.materials == frontier.materials and restored_frontier.reactors[1].stock == frontier.reactors[1].stock, "expanded round trip preserves frontier, resources and production")
-	for x in range(13, 126):
+	for x in range(13, 125):
 		frontier.buy_plot(frontier.plot_at(x, 0))
 	check(frontier.unlocked_plot_count() == 128 and frontier.plots.size() <= 1024, "island reaches supported expansion capacity with sparse frontier")
 	var cap_materials = frontier.materials.duplicate()
-	var cap_plot = frontier.plot_at(126, 0)
+	var cap_plot = frontier.plot_at(125, 0)
 	var cap_message = frontier.buy_plot(cap_plot)
 	check(cap_message.contains("128") and frontier.materials == cap_materials and not frontier.can_expand(cap_plot), "capacity limit explains itself and never consumes resources")
 	check(frontier.save_game(expanded_path).begins_with("已保存") and restored_frontier.load_game(expanded_path) and restored_frontier.unlocked_plot_count() == 128, "maximum supported island survives save round trip")

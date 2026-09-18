@@ -6,6 +6,9 @@ const World = preload("res://scripts/world_view.gd")
 const Editor = preload("res://scripts/atom_editor.gd")
 const ScienceChart = preload("res://scripts/science_chart.gd")
 const SandboxEditor = preload("res://scripts/sandbox_editor.gd")
+const CampusView = preload("res://scripts/campus_view.gd")
+const CampusPanel = preload("res://scripts/campus_panel.gd")
+var campus_view
 var state = Model.new()
 var world
 var world_box: SubViewportContainer
@@ -47,6 +50,10 @@ var research_open: bool = false
 var move_source: int = -1
 
 func _ready() -> void:
+	if OS.has_feature("android"):
+		state.layout.config.performance.visible_people=int(state.layout.config.performance.mobile_visible_people)
+		state.layout.config.performance.visible_buildings=int(state.layout.config.performance.mobile_visible_buildings)
+		Engine.max_fps=int(state.layout.config.performance.mobile_max_fps)
 	snapshot_mode = "--capture" in OS.get_cmdline_user_args()
 	visual_test = "--visual-test" in OS.get_cmdline_user_args() or "--release-ui-test" in OS.get_cmdline_user_args()
 	if not snapshot_mode and not visual_test:
@@ -112,7 +119,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.7 科研阶梯  ·  每 20 秒自动保存  ·  几何评分为游戏规则 · 科研结果仅限所示模型", 11, UI.MUTED)
+	save_label = UI.label("v0.8 科研小镇  ·  每 20 秒自动保存  ·  几何评分为游戏规则 · 科研结果仅限所示模型", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -153,9 +160,14 @@ func _build_world() -> void:
 	world_viewport.own_world_3d = true
 	world_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	world_viewport.msaa_3d = Viewport.MSAA_2X
+	if OS.has_feature("android"): world_viewport.msaa_3d = Viewport.MSAA_DISABLED
 	world_box.add_child(world_viewport)
 	world = World.new()
+	world.campus_life_enabled = true
+	world.detail_budget = clampi(int(state.layout.config.performance.visible_buildings),1,72)
 	world_viewport.add_child(world)
+	campus_view = CampusView.new()
+	campus_view.setup(state,world)
 	world.plot_clicked.connect(_select_plot)
 	world_box.gui_input.connect(_world_input)
 	var eyebrow = UI.label("YOUR LITTLE SCIENCE ISLAND", 11, UI.MINT)
@@ -210,7 +222,7 @@ func _build_toolbar() -> void:
 		["↓  收获全部", func(): _action(state.harvest_all())],
 		["＋  建造 / 装饰", func(): _toast("点击岛上的空地，选择反应炉、花园或小屋。")],
 		["◇  探索盲盒", _show_crate],
-		["♙  招募伙伴", _show_crew],
+		["科研小镇", _show_crew],
 		["⇄  收购商", _show_market],
 		["⌬  结构工坊", _show_sandbox]
 	]
@@ -316,16 +328,16 @@ func _rebuild_sidebar() -> void:
 		side.add_child(UI.paragraph("选择初始结构；工程师会来建造。\n基础建造时间12秒，多人协作更快。",13))
 		UI.spacer(side,18)
 		side.add_child(UI.label("给小岛一点温度",15,UI.LILAC))
-		for kind in state.DECORATIONS:
-			var item: Dictionary = state.DECORATIONS[kind]
-			var decoration_button = UI.button("%s   %d 金币" % [item.name,item.cost],func(): _action(state.place_decoration(selected_plot,kind)))
-			decoration_button.disabled = kind=="sculpture" and state.deliveries<3
-			side.add_child(decoration_button)
-		side.add_child(UI.paragraph("原子纪念雕塑：完成3次交付后解锁。装饰和建筑可免费搬迁。",12))
+		side.add_child(UI.button("住宅 · 院所 · 食堂 · 公园",_show_campus.bind("build"),true))
+		side.add_child(UI.paragraph("每块地可放一栋主建筑和8件庭院小物。小路沿地块边缘自动衔接。",13))
 	elif p.kind != "reactor":
-		side.add_child(UI.label(state.DECORATIONS.get(p.kind,{"name":"岛屿装饰"}).name,24,UI.LILAC))
+		var building=state.layout.building_info(p.kind)
+		side.add_child(UI.label("迎客广场" if p.kind=="plaza" else str(building.get("name",state.DECORATIONS.get(p.kind,{"name":"岛屿装饰"}).name)),24,UI.LILAC))
 		side.add_child(UI.paragraph("让实验与生活，在同一座小岛上发生。",15))
-		side.add_child(UI.button("搬迁到另一块空地",_show_relocation,true))
+		if p.kind!="plaza": side.add_child(UI.button("搬迁到另一块空地",_show_relocation,true))
+		else:
+			side.add_child(UI.paragraph("收购商骑车或乘车来访。交付或送客后，等待下一班来客。",16))
+			side.add_child(UI.button("迎接收购商",_show_market,true))
 		side.add_child(UI.button("邀请更多伙伴",_show_crew))
 	else:
 		var r: Dictionary = state.reactors[selected_reactor]
@@ -364,10 +376,15 @@ func _rebuild_sidebar() -> void:
 		order_quote_label = UI.paragraph("",13,UI.GOLD)
 		side.add_child(order_quote_label)
 		side.add_child(UI.button("查看报价与交付  →",_show_market))
+	if p.unlocked:
+		side.add_child(UI.button("小路 · 庭院 · 建筑升级",_show_campus.bind("build")))
 	_update_labels()
 
 func _process(delta: float) -> void:
 	state.tick(delta)
+	if not state.campus_notice.is_empty():
+		_toast(state.campus_notice)
+		state.campus_notice=""
 	if not state.science_notice.is_empty():
 		_toast(state.science_notice)
 		state.science_notice = ""
@@ -375,7 +392,7 @@ func _process(delta: float) -> void:
 		if not snapshot_mode and not visual_test: state.save_game()
 	refresh_clock += delta
 	save_clock += delta
-	if refresh_clock > 0.2:
+	if refresh_clock > float(state.layout.config.performance.world_refresh_seconds):
 		refresh_clock = 0
 		_update_labels()
 		_sync_world()
@@ -393,7 +410,7 @@ func _update_labels() -> void:
 		return
 	gold_label.text = "%s" % int(state.coins)
 	material_label.text = "星砂 %d   晶露 %d   合金 %d" % state.materials
-	people_label.text = "工程师 %d   科学家 %d" % [state.engineers,state.scientists]
+	people_label.text = "工程师 %d   科研 %d" % [state.engineers,state.campus.people.size()-state.engineers]
 	income_label.text = "%.1f / s" % state.total_income()
 	land_label.text = "已开拓 %d 块  /  沿边缘继续探索" % state.unlocked_plot_count()
 	if is_instance_valid(rate_label) and selected_reactor >= 0:
@@ -446,7 +463,7 @@ func _sync_world() -> void:
 		if info.known: view.template = info.reference_id
 		views.append(view)
 	world.sync(state.plots,views,state.templates,state.elements,state.engineers)
-	world.set_visitor(state.visitor_available(),str(state.order.name),state.visitor_visits)
+	if is_instance_valid(campus_view): campus_view.sync()
 
 func _action(message: String) -> void:
 	_toast(message)
@@ -499,7 +516,7 @@ func _dialog(title: String, subtitle: String, wide: bool = false) -> VBoxContain
 func _show_templates(build: bool) -> void:
 	var body = _dialog("选择一个小小世界", "新炉包含初始元素。更换配方为25金币，并清空该炉旧库存和待收金币。")
 	for key in state.templates:
-		if state.templates[key].get("substitution_only",false): continue
+		if state.templates[key].get("substitution_only",false) and key not in state.campus.unlocked_materials: continue
 		var tpl: Dictionary = state.templates[key]
 		var panel = PanelContainer.new()
 		body.add_child(panel)
@@ -711,9 +728,9 @@ func _show_crate() -> void:
 	var star = UI.label("◇",110,UI.GOLD)
 	star.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	body.add_child(star)
-	body.add_child(UI.paragraph("也许是一捧金币，也许是岛上的新伙伴。\n所有探索箱只消耗游戏金币。",18,UI.TEXT))
+	body.add_child(UI.paragraph("也许是一捧金币，也许是岛上的新伙伴。\n所有探索箱只消耗游戏金币。工程师需要空床位；\n住房不足时伙伴奖励折为85金币。",18,UI.TEXT))
 	body.add_child(UI.paragraph(state.catalog.crate_probabilities.description,14))
-	body.add_child(UI.label("距离保底工程师还有 %d 箱" % (10-state.crate_count%10),15,UI.LILAC))
+	body.add_child(UI.label("距离保底伙伴奖励还有 %d 箱" % (10-state.crate_count%10),15,UI.LILAC))
 	body.add_child(UI.button("打开首箱  ·  免费" if state.crate_count == 0 else "打开探索箱  ·  45 金币",_open_crate,true))
 
 func _open_crate() -> void:
@@ -734,14 +751,17 @@ func _open_crate() -> void:
 	tween.tween_property(reward,"modulate:a",1.0,0.5)
 
 func _show_crew() -> void:
-	var body = _dialog("有人一起，好奇加倍", "CREW QUARTERS   /   岛上的伙伴")
-	body.add_child(UI.label("工程师  %d 人" % state.engineers,28,UI.GOLD))
-	body.add_child(UI.paragraph("小工程师会在岛上走动和巡检。\n每增加一人，建造速度增加55%的基础速度。\n小屋是可爱的装饰，首版不限制居住人数。",17,UI.TEXT))
-	body.add_child(UI.button("招募工程师  ·  %d 金币" % (70+30*(state.engineers-1)),func(): _action(state.hire_engineer()); _show_crew(),true))
-	UI.spacer(body,15)
-	body.add_child(UI.label("科学家  %d 人" % state.scientists,25,UI.LILAC))
-	body.add_child(UI.paragraph("2位工程师支持研究站后，可以邀请科学家。\n第一项研究：H–O水分子的参考几何辅助。",16))
-	body.add_child(UI.button("前往研究站",_show_research))
+	_show_campus("people")
+
+func _show_campus(tab: String="overview") -> void:
+	_close_modal()
+	var panel=CampusPanel.new()
+	modal=panel
+	add_child(panel)
+	panel.setup(state,selected_plot)
+	panel.changed.connect(_action)
+	panel.dismissed.connect(func(): modal=null)
+	panel._show(tab)
 
 func _show_research() -> void:
 	var body = _dialog("把猜测，变成发现", "RESEARCH STATION   /   选中反应炉 → 解锁方法 → 计算 → 查看结果",true)
@@ -749,7 +769,7 @@ func _show_research() -> void:
 	body.add_child(UI.paragraph("结构与产率的基础评分来自参考几何。下面的研究会实际进行数值计算，各方法只在标注范围内使用。",16))
 	body.add_child(UI.label("科学家  %d / 3  ·  %s" % [state.scientists,state.science_summary()],18,UI.GOLD))
 	if state.scientists < 3:
-		body.add_child(UI.button("邀请科学家  ·  %d金币（需2位工程师）" % (100+state.scientists*120),func(): _action(state.research()); _show_research()))
+		body.add_child(UI.button("前往小镇 · 招募博士、教授与院士",_show_crew))
 	if not state.science_pending.is_empty():
 		body.add_child(UI.label("计算中 · 可以关闭窗口，继续经营小岛",19,UI.MINT))
 		body.add_child(UI.button("取消本次研究",func(): _action(state.cancel_science()); _show_research()))
@@ -859,10 +879,10 @@ func _show_help() -> void:
 	for entry in [
 		["01  调整原子", "选择反应炉 → 原子工作台。拖动彩球，观察产率；确认修改时按炉等级扣费。旧库存会清空，记得先收获。"],
 		["02  收获与扩张", "点击注入微光赚金币。炉子持续产生待收金币和产物；收获时概率获得星砂、晶露、合金片。点击虚线地块开拓。"],
-		["03  带伙伴来", "招募工程师加速建造；探索箱首箱免费。点击空地摆放反应炉、花园或小屋。"],
+		["03  带伙伴来", "先造住宅并铺路，再招募伙伴。工程师到岗后才施工；科研小镇可以查看性格、日薪和生活心愿。"],
 		["04  接一张订单", "每次到访可交付一次，之后等待20秒。库存达到3份即可交付。种类相符且几何响应与目标相差≤5个百分点，获得精品催化晶，用来升级炉子。"],
 		["05  元素替换", "元素仓库购买原料 → 工作台选择位点 → 预览替换。应用时扣库存与一次编辑费；未识别的探索组合不参与精品订单。"],
-		["06  解锁新知识", "收获不同配方解锁卡片；2位工程师后可邀请科学家。研究站可解锁弹簧势优化、H₂机器学习实验与一维DFT模型。"]
+		["06  解锁新知识", "先造科研院所和博士公寓，再招募博士生开展基础课题。院士增加进阶课题名额，教授可选带队提效；研究站保留势函数和一维DFT教学任务。"]
 	]:
 		body.add_child(UI.label(entry[0],20,UI.GOLD))
 		body.add_child(UI.paragraph(entry[1],16))

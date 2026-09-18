@@ -24,7 +24,8 @@ static func style(color: Color = PANEL, radius: int = 18, border: Color = LINE) 
 
 static func make_theme() -> Theme:
 	var t = Theme.new()
-	var font = preload("res://assets/fonts/NotoSansCJKsc-Regular.otf")
+	var font = preload("res://assets/fonts/NotoSansCJKsc-Regular.otf").duplicate()
+	font.fallbacks=[ThemeDB.fallback_font]
 	t.default_font = font
 	t.default_font_size = 15
 	t.set_color("font_color", "Label", TEXT)

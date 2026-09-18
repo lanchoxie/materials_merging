@@ -14,7 +14,8 @@ func _run() -> void:
 	s.coins=10000
 	s.upgrades=20
 	s.engineers=3
-	for n in range(3): s.research()
+	s.campus.setup(3,3)
+	s._sync_campus_counts()
 	var work=s.sandbox_from_baseline("water")
 	# Recognition follows topology, not an untrusted baseline label or atom order.
 	work.atoms=["H","O","H"]
@@ -109,4 +110,3 @@ func _run() -> void:
 	s.close_science()
 	print("RELEASE CHECKS: %d passed / %d total" % [checks-failures.size(),checks])
 	quit(0 if failures.is_empty() else 1)
-

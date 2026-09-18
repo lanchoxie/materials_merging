@@ -1,4 +1,4 @@
-param([switch]$SkipImport, [string]$Version = '0.7.0')
+param([switch]$SkipImport, [string]$Version = '0.8.0')
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 foreach ($relative in @('.runtime/AppData','.runtime/LocalAppData','.runtime/Temp','.runtime/android','builds','artifacts')) {
@@ -35,11 +35,11 @@ Set-Content -LiteralPath $settingsPath -Value $settings -Encoding utf8
 $godot = Join-Path $PSScriptRoot 'tools/godot/Godot_v4.7.2-stable_win64_console.exe'
 if (-not $SkipImport) {
     & $godot --headless --path $PSScriptRoot --editor --import --quit --log-file (Join-Path $PSScriptRoot 'artifacts/android-import.log')
-    if ($LASTEXITCODE -ne 0) { throw 'Godot import failed.' }
+    if ($LASTEXITCODE -ne 0 -or (Select-String -LiteralPath artifacts/android-import.log -Pattern 'SCRIPT ERROR:' -Quiet)) { throw 'Godot import failed.' }
 }
 $apk = Join-Path $PSScriptRoot ('builds/AtomAtelier-' + $Version + '-android.apk')
 & $godot --headless --path $PSScriptRoot --export-debug Android $apk --log-file (Join-Path $PSScriptRoot 'artifacts/android-export.log')
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $apk)) { throw 'Android export failed.' }
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $apk) -or (Select-String -LiteralPath artifacts/android-export.log -Pattern 'SCRIPT ERROR:' -Quiet)) { throw 'Android export failed.' }
 & (Join-Path $buildTools 'apksigner.bat') verify --verbose --print-certs $apk | Tee-Object -FilePath (Join-Path $PSScriptRoot 'artifacts/android-signature.txt')
 if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
 & (Join-Path $buildTools 'aapt.exe') dump badging $apk | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'artifacts/android-package.txt')

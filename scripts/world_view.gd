@@ -39,6 +39,8 @@ var _map_max: Vector2 = Vector2(3.0, 3.0)
 var _detailed_plots: Dictionary = {}
 var _visible_plots: Dictionary = {}
 var _detail_signature: String = ""
+var campus_life_enabled: bool = false
+var detail_budget: int = DETAIL_BUDGET
 # The visiting buyer lives outside ProceduralIsland so land and LOD rebuilds
 # never restart an arrival, reset a wave, or duplicate a character.
 var _visitor_node: Node3D
@@ -127,7 +129,7 @@ func _ensure_stage() -> void:
 	sunlight.rotation_degrees = Vector3(-53.0, -34.0, 0.0)
 	sunlight.light_color = Color("fff1d9")
 	sunlight.light_energy = 0.78
-	sunlight.shadow_enabled = true
+	sunlight.shadow_enabled = not OS.has_feature("android")
 	sunlight.directional_shadow_max_distance = 45.0
 	sunlight.shadow_bias = 0.035
 	sunlight.shadow_normal_bias = 1.0
@@ -262,6 +264,7 @@ func _build_plot(index: int) -> void:
 			_build_frontier_plot(plot_root, index)
 		return
 	var kind: String = str(data.get("kind", "empty"))
+	if campus_life_enabled and kind in ["plaza","institute","engineer_house","doctor_dorm","professor_apartment","academician_villa","canteen","park"]: return
 	var reactor: Dictionary = _reactor_on_plot(index, data)
 	if not _detailed_plots.has(index):
 		_build_simple_plot(plot_root, kind, not reactor.is_empty())
@@ -616,6 +619,7 @@ func _build_house(parent: Node3D) -> void:
 
 
 func _build_paths_and_details() -> void:
+	if campus_life_enabled: return
 	var path: StandardMaterial3D = _mat(Color("d8c29a"))
 	var north_south: Array[Vector3] = []
 	var east_west: Array[Vector3] = []
@@ -675,6 +679,7 @@ func _grass(parent: Node3D, pos: Vector3, seed_value: int) -> void:
 
 
 func _build_workers() -> void:
+	if campus_life_enabled: return
 	for index in range(clampi(_worker_count, 1, 10)):
 		var worker: Node3D = Node3D.new()
 		_content.add_child(worker)
@@ -1002,7 +1007,7 @@ func _choose_visible_details() -> void:
 			_visible_plots[index] = true
 			candidates.append({"index": index, "distance": -1.0 if index == _selected else distance})
 	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.distance) < float(b.distance))
-	for index in range(mini(DETAIL_BUDGET, candidates.size())):
+	for index in range(mini(detail_budget, candidates.size())):
 		_detailed_plots[int(candidates[index].index)] = true
 
 

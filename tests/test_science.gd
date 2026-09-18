@@ -20,7 +20,8 @@ func _run() -> void:
 	s.engineers=3
 	s.coins=10000
 	s.upgrades=20
-	for i in range(3): s.research()
+	s.campus.setup(3,3)
+	s._sync_campus_counts()
 	check(s.scientists==3,"scientist progression")
 	s.change_template(0,"hydrogen")
 	s.reactors[0].positions[1][0]+=0.20

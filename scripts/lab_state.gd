@@ -1,5 +1,15 @@
 extends RefCounted
 
+const CampusSim = preload("res://scripts/campus_sim.gd")
+const CampusLayout = preload("res://scripts/campus_layout.gd")
+const CampusPayroll = preload("res://scripts/campus_payroll.gd")
+var campus = CampusSim.new()
+var layout = CampusLayout.new()
+var payroll = CampusPayroll.new()
+var campus_notice: String = ""
+var _campus_clock: float = 0
+var _production_clock: float = 0
+
 const Economy = preload("res://scripts/economy.gd")
 const Specimen = preload("res://scripts/specimen.gd")
 const StructureSandbox = preload("res://scripts/structure_sandbox.gd")
@@ -72,6 +82,9 @@ func _init():
 		plots[4].rid = 0
 		discovered.append("water")
 	_update_order()
+	layout.initialize(plots)
+	_append_frontier()
+	campus.setup(engineers,scientists)
 
 # --- 0.4 structure sandbox -------------------------------------------------
 # Player-authored specimens are kept separate from production reactors until
@@ -501,11 +514,26 @@ func tick(delta: float):
 	if not is_finite(delta) or delta <= 0.0:
 		return
 	delta = minf(delta, 3600.0)
+	_campus_clock += delta
+	if _campus_clock >= 1.0:
+		var payroll_result: Dictionary=payroll.tick(_campus_clock,campus.people,campus.config,coins)
+		coins-=float(payroll_result.paid)
+		campus.work_factor=payroll.work_factor(campus.config)
+		var campus_result: Dictionary=campus.tick(_campus_clock,campus_context())
+		_campus_clock=0.0
+		if not campus_result.get("notifications",[]).is_empty(): campus_notice="；".join(campus_result.notifications)
+		if payroll_result.settled:
+			campus_notice="已发放薪酬 %.1f 金币%s" % [payroll_result.paid,"；欠薪 %.1f，工作效率暂为75%%，收获后可补发" % payroll.arrears if payroll.arrears>0 else ""]
+	_production_clock += delta
+	if _production_clock < 0.2: return
+	delta=_production_clock
+	_production_clock=0.0
 	visitor_cooldown = maxf(0.0, visitor_cooldown - delta)
 	for r in reactors:
 		var active_time = delta
 		if float(r.build_left) > 0.0:
-			var build_speed = 1.0 + 0.55 * (engineers - 1)
+			var build_speed = campus.construction_factor(int(r.plot))
+			if build_speed<=0: continue
 			var time_needed = float(r.build_left) / build_speed
 			r.build_left = maxf(0.0, float(r.build_left) - delta * build_speed)
 			active_time = maxf(0.0, delta - time_needed)
@@ -626,7 +654,7 @@ func _append_frontier():
 				plots.append_array(additions)
 				return
 			coordinates[coordinate] = true
-			additions.append({"x": coordinate.x, "z": coordinate.y, "unlocked": false, "kind": "empty", "rid": -1})
+			additions.append({"x": coordinate.x, "z": coordinate.y, "unlocked": false, "kind": "empty", "rid": -1,"road":false,"building_level":1,"props":[]})
 	plots.append_array(additions)
 
 func buy_plot(index: int) -> String:
@@ -645,13 +673,15 @@ func buy_plot(index: int) -> String:
 	for i in range(3):
 		materials[i] -= cost
 	plots[index].unlocked = true
+	plots[index].road=false
+	layout.mark_changed()
 	_append_frontier()
 	return "新土地已开拓！可以放置反应炉或装饰"
 
 func place_reactor(plot_index: int, template_id: String = "water") -> String:
 	if plot_index < 0 or plot_index >= plots.size() or not templates.has(template_id):
 		return "请选择有效的土地和结构"
-	if templates[template_id].get("substitution_only",false):
+	if templates[template_id].get("substitution_only",false) and template_id not in campus.unlocked_materials:
 		return "这个结构需要在原子工作台中替换元素来发现"
 	if not plots[plot_index].unlocked or plots[plot_index].kind != "empty":
 		return "请在已开拓的空地上建造"
@@ -662,6 +692,7 @@ func place_reactor(plot_index: int, template_id: String = "water") -> String:
 	reactors.append(r)
 	plots[plot_index].kind = "reactor"
 	plots[plot_index].rid = reactors.size() - 1
+	layout.mark_changed()
 	return "反应炉开始建造 · 工程师越多，建造越快"
 
 const DECORATIONS = {"garden":{"name":"晶体花园","cost":35},"house":{"name":"工程师小屋","cost":60},"road":{"name":"星砂小径","cost":18},"fence":{"name":"木质围栏","cost":24},"sculpture":{"name":"原子纪念雕塑","cost":85}}
@@ -674,30 +705,34 @@ func place_decoration(plot_index: int, kind: String) -> String:
 	if coins < int(info.cost): return "金币不足，需要%d金币" % int(info.cost)
 	coins -= int(info.cost)
 	plots[plot_index].kind = kind
+	layout.mark_changed()
 	return "%s落成了" % info.name
 
 func move_building(source: int, target: int) -> String:
 	if source < 0 or source >= plots.size() or target < 0 or target >= plots.size(): return "请选择有效地块"
 	var origin: Dictionary = plots[source]
+	if origin.kind=="plaza": return "广场是公共交通入口，不可搬迁"
 	var destination: Dictionary = plots[target]
 	if not origin.unlocked or origin.kind == "empty": return "这里没有可搬迁的建筑"
 	if not destination.unlocked or destination.kind != "empty": return "请选择已开拓的空地"
 	destination.kind = origin.kind
 	destination.rid = origin.rid
+	destination.building_level=origin.get("building_level",1)
+	origin.building_level=1
+	for resident in campus.people:
+		if int(resident.home_plot)==source: resident.home_plot=target
+		if int(resident.work_plot)==source: resident.work_plot=target
+		if int(resident.target_plot)==source:
+			resident.target_plot=target
+			resident.arrived=false
+	layout.mark_changed()
 	if origin.kind == "reactor": reactors[int(origin.rid)].plot = target
 	origin.kind = "empty"
 	origin.rid = -1
 	return "搬迁完成，结构、等级与库存均已保留"
 
 func hire_engineer() -> String:
-	var cost = 70 + 30 * (engineers - 1)
-	if engineers >= 100:
-		return "工程师团队已满员"
-	if coins < cost:
-		return "招募下一位工程师需要%d金币" % cost
-	coins -= cost
-	engineers += 1
-	return "工程师加入！现有%d人，建造速度提升" % engineers
+	return campus_hire("engineer")
 
 func open_crate() -> String:
 	var cost = 0 if crate_count == 0 else 45
@@ -707,11 +742,14 @@ func open_crate() -> String:
 	crate_count += 1
 	var roll = rng.randf()
 	if crate_count % 10 == 0 or roll >= 0.85:
-		if engineers < 100:
-			engineers += 1
-			return "探索箱打开：工程师 +1！" + ("第10箱保底已触发" if crate_count % 10 == 0 else "")
-		coins += 100.0
-		return "团队已满员，工程师奖励转换为100金币"
+		var context=campus_context()
+		context.coins=100000000
+		var result: Dictionary=campus.hire("engineer",context)
+		if result.ready:
+			_sync_campus_counts()
+			return "探索箱打开：免费工程师 +1，已入住空床位！"
+		coins+=85.0
+		return "暂时没有连路的空床位，工程师奖励转换为85金币"
 	if roll < 0.50:
 		var prize = rng.randi_range(28, 90)
 		coins += prize
@@ -824,16 +862,7 @@ func deliver(index: int) -> String:
 	return "精品成交！+%d 金币 · 精品催化晶 +1" % payment if premium else "普通成交 +%d 金币；下一张订单已到达" % payment
 
 func research() -> String:
-	if scientists >= 3:
-		return "研究站已拥有3位科学家；可以继续解锁经验势、机器学习势和DFT教学任务"
-	if engineers < 2:
-		return "需要至少2位工程师支持研究站"
-	var cost := 100 + scientists * 120
-	if coins < cost:
-		return "邀请下一位科学家需要%d金币" % cost
-	coins -= cost
-	scientists += 1
-	return "科学家入驻%d号位！%s" % [scientists, "先解锁H–O参考几何辅助" if scientists == 1 else ("可以研究更多经验势体系" if scientists == 2 else "研究站达到高阶计算教学配置")]
+	return campus_hire("doctor")
 
 func optimize(index: int) -> String:
 	if not _valid_index(index):
@@ -929,7 +958,7 @@ func apply_structure_edit(index: int, positions: Array, atoms: Array) -> String:
 func change_template(index: int, template_id: String) -> String:
 	if not _valid_index(index) or not templates.has(template_id):
 		return "请选择有效的反应炉和结构"
-	if templates[template_id].get("substitution_only",false):
+	if templates[template_id].get("substitution_only",false) and template_id not in campus.unlocked_materials:
 		return "这个结构只能通过元素替换获得，不能直接装载"
 	var r = reactors[index]
 	if float(r.build_left) > 0.0:
@@ -976,7 +1005,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 7, "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 8, "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1035,7 +1064,7 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 7, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 8, true):
 		return false
 	if int(data.version) >= 3:
 		# v0.3 saves may predate newly discoverable elements. Keep every
@@ -1051,7 +1080,7 @@ func _validate_save(data) -> bool:
 	for key in ["upgrades", "crate_count", "deliveries", "total_harvests"]:
 		if not _number_ok(data.get(key), 0, 1000000, true):
 			return false
-	if not _number_ok(data.get("engineers"), 1, 100, true) or not _number_ok(data.get("scientists"), 0, 3, true):
+	if not _number_ok(data.get("engineers"), 0, 100, true) or not _number_ok(data.get("scientists"), 0, 3, true):
 		return false
 	if data.has("science_unlocked"):
 		if not data.science_unlocked is Array or data.science_unlocked.size() > science_method_ids().size(): return false
@@ -1116,8 +1145,9 @@ func _validate_save(data) -> bool:
 	var open_count = 0
 	for i in range(data.plots.size()):
 		var p = data.plots[i]
-		if not p is Dictionary or not p.get("unlocked") is bool or not p.get("kind") is String or p.kind not in ["empty", "reactor", "garden", "house", "road", "fence", "sculpture"]:
+		if not p is Dictionary or not p.get("unlocked") is bool or not p.get("kind") is String or p.kind not in ["empty", "reactor", "garden", "house", "road", "fence", "sculpture", "plaza"] + layout.building_kinds():
 			return false
+		if int(data.version)>=8 and not layout.valid_plot_fields(p): return false
 		if int(data.version) >= 2:
 			if not _number_ok(p.get("x"), -MAX_COORDINATE, MAX_COORDINATE, true) or not _number_ok(p.get("z"), -MAX_COORDINATE, MAX_COORDINATE, true):
 				return false
@@ -1138,7 +1168,18 @@ func _validate_save(data) -> bool:
 				return false
 		elif int(p.rid) != -1 or seen_plots.has(i):
 			return false
-	return open_count <= MAX_UNLOCKED_PLOTS
+	if int(data.version)>=8:
+		if data.has("payroll"):
+			if not data.payroll is Dictionary or not CampusPayroll.new().restore(data.payroll): return false
+		if not data.get("campus") is Dictionary: return false
+		var check_campus=CampusSim.new()
+		if not check_campus.restore(data.campus): return false
+		for resident in check_campus.people:
+			for location in ["home_plot","target_plot","work_plot","current_plot","next_plot","travel_target"]:
+				if int(resident.get(location,-1))>=data.plots.size(): return false
+			for location in resident.get("travel_route",[]):
+				if int(location)>=data.plots.size(): return false
+	return open_count <= MAX_UNLOCKED_PLOTS+1
 
 func load_game(path: String = "") -> bool:
 	if path.is_empty():
@@ -1203,4 +1244,111 @@ func load_game(path: String = "") -> bool:
 		r.pending = int(r.get("pending", 0))
 		r.signature = signature(r)
 	_update_order()
+	layout.initialize(plots,true)
+	_append_frontier()
+	if int(data.version)>=8:
+		campus.restore(data.campus)
+	else:
+		campus.setup(engineers,scientists)
+	payroll=CampusPayroll.new()
+	if data.has("payroll"): payroll.restore(data.payroll)
+	campus.work_factor=payroll.work_factor(campus.config)
 	return true
+
+
+func campus_context() -> Dictionary:
+	return {"plots":plots,"reactors":reactors,"buildings":layout.buildings(plots),"plaza_plot":layout.plaza_index,"coins":coins,"deliveries":deliveries,"total_harvests":total_harvests,"templates":templates,"road_links":layout.road_links(plots),"reachable_plots":layout.reachable(plots)}
+
+func _sync_campus_counts() -> void:
+	engineers=campus.role_count("engineer")
+	scientists=mini(3,campus.people.size()-engineers)
+
+func _campus_transaction(result: Dictionary) -> String:
+	if result.get("ready",false):
+		coins-=float(result.get("cost",0))
+		_sync_campus_counts()
+	return str(result.get("message","操作未完成"))
+
+func campus_hire(role: String) -> String:
+	return _campus_transaction(campus.hire(role,campus_context()))
+
+func campus_dismiss(id: int) -> String:
+	var message: String=campus.dismiss(id)
+	_sync_campus_counts()
+	return message
+
+func campus_resolve_request(id: int, choice: String) -> String:
+	return _campus_transaction(campus.resolve_request(id,choice,campus_context()))
+
+func campus_start_research(project_id: String) -> String:
+	return _campus_transaction(campus.start_research(project_id,campus_context()))
+
+func campus_pay_arrears() -> String:
+	if payroll.arrears<=0: return "目前没有欠薪"
+	var paid=payroll.pay_arrears(coins)
+	coins-=paid
+	campus.work_factor=payroll.work_factor(campus.config)
+	return "已补发%.1f金币，剩余欠薪%.1f" % [paid,payroll.arrears]
+
+func campus_build(plot: int, kind: String) -> String:
+	var info=layout.building_info(kind)
+	if plot<0 or plot>=plots.size() or info.is_empty(): return "请选择有效地块与建筑"
+	if not plots[plot].unlocked or plots[plot].kind!="empty": return "建筑需要已开拓的空地"
+	if coins<float(info.cost): return "需要%d金币" % int(info.cost)
+	coins-=float(info.cost)
+	plots[plot].kind=kind
+	plots[plot].building_level=1
+	layout.mark_changed()
+	return "%s已落成；请铺设小路连通广场" % info.name
+
+func campus_upgrade(plot: int) -> String:
+	if plot<0 or plot>=plots.size(): return "地块不存在"
+	var p: Dictionary=plots[plot]
+	var info=layout.building_info(p.kind)
+	if info.is_empty(): return "此建筑没有住宅/工位升级"
+	var level=int(p.get("building_level",1))
+	if level>=int(info.max_level): return "已达到最高楼层"
+	var cost=int(info.upgrade_cost)*level
+	if coins<cost: return "升级需要%d金币" % cost
+	coins-=cost
+	p.building_level=level+1
+	layout.mark_changed()
+	return "%s升至%d层，容量%d人" % [info.name,level+1,layout.capacity(p)]
+
+func campus_road(plot: int) -> String:
+	if plot<0 or plot>=plots.size() or not plots[plot].unlocked: return "先开拓这块地"
+	if plots[plot].get("road",false): return "这里已经铺好小路，相邻小路会自动接通"
+	var cost=int(layout.config.roads.cost)
+	if coins<cost: return "铺路需要%d金币" % cost
+	coins-=cost
+	plots[plot].road=true
+	layout.mark_changed()
+	return "小路铺好了，相邻已铺小路自动连接"
+
+func campus_prop(plot: int, slot: int, kind: String) -> String:
+	if plot<0 or plot>=plots.size() or not plots[plot].unlocked or slot<0 or slot>7: return "请选择已开拓地块的有效小物件位置"
+	if not layout.config.props.has(kind): return "物件不存在"
+	if plots[plot].kind=="plaza": return "公共广场保留交通空间，请在外围地块布置"
+	var info: Dictionary=layout.config.props[kind]
+	if deliveries<int(info.requires_deliveries): return "完成%d次交付后解锁" % int(info.requires_deliveries)
+	var props: Array=plots[plot].get("props",[])
+	for prop in props:
+		if int(prop.slot)==slot: return "这个位置已有物件，请先收纳"
+	if coins<float(info.cost): return "金币不足"
+	coins-=float(info.cost)
+	props.append({"slot":slot,"kind":kind})
+	plots[plot].props=props
+	layout.mark_changed()
+	return "%s已摆放，可与主建筑共用一个地块" % info.name
+
+func campus_remove_prop(plot: int, slot: int) -> String:
+	if plot<0 or plot>=plots.size(): return "地块不存在"
+	var props: Array=plots[plot].get("props",[])
+	for i in range(props.size()):
+		if int(props[i].slot)==slot:
+			var kind: String=props[i].kind
+			coins+=float(layout.config.props[kind].cost)
+			props.remove_at(i)
+			layout.mark_changed()
+			return "物件已收回，返还原价金币"
+	return "这里没有物件"
