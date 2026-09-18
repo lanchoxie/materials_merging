@@ -108,7 +108,9 @@ func _buildings() -> void:
 	var road=UI.button("铺设连通小路 · %d金币" % int(state.layout.config.roads.cost),_road)
 	road.disabled=bool(plot.get("road",false)); body.add_child(road)
 	if plot.kind=="empty":
-		for kind in state.layout.building_kinds():
+		var building_choices: Array=state.layout.building_kinds()
+		building_choices.erase("park"); building_choices.push_front("park")
+		for kind in building_choices:
 			var info: Dictionary=state.layout.building_info(kind)
 			var card=_card("%s · %d金币 · 初始容量%d人" % [info.name,info.cost,info.capacity])
 			card.add_child(UI.paragraph(info.description,15)); card.add_child(UI.button("在所选地块建造",_build.bind(kind)))

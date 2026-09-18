@@ -1008,7 +1008,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 9, "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 10, "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1069,7 +1069,7 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 9, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 10, true):
 		return false
 	if int(data.version) >= 3:
 		# v0.3 saves may predate newly discoverable elements. Keep every
@@ -1273,6 +1273,7 @@ func load_game(path: String = "") -> bool:
 	market.quote_rules=island_rules.visitors
 	if int(data.version)>=9:
 		storage.restore(data.storage,layout.config.props.keys()+["road"],island_rules.consumables.keys(),plots)
+		if int(data.version)<10: _repair_legacy_references()
 		market.restore(data.market,island_rules.visitors,templates)
 		logistics.rounds=data.logistics_rounds.duplicate()
 		for id in logistics.rounds: logistics.rounds[id]=int(logistics.rounds[id])
@@ -1291,6 +1292,17 @@ func load_game(path: String = "") -> bool:
 		storage.finds["3"]="crystal_fox"
 	return true
 
+
+func _repair_legacy_references() -> void:
+	# Correct old mislabelled snapshots without changing amounts, IDs, coordinates or paid income.
+	for batch in storage.batches:
+		if not str(batch.reference).is_empty(): continue
+		var work: Dictionary=batch.work
+		var info=sandbox_reference(work)
+		if not info.known: continue
+		batch.reference=info.reference_id; batch.name=info.name; batch.formula=info.formula
+		var specimen={"template":info.reference_id,"sandbox":true,"atoms":work.atoms,"positions":work.positions,"bonds":work.bonds,"mode":work.get("mode","science"),"periodic":work.get("periodic",false),"cell_lengths":work.get("cell",[6.0,6.0,6.0])}
+		batch.quality=quality(specimen)
 
 func campus_context() -> Dictionary:
 	return {"plots":plots,"reactors":reactors,"buildings":layout.buildings(plots),"plaza_plot":layout.plaza_index,"coins":coins,"deliveries":deliveries,"total_harvests":total_harvests,"templates":templates,"road_links":layout.road_links(plots),"reachable_plots":layout.reachable(plots)}

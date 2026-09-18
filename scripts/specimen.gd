@@ -1,5 +1,6 @@
 extends RefCounted
-## Recognition is restricted to the inherited topology family, never arbitrary chemistry.
+## Isolated specimens share the sandbox graph resolver; template labels are not chemistry.
+const Reference = preload("res://scripts/sandbox_reference.gd")
 
 static func reference_id(base_id: String, atoms: Array, templates: Dictionary) -> String:
 	if not templates.has(base_id): return ""
@@ -7,13 +8,16 @@ static func reference_id(base_id: String, atoms: Array, templates: Dictionary) -
 	if atoms.size() != base.atoms.size(): return ""
 	for key in templates:
 		var candidate: Dictionary = templates[key]
-		if candidate.get("family",key) != base.get("family",base_id): continue
-		if atoms == candidate.atoms: return key
-		if base.get("family","") == "diatomic" and atoms.size() == 2:
-			if atoms[0] == candidate.atoms[1] and atoms[1] == candidate.atoms[0]: return key
+		if base.has("cell"):
+			if candidate.get("family",key) == base.get("family",base_id) and atoms == candidate.atoms: return key
+		elif not candidate.has("cell") and not Reference.match_graph(atoms,base.get("bond_orders",[]),candidate).is_empty():
+			return key
 	return ""
 
 static func describe(base_id: String, atoms: Array, templates: Dictionary, elements: Dictionary) -> Dictionary:
+	var base: Dictionary = templates[base_id]
+	if not base.has("cell"):
+		return Reference.describe({"atoms":atoms,"positions":base.positions,"bonds":base.get("bond_orders",[]),"mode":"science","periodic":false},templates,elements)
 	var reference: String = reference_id(base_id,atoms,templates)
 	var info: Dictionary = templates[reference if not reference.is_empty() else base_id].duplicate(true)
 	info["known"] = not reference.is_empty()

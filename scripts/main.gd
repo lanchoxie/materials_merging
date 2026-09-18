@@ -6,6 +6,8 @@ const World = preload("res://scripts/world_view.gd")
 const Editor = preload("res://scripts/atom_editor.gd")
 const ScienceChart = preload("res://scripts/science_chart.gd")
 const SandboxEditor = preload("res://scripts/sandbox_editor.gd")
+const BuildingDrag=preload("res://scripts/building_drag.gd")
+var building_drag=BuildingDrag.new()
 const CampusView = preload("res://scripts/campus_view.gd")
 const IslandPanel=preload("res://scripts/island_panel.gd")
 const OrderBubbles=preload("res://scripts/order_bubbles.gd")
@@ -53,6 +55,9 @@ var research_open: bool = false
 var move_source: int = -1
 
 func _ready() -> void:
+	if OS.has_feature("web"):
+		state.layout.config.performance.visible_people=int(state.layout.config.performance.web_visible_people)
+		state.layout.config.performance.visible_buildings=int(state.layout.config.performance.web_visible_buildings)
 	if OS.has_feature("android"):
 		state.layout.config.performance.visible_people=int(state.layout.config.performance.mobile_visible_people)
 		state.layout.config.performance.visible_buildings=int(state.layout.config.performance.mobile_visible_buildings)
@@ -63,6 +68,7 @@ func _ready() -> void:
 		state.load_game()
 	theme = UI.make_theme()
 	_build_ui()
+	building_drag.setup(self)
 	_sync_world()
 	_select_plot(4)
 	_update_labels()
@@ -123,7 +129,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.9 浮岛日常  ·  每 20 秒自动保存  ·  几何评分为游戏规则 · 科研结果仅限所示模型", 11, UI.MUTED)
+	save_label = UI.label("v0.10 浮岛焕新  ·  每 20 秒自动保存  ·  几何评分为游戏规则 · 科研结果仅限所示模型", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -138,17 +144,13 @@ func _build_left() -> void:
 	UI.spacer(v, 2)
 	v.add_child(UI.label("每一章\n都是新世界", 21))
 	UI.spacer(v, 8)
-	v.add_child(UI.button("01   分子花园", func(): _toast("先从水、氢气和甲烷开始，摆放你自己的分子。"), true))
-	v.add_child(UI.button("02   晶体岛屿", func(): _show_templates(false)))
-	for text in ["03   表面之境", "04   缺陷寻宝", "05   链的宇宙"]:
-		var b = UI.button(text+"  ·", _show_research)
-		b.add_theme_color_override("font_color", UI.MUTED)
-		v.add_child(b)
+	v.add_child(UI.label("浮岛经营",19,UI.MINT))
+	v.add_child(UI.paragraph("分子与晶体\n用结构点亮生活",15))
 	UI.spacer(v, 8)
 	v.add_child(UI.label("你的发现", 13, UI.MUTED))
 	v.add_child(UI.button("▧   结构图鉴", _show_collection))
 	v.add_child(UI.button("✧   研究站", _show_research))
-	v.add_child(UI.button("◈   元素仓库", _show_elements))
+	v.add_child(UI.paragraph("元素与物品统一放在工具箱。\n公园在下方建造菜单。",13))
 	var help_button = UI.button("怎么玩  ?", _show_help)
 	v.add_child(help_button)
 
@@ -164,7 +166,7 @@ func _build_world() -> void:
 	world_viewport.own_world_3d = true
 	world_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	world_viewport.msaa_3d = Viewport.MSAA_2X
-	if OS.has_feature("android"): world_viewport.msaa_3d = Viewport.MSAA_DISABLED
+	if OS.has_feature("android") or OS.has_feature("web"): world_viewport.msaa_3d = Viewport.MSAA_DISABLED
 	world_box.add_child(world_viewport)
 	world = World.new()
 	world.campus_life_enabled = true
@@ -180,9 +182,9 @@ func _build_world() -> void:
 	var title = UI.label("好奇心所至，小岛继续生长。", 27)
 	title.position = Vector2(248,164)
 	add_child(title)
-	var caption = UI.label("拖动地图探索边界  /  点击地块建造  /  滚轮缩放", 13, UI.MUTED)
+	var caption = UI.label("拖地图 · 长按建筑搬迁 · 滚轮缩放", 13, UI.MUTED)
 	if OS.has_feature("android"):
-		caption.text = "单指拖动地图  /  轻触地块建造  /  按钮缩放和旋转"
+		caption.text = "拖地图 · 长按建筑搬迁 · 轻触地块建造"
 	caption.position = Vector2(251,211)
 	add_child(caption)
 	var camera_controls = HBoxContainer.new()
@@ -191,7 +193,7 @@ func _build_world() -> void:
 	add_child(camera_controls)
 	for entry in [["↶ 左转", 0.28], ["右转 ↷", -0.28]]:
 		var turn_button = UI.button(entry[0], func(): world.orbit(entry[1]))
-		turn_button.custom_minimum_size = Vector2(142, 56)
+		turn_button.custom_minimum_size = Vector2(142, 44)
 		camera_controls.add_child(turn_button)
 	var map_controls = HBoxContainer.new()
 	map_controls.position = Vector2(251, 239)
@@ -199,7 +201,7 @@ func _build_world() -> void:
 	add_child(map_controls)
 	for entry in [["边缘", _show_map], ["回家", func(): world.reset_view()], ["−", func(): world.zoom_view(1.22)], ["＋", func(): world.zoom_view(0.82)]]:
 		var b = UI.button(entry[0], entry[1])
-		b.custom_minimum_size = Vector2(84, 56)
+		b.custom_minimum_size = Vector2(84, 44)
 		map_controls.add_child(b)
 	land_label = UI.label("", 13, UI.GOLD)
 	land_label.position = Vector2(254, 654)
@@ -224,7 +226,7 @@ func _build_toolbar() -> void:
 	h.add_child(click_b)
 	var buttons = [
 		["↓  收获全部", func(): _action(state.harvest_all())],
-		["＋  建造 / 装饰", func(): _toast("点击岛上的空地，选择反应炉、花园或小屋。")],
+		["＋  建造 / 公园", _show_build_menu],
 		["◇  探索盲盒", _show_crate],
 		["科研小镇", _show_crew],
 		["工具箱", _show_toolbox],
@@ -262,6 +264,7 @@ func _world_input(event: InputEvent) -> void:
 		_move_world_pointer(event.position)
 
 func _begin_world_pointer(pos: Vector2) -> void:
+	building_drag.begin(pos)
 	world_pointer_down = true
 	world_pointer_start = pos
 	world_pointer_last = pos
@@ -269,12 +272,18 @@ func _begin_world_pointer(pos: Vector2) -> void:
 
 func _move_world_pointer(pos: Vector2) -> void:
 	if not world_pointer_down: return
+	if building_drag.move(pos):
+		world_pointer_last=pos
+		return
 	if pos.distance_to(world_pointer_start) > 10.0: world_pointer_dragged = true
 	if world_pointer_dragged:
 		world.pan_view((world_pointer_last - pos) * world.camera.size / (world_box.size.y * World.PITCH))
 	world_pointer_last = pos
 
 func _end_world_pointer(pos: Vector2) -> void:
+	if building_drag.release(pos):
+		world_pointer_down=false
+		return
 	if world_pointer_down and not world_pointer_dragged:
 		_pick_world(pos)
 	world_pointer_down = false
@@ -283,11 +292,14 @@ func _input(event: InputEvent) -> void:
 	if not is_instance_valid(world_box): return
 	# A release outside the viewport must not leave a captured drag behind.
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if not world_box.get_global_rect().has_point(event.position): world_pointer_down = false
+		if not world_box.get_global_rect().has_point(event.position):
+			world_pointer_down = false
+			building_drag.cancel()
 	if event is InputEventScreenTouch and not event.pressed and event.index == world_touch_index:
 		if not world_box.get_global_rect().has_point(event.position):
 			world_touch_index = -1
 			world_pointer_down = false
+			building_drag.cancel()
 
 func _pick_world(local_position: Vector2) -> void:
 	var screen_position = local_position * Vector2(world_viewport.size) / world_box.size
@@ -342,7 +354,6 @@ func _rebuild_sidebar() -> void:
 		else:
 			side.add_child(UI.paragraph("收购商骑车或乘车来访。交付或送客后，等待下一班来客。",16))
 			side.add_child(UI.button("迎接收购商",_show_market,true))
-		side.add_child(UI.button("邀请更多伙伴",_show_crew))
 	else:
 		var r: Dictionary = state.reactors[selected_reactor]
 		var tpl: Dictionary = state.structure_data(r)
@@ -361,7 +372,7 @@ func _rebuild_sidebar() -> void:
 		quality_label = UI.label("",13,UI.MINT)
 		side.add_child(quality_label)
 		side.add_child(UI.button("查看收益构成", _show_income))
-		side.add_child(UI.button("搬迁到另一块空地", _show_relocation))
+		side.add_child(UI.paragraph("长按炉子可拿起搬迁",13,UI.MUTED))
 		var edit_b = UI.button("进入原子工作台   →", _open_editor,true)
 		edit_b.disabled = float(r.build_left) > 0
 		side.add_child(edit_b)
@@ -387,6 +398,10 @@ func _rebuild_sidebar() -> void:
 	_update_labels()
 
 func _process(delta: float) -> void:
+	if world_pointer_down: building_drag.tick(delta)
+	var covered=is_instance_valid(modal)
+	world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED if covered else SubViewport.UPDATE_ALWAYS
+	world.process_mode=Node.PROCESS_MODE_DISABLED if covered else Node.PROCESS_MODE_INHERIT
 	state.tick(delta)
 	if not state.campus_notice.is_empty():
 		_toast(state.campus_notice)
@@ -401,7 +416,7 @@ func _process(delta: float) -> void:
 	if refresh_clock > float(state.layout.config.performance.world_refresh_seconds):
 		refresh_clock = 0
 		_update_labels()
-		_sync_world()
+		if not building_drag.active and not covered: _sync_world()
 	if save_clock > 20:
 		save_clock = 0
 		if not snapshot_mode and not visual_test:
@@ -485,6 +500,7 @@ func _toast(message: String) -> void:
 	toast_clock = 4.0
 
 func _close_modal() -> void:
+	building_drag.cancel()
 	research_open = false
 	if is_instance_valid(modal):
 		modal.queue_free()
@@ -718,6 +734,15 @@ func _open_crate() -> void:
 func _show_crew() -> void:
 	_show_campus("people")
 
+func _show_build_menu() -> void:
+	# The global build entry opens an available parcel, so parks are not hidden by reactor management.
+	if state.plots[selected_plot].kind!="empty" or not state.plots[selected_plot].unlocked:
+		for i in range(state.plots.size()):
+			if state.plots[i].unlocked and state.plots[i].kind=="empty":
+				_select_plot(i)
+				break
+	_show_campus("build")
+
 func _show_campus(tab: String="overview") -> void:
 	_close_modal()
 	var panel=CampusPanel.new()
@@ -871,6 +896,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		world_pointer_down = false
 		world_touch_index = -1
+		building_drag.cancel()
 		if not snapshot_mode and not visual_test:
 			state.save_game()
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:

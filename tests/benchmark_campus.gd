@@ -35,8 +35,8 @@ func _run() -> void:
 	assert(game.world._detailed_plots.size()<=36)
 	assert(game.campus_view.static_rebuilds==static_before)
 	var report={"device":RenderingServer.get_video_adapter_name(),"viewport":"1440x900","plots":state.unlocked_plot_count(),"residents":state.campus.people.size(),"reactors":state.reactors.size(),"rendered_residents":game.campus_view.actors.size(),"detailed_plots":game.world._detailed_plots.size(),"frames":frames.size(),"median_frame_ms":frames[120],"p95_frame_ms":frames[228],"static_rebuilds_during_sample":game.campus_view.static_rebuilds-static_before,"draw_calls":Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),"object_count":Performance.get_monitor(Performance.OBJECT_NODE_COUNT),"note":"Local Windows rendering sample only; not Android or browser FPS."}
-	FileAccess.open("res://artifacts/campus-performance-v09.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+	FileAccess.open("res://artifacts/campus-performance-v010.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://artifacts/campus-stress-v09.png")
+	root.get_texture().get_image().save_png("res://artifacts/campus-stress-v010.png")
 	print("PERFORMANCE: ",JSON.stringify(report))
 	state.close_science(); quit()

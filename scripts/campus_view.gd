@@ -1,4 +1,6 @@
 extends Node3D
+const Architecture=preload("res://scripts/campus_architecture.gd")
+const StaticGeometry=preload("res://scripts/static_geometry.gd")
 const IslandGuest=preload("res://scripts/island_guest.gd")
 var guests: Dictionary={}
 var output_markers: Dictionary={}
@@ -92,9 +94,12 @@ func _rebuild_static() -> void:
 				road_transforms.append(Transform3D(Basis.IDENTITY.scaled(Vector3(absf(next.x-hub.x)+0.3,0.025,absf(next.z-hub.z)+0.3)),(hub+next)*0.5))
 		if not world._visible_plots.has(i): continue
 		var detail=world._detailed_plots.has(i)
-		var node=Node3D.new(); scenery.add_child(node); node.position=base
+		var node=Node3D.new(); node.name="Plot_%d" % i; scenery.add_child(node); node.position=base
 		if p.kind=="plaza": _plaza(node)
-		elif p.kind in state.layout.building_kinds(): _building(node,p,detail)
+		elif not state.layout.building_info(p.kind).is_empty():
+			var building=Node3D.new(); building.name="Building"; node.add_child(building)
+			_building(building,p,detail)
+			StaticGeometry.bake(building)
 		if detail:
 			var find_kind=str(state.storage.finds.get(str(i),""))
 			if not find_kind.is_empty() and find_kind!="collected":
@@ -102,6 +107,7 @@ func _rebuild_static() -> void:
 				var sparkle=Label3D.new(); sparkle.text="✧"; sparkle.font=preload("res://assets/fonts/NotoSansCJKsc-Regular.otf"); sparkle.font_size=64; sparkle.pixel_size=0.007; sparkle.modulate=Color("ffe2a4"); sparkle.position=_prop_offset(4)+Vector3(0,1.0,0); sparkle.billboard=BaseMaterial3D.BILLBOARD_ENABLED; node.add_child(sparkle)
 			for prop in p.get("props",[]): _prop(node,str(prop.kind),int(prop.slot))
 			_connect_fences(node,p.get("props",[]))
+		StaticGeometry.bake(node)
 	_road_batch(road_transforms)
 
 func _prop_offset(slot: int) -> Vector3:
@@ -120,6 +126,12 @@ func _connect_fences(parent: Node3D, props: Array) -> void:
 
 func _plaza(parent: Node3D) -> void:
 	box(parent,Vector3(2.8,0.05,2.8),Vector3(0,0.10,0),Color("d3ccaf"))
+	# Continuous raised pedestrian rim. Expansion joins the rim, not the vehicle apron.
+	box(parent,Vector3(0.30,0.03,2.85),Vector3(1.35,0.115,0),Color("d6d2ad"))
+	box(parent,Vector3(2.85,0.03,0.30),Vector3(0,0.115,1.35),Color("d6d2ad"))
+	for z in [-0.98,-0.53,-0.08,0.37]:
+		box(parent,Vector3(0.035,0.32,0.035),Vector3(1.10,0.30,z),Color("76938b"))
+	box(parent,Vector3(0.035,0.045,1.44),Vector3(1.10,0.47,-0.3),Color("e7d9b6"))
 	box(parent,Vector3(2.3,0.04,0.56),Vector3(0,0.15,0.6),Color("a8b6ad"))
 	box(parent,Vector3(1.8,0.08,0.6),Vector3(0,0.30,-0.75),Color("e8f2da"))
 	box(parent,Vector3(1.8,0.06,0.7),Vector3(0,1.30,-0.75),Color("458c83"))
@@ -132,33 +144,8 @@ func _plaza(parent: Node3D) -> void:
 	box(parent,Vector3(0.28,0.025,0.035),Vector3(-1.10,0.92,0.81),Color("385961"))
 
 func _building(parent: Node3D, p: Dictionary, detail: bool) -> void:
-	var kind: String=p.kind
-	if kind=="engineer_house" and detail and world.has_method("_build_house"):
-		world._build_house(parent)
-		return
-	if kind=="park":
-		box(parent,Vector3(2.0,0.08,1.8),Vector3(0,0.15,0),Color("81b890"))
-		for x in [-0.60,0.60]:
-			box(parent,Vector3(0.12,0.6,0.12),Vector3(x,0.45,-0.35),Color("ac8661"))
-			ball(parent,0.42,Vector3(x,0.92,-0.35),Color("87cea0"))
-		box(parent,Vector3(1,0.15,0.3),Vector3(0,0.4,0.65),Color("e5c99f")); return
-	var level=int(p.get("building_level",1))
-	var height=0.65+0.38*level
-	var color=Color("e3e6ce")
-	var roof=Color("559f9a")
-	if kind=="doctor_dorm": roof=Color("7096b7")
-	if kind=="professor_apartment": roof=Color("aa99be")
-	if kind=="academician_villa": roof=Color("b99368")
-	if kind=="canteen": roof=Color("d88f72")
-	box(parent,Vector3(1.85,height,1.65),Vector3(0,height*0.5+0.12,0),color)
-	box(parent,Vector3(2.03,0.16,1.85),Vector3(0,height+0.20,0),roof)
-	box(parent,Vector3(0.3,0.6,0.035),Vector3(0,0.42,0.845),Color("40646c"))
-	if detail:
-		for floor_index in range(level):
-			for x in [-0.6,0.6]: box(parent,Vector3(0.27,0.21,0.035),Vector3(x,0.58+floor_index*0.38,0.845),Color("9ad6cf"))
-		if kind=="institute":
-			ball(parent,0.27,Vector3(0,height+0.6,0),Color("91ded5"))
-			box(parent,Vector3(0.07,0.4,0.07),Vector3(0,height+0.35,0),roof)
+	Architecture.build(self,parent,p,detail)
+
 
 func _prop(parent: Node3D, kind: String, slot: int) -> void:
 	var node=Node3D.new(); parent.add_child(node); node.position=_prop_offset(slot)

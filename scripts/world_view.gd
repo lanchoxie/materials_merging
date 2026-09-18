@@ -1,4 +1,5 @@
 extends Node3D
+const StaticGeometry=preload("res://scripts/static_geometry.gd")
 ## The entire little laboratory is made from meshes, so it needs no imported art.
 
 signal plot_clicked(index: int)
@@ -41,6 +42,9 @@ var _visible_plots: Dictionary = {}
 var _detail_signature: String = ""
 var campus_life_enabled: bool = false
 var detail_budget: int = DETAIL_BUDGET
+var detail_refresh_left: float = -1.0
+var geometry_rebuilds: int = 0
+var interaction_lock: bool = false
 # The visiting buyer lives outside ProceduralIsland so land and LOD rebuilds
 # never restart an arrival, reset a wave, or duplicate a character.
 var _visitor_node: Node3D
@@ -129,7 +133,7 @@ func _ensure_stage() -> void:
 	sunlight.rotation_degrees = Vector3(-53.0, -34.0, 0.0)
 	sunlight.light_color = Color("fff1d9")
 	sunlight.light_energy = 0.78
-	sunlight.shadow_enabled = not OS.has_feature("android")
+	sunlight.shadow_enabled = not (OS.has_feature("android") or OS.has_feature("web"))
 	sunlight.directional_shadow_max_distance = 45.0
 	sunlight.shadow_bias = 0.035
 	sunlight.shadow_normal_bias = 1.0
@@ -153,6 +157,8 @@ func _ensure_stage() -> void:
 
 
 func rebuild() -> void:
+	geometry_rebuilds += 1
+	detail_refresh_left = -1.0
 	_ensure_stage()
 	if is_instance_valid(_content):
 		_content.free()
@@ -248,6 +254,11 @@ func _plot_data(index: int) -> Dictionary:
 
 
 func _build_plot(index: int) -> void:
+	_build_plot_raw(index)
+	var plot_node = _content.get_node_or_null("Plot_%d" % index)
+	if plot_node != null: StaticGeometry.bake(plot_node)
+
+func _build_plot_raw(index: int) -> void:
 	if not _visible_plots.has(index):
 		return
 	var data: Dictionary = _plot_data(index)
@@ -264,7 +275,7 @@ func _build_plot(index: int) -> void:
 			_build_frontier_plot(plot_root, index)
 		return
 	var kind: String = str(data.get("kind", "empty"))
-	if campus_life_enabled and kind in ["plaza","institute","engineer_house","doctor_dorm","professor_apartment","academician_villa","canteen","park"]: return
+	if campus_life_enabled and kind in ["plaza","institute","engineer_house","doctor_dorm","professor_apartment","academician_villa","canteen","park","garden","house"]: return
 	var reactor: Dictionary = _reactor_on_plot(index, data)
 	if not _detailed_plots.has(index):
 		_build_simple_plot(plot_root, kind, not reactor.is_empty())
@@ -1020,6 +1031,10 @@ func _visible_detail_signature() -> String:
 
 
 func _refresh_camera_details() -> void:
+	# Camera movement is immediate; expensive LOD geometry waits until the gesture settles.
+	detail_refresh_left = 0.22
+
+func _commit_camera_details() -> void:
 	_choose_visible_details()
 	var next_signature: String = _visible_detail_signature()
 	if next_signature != _detail_signature:
@@ -1052,6 +1067,9 @@ func handle_click(screen_pos: Vector2) -> int:
 
 
 func _process(delta: float) -> void:
+	if detail_refresh_left >= 0.0 and not interaction_lock:
+		detail_refresh_left -= delta
+		if detail_refresh_left < 0.0: _commit_camera_details()
 	_time += delta
 	_animate_visitor(delta)
 	for item in _molecules:

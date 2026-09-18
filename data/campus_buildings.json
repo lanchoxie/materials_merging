@@ -10,7 +10,9 @@
     "mobile_visible_people": 12,
     "mobile_visible_buildings": 16,
     "mobile_max_fps": 30,
-    "world_refresh_seconds": 0.5
+    "world_refresh_seconds": 0.5,
+    "web_visible_people": 16,
+    "web_visible_buildings": 24
   },
   "buildings": {
     "institute": {
