@@ -478,7 +478,7 @@ func _request_apply() -> void:
 		_message(str(quote.get("message", "暂时无法应用")))
 		return
 	pending_confirmation = _apply
-	confirmation.dialog_text = "将作品应用到所选反应炉？\n费用：%d 金币，元素按下方报价结算。\n会清空该炉旧库存、待收金币与生产进度，请先收获。" % int(quote.get("fee", 0))
+	confirmation.dialog_text = "将作品应用到所选反应炉？\n费用：%d 金币，元素按下方报价结算。\n更换组成需博士装炉，旧批次和待收金币保留。" % int(quote.get("fee", 0))
 	confirmation.popup_centered()
 
 func _apply() -> void:

@@ -28,7 +28,7 @@ func _run() -> void:
 	await create_timer(3.2).timeout
 	await capture("island-v07")
 	game._show_market()
-	assert(game.market_rows.size()==2)
+	assert(game.modal.mode=="mail")
 	await capture("market-v07")
 	game._close_modal()
 	game._select_plot(5)

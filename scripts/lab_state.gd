@@ -1,5 +1,13 @@
 extends RefCounted
 
+const IslandStorage=preload("res://scripts/island_storage.gd")
+const IslandLogistics=preload("res://scripts/island_logistics.gd")
+const IslandMarket=preload("res://scripts/island_market.gd")
+var storage=IslandStorage.new()
+var logistics=IslandLogistics.new()
+var market=IslandMarket.new()
+var island_rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/island_balance.json"))
+
 const CampusSim = preload("res://scripts/campus_sim.gd")
 const CampusLayout = preload("res://scripts/campus_layout.gd")
 const CampusPayroll = preload("res://scripts/campus_payroll.gd")
@@ -29,6 +37,7 @@ var _structure_cache: Dictionary = {}
 
 const MAX_UNLOCKED_PLOTS = 128
 const MAX_SAVED_PLOTS = 1024
+const MAX_SAVE_BYTES = 33554432
 const MAX_COORDINATE = 128
 const CARDINAL_DIRECTIONS = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
@@ -56,6 +65,7 @@ var _dry_harvests: int = 0
 var _serial: int = 1
 
 func _init():
+	market.quote_rules=island_rules.visitors
 	rng.randomize()
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string("res://data/materials.json"))
 	if parsed is Dictionary:
@@ -85,6 +95,8 @@ func _init():
 	layout.initialize(plots)
 	_append_frontier()
 	campus.setup(engineers,scientists)
+	market.spawn(economy,templates,island_rules.visitors)
+	storage.finds["3"]="crystal_fox"
 
 # --- 0.4 structure sandbox -------------------------------------------------
 # Player-authored specimens are kept separate from production reactors until
@@ -240,6 +252,8 @@ func sandbox_reactor_quote(index: int, work: Dictionary) -> Dictionary:
 	if not sandbox_validate(work) or work.atoms.is_empty(): q.message="至少放一个原子；结构必须在工作台范围内"; return q
 	var r: Dictionary = reactors[index]
 	if float(r.build_left)>0: q.message="请等待反应炉建好"; return q
+	if not r.get("installation",{}).is_empty(): q.message="已有待装炉样品，请等待博士或取消装炉"; return q
+	if not storage.can_add(signature(r),int(r.pending)): q.message="工具箱批次已满，请先交付订单"; return q
 	var old := reactor_work(r)
 	q.changed = old.atoms != work.atoms or old.positions != work.positions or old.bonds != work.bonds or old.mode != work.get("mode","science") or old.periodic != work.get("periodic",false) or old.cell != work.get("cell",[6.0,6.0,6.0])
 	if not q.changed: q.message="结构未改变，不扣费"; return q
@@ -251,7 +265,7 @@ func sandbox_reactor_quote(index: int, work: Dictionary) -> Dictionary:
 		if int(available.get(s,0))>0: available[s]-=1
 		else: q.required[s]=int(q.required.get(s,0))+1
 	q.fee = edit_cost(r)
-	q.message = "需要 %d 金币；确认后清空旧产物" % q.fee
+	q.message = "需要 %d 金币；更换组成由博士装炉，已完成产物保留" % q.fee
 	if coins < q.fee: q.message="金币不足：本级固定%d金币"%q.fee; return q
 	for s in q.required:
 		if int(element_inventory.get(s,0))<int(q.required[s]): q.message="%s不足：需要%d，库存%d"%[s,q.required[s],element_inventory.get(s,0)]; return q
@@ -264,6 +278,14 @@ func apply_sandbox_to_reactor(index: int, work: Dictionary) -> String:
 	coins -= int(q.fee)
 	for s in q.required: element_inventory[s] -= int(q.required[s])
 	var r: Dictionary=reactors[index]
+	var old=reactor_work(r)
+	if old.atoms!=work.atoms or old.bonds!=work.bonds or old.mode!=work.get("mode","science") or old.periodic!=work.get("periodic",false) or old.cell!=work.get("cell",[6.0,6.0,6.0]):
+		return _queue_install(r,{"kind":"sandbox","work":work.duplicate(true)},q)
+	_collect(r)
+	_install_sandbox(r,work)
+	return "坐标已保存 · -%d金币；旧批次已收入工具箱" % q.fee
+
+func _install_sandbox(r: Dictionary, work: Dictionary) -> void:
 	r.sandbox=true
 	r.work_name=str(work.get("name","我的作品")).left(48)
 	r.atoms=work.atoms.duplicate()
@@ -274,7 +296,6 @@ func apply_sandbox_to_reactor(index: int, work: Dictionary) -> String:
 	r.cell_lengths=work.get("cell",[6.0,6.0,6.0]).duplicate()
 	_structure_cache.clear()
 	_reset_product(r)
-	return "作品已装入%s · -%d金币 · %s"%[r.id,q.fee,"按参考生产" if not reference_id(r).is_empty() else "生产展示样品，等待创意收购商"]
 
 func science_method_ids() -> Array:
 	return science.ids() if science != null else []
@@ -506,21 +527,29 @@ func income_breakdown(r: Dictionary) -> Dictionary:
 func total_income() -> float:
 	var result = 0.0
 	for r in reactors:
-		result += income(r)
+		if int(r.pending)<reactor_capacity(r): result += income(r)
 	return result
 
 func tick(delta: float):
 	poll_science()
 	if not is_finite(delta) or delta <= 0.0:
 		return
-	delta = minf(delta, 3600.0)
+	delta = minf(delta, 60.0)
+	# Long frames use the same order of production, travel and collection as live play.
+	if delta>1.0:
+		for step in range(int(delta)): tick(1.0)
+		if delta-floor(delta)>0.0: tick(delta-floor(delta))
+		return
 	_campus_clock += delta
-	if _campus_clock >= 1.0:
-		var payroll_result: Dictionary=payroll.tick(_campus_clock,campus.people,campus.config,coins)
+	while _campus_clock >= 1.0:
+		var payroll_result: Dictionary=payroll.tick(1.0,campus.people,campus.config,coins)
 		coins-=float(payroll_result.paid)
 		campus.work_factor=payroll.work_factor(campus.config)
-		var campus_result: Dictionary=campus.tick(_campus_clock,campus_context())
-		_campus_clock=0.0
+		var context=campus_context()
+		context["logistics"]=logistics.prepare(campus.people,reactors,context.reachable_plots,storage,island_rules)
+		var campus_result: Dictionary=campus.tick(1.0,context)
+		_finish_logistics(logistics.arrivals(campus.people,1.0,storage,island_rules))
+		_campus_clock-=1.0
 		if not campus_result.get("notifications",[]).is_empty(): campus_notice="；".join(campus_result.notifications)
 		if payroll_result.settled:
 			campus_notice="已发放薪酬 %.1f 金币%s" % [payroll_result.paid,"；欠薪 %.1f，工作效率暂为75%%，收获后可补发" % payroll.arrears if payroll.arrears>0 else ""]
@@ -528,6 +557,7 @@ func tick(delta: float):
 	if _production_clock < 0.2: return
 	delta=_production_clock
 	_production_clock=0.0
+	market.tick(delta,economy,templates,island_rules.visitors)
 	visitor_cooldown = maxf(0.0, visitor_cooldown - delta)
 	for r in reactors:
 		var active_time = delta
@@ -539,15 +569,21 @@ func tick(delta: float):
 			active_time = maxf(0.0, delta - time_needed)
 		if active_time <= 0.0:
 			continue
-		r.stored_coins = minf(100000000.0, float(r.stored_coins) + income(r) * active_time)
+		if int(r.pending)>=reactor_capacity(r): continue
 		# Unrecognized chemistry earns only the explicit exploration stipend.
 		# It cannot create sellable units or building-material drops.
-		if reference_id(r).is_empty() and not r.get("sandbox",false): continue
-		var speed = (0.35 + quality(r) * 0.65) * (1.0 + (int(r.level) - 1) * 0.35) / 7.0
+		if reference_id(r).is_empty() and not r.get("sandbox",false):
+			r.stored_coins=minf(income(r)*float(island_rules.production.seconds_per_unit)*reactor_capacity(r),float(r.stored_coins)+income(r)*active_time)
+			continue
+		var speed = (0.35 + quality(r) * 0.65) * (1.0 + (int(r.level) - 1) * float(island_rules.production.level_speed_bonus)) / float(island_rules.production.seconds_per_unit)
+		if "process_control" in campus.unlocked_materials: speed*=1.15
+		var free=reactor_capacity(r)-int(r.pending)
+		active_time=minf(active_time,(float(free)-float(r.progress))/speed)
+		r.stored_coins=minf(100000000.0,float(r.stored_coins)+income(r)*active_time)
 		r.progress = float(r.progress) + active_time * speed
-		var produced = int(floor(float(r.progress)))
+		var produced = mini(free,int(floor(float(r.progress)+0.0000001)))
 		if produced > 0:
-			r.progress = fmod(float(r.progress), 1.0)
+			r.progress = maxf(0,float(r.progress)-produced)
 			r.stock = mini(1000000, int(r.stock) + produced)
 			r.pending = mini(1000000, int(r.get("pending", 0)) + produced)
 
@@ -563,19 +599,21 @@ func upgrade_cost(r: Dictionary) -> int:
 
 func _collect(r: Dictionary) -> Dictionary:
 	var result = {"coins": 0.0, "drops": 0, "units": 0}
-	if float(r.build_left) > 0.0 or (int(r.get("pending", 0)) == 0 and float(r.stored_coins) < 1.0):
+	if float(r.build_left) > 0.0 or (int(r.get("pending", 0)) == 0 and float(r.stored_coins) <= 0.0):
 		return result
+	if not storage.add_product(product_snapshot(r),int(r.pending)): return result
 	result.coins = float(r.stored_coins)
 	coins = minf(100000000.0, coins + result.coins)
 	r.stored_coins = 0.0
 	var units = int(r.get("pending", 0))
 	r.pending = 0
+	r.stock = 0
 	result.units = units
 	for unit in range(units if not reference_id(r).is_empty() else 0):
 		_dry_harvests += 1
-		if rng.randf() < 0.38 or _dry_harvests >= 5:
+		if rng.randf() < float(island_rules.production.drop_probability) or _dry_harvests >= int(island_rules.production.drop_pity):
 			var selected = rng.randi_range(0, 2)
-			if _dry_harvests >= 5:
+			if _dry_harvests >= int(island_rules.production.drop_pity):
 				selected = materials.find(materials.min())
 			materials[selected] = mini(1000000, int(materials[selected]) + 1)
 			result.drops += 1
@@ -676,6 +714,9 @@ func buy_plot(index: int) -> String:
 	plots[index].road=false
 	layout.mark_changed()
 	_append_frontier()
+	if (unlocked_plot_count()-5)%int(island_rules.relics.every_plots)==0:
+		var kinds: Array=island_rules.relics.kinds
+		storage.finds[str(index)]=kinds[(unlocked_plot_count()/int(island_rules.relics.every_plots))%kinds.size()]
 	return "新土地已开拓！可以放置反应炉或装饰"
 
 func place_reactor(plot_index: int, template_id: String = "water") -> String:
@@ -718,6 +759,9 @@ func move_building(source: int, target: int) -> String:
 	destination.kind = origin.kind
 	destination.rid = origin.rid
 	destination.building_level=origin.get("building_level",1)
+	if storage.cupboards.has(str(source)):
+		storage.cupboards[str(target)]=storage.cupboards[str(source)]
+		storage.cupboards.erase(str(source))
 	origin.building_level=1
 	for resident in campus.people:
 		if int(resident.home_plot)==source: resident.home_plot=target
@@ -781,85 +825,43 @@ func _update_order():
 		order.name="星球创意展策展人"
 		order.story="收集自创作品做成小岛展览。按展示样品收购，不评价真实稳定性；无精品催化晶。"
 
+func _first_visitor() -> Dictionary:
+	for v in market.visitors:
+		if v.phase=="visiting": return v
+	return {}
+
 func dismiss_visitor() -> String:
-	if not visitor_available(): return visitor_countdown_text()
-	visitor_skips += 1
-	visitor_visits += 1
-	visitor_cooldown=float(economy.rules.orders.visitor_cooldown_seconds)
-	_update_order()
-	return "已送别访客，下一位正在赶来"
+	var v=_first_visitor()
+	return visitor_countdown_text() if v.is_empty() else dismiss_market_visitor(int(v.id))
 
 func delivery_quote(index: int) -> Dictionary:
-	if not _valid_index(index):
-		return {}
-	var r: Dictionary = reactors[index]
-	var ref_id: String = reference_id(r)
-	var quote: Dictionary = economy.quote(ref_id, quality(r), int(r.stock), float(r.build_left) > 0.0, order)
-	quote.known = not ref_id.is_empty()
-	quote.exploration = bool(order.get("accept_exploration",false)) and r.get("sandbox",false) and ref_id.is_empty()
-	if ref_id.is_empty():
-		quote.ready = quote.exploration and int(r.stock)>=int(order.quantity) and float(r.build_left)<=0
-		quote.payment = 18 if quote.exploration else 0
-		quote.catalysts = 0
-		quote.premium = false
-	if order.get("accept_exploration",false) and quote.known:
-		quote.premium=false
-		quote.catalysts=0
-		quote.payment=18
-	return quote
+	if not _valid_index(index): return {}
+	var v=_first_visitor()
+	var snapshot=product_snapshot(reactors[index])
+	var batch=storage.batch(str(snapshot.id))
+	if batch.is_empty(): snapshot["quantity"]=0; batch=snapshot
+	if v.is_empty(): v={"phase":"arriving","order":order}
+	return market.quote(v,batch,economy)
 
 func visitor_available() -> bool:
-	return visitor_cooldown <= 0.0
+	return not _first_visitor().is_empty()
 
 func visitor_countdown_text() -> String:
 	if visitor_available(): return "收购商已到访 · 可以接待"
-	var seconds := maxi(1, ceili(visitor_cooldown))
-	return "下一位收购商约 %02d:%02d 后到访" % [seconds / 60, seconds % 60]
+	return "下一位收购商约 %02d:%02d 后到访" % [int(market.clock)/60,int(market.clock)%60]
 
 func market_candidates() -> Array:
-	var candidates: Array = []
+	var rows=[]
 	for i in range(reactors.size()):
-		var quote: Dictionary = delivery_quote(i)
-		quote.known = quote.get("known", false)
-		quote.score = economy.ranking_score(quote)
-		quote.reason = economy.ranking_reason(quote)
-		quote.index = i
-		candidates.append(quote)
-	# Stable insertion sort keeps reactor order when two offers are equal.
-	for i in range(1, candidates.size()):
-		var current: Dictionary = candidates[i]
-		var j := i - 1
-		while j >= 0 and float(candidates[j].score) < float(current.score):
-			candidates[j + 1] = candidates[j]
-			j -= 1
-		candidates[j + 1] = current
-	return candidates
+		var q=delivery_quote(i); q["index"]=i; rows.append(q)
+	rows.sort_custom(func(a,b): return a.score>b.score)
+	return rows
 
 func deliver(index: int) -> String:
-	if not _valid_index(index):
-		return "请选择要交付的反应炉"
-	if not visitor_available():
-		return visitor_countdown_text()
-	var r = reactors[index]
-	if reference_id(r).is_empty() and not delivery_quote(index).get("exploration",false):
-		return "探索样品暂无适用参考，不能交付科研订单"
-	if float(r.build_left) > 0.0 or int(r.stock) < int(order.quantity):
-		return "买家需要3份产物，请等待反应炉完成生产"
-	var quote: Dictionary = delivery_quote(index)
-	var premium: bool = quote.premium
-	var payment: int = quote.payment
-	r.stock -= int(order.quantity)
-	coins += payment
-	if premium:
-		upgrades += 1
-	var ref_id: String = reference_id(r)
-	if not ref_id.is_empty() and not discovered.has(ref_id):
-		discovered.append(ref_id)
-	deliveries += 1
-	visitor_visits += 1
-	visitor_cooldown = float(economy.rules.orders.get("visitor_cooldown_seconds", 45))
-	_update_order()
-	return "精品成交！+%d 金币 · 精品催化晶 +1" % payment if premium else "普通成交 +%d 金币；下一张订单已到达" % payment
+	if not _valid_index(index): return "请选择反应炉"
+	var v=_first_visitor()
+	if v.is_empty(): return visitor_countdown_text()
+	return fulfill_order(int(v.id),signature(reactors[index]))
 
 func research() -> String:
 	return campus_hire("doctor")
@@ -909,6 +911,8 @@ func edit_quote(index: int, positions: Array, atoms: Array) -> Dictionary:
 	var quote = {"valid":false,"changed":false,"ready":false,"fee":0,"required":{},"known":false,"reference_id":"","formula":"","message":"请选择有效的反应炉"}
 	if not _valid_index(index): return quote
 	var r = reactors[index]
+	if not r.get("installation",{}).is_empty(): quote.message="已有待装炉样品，请等待博士或取消装炉"; return quote
+	if not storage.can_add(signature(r),int(r.pending)): quote.message="工具箱批次已满，请先交付订单"; return quote
 	if float(r.build_left) > 0.0:
 		quote.message = "反应炉建好后才可以编辑结构"
 		return quote
@@ -950,10 +954,13 @@ func apply_structure_edit(index: int, positions: Array, atoms: Array) -> String:
 	coins -= int(quote.fee)
 	for symbol in quote.required:
 		element_inventory[symbol] -= int(quote.required[symbol])
+	if atoms!=atom_symbols(r):
+		return _queue_install(r,{"kind":"structure","positions":positions.duplicate(true),"atoms":atoms.duplicate()},quote)
+	_collect(r)
 	r.positions = positions.duplicate(true)
 	r.atoms = atoms.duplicate()
 	_reset_product(r)
-	return "结构已保存 · -%d 金币；旧产物已清空。%s" % [quote.fee,"识别为"+quote.formula if quote.known else "探索样品暂不评定精品"]
+	return "结构已保存 · -%d 金币；旧批次已收入工具箱。%s" % [quote.fee,"识别为"+quote.formula if quote.known else "探索样品暂不评定精品"]
 
 func change_template(index: int, template_id: String) -> String:
 	if not _valid_index(index) or not templates.has(template_id):
@@ -963,17 +970,13 @@ func change_template(index: int, template_id: String) -> String:
 	var r = reactors[index]
 	if float(r.build_left) > 0.0:
 		return "反应炉建好后才能更换结构"
+	if not r.get("installation",{}).is_empty(): return "已有待装炉样品，请等待博士或取消装炉"
 	if reference_id(r) == template_id:
 		return "反应炉已经使用这个结构；修改坐标请使用原子编辑器"
 	if coins < 25.0:
 		return "更换结构需要25金币"
 	coins -= 25.0
-	r.sandbox = false
-	r.template = template_id
-	r.positions = templates[template_id].positions.duplicate(true)
-	r.atoms = templates[template_id].atoms.duplicate()
-	_reset_product(r)
-	return "新结构已装载 · -25金币；旧库存与待收获金币已清空"
+	return _queue_install(r,{"kind":"template","template":template_id},{"fee":25,"required":{}})
 
 func signature(r: Dictionary) -> String:
 	var parts = [str(r.get("template", "unknown"))]
@@ -1005,7 +1008,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 8, "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 9, "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1014,10 +1017,12 @@ func save_game(path: String = "") -> String:
 		"visitor_cooldown": visitor_cooldown, "visitor_visits": visitor_visits, "visitor_skips": visitor_skips,
 		"science_unlocked": science_unlocked, "science_runs": science_runs, "science_pending": science_pending}
 	var temporary = path + ".tmp"
+	var encoded=JSON.stringify(snapshot,"\t")
+	if encoded.to_utf8_buffer().size()>MAX_SAVE_BYTES: return "保存失败：存档容量已满，请交付部分产物；旧存档仍保留"
 	var file = FileAccess.open(temporary, FileAccess.WRITE)
 	if file == null:
 		return "保存失败：无法写入存档"
-	file.store_string(JSON.stringify(snapshot, "\t"))
+	file.store_string(encoded)
 	file.flush()
 	var error = file.get_error()
 	file.close()
@@ -1064,7 +1069,7 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 8, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 9, true):
 		return false
 	if int(data.version) >= 3:
 		# v0.3 saves may predate newly discoverable elements. Keep every
@@ -1091,7 +1096,7 @@ func _validate_save(data) -> bool:
 		if not data.science_runs is Array or data.science_runs.size() > 24: return false
 		for record in data.science_runs:
 			if not _valid_science_record(record): return false
-	if not _number_ok(data.get("dry_harvests", 0), 0, 4, true) or not _number_ok(data.get("serial", 1), 1, 1000, true):
+	if not _number_ok(data.get("dry_harvests", 0), 0, int(island_rules.production.drop_pity)-1, true) or not _number_ok(data.get("serial", 1), 1, 1000, true):
 		return false
 	if not data.get("materials") is Array or data.materials.size() != 3:
 		return false
@@ -1139,6 +1144,7 @@ func _validate_save(data) -> bool:
 			return false
 		if not _number_ok(r.get("build_left"), 0, 12):
 			return false
+		if not _valid_installation(r): return false
 		if int(data.version) >= 3 and reference_id(r).is_empty() and not r.get("sandbox",false):
 			if int(r.stock) != 0 or int(r.get("pending",0)) != 0 or float(r.progress) != 0.0: return false
 	var coordinates = {}
@@ -1179,6 +1185,16 @@ func _validate_save(data) -> bool:
 				if int(resident.get(location,-1))>=data.plots.size(): return false
 			for location in resident.get("travel_route",[]):
 				if int(location)>=data.plots.size(): return false
+	if int(data.version)>=9:
+		if not IslandStorage.new().restore(data.get("storage"),layout.config.props.keys()+["road"],island_rules.consumables.keys(),data.plots): return false
+		for batch in data.storage.batches:
+			if not sandbox_validate(batch.work) or (not batch.reference.is_empty() and not templates.has(batch.reference)): return false
+		if not IslandMarket.new().restore(data.get("market"),island_rules.visitors,templates): return false
+		if not data.get("logistics_rounds") is Dictionary: return false
+		for id in data.logistics_rounds:
+			var maximum_rounds=0
+			for food in island_rules.consumables.values(): maximum_rounds=maxi(maximum_rounds,int(food.rounds))
+			if not str(id).is_valid_int() or not _number_ok(data.logistics_rounds[id],0,maximum_rounds,true): return false
 	return open_count <= MAX_UNLOCKED_PLOTS+1
 
 func load_game(path: String = "") -> bool:
@@ -1194,7 +1210,7 @@ func load_game(path: String = "") -> bool:
 		if file == null:
 			continue
 		# Refuse huge files before parsing; normal saves remain far below this limit.
-		if file.get_length() > 4194304:
+		if file.get_length() > MAX_SAVE_BYTES:
 			file.close()
 			continue
 		var content = file.get_as_text()
@@ -1253,6 +1269,26 @@ func load_game(path: String = "") -> bool:
 	payroll=CampusPayroll.new()
 	if data.has("payroll"): payroll.restore(data.payroll)
 	campus.work_factor=payroll.work_factor(campus.config)
+	storage=IslandStorage.new(); logistics=IslandLogistics.new(); market=IslandMarket.new()
+	market.quote_rules=island_rules.visitors
+	if int(data.version)>=9:
+		storage.restore(data.storage,layout.config.props.keys()+["road"],island_rules.consumables.keys(),plots)
+		market.restore(data.market,island_rules.visitors,templates)
+		logistics.rounds=data.logistics_rounds.duplicate()
+		for id in logistics.rounds: logistics.rounds[id]=int(logistics.rounds[id])
+		for r in reactors:
+			if r.get("installation",{}).is_empty(): continue
+			r.installation.fee=int(r.installation.fee)
+			for symbol in r.installation.elements: r.installation.elements[symbol]=int(r.installation.elements[symbol])
+	else:
+		# Previously collected stock moves into the bag; uncollected output remains at the reactor.
+		# Legacy pending could exceed stock after selling directly from the furnace: cap before migrating.
+		for r in reactors:
+			var waiting=mini(int(r.stock),int(r.pending))
+			storage.add_product(product_snapshot(r),int(r.stock)-waiting)
+			r.stock=waiting; r.pending=waiting
+		market.spawn(economy,templates,island_rules.visitors)
+		storage.finds["3"]="crystal_fox"
 	return true
 
 
@@ -1319,8 +1355,10 @@ func campus_road(plot: int) -> String:
 	if plot<0 or plot>=plots.size() or not plots[plot].unlocked: return "先开拓这块地"
 	if plots[plot].get("road",false): return "这里已经铺好小路，相邻小路会自动接通"
 	var cost=int(layout.config.roads.cost)
-	if coins<cost: return "铺路需要%d金币" % cost
-	coins-=cost
+	if int(storage.decorations.get("road",0))>0: storage.decorations.road-=1
+	else:
+		if coins<cost: return "铺路需要%d金币" % cost
+		coins-=cost
 	plots[plot].road=true
 	layout.mark_changed()
 	return "小路铺好了，相邻已铺小路自动连接"
@@ -1330,12 +1368,15 @@ func campus_prop(plot: int, slot: int, kind: String) -> String:
 	if not layout.config.props.has(kind): return "物件不存在"
 	if plots[plot].kind=="plaza": return "公共广场保留交通空间，请在外围地块布置"
 	var info: Dictionary=layout.config.props[kind]
+	if info.get("exploration",false) and kind not in storage.unlocked: return "开拓土地，拾取这个物件后解锁"
 	if deliveries<int(info.requires_deliveries): return "完成%d次交付后解锁" % int(info.requires_deliveries)
 	var props: Array=plots[plot].get("props",[])
 	for prop in props:
 		if int(prop.slot)==slot: return "这个位置已有物件，请先收纳"
-	if coins<float(info.cost): return "金币不足"
-	coins-=float(info.cost)
+	if int(storage.decorations.get(kind,0))>0: storage.decorations[kind]-=1
+	else:
+		if coins<float(info.cost): return "金币不足"
+		coins-=float(info.cost)
 	props.append({"slot":slot,"kind":kind})
 	plots[plot].props=props
 	layout.mark_changed()
@@ -1347,8 +1388,123 @@ func campus_remove_prop(plot: int, slot: int) -> String:
 	for i in range(props.size()):
 		if int(props[i].slot)==slot:
 			var kind: String=props[i].kind
-			coins+=float(layout.config.props[kind].cost)
+			storage.decorations[kind]=int(storage.decorations.get(kind,0))+1
 			props.remove_at(i)
 			layout.mark_changed()
-			return "物件已收回，返还原价金币"
+			return "物件已收入工具箱，可以免费再次摆放"
 	return "这里没有物件"
+
+func reactor_capacity(r: Dictionary) -> int:
+	return int(island_rules.production.base_capacity)+(int(r.level)-1)*int(island_rules.production.capacity_per_level)+(3 if "buffer_storage" in campus.unlocked_materials else 0)
+
+func product_snapshot(r: Dictionary) -> Dictionary:
+	var info=structure_data(r)
+	var work=reactor_work(r)
+	if info.has("cell"): work.periodic=true
+	return {"id":signature(r),"name":str(info.name),"formula":str(info.formula),"reference":reference_id(r),"quality":quality(r),"work":work}
+
+func _queue_install(r: Dictionary, payload: Dictionary, quote: Dictionary) -> String:
+	r["installation"]={"payload":payload.duplicate(true),"remaining":float(island_rules.logistics.installation_seconds),"fee":int(quote.fee),"elements":quote.required.duplicate()}
+	return "样品已排队 · 费用已预付；空闲博士沿小路前来装炉。旧炉继续生产，可随时取消并退款。"
+
+func cancel_installation(index: int) -> String:
+	if not _valid_index(index) or reactors[index].get("installation",{}).is_empty(): return "没有待装炉任务"
+	var job: Dictionary=reactors[index].installation
+	# A refund must never silently lose reserved elements at the inventory limit.
+	for symbol in job.elements:
+		if int(element_inventory.get(symbol,0))+int(job.elements[symbol])>9999: return "元素仓库已满，请先使用部分元素再取消"
+	coins+=int(job.fee)
+	for symbol in job.elements: element_inventory[symbol]=int(element_inventory.get(symbol,0))+int(job.elements[symbol])
+	reactors[index].erase("installation")
+	return "已取消装炉，金币与预留元素原数退回"
+
+func _finish_logistics(events: Array) -> void:
+	for event in events:
+		var r: Dictionary=reactors[int(event.reactor)]
+		if event.kind=="collect":
+			var result=_collect(r)
+			if int(result.units)>0:
+				var id=str(int(event.person))
+				logistics.rounds[id]=maxi(0,int(logistics.rounds.get(id,0))-1)
+				var p=campus.person(int(event.person))
+				p.hunger=minf(100,float(p.hunger)+5)
+		elif event.kind=="install" and not r.get("installation",{}).is_empty():
+			var job: Dictionary=r.installation
+			job.remaining=maxf(0,float(job.remaining)-campus.person_efficiency(int(event.person)))
+			if float(job.remaining)>0 or not storage.can_add(signature(r),int(r.pending)): continue
+			_collect(r)
+			var payload: Dictionary=job.payload
+			match str(payload.kind):
+				"sandbox": _install_sandbox(r,payload.work)
+				"template":
+					r.sandbox=false; r.template=payload.template
+					r.atoms=templates[r.template].atoms.duplicate(); r.positions=templates[r.template].positions.duplicate(true)
+					_reset_product(r)
+				"structure":
+					r.atoms=payload.atoms.duplicate(); r.positions=payload.positions.duplicate(true); _reset_product(r)
+			r.erase("installation"); _structure_cache.clear()
+			campus_notice="博士完成装炉：%s。旧批次已保留，新的结构开始生产。" % structure_data(r).formula
+
+func _valid_installation(r: Dictionary) -> bool:
+	var job=r.get("installation",{})
+	if not job is Dictionary: return false
+	if job.is_empty(): return true
+	if not _number_ok(job.get("remaining"),0,float(island_rules.logistics.installation_seconds)) or not _number_ok(job.get("fee"),0,100000,true): return false
+	if not IslandStorage.counts_ok(job.get("elements"),elements.keys()) or not job.get("payload") is Dictionary: return false
+	var p: Dictionary=job.payload
+	match str(p.get("kind","")):
+		"template": return templates.has(p.get("template",""))
+		"sandbox": return p.get("work") is Dictionary and sandbox_validate(p.work) and not p.work.atoms.is_empty()
+		"structure": return _valid_atoms(p.get("atoms"),templates[r.template].atoms.size()) and _valid_positions(p.get("positions"),templates[r.template].atoms.size())
+	return false
+
+func buy_consumable(kind: String, quantity: int=1) -> String:
+	if not island_rules.consumables.has(kind) or quantity<1 or quantity>100: return "请选择有效补给"
+	var info: Dictionary=island_rules.consumables[kind]
+	var cost=int(info.cost)*quantity
+	if coins<cost: return "金币不足，需要%d金币" % cost
+	if int(storage.consumables.get(kind,0))+quantity>9999: return "补给库存已满"
+	coins-=cost; storage.consumables[kind]=int(storage.consumables.get(kind,0))+quantity
+	return "%s ×%d 已收入工具箱；放入博士公寓后使用" % [info.name,quantity]
+
+func supply_dorm(plot: int, kind: String, quantity: int) -> String:
+	if plot<0 or plot>=plots.size() or plots[plot].kind!="doctor_dorm" or not island_rules.consumables.has(kind): return "请选择博士公寓"
+	if not storage.deposit_food(plot,kind,quantity,int(island_rules.logistics.cupboard_capacity)): return "补给不足或公寓储物柜已满（30份）"
+	return "已放入公寓，空闲博士会回家补充体力后收集"
+
+func collect_find(plot: int) -> String:
+	var key=str(plot)
+	var kind=str(storage.finds.get(key,""))
+	if kind.is_empty() or kind=="collected": return "这里没有待拾取的小物件"
+	storage.finds[key]="collected"
+	if kind not in storage.unlocked: storage.unlocked.append(kind)
+	storage.decorations[kind]=int(storage.decorations.get(kind,0))+1
+	layout.mark_changed()
+	return "发现%s！已收入工具箱，可摆在任意庭院空位" % layout.config.props[kind].name
+
+func store_road(plot: int) -> String:
+	if plot<0 or plot>=plots.size() or plots[plot].kind=="plaza" or not plots[plot].get("road",false): return "这里没有可收纳的小路"
+	plots[plot].road=false; storage.decorations["road"]=int(storage.decorations.get("road",0))+1
+	layout.mark_changed()
+	return "小路已收入工具箱；断开的建筑会暂停人员通行"
+
+func visitor_candidates(id: int) -> Array:
+	return market.candidates(id,storage.batches,economy)
+
+func fulfill_order(visitor_id: int, batch_id: String) -> String:
+	var visitor=market.visitor(visitor_id)
+	var batch=storage.batch(batch_id)
+	if visitor.is_empty() or visitor.phase!="visiting": return "这位客人尚未到达或已离开"
+	if batch.is_empty(): return "这个批次已用完，请先收集新产物"
+	var quote=market.quote(visitor,batch,economy)
+	if not quote.ready: return "库存不足或不符合订单，请先生产并收集"
+	if not storage.take_product(batch_id,int(visitor.order.quantity)): return "库存已变化，请重试"
+	coins+=int(quote.payment); upgrades+=int(quote.catalysts); deliveries+=1; visitor_visits+=1
+	market.leave(visitor_id)
+	return "%s成交！+%d金币%s" % ["精品" if quote.premium else "普通",int(quote.payment)," · 催化晶+1" if quote.premium else ""]
+
+func dismiss_market_visitor(id: int) -> String:
+	var v=market.visitor(id)
+	if v.is_empty() or v.phase!="visiting": return "这位客人暂时不能接待"
+	market.leave(id); visitor_skips+=1
+	return "已送别这位客人，其他订单仍然保留"

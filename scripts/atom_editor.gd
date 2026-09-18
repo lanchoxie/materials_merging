@@ -187,7 +187,7 @@ func _build_sidebar() -> void:
 	apply_button = UI.button("应用结构   ·   %d 金币" % fee, _apply, true)
 	apply_button.custom_minimum_size.y = 58
 	outer.add_child(apply_button)
-	outer.add_child(UI.paragraph("确认扣费并清空该炉旧库存、待收金币与进度。\n请先收获、交付。几何评分不等同真实能量。", 12))
+	outer.add_child(UI.paragraph("更换元素由博士装炉，坐标调整即时生效。\n旧批次保留；几何评分不等同真实能量。", 12))
 
 func _element(symbol: String) -> Dictionary:
 	return state.elements.get(symbol, {"color": "a5efd1", "covalent_radius": 0.65})

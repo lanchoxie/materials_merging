@@ -1,5 +1,6 @@
 extends SceneTree
 
+const Fixtures=preload("res://tests/fixtures_v09.gd")
 const State = preload("res://scripts/lab_state.gd")
 var failures: Array = []
 var checks: int = 0
@@ -67,17 +68,19 @@ func _initialize():
 	check(absf(state.quality(translate) - state.quality(r)) < 0.0001, "rigid translation preserves geometry score")
 	state.coins = 10000.0
 	state.apply_edit(0, state.templates.water.positions.duplicate(true))
-	state.tick(25.0)
+	for n in range(100): state.tick(1.0)
 	check(r.stock >= 3 and r.stored_coins > 0.0, "passive production")
 	var stock_before = r.stock
+	state.harvest(0)
 	state.deliver(0)
-	check(r.stock == stock_before - 3 and state.upgrades == 1 and state.deliveries == 1, "premium order consumes stock and awards catalyst")
+	check(state.storage.batch(state.signature(r)).quantity == stock_before - 3 and state.upgrades == 1 and state.deliveries == 1, "premium order consumes stock and awards catalyst")
 	var next_order = state.order.template
 	state.deliver(0)
 	check(state.order.template == next_order, "cannot deliver without enough inventory")
 	state.upgrade_reactor(0)
 	check(r.level == 2 and state.upgrades == 0 and state.edit_cost(r) > initial_cost, "upgrade consumes catalyst and raises fixed edit cost")
-	state.tick(80.0)
+	state.tick(60.0)
+	state._dry_harvests=7
 	var total_materials_before = int(state.materials[0]) + int(state.materials[1]) + int(state.materials[2])
 	state.harvest(0)
 	var total_materials_after = int(state.materials[0]) + int(state.materials[1]) + int(state.materials[2])
@@ -86,12 +89,18 @@ func _initialize():
 	state.harvest(0)
 	check(state.coins == coins_after_harvest, "harvest cannot collect coins twice")
 	state.change_template(0, "methane")
+	Fixtures.install(state)
+	Fixtures.offer(state,"methane")
 	check(r.stock == 0 and r.stored_coins == 0.0 and r.pending == 0, "switch clears previous product buffers")
-	state.tick(30.0)
+	for n in range(80): state.tick(1)
+	state.harvest(0)
 	state.deliver(0)
 	check(state.upgrades == 1 and state.deliveries == 2, "next template premium order works")
 	state.change_template(0, "water")
-	state.tick(30.0)
+	Fixtures.install(state)
+	Fixtures.offer(state,"methane")
+	for n in range(80): state.tick(1)
+	state.harvest(0)
 	state.deliver(0)
 	check(state.deliveries == 3 and state.upgrades == 1, "nonmatching template has ordinary sale but no catalyst")
 	state.place_reactor(3, "hydrogen")
@@ -159,7 +168,7 @@ func _initialize():
 	valid_file.plots[0].rid = 0
 	check(not loaded._validate_save(valid_file), "save rejects inconsistent plot ownership")
 	var baseline = JSON.parse_string(FileAccess.get_file_as_string(save_path + ".bak"))
-	check(int(baseline.version) == 8, "new saves use version eight")
+	check(int(baseline.version) == 9, "new saves use version nine")
 	valid_file = baseline.duplicate(true)
 	valid_file.plots[9].x = valid_file.plots[4].x
 	valid_file.plots[9].z = valid_file.plots[4].z
@@ -276,14 +285,17 @@ func _test_reward_rules(state) -> void:
 	var seller = State.new()
 	seller.reactors[0].positions = seller.templates.water.positions.duplicate(true)
 	seller.reactors[0].stock = 3
+	seller.reactors[0].pending = 3
+	seller.harvest(0)
+	Fixtures.offer(seller)
 	var advertised: Dictionary = seller.delivery_quote(0)
 	var wallet: float = seller.coins
 	seller.deliver(0)
 	check(seller.coins == wallet + advertised.payment and seller.upgrades == advertised.catalysts and seller.reactors[0].stock == 0, "quoted price and delivered amount agree exactly")
-	check(not seller.visitor_available() and seller.visitor_cooldown > 0.0, "buyer visit starts an adjustable cooldown")
+	check(not seller.visitor_available() and seller.market.clock > 0.0, "buyer visit starts an adjustable cooldown")
 	var blocked_wallet: float = seller.coins
 	check(seller.deliver(0).contains("后到访") and seller.coins == blocked_wallet, "cooldown blocks repeated delivery without changing the wallet")
-	seller.tick(float(seller.economy.rules.orders.visitor_cooldown_seconds))
+	for n in range(72): seller.tick(1)
 	check(seller.visitor_available() and seller.visitor_countdown_text().contains("可以接待"), "buyer becomes available after cooldown")
 	var fake: Dictionary = state.templates.water.duplicate(true)
 	fake.atoms = []
@@ -329,6 +341,7 @@ func _test_element_workflow() -> void:
 	s.tick(30)
 	s.apply_structure_edit(0,old_positions,draft_atoms)
 	check(s.coins == wallet - preview.fee and s.element_inventory.S == inventory.S - 1, "confirmed substitution charges one fixed edit and exact inventory")
+	Fixtures.install(s)
 	check(r.positions == old_positions and s.reference_id(r) == "hydrogen_sulfide", "substitution preserves player coordinates and changes scientific reference")
 	check(r.stock == 0 and r.pending == 0 and r.stored_coins == 0 and r.progress == 0, "old products never become substituted products")
 	check(s.signature(r) != old_signature, "element identity contributes to specimen fingerprint")
@@ -347,6 +360,9 @@ func _test_element_workflow() -> void:
 	new_buyer.reactors[0].atoms = ["S","H","H"]
 	new_buyer.reactors[0].positions = new_buyer.templates.hydrogen_sulfide.positions.duplicate(true)
 	new_buyer.reactors[0].stock = 3
+	new_buyer.reactors[0].pending = 3
+	new_buyer.harvest(0)
+	Fixtures.offer(new_buyer,"hydrogen_sulfide")
 	new_buyer.deliveries = 4
 	new_buyer._update_order()
 	check(new_buyer.order.template == "hydrogen_sulfide" and new_buyer.delivery_quote(0).premium, "new buyer recognizes the substituted composition instead of its original template")
@@ -357,8 +373,9 @@ func _test_element_workflow() -> void:
 	s.place_reactor(3,"perovskite_chloride")
 	check(s.coins == wallet and s.reactors.size() == 1, "new discoveries cannot bypass element costs through template loading")
 	s.apply_structure_edit(0,r.positions.duplicate(true),["S","Cl","H"])
+	Fixtures.install(s)
 	check(s.reference_id(r).is_empty() and s.quality(r) == 0, "unrecognized composition never inherits old quality")
-	s.tick(100)
+	for n in range(100): s.tick(1)
 	check(is_equal_approx(r.stored_coins,15.0) and r.stock == 0 and r.pending == 0, "unknown chemistry earns only capped exploration income and no sellable products")
 	r.level = 20
 	check(s.income(r) == 0.15 and not s.delivery_quote(0).ready and s.delivery_quote(0).payment == 0, "unknown sample cannot boost stipend by level or claim order value")

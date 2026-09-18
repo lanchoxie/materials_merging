@@ -6,16 +6,16 @@ import zipfile
 import sys
 
 root = Path(__file__).resolve().parent.parent
-apk = root / 'builds' / (sys.argv[1] if len(sys.argv) > 1 else 'AtomAtelier-0.8.0-android.apk')
+apk = root / 'builds' / (sys.argv[1] if len(sys.argv) > 1 else 'AtomAtelier-0.9.0-android.apk')
 extracted = root / 'artifacts' / (apk.stem + '-smoke')
 with zipfile.ZipFile(apk) as package:
     assert package.testzip() is None, 'Corrupt APK entry'
     names = package.namelist()
-    for database in ['materials', 'elements', 'economy', 'baselines', 'campus_people', 'campus_buildings']:
+    for database in ['materials', 'elements', 'economy', 'baselines', 'campus_people', 'campus_buildings', 'island_balance']:
         path = f'data/{database}.json'
         assert 'assets/' + path in names, 'Missing database: ' + database
         assert json.loads(package.read('assets/' + path)) == json.loads((root / path).read_text(encoding='utf-8')), 'Database not current: ' + database
-    for script in ['main', 'ui', 'lab_state', 'atom_editor', 'world_view', 'economy', 'specimen', 'structure_sandbox', 'sandbox_editor', 'sandbox_reference', 'science_pipeline', 'science_jobs', 'science_chart', 'campus_sim', 'campus_payroll', 'campus_layout', 'campus_view', 'campus_panel']:
+    for script in ['main', 'ui', 'lab_state', 'atom_editor', 'world_view', 'economy', 'specimen', 'structure_sandbox', 'sandbox_editor', 'sandbox_reference', 'science_pipeline', 'science_jobs', 'science_chart', 'campus_sim', 'campus_payroll', 'campus_layout', 'campus_view', 'campus_panel', 'island_storage', 'island_logistics', 'island_market', 'island_panel', 'island_guest', 'order_bubbles']:
         assert 'assets/scripts/' + script + '.gdc' in names, 'Missing game script: ' + script
     assert any('NotoSansCJKsc-Regular' in n for n in names), 'Missing Chinese font'
     assert 'assets/assets/fonts/OFL.txt' in names, 'Missing font license'

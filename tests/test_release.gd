@@ -1,4 +1,5 @@
 extends SceneTree
+const Fixtures=preload("res://tests/fixtures_v09.gd")
 const State = preload("res://scripts/lab_state.gd")
 var checks=0
 var failures: Array=[]
@@ -45,6 +46,7 @@ func _run() -> void:
 	s.apply_sandbox_to_reactor(0,work)
 	check(s.coins==before-s.edit_cost(old),"one fixed edit charge")
 	check(s.element_inventory.C==1 and s.element_inventory.H==18,"new atoms consumed exactly once")
+	Fixtures.install(s)
 	check(s.reference_id(s.reactors[0])=="methane","custom methane produces known stock")
 	before=s.coins
 	s.apply_sandbox_to_reactor(0,work)
@@ -52,13 +54,14 @@ func _run() -> void:
 	work.bonds=[]
 	work.name="我的像素样品"
 	s.apply_sandbox_to_reactor(0,work)
-	s.tick(100)
-	check(s.reactors[0].stock>=3,"unknown custom structure produces display samples")
+	Fixtures.install(s)
+	for n in range(240): s.tick(1)
+	s.harvest(0)
+	Fixtures.offer(s)
+	check(s.storage.batch(s.signature(s.reactors[0])).quantity>=3,"unknown custom structure produces display samples")
 	check(not s.delivery_quote(0).ready and s.delivery_quote(0).payment==0,"unknown refused for science order")
-	for n in range(3):
-		s.dismiss_visitor()
-		s.tick(21)
-	check(s.order.get("accept_exploration",false),"fourth visitor is creative curator")
+	Fixtures.offer(s,"water","exhibition")
+	check(s.market.visitors[0].order.get("property","")=="exhibition","creative curator offers exhibition order")
 	q=s.delivery_quote(0)
 	check(q.ready and q.payment==18 and not q.premium,"curator buys custom sample with no premium")
 	var catalysts=s.upgrades
@@ -81,9 +84,10 @@ func _run() -> void:
 	var loaded=State.new()
 	check(loaded.load_game("res://saves/release-test-save.json"),"custom reactor and decorations reload")
 	check(loaded.reactors[0].atoms==s.reactors[0].atoms and loaded.reactors[0].bonds==[],"save preserves arbitrary topology")
-	check(loaded.visitor_cooldown>0 and loaded.visitor_skips==3,"visit timing survives reload")
+	check(Fixtures.same(loaded.market.serialize(),s.market.serialize()),"visit timing survives reload")
 	# Actual asynchronous computation must not change sample or charge coins.
 	s.change_template(0,"water")
+	Fixtures.install(s)
 	s.unlock_science_method("empirical_ho")
 	old=s.reactors[0].duplicate(true)
 	before=s.coins

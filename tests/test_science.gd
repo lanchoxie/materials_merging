@@ -24,6 +24,7 @@ func _run() -> void:
 	s._sync_campus_counts()
 	check(s.scientists==3,"scientist progression")
 	s.change_template(0,"hydrogen")
+	preload("res://tests/fixtures_v09.gd").install(s)
 	s.reactors[0].positions[1][0]+=0.20
 	s.unlock_science_method("ml_small")
 	s.unlock_science_method("dft_teaching")

@@ -122,32 +122,33 @@ func _buildings() -> void:
 	if plot.kind=="plaza":
 		body.add_child(UI.paragraph("公共交通入口保留通行空间；可在广场外的地块布置道路、护栏与庭院。",18)); return
 	body.add_child(UI.label("庭院小物件 · 与主建筑共用地块",23,UI.LILAC))
-	var choices=UI.row(body)
+	var choices=GridContainer.new(); choices.columns=3; body.add_child(choices)
 	for kind in state.layout.config.props:
 		var info: Dictionary=state.layout.config.props[kind]
 		choices.add_child(UI.button("%s %d金币%s" % [info.name,info.cost," · 已选" if kind==prop_choice else ""],_pick_prop.bind(kind)))
-	body.add_child(UI.paragraph("成就杯：完成3次交付后解锁。小物件位于建筑外围8个位置，不占整块土地；收纳返还原价。",15))
+	body.add_child(UI.paragraph("成就杯：完成3次交付后解锁。小物件位于建筑外围8个位置，不占整块土地；收纳存入工具箱，再次摆放免费。",15))
 	var positions=["西北角","北侧","东北角","东侧","东南角","南侧","西南角","西侧"]
 	for slot in range(8):
 		var existing=""
 		for prop in plot.get("props",[]):
 			if int(prop.slot)==slot: existing=prop.kind
 		var row=UI.row(body); var label=UI.label(positions[slot]+" · "+("空位" if existing.is_empty() else str(state.layout.config.props[existing].name)),17); label.size_flags_horizontal=Control.SIZE_EXPAND_FILL; row.add_child(label)
-		row.add_child(UI.button("摆放所选物件" if existing.is_empty() else "收纳并退还金币",_prop.bind(slot,existing.is_empty())))
+		row.add_child(UI.button("摆放所选物件" if existing.is_empty() else "收入工具箱",_prop.bind(slot,existing.is_empty())))
 
 func _research() -> void:
-	body.add_child(UI.paragraph("博士生承担研发，基础课题可独立开展；每名院士同时主持一个进阶课题。教授是可选导师，到岗时让同课题博士生效率提升50%（最多4人），每人只参加一个课题。研究完成解锁配方，键长仍由你调整。",18,UI.TEXT))
+	body.add_child(UI.paragraph("博士生承担研发，基础课题可独立开展；每名院士同时主持一个进阶课题。教授是可选导师，到岗时让同课题博士生效率提升50%（最多4人），每人只参加一个课题。研究解锁工艺能力；换元素是博士的装炉任务，键长仍由你调整。",18,UI.TEXT))
 	var capacity=UI.label("",20,UI.GOLD); body.add_child(capacity); live_labels.append({"kind":"capacity","label":capacity})
 	for job in state.campus.research_jobs:
 		var label=UI.paragraph("",19,UI.MINT); body.add_child(label); live_labels.append({"kind":"job","id":int(job.id),"label":label})
 	for project in state.campus.config.projects:
+		if state.campus.config.projects[project].get("legacy",false): continue
 		var quote: Dictionary=state.campus.quote_research(project,state.campus_context())
 		var info: Dictionary=state.campus.config.projects[project]
 		var card=_card(info.name)
 		var requirements=[]
 		for role in info.requires: requirements.append("%s%d人" % [state.campus.role_data(role).name,info.requires[role]])
 		card.add_child(UI.paragraph(" + ".join(requirements)+"\n%d金币 · %d有效研究秒（生活日程会影响完成时间）" % [info.cost,info.seconds],18,UI.GOLD))
-		card.add_child(UI.paragraph("可选教授1名 · 有空闲导师时自动加入",15,UI.LILAC))
+		if info.get("optional",{}).has("professor"): card.add_child(UI.paragraph("可选教授1名 · 有空闲导师时自动加入",15,UI.LILAC))
 		card.add_child(UI.paragraph(info.note,15))
 		var quote_label=UI.paragraph(quote.message,16,UI.LILAC); card.add_child(quote_label)
 		var button=UI.button("安排团队研发",_start_research.bind(project)); button.disabled=not quote.ready; card.add_child(button)

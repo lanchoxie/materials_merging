@@ -20,7 +20,7 @@ var _request_serial: int = 1
 var _notifications: Array = []
 var work_factor: float=1.0
 
-const ACTIVITY_NAMES = {"construct":"正在施工", "maintain":"维护反应炉", "deliver_meal":"给院士送餐", "research":"在科研院所工作", "eat":"食堂用餐", "home":"回家休息", "park":"在公园休息", "stroll":"散步整理思路", "idle":"在广场待命"}
+const ACTIVITY_NAMES = {"install":"装载新样品", "collect":"收集待领取产物", "snack":"回公寓吃补给", "supply_wait":"等公寓补给", "construct":"正在施工", "maintain":"维护反应炉", "deliver_meal":"给院士送餐", "research":"在科研院所工作", "eat":"食堂用餐", "home":"回家休息", "park":"在公园休息", "stroll":"散步整理思路", "idle":"在广场待命"}
 
 func _init():
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string("res://data/campus_people.json"))
@@ -184,6 +184,9 @@ func _step(dt: float, context: Dictionary):
 			else: _set_activity(p,"idle",plaza)
 			eng_index += 1
 		elif not on_duty: _set_activity(p,"home",home)
+		elif context.get("logistics",{}).has(int(p.id)):
+			var task: Dictionary=context.logistics[int(p.id)]
+			_set_activity(p,str(task.activity),int(task.target))
 		elif (float(p.hunger) >= 65 or (p.activity == "eat" and float(p.hunger) > 20)) and p.role != "academician" and canteen >= 0: _set_activity(p,"eat",canteen)
 		elif p.role == "doctor" and elapsed < float(p.next_rethink) and p.activity in ["park","stroll"]: pass
 		elif p.role == "doctor" and elapsed >= float(p.next_rethink):
@@ -360,7 +363,7 @@ func research_capacity() -> Dictionary:
 
 func quote_research(template_id: String, context: Dictionary) -> Dictionary:
 	var q = {"ready":false,"cost":0,"message":"没有这个研发项目","team":[]}
-	if not config.projects.has(template_id) or not context.get("templates",{}).has(template_id): return q
+	if not config.projects.has(template_id): return q
 	var rule: Dictionary = config.projects[template_id]
 	q.cost = int(rule.cost); q.name = rule.name; q.requires = rule.requires.duplicate(); q.seconds = rule.seconds; q.note = rule.note
 	if template_id in unlocked_materials: q.message = "该配方已经完成研发"; return q
@@ -373,7 +376,7 @@ func quote_research(template_id: String, context: Dictionary) -> Dictionary:
 		for role in rule.requires: requirement_text.append(str(config.roles[role].name) + " " + str(int(rule.requires[role])) + " 人")
 		q.message = "需要空闲的" + "、".join(requirement_text); return q
 	if not _wallet_allows(context,q.cost): q.message = "金币不足"; return q
-	q.ready = true; q.team = team; q.message = "研究团队已就位；完成后解锁配方，键长由你调整"
+	q.ready = true; q.team = team; q.message = "研究团队已就位；完成后解锁工艺能力，键长仍由你调整"
 	return q
 
 func _pick_team(rule: Dictionary, existing: Array) -> Array:
@@ -440,7 +443,7 @@ func _progress_research(dt: float, context: Dictionary):
 			for id in job.team: person(int(id)).research_job = -1
 			for id in job.team: person(int(id)).supervisor_id = -1
 			job.team.clear()
-			_notifications.append("研发完成：" + str(rule.name) + "。新配方已解锁，原子坐标仍由你调整。")
+			_notifications.append("研发完成：" + str(rule.name) + "。新能力已解锁，原子坐标仍由你调整。")
 
 func research_rate(job: Dictionary) -> float:
 	var rule: Dictionary=config.projects[job.template_id]
@@ -453,6 +456,7 @@ func research_rate(job: Dictionary) -> float:
 		if resident.role=="academician": leaders+=1
 		if resident.role=="professor": mentors+=1
 	if leaders<int(rule.requires.get("academician",0)): return 0.0
+	if mentors<int(rule.requires.get("professor",0)): return 0.0
 	var effort=0.0
 	var mentored=0
 	for id in job.team:

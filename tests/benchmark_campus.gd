@@ -22,6 +22,7 @@ func _run() -> void:
 		else: state.campus_build(i,["institute","engineer_house","doctor_dorm"][i%3])
 		for slot in [0,2,4,6]: state.campus_prop(i,slot,"flower")
 	state.campus.setup(80,16); state._sync_campus_counts()
+	for n in range(140): state.tick(1)
 	game._sync_world()
 	await create_timer(3).timeout
 	var frames=[]; var previous=Time.get_ticks_usec()
@@ -34,8 +35,8 @@ func _run() -> void:
 	assert(game.world._detailed_plots.size()<=36)
 	assert(game.campus_view.static_rebuilds==static_before)
 	var report={"device":RenderingServer.get_video_adapter_name(),"viewport":"1440x900","plots":state.unlocked_plot_count(),"residents":state.campus.people.size(),"reactors":state.reactors.size(),"rendered_residents":game.campus_view.actors.size(),"detailed_plots":game.world._detailed_plots.size(),"frames":frames.size(),"median_frame_ms":frames[120],"p95_frame_ms":frames[228],"static_rebuilds_during_sample":game.campus_view.static_rebuilds-static_before,"draw_calls":Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),"object_count":Performance.get_monitor(Performance.OBJECT_NODE_COUNT),"note":"Local Windows rendering sample only; not Android or browser FPS."}
-	FileAccess.open("res://artifacts/campus-performance.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+	FileAccess.open("res://artifacts/campus-performance-v09.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("res://artifacts/campus-stress-v08.png")
+	root.get_texture().get_image().save_png("res://artifacts/campus-stress-v09.png")
 	print("PERFORMANCE: ",JSON.stringify(report))
 	state.close_science(); quit()

@@ -37,6 +37,8 @@ func _initialize() -> void:
 	check("perovskite_chloride" in s.campus.unlocked_materials,"arrived scientific team completes recipe")
 	check(s.reactors[0].positions==positions,"research never adjusts player atom coordinates")
 	s.change_template(0,"perovskite_chloride")
+	s.campus.elapsed=(int(s.campus.elapsed/480)+1)*480+100
+	for n in range(60): s.tick(1)
 	check(s.reactors[0].template=="perovskite_chloride","researched recipe appears in manufacturing API")
 	s.deliveries=3; s.campus_prop(3,2,"trophy")
 	check(s.plots[3].props.size()==3,"earned trophy shares a housing plot")

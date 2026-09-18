@@ -7,6 +7,9 @@ const Editor = preload("res://scripts/atom_editor.gd")
 const ScienceChart = preload("res://scripts/science_chart.gd")
 const SandboxEditor = preload("res://scripts/sandbox_editor.gd")
 const CampusView = preload("res://scripts/campus_view.gd")
+const IslandPanel=preload("res://scripts/island_panel.gd")
+const OrderBubbles=preload("res://scripts/order_bubbles.gd")
+var order_bubbles
 const CampusPanel = preload("res://scripts/campus_panel.gd")
 var campus_view
 var state = Model.new()
@@ -113,13 +116,14 @@ func _build_ui() -> void:
 	side = UI.column(scroll, 9)
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_build_toolbar()
+	order_bubbles=OrderBubbles.new(); add_child(order_bubbles); order_bubbles.setup(self)
 	toast_panel = UI.box(self, Rect2(365, 710, 650, 60), Color("29494a"))
 	toast_label = UI.paragraph("", 15, UI.TEXT)
 	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.8 科研小镇  ·  每 20 秒自动保存  ·  几何评分为游戏规则 · 科研结果仅限所示模型", 11, UI.MUTED)
+	save_label = UI.label("v0.9 浮岛日常  ·  每 20 秒自动保存  ·  几何评分为游戏规则 · 科研结果仅限所示模型", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -193,7 +197,7 @@ func _build_world() -> void:
 	map_controls.position = Vector2(251, 239)
 	map_controls.add_theme_constant_override("separation", 8)
 	add_child(map_controls)
-	for entry in [["土地", _show_map], ["回家", func(): world.reset_view()], ["−", func(): world.zoom_view(1.22)], ["＋", func(): world.zoom_view(0.82)]]:
+	for entry in [["边缘", _show_map], ["回家", func(): world.reset_view()], ["−", func(): world.zoom_view(1.22)], ["＋", func(): world.zoom_view(0.82)]]:
 		var b = UI.button(entry[0], entry[1])
 		b.custom_minimum_size = Vector2(84, 56)
 		map_controls.add_child(b)
@@ -223,7 +227,7 @@ func _build_toolbar() -> void:
 		["＋  建造 / 装饰", func(): _toast("点击岛上的空地，选择反应炉、花园或小屋。")],
 		["◇  探索盲盒", _show_crate],
 		["科研小镇", _show_crew],
-		["⇄  收购商", _show_market],
+		["工具箱", _show_toolbox],
 		["⌬  结构工坊", _show_sandbox]
 	]
 	for entry in buttons:
@@ -318,7 +322,7 @@ func _rebuild_sidebar() -> void:
 		expand_button.disabled = not state.can_expand(selected_plot)
 		side.add_child(expand_button)
 		side.add_child(UI.paragraph("沿已开拓土地的相邻边缘延伸；越远建材越多。" if state.can_expand(selected_plot) else "先开拓相邻土地，才能到达这里。",13))
-		side.add_child(UI.paragraph("收获每份产物有38%概率掉落建材，\n连续5份无掉落则补给最少的一种。",13))
+		side.add_child(UI.paragraph("收集已知产物有%d%%概率掉落建材，\n连续%d份无掉落则补给最少的一种。" % [roundi(float(state.island_rules.production.drop_probability)*100),int(state.island_rules.production.drop_pity)],13))
 	elif p.kind == "empty":
 		side.add_child(UI.label("一块充满可能的空地",21,UI.MINT))
 		side.add_child(UI.paragraph("选一个新邻居，让小岛热闹起来。"))
@@ -370,13 +374,15 @@ func _rebuild_sidebar() -> void:
 		side.add_child(UI.button("升级   %d 金币 + 1 催化晶" % state.upgrade_cost(r),func(): _action(state.upgrade_reactor(selected_reactor))))
 		side.add_child(UI.paragraph("本等级编辑固定 %d 金币 / 次\n样品指纹  %s" % [state.edit_cost(r),state.signature(r).substr(0,10)],12))
 		UI.spacer(side,4)
-		side.add_child(UI.label("来访订单  /  %s" % state.order.name,14,UI.LILAC))
-		var target: Dictionary = state.templates[state.order.template]
-		side.add_child(UI.paragraph("求购展示样品 × 3，统一18金币。" if state.order.get("accept_exploration",false) else "求购 %s × 3\n几何响应目标98%%，相差≤5个百分点为精品。" % target.formula,13))
-		order_quote_label = UI.paragraph("",13,UI.GOLD)
-		side.add_child(order_quote_label)
-		side.add_child(UI.button("查看报价与交付  →",_show_market))
+		if not r.get("installation",{}).is_empty():
+			side.add_child(UI.paragraph("新样品等待博士装炉 · 旧炉继续运转",14,UI.GOLD))
+			side.add_child(UI.button("取消装炉并退款",func(): _action(state.cancel_installation(selected_reactor))))
+		side.add_child(UI.paragraph("收获后产物收入工具箱。订单请到广场邮箱查看，或点击来客头顶气泡。",14))
+
 	if p.unlocked:
+		var find_kind=str(state.storage.finds.get(str(selected_plot),""))
+		if not find_kind.is_empty() and find_kind!="collected": side.add_child(UI.button("拾取 · "+str(state.layout.config.props[find_kind].name),func(): _action(state.collect_find(selected_plot)),true))
+		if p.kind=="doctor_dorm": side.add_child(UI.button("公寓补给 · 泡面 / 可乐",func(): _show_toolbox(); modal._tab("supplies"),true))
 		side.add_child(UI.button("小路 · 庭院 · 建筑升级",_show_campus.bind("build")))
 	_update_labels()
 
@@ -415,10 +421,10 @@ func _update_labels() -> void:
 	land_label.text = "已开拓 %d 块  /  沿边缘继续探索" % state.unlocked_plot_count()
 	if is_instance_valid(rate_label) and selected_reactor >= 0:
 		var r: Dictionary = state.reactors[selected_reactor]
-		rate_label.text = "%.2f  金币 / 秒" % state.income(r)
+		rate_label.text = "%.2f  金币 / 秒" % (state.income(r) if int(r.pending)<state.reactor_capacity(r) else 0.0)
 		progress_bar.value = float(r.progress) * 100
-		stock_label.text = "待收 %d 金币  ·  库存 %d 份" % [int(r.stored_coins),r.stock]
-		quality_label.text = "建造中  %.1f 秒" % r.build_left if r.build_left > 0 else ("几何匹配  %d%%   ·   持续生长中" % roundi(state.quality(r)*100) if not state.reference_id(r).is_empty() else "探索样品 · 科学匹配未知 · 可制作展示品")
+		stock_label.text = "待收 %d 金币 · 待领取 %d / %d 份" % [int(r.stored_coins),r.pending,state.reactor_capacity(r)]
+		quality_label.text = "满仓暂停 · 请手动收获或安排博士收集" if int(r.pending)>=state.reactor_capacity(r) else "建造中  %.1f 秒" % r.build_left if r.build_left > 0 else ("几何匹配  %d%%   ·   持续生长中" % roundi(state.quality(r)*100) if not state.reference_id(r).is_empty() else "探索样品 · 科学匹配未知 · 可制作展示品")
 		if is_instance_valid(order_quote_label):
 			var quote: Dictionary = state.delivery_quote(selected_reactor)
 			order_quote_label.text = "%s预报价  %d 金币%s" % ["精品" if quote.premium else "普通", quote.payment, " + 催化晶" if quote.premium else ""] if quote.known or quote.get("exploration",false) else "探索样品可等待创意收购商来访"
@@ -514,7 +520,7 @@ func _dialog(title: String, subtitle: String, wide: bool = false) -> VBoxContain
 	return body
 
 func _show_templates(build: bool) -> void:
-	var body = _dialog("选择一个小小世界", "新炉包含初始元素。更换配方为25金币，并清空该炉旧库存和待收金币。")
+	var body = _dialog("选择一个小小世界", "新炉包含初始元素。更换配方预付25金币，等待空闲博士装炉；旧批次保留。")
 	for key in state.templates:
 		if state.templates[key].get("substitution_only",false) and key not in state.campus.unlocked_materials: continue
 		var tpl: Dictionary = state.templates[key]
@@ -526,31 +532,14 @@ func _show_templates(build: bool) -> void:
 		v.add_child(UI.paragraph("%s章节  ·  %d个可编辑原子\n复杂度 %.2f  ·  满匹配Lv.1产出 %.2f金币/秒" % [tpl.chapter,tpl.atoms.size(),profile.complexity,profile.base_rate],13))
 		v.add_child(UI.button("建造此反应炉  ·  100金币" if build else "装载结构  ·  25金币",_choose_template.bind(key,build)))
 
-func _show_map(frontier: bool = true) -> void:
-	var body = _dialog("小岛的下一步", "已开拓 %d / %d 块。选一块土地，即可把镜头移到那里。" % [state.unlocked_plot_count(),Model.MAX_UNLOCKED_PLOTS], true)
-	var filters = UI.row(body,12)
-	filters.add_child(UI.button("可以开拓的边界",_show_map.bind(true),frontier))
-	filters.add_child(UI.button("我的土地与建筑",_show_map.bind(false),not frontier))
-	body.add_child(UI.paragraph("开拓消耗星砂、晶露、合金片；离出生地越远，单格需要的材料越多。新土地会带来新的边界。",15))
-	var grid = GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation",10)
-	grid.add_theme_constant_override("v_separation",10)
-	body.add_child(grid)
-	var count: int = 0
+func _show_map(_frontier: bool=true) -> void:
+	# Expansion is performed on the island, never in a separate matrix.
+	var options=[]
 	for i in range(state.plots.size()):
-		var p: Dictionary = state.plots[i]
-		if (frontier and not state.can_expand(i)) or (not frontier and not p.unlocked): continue
-		count += 1
-		var detail: String = "三种建材各 %d" % state.plot_cost(i)
-		if not frontier:
-			detail = {"empty":"空地 · 等待布置","reactor":"反应炉 · 生产中","garden":"晶体花园","house":"工程师小屋"}.get(p.kind,"土地")
-		var b = UI.button("%s\n%s   →" % [state.plot_label(i),detail],_locate_plot.bind(i))
-		b.custom_minimum_size = Vector2(273,86)
-		b.add_theme_font_size_override("font_size",15)
-		grid.add_child(b)
-	if count == 0:
-		body.add_child(UI.paragraph("这一版的小岛已经开拓完成。试着搭配不同建筑，规划自己的科学园区。",18))
+		if state.can_expand(i): options.append(i)
+	if options.is_empty(): _toast("当前没有可开拓边缘"); return
+	var next=options[(options.find(selected_plot)+1)%options.size()]
+	_select_plot(next); world.focus_plot(next)
 
 func _locate_plot(index: int) -> void:
 	_close_modal()
@@ -626,42 +615,18 @@ func _save_baseline_work(baseline_id: String) -> void:
 	_show_sandbox()
 
 func _show_market() -> void:
-	var target: Dictionary = state.templates[state.order.template]
-	var body = _dialog("来访收购商", "%s  /  第 %d 张订单" % [state.order.name,state.deliveries+1],true)
-	var arrival = UI.row(body, 10)
-	var visitor = UI.label("◉", 34, UI.GOLD)
-	visitor.custom_minimum_size = Vector2(50, 50)
-	arrival.add_child(visitor)
-	visitor_status_label = UI.label(state.visitor_countdown_text(), 18, UI.MINT)
-	visitor_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	arrival.add_child(visitor_status_label)
-	var wave = UI.label("收购商正在查看靠岸样品 · 接待频率受行程限制", 13, UI.MUTED)
-	arrival.add_child(wave)
-	# A short entrance loop keeps the visitor lively without leaving an
-	# unbounded tween in the scene tree.
-	var tween = create_tween().set_loops(8)
-	tween.tween_property(visitor, "rotation", 0.10, 0.35)
-	tween.tween_property(visitor, "rotation", -0.10, 0.35)
-	tween.tween_property(visitor, "rotation", 0.0, 0.20)
-	body.add_child(UI.label("求购 展示样品 × 3" if state.order.get("accept_exploration",false) else "求购  %s × %d" % [target.formula,state.order.quantity],30,UI.MINT))
-	body.add_child(UI.button("送别这位访客，等下一位",func(): _action(state.dismiss_visitor()); _show_market()))
-	body.add_child(UI.paragraph(state.order.get("story",""),16,UI.TEXT))
-	body.add_child(UI.paragraph("展示样品统一报价18金币，无精品评级。" if state.order.get("accept_exploration",false) else "目标匹配度98%%，同类样品相差≤5个百分点为精品。精品奖励 %d 金币 + 1催化晶；近似或异类样品可折价成交。" % state.order.reward,16))
-	body.add_child(UI.paragraph("报价按当前样品计算，系统会优先展示最合理、现在可完成且收益较高的样品。交付消耗3份库存；这里评估几何，不推测带隙或导电率。",13))
-	for candidate in state.market_candidates():
-		var i: int = int(candidate.index)
-		var r: Dictionary = state.reactors[i]
-		var card = PanelContainer.new()
-		body.add_child(card)
-		var v = UI.column(card,8)
-		var heading = UI.label("%d  ·  %s   %s   Lv.%d" % [market_rows.size() + 1,r.id,state.structure_data(r).formula,r.level],22,UI.LILAC)
-		v.add_child(heading)
-		var quote_label = UI.paragraph("",16,UI.GOLD)
-		v.add_child(quote_label)
-		var b = UI.button("按此报价交付  →",_deliver_market.bind(i),true)
-		v.add_child(b)
-		market_rows.append({"index":i,"label":quote_label,"button":b,"reason":candidate.reason,"card":card,"heading":heading})
-	_update_labels()
+	_show_island_panel("mail")
+
+func _show_toolbox() -> void:
+	_show_island_panel("toolbox")
+
+func _show_island_panel(page: String, visitor: int=-1) -> void:
+	_close_modal()
+	var panel=IslandPanel.new(); add_child(panel); modal=panel
+	panel.setup(state,selected_plot,page,visitor)
+	panel.acted.connect(_action)
+	panel.dismissed.connect(func(): if modal==panel: modal=null)
+	panel.arrange.connect(func(kind): _show_campus("build"); modal.prop_choice=kind; modal._show("build"))
 
 func _deliver_market(index: int) -> void:
 	_action(state.deliver(index))
@@ -822,13 +787,13 @@ func _show_science_result(index: int) -> void:
 		for i in range(state.reactors.size()):
 			if state.reactors[i].id==record.reactor: reactor_index=i
 		var current = reactor_index>=0 and state.signature(state.reactors[reactor_index])==record.signature
-		body.add_child(UI.paragraph("应用后清空该炉旧库存和待收金币。计算不收费；应用按当前炉等级收取一次编辑费。" if current else "原样品已变化，这份结果已经过期，请重新计算。",15,UI.GOLD))
+		body.add_child(UI.paragraph("应用前自动收好旧批次与金币。计算不收费；应用按当前炉等级收取一次编辑费。" if current else "原样品已变化，这份结果已经过期，请重新计算。",15,UI.GOLD))
 		if current:
 			body.add_child(UI.button("应用优化坐标 · %d金币" % state.edit_cost(state.reactors[reactor_index]),_confirm_science_apply.bind(index),true))
 	body.add_child(UI.button("返回研究站",_show_research))
 
 func _confirm_science_apply(index: int) -> void:
-	var body = _dialog("应用优化结构？","确认后按反应炉等级扣除固定编辑费，并清空原库存和待收金币。")
+	var body = _dialog("应用优化结构？","确认后按反应炉等级扣除固定编辑费，并保留原批次和待收金币。")
 	body.add_child(UI.paragraph("这不会额外扣除元素。预览和计算均免费，只有结构实际改变时才收取编辑费。",18))
 	body.add_child(UI.button("确认应用",func(): _action(state.apply_science_result(index)); _show_science_result(index),true))
 	body.add_child(UI.button("返回结果，不作修改",_show_science_result.bind(index)))
@@ -877,7 +842,7 @@ func _show_collection() -> void:
 func _show_help() -> void:
 	var body = _dialog("欢迎来到原子工坊", "一座可以经营、收集和自由摆放的科学小岛。")
 	for entry in [
-		["01  调整原子", "选择反应炉 → 原子工作台。拖动彩球，观察产率；确认修改时按炉等级扣费。旧库存会清空，记得先收获。"],
+		["01  调整原子", "选择反应炉 → 原子工作台。拖动彩球，观察产率；确认修改时按炉等级扣费。旧批次保留；换元素需要博士装炉。"],
 		["02  收获与扩张", "点击注入微光赚金币。炉子持续产生待收金币和产物；收获时概率获得星砂、晶露、合金片。点击虚线地块开拓。"],
 		["03  带伙伴来", "先造住宅并铺路，再招募伙伴。工程师到岗后才施工；科研小镇可以查看性格、日薪和生活心愿。"],
 		["04  接一张订单", "每次到访可交付一次，之后等待20秒。库存达到3份即可交付。种类相符且几何响应与目标相差≤5个百分点，获得精品催化晶，用来升级炉子。"],
@@ -899,7 +864,7 @@ func _open_editor() -> void:
 	add_child(editor)
 	editor.setup(state,selected_reactor)
 	modal = editor
-	editor.applied.connect(func(): modal = null; _action("新结构已应用。旧库存已清空，反应炉开始新一轮生产。"))
+	editor.applied.connect(func(): modal = null; _action("修改已提交；更换元素等待博士装炉，已有产物会保留。"))
 	editor.dismissed.connect(func(): modal = null)
 
 func _notification(what: int) -> void:

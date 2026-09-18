@@ -1,4 +1,7 @@
 extends Node3D
+const IslandGuest=preload("res://scripts/island_guest.gd")
+var guests: Dictionary={}
+var output_markers: Dictionary={}
 ## Presentation only. Logical people keep updating when their meshes are hidden.
 var state
 var world
@@ -8,22 +11,9 @@ var geometry_key=""
 var models: Dictionary={}
 var materials: Dictionary={}
 var time=0.0
-var transport: Node3D
-var visitor_progress=0.0
-var visitor_key=-1
-var visitor_start=Vector3.ZERO
-var visitor_stop=Vector3.ZERO
-var visitor_phase="absent"
-var buyer: Dictionary={}
-var buyer_progress=0.0
-var buyer_stop=Vector3.ZERO
-var vehicle_rider: Node3D
 var _actor_pool: Array=[]
-var _visitor_available=false
-var _visitor_next_key=0
 var static_rebuilds=0
 var avatar_rebuilds=0
-var vehicle_rebuilds=0
 
 func setup(model, island) -> void:
 	state=model; world=island
@@ -78,7 +68,8 @@ func sync() -> void:
 		geometry_key=key
 		_rebuild_static()
 	_sync_people()
-	_sync_visitor()
+	_sync_guests()
+	_sync_output_markers()
 
 func _rebuild_static() -> void:
 	static_rebuilds+=1
@@ -105,6 +96,10 @@ func _rebuild_static() -> void:
 		if p.kind=="plaza": _plaza(node)
 		elif p.kind in state.layout.building_kinds(): _building(node,p,detail)
 		if detail:
+			var find_kind=str(state.storage.finds.get(str(i),""))
+			if not find_kind.is_empty() and find_kind!="collected":
+				_prop(node,find_kind,4)
+				var sparkle=Label3D.new(); sparkle.text="✧"; sparkle.font=preload("res://assets/fonts/NotoSansCJKsc-Regular.otf"); sparkle.font_size=64; sparkle.pixel_size=0.007; sparkle.modulate=Color("ffe2a4"); sparkle.position=_prop_offset(4)+Vector3(0,1.0,0); sparkle.billboard=BaseMaterial3D.BILLBOARD_ENABLED; node.add_child(sparkle)
 			for prop in p.get("props",[]): _prop(node,str(prop.kind),int(prop.slot))
 			_connect_fences(node,p.get("props",[]))
 	_road_batch(road_transforms)
@@ -132,6 +127,9 @@ func _plaza(parent: Node3D) -> void:
 	ball(parent,0.17,Vector3(0,1.55,-0.75),Color("ffcf77"))
 	var sign=Label3D.new(); sign.text="迎客广场"; sign.font=preload("res://assets/fonts/NotoSansCJKsc-Regular.otf"); sign.font_size=40; sign.pixel_size=0.008
 	sign.position=Vector3(0,1.58,0); sign.billboard=BaseMaterial3D.BILLBOARD_ENABLED; parent.add_child(sign)
+	box(parent,Vector3(0.07,0.65,0.07),Vector3(-1.10,0.43,0.65),Color("4c747c"))
+	box(parent,Vector3(0.40,0.32,0.30),Vector3(-1.10,0.88,0.65),Color("dd9f70"))
+	box(parent,Vector3(0.28,0.025,0.035),Vector3(-1.10,0.92,0.81),Color("385961"))
 
 func _building(parent: Node3D, p: Dictionary, detail: bool) -> void:
 	var kind: String=p.kind
@@ -165,6 +163,23 @@ func _building(parent: Node3D, p: Dictionary, detail: bool) -> void:
 func _prop(parent: Node3D, kind: String, slot: int) -> void:
 	var node=Node3D.new(); parent.add_child(node); node.position=_prop_offset(slot)
 	match kind:
+		"crystal_fox":
+			ball(node,0.19,Vector3(0,0.29,0),Color("a7d6df"))
+			ball(node,0.15,Vector3(0,0.49,0.08),Color("b5e9eb"))
+			for x in [-0.1,0.1]:
+				var ear=PrismMesh.new(); ear.size=Vector3(0.13,0.21,0.12); mesh(node,ear,Vector3(x,0.63,0.06),Color("87c6db"))
+				ball(node,0.02,Vector3(x*0.55,0.51,0.215),Color("304f68"))
+			ball(node,0.035,Vector3(0,0.455,0.23),Color("ececcf"))
+			var tail=ball(node,0.14,Vector3(0.22,0.24,-0.08),Color("d4edeb")); tail.scale=Vector3(1.5,0.8,0.8)
+		"orbit_mobile":
+			box(node,Vector3(0.04,0.64,0.04),Vector3(0,0.44,0),Color("e4c99f"))
+			var ring=TorusMesh.new(); ring.inner_radius=0.17; ring.outer_radius=0.2; ring.rings=16; ring.ring_segments=8
+			var orbit=mesh(node,ring,Vector3(0,0.64,0),Color("e4c99f")); orbit.rotation.z=0.6
+			ball(node,0.075,Vector3(0,0.64,0),Color("b7adea")); ball(node,0.05,Vector3(0.20,0.64,0),Color("8de2cc"))
+		"moon_lamp":
+			box(node,Vector3(0.26,0.12,0.26),Vector3(0,0.20,0),Color("93c4c5"))
+			ball(node,0.20,Vector3(0,0.47,0),Color("ffe3a1"))
+			for x in [-0.06,0.06]: ball(node,0.015,Vector3(x,0.48,0.188),Color("9a815c"))
 		"flower":
 			box(node,Vector3(0.20,0.18,0.20),Vector3(0,0.20,0),Color("d79478"))
 			ball(node,0.13,Vector3(0,0.39,0),Color("ceaff2"))
@@ -241,7 +256,7 @@ func _sync_people() -> void:
 			actors[id].node.position=state.layout.hub(state.plots,int(actors[id].plot))
 		var actor: Dictionary=actors[id]
 		actor.activity=person.activity
-		actor.tool.visible=person.activity in ["construct","maintain","deliver_meal"]
+		actor.tool.visible=person.activity in ["construct","maintain","deliver_meal","collect","install","snack"]
 		_sync_actor_route(actor,person,target)
 	while _actor_pool.size()>limit:
 		var retired: Dictionary=_actor_pool.pop_back(); retired.node.queue_free()
@@ -281,101 +296,7 @@ func _path_point(path: Array, progress: float) -> Vector3:
 func _animate_actor(actor: Dictionary, moving: bool, phase: float) -> void:
 	actor.body.position.y=absf(sin(phase))*0.018 if moving else 0.0
 	for index in range(2): actor.legs[index].rotation.x=sin(phase+index*PI)*0.35 if moving else 0.0
-	actor.tool.rotation.x=sin(time*5)*0.7 if not moving and actor.activity in ["construct","maintain"] and actor.arrived else 0.0
-
-func _wheel(parent: Node3D, at: Vector3, radius: float) -> void:
-	var key="wheel"+str(radius)
-	if not models.has(key):
-		var shape=TorusMesh.new(); shape.inner_radius=radius*0.62; shape.outer_radius=radius; shape.rings=12; shape.ring_segments=6
-		models[key]=shape
-	var wheel=mesh(parent,models[key],at,Color("33505b")); wheel.rotation.z=PI*0.5
-
-func _beam(parent: Node3D, start: Vector3, end: Vector3, width: float, color: Color) -> void:
-	var beam=box(parent,Vector3(width,width,start.distance_to(end)),(start+end)*0.5,color)
-	beam.look_at_from_position((start+end)*0.5,end,Vector3.RIGHT)
-
-func _create_transport(key: int) -> void:
-	if is_instance_valid(transport): transport.queue_free()
-	transport=Node3D.new(); add_child(transport)
-	transport.name="BuyerTransport"
-	vehicle_rebuilds+=1
-	visitor_key=key
-	var style=key%3
-	transport.set_meta("vehicle_style",["bicycle","car","minibus"][style])
-	vehicle_rider=null
-	if style==0:
-		for z in [-0.35,0.35]: _wheel(transport,Vector3(0,0.22,z),0.19)
-		var frame=Color("dfae66")
-		for edge in [[Vector3(0,0.23,-0.35),Vector3(0,0.50,-0.10)],[Vector3(0,0.50,-0.10),Vector3(0,0.23,0.35)],[Vector3(0,0.23,0.35),Vector3(0,0.23,-0.35)],[Vector3(0,0.23,-0.35),Vector3(0,0.59,-0.30)]]:
-			_beam(transport,edge[0],edge[1],0.055,frame)
-		box(transport,Vector3(0.31,0.035,0.04),Vector3(0,0.59,-0.30),Color("33505b"))
-		box(transport,Vector3(0.16,0.05,0.20),Vector3(0,0.52,0.08),Color("7d614f"))
-		vehicle_rider=Node3D.new(); transport.add_child(vehicle_rider)
-		ball(vehicle_rider,0.12,Vector3(0,0.93,0.05),Color("f5dfbb"))
-		box(vehicle_rider,Vector3(0.21,0.25,0.16),Vector3(0,0.72,0.05),Color("bf8eb6"))
-	else:
-		var length=1.2 if style==1 else 1.7
-		box(transport,Vector3(0.62,0.27,length),Vector3(0,0.36,0),Color("7ebdc4") if style==1 else Color("e5bb77"))
-		box(transport,Vector3(0.56,0.28,length*0.67),Vector3(0,0.62,-0.1),Color("ebecd7"))
-		box(transport,Vector3(0.48,0.18,0.025),Vector3(0,0.65,-0.1-length*0.335),Color("7bafbb"))
-		for z in [-length*0.33,length*0.33]:
-			for x in [-0.32,0.32]: _wheel(transport,Vector3(x,0.22,z),0.14)
-		for x in [-0.21,0.21]: box(transport,Vector3(0.12,0.075,0.03),Vector3(x,0.37,-length*0.5-0.02),Color("ffeac1"))
-	if buyer.is_empty():
-		buyer=_avatar("buyer",false)
-		buyer.node.name="PlazaBuyer"
-		buyer.tool.visible=true
-	buyer.node.visible=false
-
-func _sync_visitor() -> void:
-	if state.layout.plaza_index<0: return
-	_visitor_available=state.visitor_available()
-	_visitor_next_key=int(state.visitor_visits)
-	visitor_stop=state.layout.hub(state.plots,state.layout.plaza_index)+Vector3(-1.25,0,-0.6)
-	visitor_start=visitor_stop+Vector3(0,0,5)
-	buyer_stop=visitor_stop+Vector3(-0.6,0,-1.15)
-	if visitor_phase=="absent" and _visitor_available: _start_arrival()
-	elif visitor_phase not in ["absent","boarding","departing"] and (not _visitor_available or visitor_key!=_visitor_next_key):
-		# Keep the outgoing car and buyer until boarding and departure finish.
-		visitor_phase="boarding" if buyer_progress>0 else "departing"
-
-func _start_arrival() -> void:
-	_create_transport(_visitor_next_key)
-	visitor_progress=0.0; buyer_progress=0.0
-	visitor_phase="arriving"
-	transport.position=visitor_start
-	transport.visible=true
-
-func _process_visitor(delta: float) -> void:
-	if visitor_phase=="absent": return
-	match visitor_phase:
-		"arriving":
-			visitor_progress=move_toward(visitor_progress,1.0,delta*0.30)
-			if visitor_progress>=1.0: visitor_phase="disembarking"
-		"disembarking":
-			buyer_progress=move_toward(buyer_progress,1.0,delta*0.6)
-			if buyer_progress>=1.0: visitor_phase="browsing"
-		"boarding":
-			buyer_progress=move_toward(buyer_progress,0.0,delta*0.7)
-			if buyer_progress<=0.0: visitor_phase="departing"
-		"departing":
-			visitor_progress=move_toward(visitor_progress,0.0,delta*0.35)
-			if visitor_progress<=0.0:
-				visitor_phase="absent"
-				transport.visible=false
-				buyer.node.visible=false
-				if _visitor_available: _start_arrival()
-				return
-	transport.position=visitor_start.lerp(visitor_stop,visitor_progress)
-	transport.rotation.y=0.0 if visitor_phase!="departing" else PI
-	if is_instance_valid(vehicle_rider): vehicle_rider.visible=buyer_progress<=0.0
-	var walking=visitor_phase in ["disembarking","boarding"]
-	buyer.node.visible=buyer_progress>0.0
-	buyer.node.position=visitor_stop.lerp(buyer_stop,buyer_progress)
-	var facing=buyer_stop-visitor_stop if visitor_phase!="boarding" else visitor_stop-buyer_stop
-	buyer.node.rotation.y=atan2(facing.x,facing.z)
-	_animate_actor(buyer,walking,time*7)
-	if visitor_phase=="browsing": buyer.tool.rotation.z=sin(time*1.8)*0.12
+	actor.tool.rotation.x=sin(time*5)*0.7 if not moving and actor.activity in ["construct","maintain","collect","install"] and actor.arrived else 0.0
 
 func _process(delta: float) -> void:
 	if state==null: return
@@ -407,4 +328,35 @@ func _process(delta: float) -> void:
 		var indoors=actor.arrived and not moving and actor.activity in ["home","research","eat"]
 		node.visible=not indoors
 		_animate_actor(actor,moving,time*7+int(id))
-	_process_visitor(delta)
+
+func _sync_guests() -> void:
+	var current=[]
+	for v in state.market.visitors:
+		var id=int(v.id); current.append(id)
+		if not guests.has(id):
+			var guest=IslandGuest.new(); add_child(guest); guest.setup(state,world,self,id); guests[id]=guest
+	for id in guests.keys():
+		if id not in current: guests[id].queue_free(); guests.erase(id)
+
+func mailbox_point() -> Vector3:
+	var p: Dictionary=state.plots[state.layout.plaza_index]
+	return Vector3(float(p.x)*3-1.10,1.15,float(p.z)*3+0.65)
+
+func _sync_output_markers() -> void:
+	for r in state.reactors:
+		var id=str(r.id)
+		var show=int(r.pending)>0 and world._detailed_plots.has(int(r.plot))
+		if not output_markers.has(id) and show:
+			var node=Node3D.new(); add_child(node)
+			box(node,Vector3(0.34,0.25,0.30),Vector3(0,0.22,0),Color("e8c591"))
+			for x in [-0.1,0.1]: ball(node,0.065,Vector3(x,0.40,0),Color("a5efd1"))
+			var label=Label3D.new(); label.font=preload("res://assets/fonts/NotoSansCJKsc-Regular.otf"); label.font_size=32; label.pixel_size=0.007; label.billboard=BaseMaterial3D.BILLBOARD_ENABLED; label.position=Vector3(0,0.7,0); node.add_child(label)
+			output_markers[id]={"node":node,"label":label}
+		if not output_markers.has(id): continue
+		var marker: Dictionary=output_markers[id]
+		marker.node.visible=show
+		if show:
+			var plot: Dictionary=state.plots[int(r.plot)]
+			marker.node.position=Vector3(float(plot.x)*3+0.95,0.1,float(plot.z)*3+0.9)
+			marker.label.text="满仓 · 待收" if int(r.pending)>=state.reactor_capacity(r) else "待收 ×%d" % int(r.pending)
+			marker.label.modulate=Color("ffcf83") if int(r.pending)>=state.reactor_capacity(r) else Color("b9f2d8")

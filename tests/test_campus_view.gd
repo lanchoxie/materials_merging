@@ -13,6 +13,10 @@ class Island extends Node3D:
 	var _detailed_plots={0:true,1:true,2:true}
 
 class Model extends RefCounted:
+	var reactors: Array=[]
+	var storage=preload("res://scripts/island_storage.gd").new()
+	var market=preload("res://scripts/island_market.gd").new()
+	var island_rules={"visitors":{"arrival_seconds":6,"departure_seconds":5}}
 	var layout=Layout.new()
 	var campus=Campus.new()
 	var visitor_visits=0
@@ -34,6 +38,7 @@ func _initialize(): call_deferred("run")
 func run():
 	var model=Model.new()
 	model.layout.initialize(model.plots)
+	model.market.visitors=[{"id":1,"slot":0,"phase":"arriving","age":0.0},{"id":2,"slot":1,"phase":"visiting","age":0.0},{"id":3,"slot":2,"phase":"visiting","age":0.0}]
 	model.campus.setup(40,0)
 	for person in model.campus.people:
 		person.current_plot=0; person.next_plot=1; person.target_plot=1
@@ -67,23 +72,20 @@ func run():
 	view.sync()
 	check(view.actors.size()==16 and view.avatar_rebuilds==rebuilds,"camera visibility reuses retired avatars instead of rebuilding them")
 	check(view.static_rebuilds==2,"camera detail change rebuilds static geometry once")
-	check(view.transport.get_meta("vehicle_style")=="bicycle","first buyer arrives by bicycle")
-	frames(view,6)
-	check(view.visitor_phase=="browsing" and view.buyer.node.visible,"buyer walks from parked transport into plaza")
-	var transport_id=view.transport.get_instance_id()
-	model.visitor_visits=1; model.available=false; view.sync()
-	check(view.visitor_phase=="boarding" and view.transport.get_instance_id()==transport_id and view.visitor_key==0,"sale keeps outgoing buyer and vehicle through boarding")
-	frames(view,7)
-	check(view.visitor_phase=="absent" and not view.transport.visible and not view.buyer.node.visible,"buyer and transport finish departure during cooldown")
-	check(view.vehicle_rebuilds==1,"cooldown does not create next vehicle early")
-	model.available=true; view.sync()
-	check(view.transport.get_meta("vehicle_style")=="car" and view.visitor_key==1 and view.vehicle_rebuilds==2,"next visit selects next vehicle after cooldown")
-	frames(view,1)
-	transport_id=view.transport.get_instance_id()
-	model.visitor_visits=2; model.available=false; view.sync()
-	check(view.visitor_phase=="departing" and view.transport.get_instance_id()==transport_id,"visitor dismissed while driving departs without teleporting or replacement")
-	frames(view,6); model.available=true; view.sync()
-	check(view.transport.get_meta("vehicle_style")=="minibus","third visit arrives by minibus")
+	check(view.guests.size()==3,"three visitors have separate visual actors")
+	var guest=view.guests[1]
+	check(guest.transport.get_meta("vehicle_style")=="bicycle","first buyer arrives by bicycle")
+	check(view.guests[2].transport.get_meta("vehicle_style")=="car","second buyer arrives by car")
+	check(view.guests[3].transport.get_meta("vehicle_style")=="minibus","third buyer arrives by minibus")
+	model.market.visitors[0].age=3; guest._process(0.1)
+	check(not guest.buyer.node.visible,"buyer remains on transport during approach")
+	model.market.visitors[0].phase="visiting"; guest._process(0.1)
+	check(guest.buyer.node.visible,"arrived buyer stands by parked vehicle")
+	var transport_id=guest.transport.get_instance_id()
+	model.market.visitors[0].phase="leaving"; model.market.visitors[0].age=1; guest._process(0.1); view.sync()
+	check(guest.transport.get_instance_id()==transport_id and view.guests.size()==3,"outgoing guest keeps vehicle until departure completes")
+	model.market.visitors.remove_at(0); view.sync()
+	check(view.guests.size()==2 and view.guests.has(2) and view.guests.has(3),"departed visitor retires without affecting other guests")
 	var untouched=model.campus.people[25].duplicate(true)
 	frames(view,3)
 	check(model.campus.people[25]==untouched,"presentation never mutates simulation work or arrival state")
