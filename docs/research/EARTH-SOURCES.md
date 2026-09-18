@@ -43,3 +43,5 @@
 具体聚合物的热、电和机械性能；材料牌号的强度/韧性与加工条件；膜的目标离子截留与耗能；活性炭对指定污染物的容量；具体光伏器件的效率—耐久条件；生物耐受范围；代表恐龙群落的地区/时段；中世纪建筑与工艺的地区参照。
 
 以上缺口不靠自动线性插值填平。先将用途做成可配置的教学场景，在面向玩家的档案里标明证据状态，再分批引入真实参考。
+
+0.12实现核对（2026-09-19）：[NOAA What is a dead zone?](https://oceanservice.noaa.gov/facts/deadzone.html) 支持低氧时可移动动物离开或发生损失的方向；[Smithsonian 早期生命](https://naturalhistory.si.edu/education/teaching-resources/life-science/early-life-earth-animal-origins) 支持氧敏感微生物受到环境压力。运行配置只采用定性方向，没有采纳其地质年代或任何真实物种致死浓度；生态阈值和动力单位是游戏规则。

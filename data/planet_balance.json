@@ -1,11 +1,78 @@
 {
-  "version": 1,
+  "version": 2,
   "note": "Gameplay units and timings; no physical planetary cooling or purity prediction.",
-  "workshop": {"samples_required": 2, "starter_feed": 2, "feed_cost": 18, "packing_cost": 12, "packing_seconds": 25, "inventory_limit": 99, "product_limit": 32},
-  "world": {"seed": 9192026, "capacity": 3, "delivery_seconds": 8, "max_events": 32, "trial_allowance": 3, "max_seconds": 10000000},
+  "workshop": {
+    "samples_required": 2,
+    "starter_feed": 2,
+    "feed_cost": 18,
+    "packing_cost": 12,
+    "packing_seconds": 25,
+    "inventory_limit": 99,
+    "product_limit": 32
+  },
+  "world": {
+    "seed": 9192026,
+    "capacity": 3,
+    "delivery_seconds": 8,
+    "max_events": 32,
+    "trial_allowance": 3,
+    "max_seconds": 10000000
+  },
   "sites": [
-    {"id": "deep", "name": "深槽蓄水", "description": "水集中在深槽，留下较多干燥岸地。", "capacity": 3},
-    {"id": "shelf", "name": "浅台漫流", "description": "同样的水箱铺开更宽的浅水面。", "capacity": 3}
+    {
+      "id": "deep",
+      "name": "深槽蓄水",
+      "description": "水集中在深槽，留下较多干燥岸地。",
+      "capacity": 3
+    },
+    {
+      "id": "shelf",
+      "name": "浅台漫流",
+      "description": "同样的水箱铺开更宽的浅水面。",
+      "capacity": 3
+    }
   ],
-  "recipe": {"id": "standard_water_crate", "version": 1, "name": "标准水箱", "input_name": "标准供料包（含回收容器）", "output_name": "标准水箱", "equipment": "合作方独立装罐台", "scope": "身份验证只证明结构参考相符；供料规格由合作方提供，几何评分不等于纯度。"}
+  "recipe": {
+    "id": "standard_water_crate",
+    "version": 1,
+    "name": "标准水箱",
+    "input_name": "标准供料包（含回收容器）",
+    "output_name": "标准水箱",
+    "equipment": "合作方独立装罐台",
+    "scope": "身份验证只证明结构参考相符；供料规格由合作方提供，几何评分不等于纯度。"
+  },
+  "supplies": {
+    "station_parts": {
+      "name": "供氧器组件包",
+      "price": 42,
+      "description": "扩散头、流量控制器和连接件；不含运行补给。"
+    },
+    "oxygen_feed": {
+      "name": "氧气动力供料包",
+      "price": 24,
+      "description": "合作方标准氧气与已充能动力模块；不是玩家样品的宏观纯度测量。"
+    }
+  },
+  "recipes": {
+    "oxygen_station": {
+      "id": "oxygen_station",
+      "version": 1,
+      "name": "便携供氧器",
+      "reference": "oxygen",
+      "input": "station_parts",
+      "fee": 20,
+      "seconds": 35,
+      "description": "组装扩散头与控制器。每个生态舱最多1台，安装后仍需补给。"
+    },
+    "oxygen_cartridge": {
+      "id": "oxygen_cartridge",
+      "version": 1,
+      "name": "氧气动力补给盒",
+      "reference": "oxygen",
+      "input": "oxygen_feed",
+      "fee": 10,
+      "seconds": 25,
+      "description": "封装标准氧气和动力模块。正常流量运行60秒；气源和动力都有限。"
+    }
+  }
 }

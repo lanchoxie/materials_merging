@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "model": "oxygen_teaching_v1",
+  "scope": "Two isolated teaching habitats. Oxygen, cover and populations are game indicators, not mg/L, species predictions or a reconstruction of an era. Temperature, food and salinity are held suitable. The outer bay is a fixed suitable boundary habitat.",
+  "sources": [
+    {
+      "id": "smithsonian_early_life",
+      "url": "https://naturalhistory.si.edu/education/teaching-resources/life-science/early-life-earth-animal-origins",
+      "supports": "Oxygen exposure can harm oxygen-intolerant microbial communities; no numerical rates taken."
+    },
+    {
+      "id": "noaa_deadzone",
+      "url": "https://oceanservice.noaa.gov/facts/deadzone.html",
+      "supports": "Low dissolved oxygen can cause death or movement of mobile animals; no numerical thresholds taken."
+    }
+  ],
+  "device": {
+    "cartridge_units": 60,
+    "transfer_per_unit": 1.8,
+    "flows": [
+      0.5,
+      1.0,
+      2.0
+    ]
+  },
+  "history": {
+    "every_seconds": 5,
+    "limit": 120
+  },
+  "microbe": {
+    "name": "厌氧微生物池",
+    "initial_oxygen": 4.0,
+    "oxygen_sink": 0.7,
+    "initial_sensitive": 80.0,
+    "initial_tolerant": 20.0,
+    "initial_refuge": 18.0,
+    "stress_above": 20.0,
+    "damage_rate": 0.065,
+    "recovery_rate": 0.2,
+    "tolerant_growth": 0.35,
+    "refuge_capacity": 20.0,
+    "tolerant_decline": 0.1,
+    "refuge_growth": 0.02,
+    "refuge_damage_ratio": 0.25,
+    "decline_observation_below": 40,
+    "recovery_observation_above": 60
+  },
+  "fish": {
+    "name": "缺氧鱼湾",
+    "initial_oxygen": 8.0,
+    "oxygen_sink": 1.0,
+    "initial_bay": 6.0,
+    "initial_outer": 18.0,
+    "leave_below": 30.0,
+    "return_above": 42.0,
+    "leave_rate": 0.6,
+    "return_rate": 0.45,
+    "lethal_below": 16.0,
+    "stress_seconds": 12,
+    "death_rate": 0.14
+  }
+}

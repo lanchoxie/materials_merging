@@ -1,4 +1,5 @@
 extends Node3D
+const EcologyView=preload("res://scripts/planet_ecology_view.gd")
 ## Procedural display only: it consumes a world snapshot and never changes inventory.
 var camera: Camera3D
 var globe: Node3D
@@ -11,6 +12,8 @@ var distance=9.6
 var highlighted=""
 var highlight_valid=true
 var snapshot: Dictionary={}
+var ecology_view
+var display_mode="water"
 
 func _ready() -> void:
 	var env=WorldEnvironment.new(); env.environment=Environment.new()
@@ -31,6 +34,7 @@ func _ready() -> void:
 	_ring(orbit,3.69,3.70,Vector3.ZERO,"294652")
 	_make_site("deep",Vector3(-1.12,1.35,2.14),false)
 	_make_site("shelf",Vector3(1.13,0.65,2.53),true)
+	ecology_view=EcologyView.new(); globe.add_child(ecology_view); ecology_view.setup(self); ecology_view.hide()
 	var moon=Node3D.new(); moon.position=Vector3(3.4,1.6,-1.7); add_child(moon)
 	_sphere(moon,0.23,Vector3.ZERO,"edc58c")
 
@@ -121,18 +125,29 @@ func sync(world: Dictionary) -> void:
 		for zone in world.zones:
 			if sites.has(zone.id): sites[zone.id].shown=float(zone.water)
 	snapshot=world.duplicate(true)
+	ecology_view.sync(world)
+
+func set_mode(mode: String) -> void:
+	display_mode=mode
+	for info in sites.values(): info.root.visible=mode=="water"
+	ecology_view.visible=mode=="ecology"
+
+func active_sites() -> Dictionary:
+	return sites if display_mode=="water" else ecology_view.sites
 
 func project_site(id: String) -> Vector2:
-	if not sites.has(id): return Vector2(-1000,-1000)
-	return camera.unproject_position(sites[id].root.to_global(Vector3(0,0.2,0)))
+	var all=active_sites()
+	if not all.has(id): return Vector2(-1000,-1000)
+	return camera.unproject_position(all[id].root.to_global(Vector3(0,0.2,0)))
 
 func site_visible(id: String) -> bool:
-	var root: Node3D=sites[id].root
+	if not active_sites().has(id): return false
+	var root: Node3D=active_sites()[id].root
 	return root.global_basis.y.dot((camera.global_position-root.global_position).normalized())>0.20
 
 func pick(at: Vector2) -> String:
 	var closest=""; var distance_px=90.0
-	for id in sites:
+	for id in active_sites():
 		if not site_visible(id): continue
 		var d=project_site(id).distance_to(at)
 		if d<distance_px: closest=id; distance_px=d
@@ -152,6 +167,11 @@ func _process(dt: float) -> void:
 	globe.rotation.y=lerp_angle(globe.rotation.y,target_yaw,minf(1,dt*12))
 	globe.rotation.x=lerpf(globe.rotation.x,target_pitch,minf(1,dt*12))
 	camera.position.z=lerpf(camera.position.z,distance,minf(1,dt*10)); camera.look_at(Vector3.ZERO)
+	if display_mode=="ecology":
+		for id in ecology_view.sites:
+			var marker=ecology_view.sites[id].marker; marker.visible=id==highlighted
+			marker.material_override=_mat("a5efd1" if highlight_valid else "e7958c")
+		return
 	for id in sites:
 		var info=sites[id]; info.marker.visible=id==highlighted
 		info.marker.material_override=_mat("a5efd1" if highlight_valid else "e7958c")

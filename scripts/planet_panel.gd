@@ -3,6 +3,7 @@ signal dismissed
 signal acted(message: String)
 const UI=preload("res://scripts/ui.gd")
 const View=preload("res://scripts/planet_view.gd")
+const EcologyPanel=preload("res://scripts/planet_ecology_panel.gd")
 var state
 var view
 var viewport: SubViewport
@@ -29,22 +30,31 @@ var touch_index=-1
 var token=0
 var target_world=""
 var closing=false
+var selected_recipe="standard_water_crate"
+var target_recipe="standard_water_crate"
+var tray_title: Label
+var eco_site="microbe"
+var eco_widgets: Dictionary={}
+var replay_index=-1
 
 func setup(model) -> void:
 	state=model; state.planet.observing=true; state.planet.observer_id=get_instance_id()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var heading=UI.label("材料试验星球",30,UI.MINT); heading.position=Vector2(32,21); add_child(heading)
-	var subtitle=UI.label("EXPERIMENT 01    /    让你的第一箱水，抵达另一个世界",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
+	var subtitle=UI.label("EXPERIMENT 02    /    同一份材料，不同的生命故事",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1285,27); close.size=Vector2(122,46); add_child(close)
-	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(1000,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
+	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(600,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
+	var scenes=HBoxContainer.new(); scenes.position=Vector2(672,107); add_child(scenes)
+	scenes.add_child(UI.button("水与地形",func(): _choose_recipe("standard_water_crate")))
+	scenes.add_child(UI.button("生态试验",func(): _choose_recipe("oxygen_station"); section="observe"; _redraw()))
 	viewport_box=SubViewportContainer.new(); viewport_box.position=Vector2(24,165); viewport_box.size=Vector2(984,550); viewport_box.stretch=true; viewport_box.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(viewport_box)
 	viewport=SubViewport.new(); viewport.size=Vector2i(984,550); viewport.own_world_3d=true; viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; viewport_box.add_child(viewport)
 	if not OS.has_feature("web") and not OS.has_feature("android"): viewport.msaa_3d=Viewport.MSAA_2X
 	view=View.new(); viewport.add_child(view)
-	for id in ["deep","shelf"]:
+	for id in ["deep","shelf","microbe","fish"]:
 		var badge=PanelContainer.new(); badge.add_theme_stylebox_override("panel",UI.style(Color("162f3a"),10)); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
-		var label=UI.label("深槽蓄水" if id=="deep" else "浅台漫流",14,UI.TEXT); label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; badge.add_child(label); site_labels[id]=badge
+		var label=UI.label({"deep":"深槽蓄水","shelf":"浅台漫流","microbe":"厌氧微生物池","fish":"缺氧鱼湾"}[id],14,UI.TEXT); label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; badge.add_child(label); site_labels[id]=badge
 	var camera_row=HBoxContainer.new(); camera_row.position=Vector2(40,660); camera_row.size=Vector2(550,44); camera_row.add_theme_constant_override("separation",8); add_child(camera_row)
 	camera_row.add_child(UI.button("回到试验湾",func(): _cancel_gesture(); view.reset_camera()))
 	camera_row.add_child(UI.button("＋",func(): view.zoom(-0.8)))
@@ -55,15 +65,17 @@ func setup(model) -> void:
 	tray=PanelContainer.new(); tray.custom_minimum_size=Vector2(215,86); tray.add_theme_stylebox_override("panel",UI.style(Color("284b50"),14,UI.MINT.darkened(0.4))); inventory.add_child(tray)
 	tray.mouse_default_cursor_shape=Control.CURSOR_DRAG; tray.gui_input.connect(_tray_input)
 	var inside=UI.column(tray,5); inside.mouse_filter=Control.MOUSE_FILTER_PASS
-	inside.add_child(UI.label("▣  标准水箱",22,UI.MINT))
+	tray_title=UI.label("▣  标准水箱",20,UI.MINT); inside.add_child(tray_title)
 	tray_label=UI.label("",14,UI.TEXT); inside.add_child(tray_label)
 	var hint=UI.column(inventory,6); hint.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	hint.add_child(UI.label("把水箱拖到深槽或浅台",21,UI.TEXT))
+	var choices=UI.row(hint,8)
+	for item in [["standard_water_crate","水箱"],["oxygen_station","供氧器"],["oxygen_cartridge","补给盒"]]:
+		choices.add_child(UI.button(item[1],_choose_recipe.bind(item[0])))
 	caption=UI.paragraph("",15,UI.MUTED); hint.add_child(caption)
 	var panel=UI.box(self,Rect2(1024,107,392,737))
 	var right=UI.column(panel,12)
 	var tabs=UI.row(right,8)
-	tabs.add_child(UI.button("装罐工坊",func(): section="workshop"; _redraw()))
+	tabs.add_child(UI.button("生产工坊",func(): section="workshop"; _redraw()))
 	tabs.add_child(UI.button("观察 / 对照",func(): section="observe"; _redraw()))
 	var scroll=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; right.add_child(scroll)
 	body=UI.column(scroll,12); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
@@ -75,20 +87,42 @@ func _fingerprint() -> String:
 	var batches=[]
 	for item in state.storage.batches: batches.append([item.id,item.quantity])
 	var p=state.planet; var w=p.worlds.get_world()
-	return str([p.joined,p.qualified,p.feed,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.zones,w.events.size(),p.worlds.worlds.size(),batches])
+	return str([p.joined,p.qualified,p.extra_qualifications.keys(),p.feed,p.supplies,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.eco_allowance,w.zones,w.event_serial,int(w.seconds)/5,p.worlds.worlds.size(),batches])
 
 func _redraw() -> void:
 	if state==null: return
-	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null
+	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null; eco_widgets={}
 	var p=state.planet
 	for w in p.worlds.worlds:
 		var button=UI.button(w.name,func(): _do("select",{"world_id":str(w.id)}),w.id==p.worlds.active_id)
 		button.custom_minimum_size.x=185; world_tabs.add_child(button)
-	var world=p.worlds.get_world()
 	if section=="workshop": _workshop()
+	elif view.display_mode=="ecology": EcologyPanel.build(self)
 	else: _observations()
 	fingerprint=_fingerprint()
-	view.sync(world)
+	view.sync(display_snapshot())
+
+func _choose_recipe(id: String) -> void:
+	_cancel_gesture(); selected_recipe=id; replay_index=-1
+	view.set_mode("water" if id=="standard_water_crate" else "ecology")
+	_redraw(); _live()
+
+func display_snapshot() -> Dictionary:
+	var world=state.planet.worlds.get_world()
+	if replay_index<0: return world
+	var copy=world.duplicate(true); var history=world.ecology.history
+	var entry=history[clampi(replay_index,0,history.size()-1)]
+	copy.seconds=entry.at; copy.paused=true; copy.ecology.regions=entry.regions.duplicate(true)
+	return copy
+
+func _replay() -> void:
+	_cancel_gesture()
+	if replay_index>=0: replay_index=-1
+	else:
+		var world=state.planet.worlds.get_world()
+		if not world.paused: state.planet.command(state,"pause")
+		replay_index=world.ecology.history.size()-1
+	_redraw(); _live()
 
 func _text(text: String,size: int=16,color: Color=UI.MUTED) -> void:
 	body.add_child(UI.paragraph(text,size,color))
@@ -98,33 +132,38 @@ func _button(text: String,callback: Callable,primary: bool=false,disabled: bool=
 
 func _workshop() -> void:
 	var p=state.planet; var rules=p.config.workshop
-	_text("第一封星际来信",23,UI.MINT)
-	_text("试验湾的盆地已经冷却。我们想借用你的水样，验证装罐流程，再把水送进两种地形。",17,UI.TEXT)
+	var info=p.recipe(selected_recipe); var ref=str(info.reference)
 	if not p.joined:
+		_text("第一封星际来信",23,UI.MINT)
+		_text("把浮岛的结构样品变成有用途的成品，在星球上观察它们带来的变化。",17,UI.TEXT)
 		_text("合作方提供独立装罐台与%d份标准供料。不需要先招募院士。" % int(rules.starter_feed))
 		_button("领取合作与首次供料",func(): _do("join"),true)
 		return
-	if not p.qualified:
-		_text("① 提交水样，解锁装罐",21,UI.MINT)
-		_text("需要同一批次的%d份已收集水样。身份验证会消耗样品；供料另计。" % int(rules.samples_required))
-		var candidates=p.water_candidates(state)
-		if candidates.is_empty(): _text("回到浮岛，领取水分子反应炉中的产物，再来查看。",17,UI.GOLD)
+	_text(str(info.name),23,UI.MINT); _text(str(info.description),16,UI.TEXT)
+	if not p.qualified_for(ref):
+		var sample_name="水样" if ref=="water" else "氧气 O₂ 样品"
+		_text("① 提交%s" % sample_name,21,UI.MINT)
+		_text("需要同一批次的%d份已收集样品。身份验证消耗样品；批量供料另计。" % int(rules.samples_required))
+		var candidates=p.sample_candidates(state,ref)
+		if candidates.is_empty(): _text("在浮岛建造%s反应炉并收获，或在沙盒正确搭出对应结构。" % ("水分子" if ref=="water" else "氧气 O₂"),16,UI.GOLD)
 		for batch in candidates:
-			_button("提交水样 · 库存%d份" % int(batch.quantity),func(): _do("qualify",{"batch_id":str(batch.id)}),true,int(batch.quantity)<int(rules.samples_required))
+			_button("提交%s · 库存%d份" % [sample_name,int(batch.quantity)],func(): _do("qualify",{"batch_id":str(batch.id),"reference":ref}),true,int(batch.quantity)<int(rules.samples_required))
 	else:
-		_text("② 标准水箱装罐",21,UI.MINT)
-		_text("1份供料 + %d金币 → 1箱水\n每箱%d秒 · 合作方独立装罐台" % [int(rules.packing_cost),int(rules.packing_seconds)],17,UI.TEXT)
-		_text("供料 %d份  /  成品 %d箱\n金币 %d" % [p.feed,p.products.size(),int(state.coins)],18,UI.GOLD)
+		_text("② 准备供料与制作",21,UI.MINT)
+		_text("1份供料 + %d金币 → 1件成品\n用时%d秒 · 独立合作工坊" % [int(info.fee),int(info.seconds)],17,UI.TEXT)
+		_text("供料 %d份  /  成品 %d件\n金币 %d" % [p.input_count(info.input),p.available_products(selected_recipe),int(state.coins)],18,UI.GOLD)
 		if p.job.is_empty():
-			_button("开始装罐 · %d金币" % int(rules.packing_cost),func(): _do("pack"),true)
+			_button(("开始装罐" if ref=="water" else "开始制作")+" · %d金币" % int(info.fee),func(): _do("pack",{"recipe":selected_recipe}),true)
 		else:
-			progress_text=UI.label("",17,UI.MINT); body.add_child(progress_text)
+			progress_text=UI.paragraph("",17,UI.MINT); body.add_child(progress_text)
 			progress=ProgressBar.new(); progress.custom_minimum_size.y=12; progress.show_percentage=false; body.add_child(progress)
-			_button("取消装罐 · 退供料，费用不退",func(): _do("cancel_pack"))
-	_button("补充1份供料 · %d金币" % int(rules.feed_cost),func(): _do("buy_feed"))
-	_text("样品验证与批量供料分开。几何匹配度不等于水的纯度。",14)
-	_text("③ 选择水的落点",21,UI.MINT)
-	_text("深槽：集中蓄水，保留岸地。\n浅台：同样用水，铺开更宽水面。\n主世界总容量为3箱。",16,UI.TEXT)
+			_button("取消制作 · 退供料，费用不退",func(): _do("cancel_pack"))
+	var input_info={"name":"标准水供料","price":int(rules.feed_cost)} if ref=="water" else p.config.supplies[info.input]
+	_text("%s · 库存%d份" % [input_info.name,p.input_count(info.input)],16,UI.MINT)
+	_button("补充1份供料 · %d金币" % int(input_info.price),func(): _do("buy_feed",{"input":info.input}))
+	_text("结构身份不等于宏观纯度。标准组件、气源与已充能模块由合作方供给。",14)
+	_text("③ 选择落点",21,UI.MINT)
+	_text("深槽集中蓄水，浅台水面更宽。\n主世界总容量3箱。" if ref=="water" else "先放供氧器，再拖入补给盒。\n同样的氧气会影响不同生命。\n每个舱独立供氧，互不串气。",16,UI.TEXT)
 	_button("查看观察记录与实验副本",func(): section="observe"; _redraw())
 
 func _observations() -> void:
@@ -132,47 +171,61 @@ func _observations() -> void:
 	_text(str(w.name),24,UI.MINT)
 	_text("封闭盆地 · %s\n已交付 %d / 3箱" % ["主仓库供给" if w.mode=="career" else "独立配给，无法运回出售",int(p.worlds.total(w))],17,UI.TEXT)
 	_button("继续观察" if w.paused else "暂停观察",func(): _do("pause"),true)
-	if w.mode=="experiment": _button("重置本实验 · 回到起点",func(): _do("reset_trial"))
-	if p.worlds.worlds.size()<3:
-		_button("从干燥盆地创建实验",func(): _do("fork",{"dry":true}))
-		_button("复制当前状态为实验",func(): _do("fork",{"dry":false}))
-	else:
-		_button("两个实验同步推进10秒",func(): _do("step_pair"),false,not p.worlds.can_step_pair())
+	_world_controls(w)
 	_text("只推进当前世界；离开星球就暂停。\n返回浮岛不影响装罐。\n实验先布置，再同步观察。",14)
 	_text("世界对照",21,UI.MINT)
 	for other in p.worlds.worlds:
 		_text("%s · %d秒\n深槽 %d箱 / 浅台 %d箱" % [other.name,int(other.seconds),int(other.zones[0].target),int(other.zones[1].target)],16,UI.TEXT)
-	if p.worlds.worlds.size()==3 and not p.worlds.can_step_pair(): _text("实验起点或时刻不同，暂不能作为同条件对照。",14,UI.GOLD)
-	_text("观察记录",21,UI.MINT)
-	if w.events.is_empty(): _text("尚未投放。先把水箱送到一个盆地落点。")
-	for i in range(w.events.size()-1,maxi(-1,w.events.size()-5),-1):
-		var event=w.events[i]; _text("%ds · %s" % [int(event.at),event.message],15,UI.TEXT)
+	_events(w)
 	if w.observation:
 		_text("观察卡 · 水的去向",21,UI.MINT)
 		_text("这一箱水改变的是局部封闭盆地。深槽和浅台的水面形状不同，水箱总量相同。",16,UI.TEXT)
 
+func _world_controls(w: Dictionary) -> void:
+	var p=state.planet
+	if w.mode=="experiment":
+		_button("重置本实验 · 回到起点",func(): _do("reset_trial"))
+		_button("换用初始生态与干燥盆地",func(): _do("reset_trial",{"fresh":true}))
+	if p.worlds.worlds.size()<3:
+		_button("从干燥盆地创建实验" if view.display_mode=="water" else "从初始生态创建实验",func(): _do("fork",{"dry":true}))
+		_button("复制当前状态为实验",func(): _do("fork",{"dry":false}))
+	else:
+		_button("两个实验同步推进10秒",func(): _do("step_pair"),false,not p.worlds.can_step_pair())
+	if p.worlds.worlds.size()==3 and not p.worlds.can_step_pair(): _text("实验起点或时刻不同，暂不能作为同条件对照。",14,UI.GOLD)
+
+func _events(w: Dictionary) -> void:
+	_text("观察记录",21,UI.MINT)
+	if w.events.is_empty(): _text("尚未干预，先放置成品或开始观察。")
+	for i in range(w.events.size()-1,maxi(-1,w.events.size()-9),-1):
+		var event=w.events[i]; _text("%ds · %s" % [int(event.at),event.message],15,UI.TEXT)
+
 func _do(action: String,data: Dictionary={}) -> void:
 	_cancel_gesture()
+	if action=="select": replay_index=-1
+	elif replay_index>=0: status.text="正在回看历史，请先回到当前时刻再操作"; return
 	var message=state.planet.command(state,action,data)
 	status.text=message; acted.emit(message); _redraw(); _live()
 
 func _live() -> void:
 	var p=state.planet; var w=p.worlds.get_world()
-	var count=p.available_products() if w.mode=="career" else int(w.allowance)
-	tray_label.text="%s %d箱 · 按住拖放" % ["主仓库" if w.mode=="career" else "实验配给",count]
-	caption.text="%s · %s · 已抵达%d/3箱\n点选水箱后也可点击落点；落在空白处会取消。" % [w.name,"暂停中" if w.paused else "观察中",int(p.worlds.total(w))]
+	var count=p.available_in(w,selected_recipe)
+	tray_title.text="▣  "+str(p.recipe(selected_recipe).name).replace("氧气动力补给盒","氧气补给盒")
+	tray_label.text="%s %d件 · 按住拖放" % ["主仓库" if w.mode=="career" else "实验配给",count]
+	caption.text="%s · %s\n拖动左侧成品到落点；点选后也可点击放置。" % [w.name,"历史回看" if replay_index>=0 else ("暂停中" if w.paused else "观察中")]
 	if is_instance_valid(progress) and not p.job.is_empty():
 		progress.value=100*(1-float(p.job.left)/float(p.job.duration))
-		progress_text.text="装罐中 · 剩余%d秒" % ceili(float(p.job.left))
-	view.sync(w)
+		progress_text.text="%s · 剩余%d秒" % [p.recipe(str(p.job.recipe)).name,ceili(float(p.job.left))]
+	view.sync(display_snapshot())
+	EcologyPanel.live(self)
 
 func _begin_drag(at: Vector2) -> void:
 	var p=state.planet; var w=p.worlds.get_world()
-	var count=p.products.size() if w.mode=="career" else int(w.allowance)
+	if replay_index>=0: status.text="回看中的世界不可投放，请先回到当前时刻"; return
+	var count=p.available_in(w,selected_recipe)
 	if not p.joined or count<1:
 		status.text="先领取合作并完成装罐，或建立独立实验副本"; return
 	dragging=true; armed=false; rotating=false; pointer=at; start=at
-	token=p.shipment_serial; target_world=w.id; ghost.show(); ghost.move_to_front()
+	token=p.shipment_serial; target_world=w.id; target_recipe=selected_recipe; ghost.show(); ghost.move_to_front()
 
 func _tray_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch and event.pressed:
@@ -187,12 +240,12 @@ func _site_at(at: Vector2) -> String:
 func _end_drag(at: Vector2) -> void:
 	var site=_site_at(at)
 	if not site.is_empty():
-		var data={"world_id":target_world,"site_id":site,"token":token}
+		var data={"world_id":target_world,"site_id":site,"token":token,"recipe":target_recipe}
 		_do("deploy",data)
 	elif start.distance_to(at)<10 and tray.get_global_rect().has_point(at):
-		dragging=false; armed=true; status.text="已选中水箱，点击深槽或浅台放置；返回键取消"
+		dragging=false; armed=true; status.text="已选中成品，点击落点放置；返回键取消"
 	else:
-		_cancel_gesture(); status.text="已取消投放，水箱没有消耗"
+		_cancel_gesture(); status.text="已取消投放，成品没有消耗"
 
 func _cancel_gesture() -> void:
 	dragging=false; armed=false; rotating=false; touch_index=-1
@@ -250,8 +303,8 @@ func _process(dt: float) -> void:
 	if dragging or armed:
 		ghost.position=pointer+Vector2(14,-40)
 		view.highlighted=_site_at(pointer)
-		view.highlight_valid=state.planet.worlds.can_deploy(target_world,view.highlighted)
-		ghost.get_child(0).text="盆地已满" if not view.highlighted.is_empty() and not view.highlight_valid else "▣  水箱 ×1"
+		view.highlight_valid=state.planet.worlds.can_deploy(target_world,view.highlighted,target_recipe)
+		ghost.get_child(0).text="落点不适用" if not view.highlighted.is_empty() and not view.highlight_valid else "▣  "+str(state.planet.recipe(target_recipe).name)
 
 func handle_back() -> bool:
 	if dragging or armed: _cancel_gesture()

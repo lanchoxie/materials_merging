@@ -7,6 +7,8 @@ var worlds=Worlds.new(config)
 var joined=false
 var qualified=false
 var qualification: Dictionary={}
+var extra_qualifications: Dictionary={}
+var supplies: Dictionary={"station_parts":0,"oxygen_feed":0}
 var feed=0
 var products: Array=[]
 var job: Dictionary={}
@@ -17,17 +19,48 @@ var observer_id=0
 var _reference_cache: Dictionary={}
 var notice=""
 
-func available_products() -> int:
-	return products.size()
+func recipe_ids() -> Array:
+	return ["standard_water_crate"]+config.recipes.keys()
+
+func recipe(id: String) -> Dictionary:
+	if id=="standard_water_crate":
+		return {"id":id,"version":int(config.recipe.version),"name":str(config.recipe.name),"reference":"water","input":"feed","fee":int(config.workshop.packing_cost),"seconds":float(config.workshop.packing_seconds),"description":"把合作方标准供料装入回收水箱。"}
+	return config.recipes.get(id,{})
+
+func qualified_for(reference: String) -> bool:
+	return qualified if reference=="water" else extra_qualifications.has(reference)
+
+func evidence(reference: String) -> Dictionary:
+	return qualification if reference=="water" else extra_qualifications.get(reference,{})
+
+func input_count(id: String) -> int:
+	return feed if id=="feed" else int(supplies.get(id,0))
+
+func _input_add(id: String,amount: int) -> void:
+	if id=="feed": feed+=amount
+	else: supplies[id]=input_count(id)+amount
+
+func available_products(recipe_id: String="standard_water_crate") -> int:
+	var result=0
+	for item in products:
+		if item.recipe==recipe_id: result+=1
+	return result
+
+func available_in(world: Dictionary,recipe_id: String) -> int:
+	if world.mode=="career": return available_products(recipe_id)
+	return int(world.allowance) if recipe_id=="standard_water_crate" else int(world.eco_allowance.get(recipe_id,0))
 
 func water_candidates(state) -> Array:
+	return sample_candidates(state,"water")
+
+func sample_candidates(state,reference: String) -> Array:
 	var candidates=[]
 	for batch in state.storage.batches:
 		# Resolve the immutable structure, not its original template label.
 		if not _reference_cache.has(batch.id):
 			if _reference_cache.size()>=512: _reference_cache.clear()
 			_reference_cache[batch.id]=str(state.sandbox_reference(batch.work).get("reference_id",""))
-		if _reference_cache[batch.id]=="water": candidates.append(batch)
+		if _reference_cache[batch.id]==reference: candidates.append(batch)
 	return candidates
 
 func command(state,action: String,payload: Dictionary={}) -> String:
@@ -38,47 +71,61 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			return "已加入试验湾合作，收到%d份标准供料" % feed
 		"qualify":
 			if not joined: return "先在邮箱领取试验湾合作"
-			if qualified: return "装罐工艺已经解锁，无需重复提交样品"
+			var ref=str(payload.get("reference","water"))
+			if ref not in ["water","oxygen"]: return "暂无这个体系的工艺"
+			if qualified_for(ref): return "工艺已经解锁，无需重复提交样品"
 			var id=str(payload.get("batch_id","")); var accepted: Dictionary={}
-			for candidate in water_candidates(state):
+			for candidate in sample_candidates(state,ref):
 				if candidate.id==id: accepted=candidate
-			if accepted.is_empty() or int(accepted.quantity)<int(config.workshop.samples_required): return "需要同一批次的%d份已收集水样；其他含氢或含氧结构不能代替" % int(config.workshop.samples_required)
-			qualification={"batch_id":id,"work":accepted.work.duplicate(true),"reference":"water","method":"reference_identity_v1"}
-			state.storage.take_product(id,int(config.workshop.samples_required)); qualified=true
-			return "水样身份已验证，独立装罐台开放；供料由合作方提供"
+			if accepted.is_empty() or int(accepted.quantity)<int(config.workshop.samples_required): return "需要同一批次的%d份%s样品，其他结构不能代替" % [int(config.workshop.samples_required),"水" if ref=="water" else "氧气 O₂"]
+			var proof={"batch_id":id,"work":accepted.work.duplicate(true),"reference":ref,"method":"reference_identity_v1"}
+			state.storage.take_product(id,int(config.workshop.samples_required))
+			if ref=="water": qualification=proof; qualified=true
+			else: extra_qualifications[ref]=proof
+			return "%s样品身份已验证，对应工艺开放；批量供料由合作方提供" % ("水" if ref=="water" else "氧气")
 		"buy_feed":
 			if not joined: return "先领取合作补给"
-			if feed+int(not job.is_empty())>=int(config.workshop.inventory_limit): return "供料仓已满（含装罐台预留供料）"
-			if state.coins<float(config.workshop.feed_cost): return "金币不足，供料%d金币一份" % int(config.workshop.feed_cost)
-			state.coins-=float(config.workshop.feed_cost); feed+=1
-			return "购入1份标准供料（含容器）"
+			var input_id=str(payload.get("input","feed"))
+			if input_id!="feed" and not config.supplies.has(input_id): return "未知供料"
+			var reserved=int(not job.is_empty() and recipe(str(job.recipe)).input==input_id)
+			if input_count(input_id)+reserved>=int(config.workshop.inventory_limit): return "供料仓已满（含工坊预留供料）"
+			var price=int(config.workshop.feed_cost) if input_id=="feed" else int(config.supplies[input_id].price)
+			if state.coins<price: return "金币不足，供料%d金币一份" % price
+			state.coins-=price; _input_add(input_id,1)
+			return "购入1份%s" % ("标准水供料（含容器）" if input_id=="feed" else str(config.supplies[input_id].name))
 		"pack":
-			if not qualified: return "先提交水样解锁装罐工艺"
+			var info=recipe(str(payload.get("recipe","standard_water_crate")))
+			if info.is_empty(): return "未知工艺"
+			if not qualified_for(str(info.reference)): return "先提交对应的结构样品解锁工艺"
 			if not job.is_empty(): return "装罐台正在工作"
 			if products.size()>=int(config.workshop.product_limit): return "成品仓已满，请先部署水箱"
-			if feed<1 or state.coins<float(config.workshop.packing_cost): return "需要1份供料与%d金币装罐费" % int(config.workshop.packing_cost)
-			feed-=1; state.coins-=float(config.workshop.packing_cost)
-			job={"id":serial,"recipe":str(config.recipe.id),"recipe_version":int(config.recipe.version),"left":float(config.workshop.packing_seconds),"duration":float(config.workshop.packing_seconds),"fee":int(config.workshop.packing_cost),"source_batch":str(qualification.batch_id)}
+			if input_count(str(info.input))<1 or state.coins<float(info.fee): return "需要1份对应供料与%d金币工费" % int(info.fee)
+			_input_add(str(info.input),-1); state.coins-=float(info.fee)
+			job={"id":serial,"recipe":str(info.id),"recipe_version":int(info.version),"left":float(info.seconds),"duration":float(info.seconds),"fee":int(info.fee),"source_batch":str(evidence(str(info.reference)).batch_id)}
 			serial+=1
-			return "已开始装罐 · %d秒后水箱自动入库" % int(config.workshop.packing_seconds)
+			return "%s制作中 · %d秒后自动入库" % [info.name,int(info.seconds)]
 		"cancel_pack":
 			if job.is_empty(): return "装罐台当前空闲"
 			# Supply is reserved until completion; service fee covers interrupted work.
-			feed+=1; job.clear()
+			_input_add(str(recipe(str(job.recipe)).input),1); job.clear()
 			return "已退回预留供料；本次装罐费不退还"
 		"deploy":
 			var id=str(payload.get("world_id","")); var site=str(payload.get("site_id",""))
+			var recipe_id=str(payload.get("recipe","standard_water_crate"))
+			if recipe(recipe_id).is_empty(): return "未知成品"
 			if not Count.count_ok(payload.get("token")) or int(payload.token)!=shipment_serial: return "这次投放已处理或已过期，请重新选择水箱"
-			if not joined or not worlds.can_deploy(id,site): return "请选择还有容量的盆地落点"
+			if not joined or not worlds.can_deploy(id,site,recipe_id): return "落点不适用：设备不可重复安装，补给需等上一盒耗尽"
 			var w=worlds.get_world(id)
 			if w.mode=="career":
-				if products.is_empty(): return "主仓库暂无水箱，请先装罐"
-				products.pop_front()
+				if available_products(recipe_id)<=0: return "主仓库暂无这个成品，请先制作"
+				for i in range(products.size()):
+					if products[i].recipe==recipe_id: products.remove_at(i); break
 			else:
-				if int(w.allowance)<=0: return "本次实验配给已用完，可以重置实验"
-				w.allowance=int(w.allowance)-1
-			worlds.deploy(id,site,shipment_serial); shipment_serial+=1
-			return "水箱已交付%s；%s" % [w.name,"开始观察后会流入盆地" if w.paused else "正在经管道注入盆地"]
+				if available_in(w,recipe_id)<=0: return "本次实验配给已用完，可以重置实验"
+				if recipe_id=="standard_water_crate": w.allowance=int(w.allowance)-1
+				else: w.eco_allowance[recipe_id]=int(w.eco_allowance[recipe_id])-1
+			worlds.deploy(id,site,shipment_serial,recipe_id); shipment_serial+=1
+			return "%s已交付%s%s" % [recipe(recipe_id).name,w.name,"；开始观察后运行" if w.paused else ""]
 		"select":
 			var id=str(payload.get("world_id",""))
 			if worlds.get_world(id).is_empty(): return "这个世界不存在"
@@ -86,7 +133,13 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 		"fork":
 			if not joined: return "先领取试验湾合作"
 			return worlds.fork(bool(payload.get("dry",false)))
-		"reset_trial": return worlds.reset_trial()
+		"reset_trial": return worlds.reset_trial(bool(payload.get("fresh",false)))
+		"ecology":
+			if not joined: return "先领取合作补给"
+			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.ecology)
+			var result=worlds.ecology.control(w.ecology,str(payload.get("site","")),str(payload.get("control","")))
+			if before!=worlds.ecology.canonical(w.ecology): worlds._event(w,"ecology",result)
+			return result
 		"pause":
 			var w=worlds.get_world(); w.paused=not w.paused
 			return "观察已暂停" if w.paused else "观察继续"
@@ -99,14 +152,16 @@ func tick(dt: float) -> void:
 		job.left=maxf(0,float(job.left)-dt)
 		if float(job.left)<=0:
 			products.append({"id":int(job.id),"recipe":str(job.recipe),"recipe_version":int(job.recipe_version),"source_batch":str(job.source_batch)})
-			job.clear(); notice="标准水箱装罐完成，已收入工业成品仓"
+			notice="%s制作完成，已收入工业成品仓" % recipe(str(job.recipe)).name; job.clear()
 	if observing: worlds.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":1,"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
+	return {"version":2,"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or data.get("version")!=1: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2]: return false
+	data=data.duplicate(true)
+	if data.version==1: data.extra_qualifications={}; data.supplies={"station_parts":0,"oxygen_feed":0}
 	if not data.get("joined") is bool or not data.get("qualified") is bool or (data.qualified and not data.joined): return false
 	if not Count.count_ok(data.get("feed")) or int(data.feed)>int(config.workshop.inventory_limit): return false
 	for key in ["serial","shipment_serial"]:
@@ -114,10 +169,20 @@ func restore(data,state) -> bool:
 	if not data.get("qualification") is Dictionary: return false
 	if data.qualified:
 		var q=data.qualification
-		if not q.get("batch_id") is String or q.batch_id.length()>96 or q.get("reference")!="water" or q.get("method")!="reference_identity_v1": return false
+		if not q.get("batch_id") is String or q.batch_id.is_empty() or q.batch_id.length()>96 or q.get("reference")!="water" or q.get("method")!="reference_identity_v1": return false
 		if not q.get("work") is Dictionary or not state.sandbox_validate(q.work): return false
 		if state.sandbox_reference(q.work).get("reference_id","")!="water": return false
 	elif not data.qualification.is_empty(): return false
+	if not data.get("supplies") is Dictionary or data.supplies.size()!=config.supplies.size(): return false
+	for key in config.supplies:
+		if not Count.count_ok(data.supplies.get(key)) or int(data.supplies[key])>int(config.workshop.inventory_limit): return false
+	if not data.get("extra_qualifications") is Dictionary or data.extra_qualifications.size()>1: return false
+	for ref in data.extra_qualifications:
+		if ref!="oxygen" or not data.joined: return false
+		var q=data.extra_qualifications[ref]
+		if not q is Dictionary or not q.get("batch_id") is String or q.batch_id.is_empty() or q.batch_id.length()>96: return false
+		if q.get("reference")!=ref or q.get("method")!="reference_identity_v1" or not q.get("work") is Dictionary: return false
+		if not state.sandbox_validate(q.work) or state.sandbox_reference(q.work).get("reference_id","")!=ref: return false
 	if not data.get("products") is Array or data.products.size()>int(config.workshop.product_limit): return false
 	var ids=[]
 	for product in data.products:
@@ -125,21 +190,33 @@ func restore(data,state) -> bool:
 		ids.append(int(product.id))
 	if not data.get("job") is Dictionary: return false
 	if not data.job.is_empty():
-		if int(data.feed)>=int(config.workshop.inventory_limit): return false
 		if not _valid_product(data.job,data,ids) or data.products.size()>=int(config.workshop.product_limit): return false
+		var info=recipe(str(data.job.recipe))
+		var stock=int(data.feed) if info.input=="feed" else int(data.supplies[info.input])
+		if stock>=int(config.workshop.inventory_limit): return false
 		for key in ["left","duration"]:
 			if not (data.job.get(key) is int or data.job.get(key) is float) or not is_finite(float(data.job[key])): return false
-		if float(data.job.duration)!=float(config.workshop.packing_seconds) or float(data.job.left)<=0 or float(data.job.left)>float(data.job.duration): return false
-		if data.job.get("fee")!=int(config.workshop.packing_cost): return false
+		# Work already paid for retains its quoted duration and fee after balance updates.
+		if float(data.job.duration)<=0 or float(data.job.duration)>86400 or float(data.job.left)<=0 or float(data.job.left)>float(data.job.duration): return false
+		if not Count.count_ok(data.job.get("fee")) or int(data.job.fee)>1000000: return false
 	var restored=Worlds.new(config)
+	if int(data.version)==2 and (not data.get("worlds") is Dictionary or data.worlds.get("version")!=2): return false
 	if not restored.restore(data.get("worlds")): return false
 	if not data.joined and (int(data.feed)>0 or not data.products.is_empty() or not data.job.is_empty() or restored.worlds.size()>1): return false
+	if not data.joined:
+		for n in data.supplies.values():
+			if int(n)>0: return false
 	joined=data.joined; qualified=data.qualified; qualification=data.qualification.duplicate(true)
 	feed=int(data.feed); products=data.products.duplicate(true); job=data.job.duplicate(true)
+	extra_qualifications=data.extra_qualifications.duplicate(true); supplies=data.supplies.duplicate(true)
 	serial=int(data.serial); shipment_serial=int(data.shipment_serial); worlds=restored; observing=false
 	return true
 
 func _valid_product(product,data,ids: Array) -> bool:
-	if not data.qualified or not product is Dictionary: return false
+	if not product is Dictionary: return false
 	if not Count.count_ok(product.get("id")) or int(product.id)<1 or int(product.id)>=int(data.serial) or int(product.id) in ids: return false
-	return product.get("recipe")==str(config.recipe.id) and product.get("recipe_version")==int(config.recipe.version) and product.get("source_batch")==str(data.qualification.get("batch_id",""))
+	var info=recipe(str(product.get("recipe","")))
+	if info.is_empty(): return false
+	var q=data.qualification if info.reference=="water" else data.extra_qualifications.get(info.reference,{})
+	if q.is_empty() or (info.reference=="water" and not data.qualified): return false
+	return product.get("recipe_version")==int(info.version) and product.get("source_batch")==str(q.batch_id)

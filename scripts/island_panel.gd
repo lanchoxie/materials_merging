@@ -80,11 +80,12 @@ func _products() -> void:
 func _industrial() -> void:
 	var p=state.planet
 	body.add_child(UI.paragraph("工业成品用于星球部署，和反应炉的结构样品分别保管。实验副本的虚拟配给不会进入这里。",18))
-	var card=_card("标准水箱 · 主仓库 %d箱" % p.products.size())
-	card.add_child(UI.label("标准供料 %d份 · %s" % [p.feed,"装罐中" if not p.job.is_empty() else "装罐台空闲"],18,UI.GOLD))
-	card.add_child(UI.button("前往试验湾 · 装罐与投放",func(): planet_requested.emit(),true))
-	for product in p.products:
-		card.add_child(UI.paragraph("水箱 #%d · 来自样品批次 %s" % [int(product.id),str(product.source_batch)],15))
+	body.add_child(UI.button("前往试验湾 · 生产与投放",func(): planet_requested.emit(),true))
+	for id in p.recipe_ids():
+		var info=p.recipe(id); var card=_card("%s · 主仓库 %d件" % [info.name,p.available_products(id)])
+		card.add_child(UI.label("对应供料 %d份" % p.input_count(info.input),18,UI.GOLD))
+		for product in p.products:
+			if product.recipe==id: card.add_child(UI.paragraph("成品 #%d · 来源样品批次 %s" % [int(product.id),str(product.source_batch)],15))
 
 func _materials() -> void:
 	body.add_child(UI.paragraph("建材用于向浮岛边缘开拓；催化晶用于反应炉升级。它们与摆件、小路和生活补给分别存放。",19))

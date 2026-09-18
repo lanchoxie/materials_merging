@@ -1,6 +1,8 @@
 extends RefCounted
 ## World state has no access to the island wallet, sample bag or product stock.
 const Rules=preload("res://scripts/island_storage.gd")
+const Ecology=preload("res://scripts/planet_ecology.gd")
+var ecology=Ecology.new()
 var config: Dictionary
 var worlds: Array=[]
 var active_id="home"
@@ -15,7 +17,7 @@ func _new_world(id: String,title: String,mode: String) -> Dictionary:
 	for site in config.sites: zones.append({"id":site.id,"target":0,"water":0.0})
 	return {"id":id,"name":title,"mode":mode,"seed":int(config.world.seed),"seconds":0,"fraction":0.0,
 		"paused":mode=="experiment","zones":zones,"events":[],"event_serial":0,"allowance":int(config.world.trial_allowance) if mode=="experiment" else 0,
-		"base":{},"base_key":"","observation":false}
+		"base":{},"base_key":"","observation":false,"ecology":ecology.fresh(),"eco_allowance":{"oxygen_station":2,"oxygen_cartridge":4}}
 
 func get_world(id: String="") -> Dictionary:
 	for item in worlds:
@@ -27,15 +29,21 @@ func total(world: Dictionary, field: String="target") -> float:
 	for zone in world.zones: result+=float(zone[field])
 	return result
 
-func can_deploy(id: String, site_id: String) -> bool:
+func can_deploy(id: String, site_id: String,recipe: String="standard_water_crate") -> bool:
 	var w=get_world(id)
+	if w.is_empty(): return false
+	if recipe!="standard_water_crate": return ecology.can_deploy(w.ecology,site_id,recipe)
 	if w.is_empty() or total(w)>=int(config.world.capacity): return false
 	for zone in w.zones:
 		if zone.id==site_id: return int(zone.target)<int(config.world.capacity)
 	return false
 
-func deploy(id: String,site_id: String,shipment: int) -> void:
+func deploy(id: String,site_id: String,shipment: int,recipe: String="standard_water_crate") -> void:
 	var w=get_world(id)
+	if recipe!="standard_water_crate":
+		ecology.deploy(w.ecology,site_id,recipe)
+		_event(w,"ecology","%s：%s" % [str(ecology.rules[site_id].name),"供氧器就位，等待氧气与动力补给。" if recipe=="oxygen_station" else "已更换氧气与动力补给盒。"],shipment)
+		return
 	for zone in w.zones:
 		if zone.id==site_id:
 			zone.target=int(zone.target)+1
@@ -51,8 +59,10 @@ func tick_world(w: Dictionary,dt: float) -> void:
 	if not is_finite(dt) or dt<=0 or dt>60: return
 	w.fraction=float(w.fraction)+dt
 	while float(w.fraction)>=1.0:
+		if int(w.seconds)>=int(config.world.max_seconds): w.fraction=0.0; break
 		w.fraction=float(w.fraction)-1.0
 		w.seconds=mini(int(config.world.max_seconds),int(w.seconds)+1)
+		for message in ecology.step(w.ecology,int(w.seconds)): _event(w,"ecology",message)
 		for zone in w.zones:
 			zone.water=minf(float(zone.target),float(zone.water)+1.0/float(config.world.delivery_seconds))
 		if not w.observation and total(w,"water")>=1.0:
@@ -64,12 +74,13 @@ func tick(dt: float) -> void:
 	if not w.paused: tick_world(w,dt)
 
 func base_snapshot(w: Dictionary) -> Dictionary:
-	return {"seed":int(w.seed),"seconds":int(w.seconds),"fraction":float(w.fraction),"zones":w.zones.duplicate(true),"observation":w.observation}
+	return {"seed":int(w.seed),"seconds":int(w.seconds),"fraction":float(w.fraction),"zones":w.zones.duplicate(true),"observation":w.observation,"ecology":w.ecology.duplicate(true)}
 
 func _base_key(base: Dictionary) -> String:
 	# JSON parses integer fields as floats. Hash semantic values, not their storage types.
 	var parts=["%d:%d:%.6f:%d" % [int(base.seed),int(base.seconds),float(base.fraction),int(base.observation)]]
 	for zone in base.zones: parts.append("%s:%d:%.6f" % [str(zone.id),int(zone.target),float(zone.water)])
+	if base.has("ecology"): parts.append(ecology.canonical(base.ecology))
 	return "|".join(parts).sha256_text()
 
 func fork(dry: bool=false) -> String:
@@ -88,13 +99,17 @@ func fork(dry: bool=false) -> String:
 func _reset_from_base(w: Dictionary) -> void:
 	for key in ["seed","seconds","fraction","observation"]: w[key]=w.base[key]
 	w.zones=w.base.zones.duplicate(true)
+	w.ecology=w.base.ecology.duplicate(true)
+	w.eco_allowance={"oxygen_station":2,"oxygen_cartridge":4}
 	w.paused=true; w.allowance=int(config.world.trial_allowance)
 	w.events=[]; w.event_serial=0
 	_event(w,"fork","同起点试验已就绪 · 先放置水箱，再开始观察")
 
-func reset_trial() -> String:
+func reset_trial(fresh_start: bool=false) -> String:
 	var w=get_world()
 	if w.mode!="experiment": return "主世界不会重置；请在实验副本中试验"
+	if fresh_start:
+		w.base=base_snapshot(_new_world("source","","career")); w.base_key=_base_key(w.base)
 	_reset_from_base(w)
 	return "已回到这个实验的起点，独立配给已重置"
 
@@ -109,7 +124,7 @@ func step_pair() -> String:
 	return "两个实验共同推进了10秒，现已暂停，方便比较"
 
 func serialize() -> Dictionary:
-	return {"active_id":active_id,"worlds":worlds.duplicate(true)}
+	return {"version":2,"active_id":active_id,"worlds":worlds.duplicate(true)}
 
 func _number(value,lo: float,hi: float,integer: bool=false) -> bool:
 	return (value is int or value is float) and is_finite(float(value)) and value>=lo and value<=hi and (not integer or float(value)==floor(float(value)))
@@ -124,14 +139,21 @@ func _valid_base(w) -> bool:
 		if not zone is Dictionary or zone.get("id")!=config.sites[i].id: return false
 		if not _number(zone.get("target"),0,float(config.world.capacity),true): return false
 		if not _number(zone.get("water"),0,float(zone.target)): return false
-	return total(w)<=int(config.world.capacity)
+	return total(w)<=int(config.world.capacity) and (not w.has("ecology") or ecology.valid(w.ecology,int(w.seconds)))
 
 func restore(data) -> bool:
 	if not data is Dictionary or not data.get("worlds") is Array or not data.get("active_id") is String: return false
+	if not _number(data.get("version",1),1,2,true): return false
+	var legacy=data.get("version",1)==1
 	if data.worlds.size()<1 or data.worlds.size()>3: return false
 	var ids=[]
 	for w in data.worlds:
 		if not _valid_base(w): return false
+		if not legacy and (not w.has("ecology") or not w.get("eco_allowance") is Dictionary): return false
+		if not legacy:
+			if w.eco_allowance.size()!=2: return false
+			for key in ["oxygen_station","oxygen_cartridge"]:
+				if not _number(w.eco_allowance.get(key),0,2 if key=="oxygen_station" else 4,true): return false
 		if w.get("id") not in ["home","trial_a","trial_b"] or w.id in ids: return false
 		ids.append(w.id)
 		if not w.get("name") is String or w.name.length()>32 or not w.get("paused") is bool: return false
@@ -141,6 +163,7 @@ func restore(data) -> bool:
 		if not w.get("base") is Dictionary or not w.get("base_key") is String: return false
 		if w.mode=="experiment":
 			if not _valid_base(w.base) or w.base_key!=_base_key(w.base): return false
+			if not legacy and not w.base.has("ecology"): return false
 		elif not w.base.is_empty() or not w.base_key.is_empty(): return false
 		if not _number(w.get("event_serial"),0,10000000,true): return false
 		if not w.get("events") is Array or w.events.size()>int(config.world.max_events): return false
@@ -149,7 +172,12 @@ func restore(data) -> bool:
 			if not event is Dictionary or not _number(event.get("id"),last+1,int(w.event_serial),true): return false
 			last=int(event.id)
 			if not _number(event.get("at"),0,int(w.seconds),true) or not _number(event.get("shipment"),0,10000000,true): return false
-			if event.get("kind") not in ["shipment","observation","fork"] or not event.get("message") is String or event.message.length()>160: return false
+			if event.get("kind") not in ["shipment","observation","fork","ecology"] or not event.get("message") is String or event.message.length()>160: return false
 	if "home" not in ids or data.active_id not in ids: return false
 	worlds=data.worlds.duplicate(true); active_id=data.active_id
+	if legacy:
+		for w in worlds:
+			w.ecology=ecology.fresh(int(w.seconds)); w.eco_allowance={"oxygen_station":2,"oxygen_cartridge":4}
+			if w.mode=="experiment":
+				w.base.ecology=ecology.fresh(int(w.base.seconds)); w.base_key=_base_key(w.base)
 	return true
