@@ -10,6 +10,7 @@ const BuildingDrag=preload("res://scripts/building_drag.gd")
 var building_drag=BuildingDrag.new()
 const CampusView = preload("res://scripts/campus_view.gd")
 const IslandPanel=preload("res://scripts/island_panel.gd")
+const PlanetPanel=preload("res://scripts/planet_panel.gd")
 const OrderBubbles=preload("res://scripts/order_bubbles.gd")
 var order_bubbles
 const CampusPanel = preload("res://scripts/campus_panel.gd")
@@ -129,7 +130,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.10 浮岛焕新  ·  每 20 秒自动保存  ·  几何评分为游戏规则 · 科研结果仅限所示模型", 11, UI.MUTED)
+	save_label = UI.label("v0.11 星球试验台  ·  广场邮箱开启星际合作  ·  每20秒自动保存  ·  物理与生态规则按章节逐步开放", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -403,6 +404,9 @@ func _process(delta: float) -> void:
 	world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED if covered else SubViewport.UPDATE_ALWAYS
 	world.process_mode=Node.PROCESS_MODE_DISABLED if covered else Node.PROCESS_MODE_INHERIT
 	state.tick(delta)
+	if not state.planet.notice.is_empty():
+		_toast(state.planet.notice); state.planet.notice=""
+		if not snapshot_mode and not visual_test: state.save_game()
 	if not state.campus_notice.is_empty():
 		_toast(state.campus_notice)
 		state.campus_notice=""
@@ -643,6 +647,16 @@ func _show_island_panel(page: String, visitor: int=-1) -> void:
 	panel.acted.connect(_action)
 	panel.dismissed.connect(func(): if modal==panel: modal=null)
 	panel.arrange.connect(func(kind): _show_campus("build"); modal.prop_choice=kind; modal._show("build"))
+	panel.planet_requested.connect(_show_planet)
+
+func _show_planet() -> void:
+	_close_modal()
+	var panel=PlanetPanel.new(); add_child(panel); modal=panel
+	panel.setup(state)
+	panel.acted.connect(_action)
+	panel.dismissed.connect(func():
+		if modal==panel: modal=null
+		if not snapshot_mode and not visual_test: state.save_game())
 
 func _deliver_market(index: int) -> void:
 	_action(state.deliver(index))

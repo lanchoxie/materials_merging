@@ -3,6 +3,8 @@ extends RefCounted
 const IslandStorage=preload("res://scripts/island_storage.gd")
 const IslandLogistics=preload("res://scripts/island_logistics.gd")
 const IslandMarket=preload("res://scripts/island_market.gd")
+const PlanetProgram=preload("res://scripts/planet_program.gd")
+var planet=PlanetProgram.new()
 var storage=IslandStorage.new()
 var logistics=IslandLogistics.new()
 var market=IslandMarket.new()
@@ -540,6 +542,7 @@ func tick(delta: float):
 		for step in range(int(delta)): tick(1.0)
 		if delta-floor(delta)>0.0: tick(delta-floor(delta))
 		return
+	planet.tick(delta)
 	_campus_clock += delta
 	while _campus_clock >= 1.0:
 		var payroll_result: Dictionary=payroll.tick(1.0,campus.people,campus.config,coins)
@@ -1008,7 +1011,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 10, "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 11, "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1069,8 +1072,9 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 10, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 11, true):
 		return false
+	if int(data.version)>=11 and not PlanetProgram.new().restore(data.get("planet"),self): return false
 	if int(data.version) >= 3:
 		# v0.3 saves may predate newly discoverable elements. Keep every
 		# existing quantity and initialize only symbols introduced in v0.4.
@@ -1221,6 +1225,8 @@ func load_game(path: String = "") -> bool:
 			break
 	if data == null:
 		return false
+	planet=PlanetProgram.new()
+	if int(data.version)>=11: planet.restore(data.planet,self)
 	coins = float(data.coins)
 	_reset_element_inventory()
 	if int(data.version) >= 3:

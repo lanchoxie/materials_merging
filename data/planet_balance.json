@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "note": "Gameplay units and timings; no physical planetary cooling or purity prediction.",
+  "workshop": {"samples_required": 2, "starter_feed": 2, "feed_cost": 18, "packing_cost": 12, "packing_seconds": 25, "inventory_limit": 99, "product_limit": 32},
+  "world": {"seed": 9192026, "capacity": 3, "delivery_seconds": 8, "max_events": 32, "trial_allowance": 3, "max_seconds": 10000000},
+  "sites": [
+    {"id": "deep", "name": "深槽蓄水", "description": "水集中在深槽，留下较多干燥岸地。", "capacity": 3},
+    {"id": "shelf", "name": "浅台漫流", "description": "同样的水箱铺开更宽的浅水面。", "capacity": 3}
+  ],
+  "recipe": {"id": "standard_water_crate", "version": 1, "name": "标准水箱", "input_name": "标准供料包（含回收容器）", "output_name": "标准水箱", "equipment": "合作方独立装罐台", "scope": "身份验证只证明结构参考相符；供料规格由合作方提供，几何评分不等于纯度。"}
+}
