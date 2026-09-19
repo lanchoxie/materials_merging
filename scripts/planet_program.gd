@@ -160,6 +160,15 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			if not joined: return "先领取试验湾合作"
 			return worlds.fork(bool(payload.get("dry",false)),str(payload.get("era","")))
 		"reset_trial": return worlds.reset_trial(bool(payload.get("fresh",false)),str(payload.get("era","")))
+		"activate_habitat":
+			if not joined: return "先领取合作补给"
+			return worlds.activate_habitat()
+		"habitat":
+			if not joined: return "先领取合作补给"
+			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.habitat)
+			var result=worlds.habitat.control(w.habitat,str(payload.get("id","")))
+			if before!=worlds.ecology.canonical(w.habitat): worlds._event(w,"habitat",result)
+			return result
 		"activate_village":
 			if not joined: return "先领取合作补给"
 			return worlds.activate_village()
@@ -204,10 +213,10 @@ func tick(dt: float,effort: float=0.0) -> void:
 	if observing: worlds.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":5,"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
+	return {"version":6,"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5]: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6]: return false
 	data=data.duplicate(true)
 	if data.version<5: data.production_mode="partner"
 	if data.get("production_mode") not in ["partner","island"]: return false
@@ -221,6 +230,9 @@ func restore(data,state) -> bool:
 	if data.version<5:
 		if not data.get("supplies") is Dictionary or data.supplies.size()!=9: return false
 		for id in ["drinking_kit","frame_kit","tool_chest_kit"]: data.supplies[id]=0
+	if data.version<6:
+		if not data.get("supplies") is Dictionary or data.supplies.size()!=12: return false
+		data.supplies.habitat_bridge_kit=0; data.supplies.shade_kit=0
 	if not data.get("reports") is Dictionary or data.reports.size()>2: return false
 	for mode in data.reports:
 		if not lab.valid_report(data.reports[mode],str(mode)) or data.get("joined")!=true: return false
@@ -272,6 +284,7 @@ func restore(data,state) -> bool:
 	if not data.joined and (int(data.feed)>0 or not data.products.is_empty() or not data.job.is_empty() or restored.worlds.size()>1): return false
 	if not data.joined:
 		if restored.get_world("home").village.enabled: return false
+		if restored.get_world("home").habitat.enabled: return false
 		for n in data.supplies.values():
 			if int(n)>0: return false
 	production_mode=data.production_mode

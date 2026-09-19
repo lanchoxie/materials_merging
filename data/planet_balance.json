@@ -101,6 +101,14 @@
       "name": "农工工具供料包",
       "price": 24,
       "description": "锄具、扳手与磨具耐用件"
+    },
+    "habitat_bridge_kit": {
+      "name": "标准连接桥构件",
+      "price": 52
+    },
+    "shade_kit": {
+      "name": "遮荫织物与支架",
+      "price": 34
     }
   },
   "recipes": {
@@ -251,6 +259,28 @@
       "seconds": 22,
       "description": "有限耐用量的锄具、扳手和磨具；使用会消耗耐用量。",
       "domain": "village"
+    },
+    "habitat_bridge": {
+      "id": "habitat_bridge",
+      "version": 1,
+      "name": "栖地连接桥",
+      "reference": "water",
+      "input": "habitat_bridge_kit",
+      "fee": 18,
+      "seconds": 32,
+      "description": "投到未连接的峡口，接通两片栖地。植食动物与捕食者均能通过，之后可以关闭通道。",
+      "domain": "habitat"
+    },
+    "shade_canopy": {
+      "id": "shade_canopy",
+      "version": 1,
+      "name": "遮荫保水棚",
+      "reference": "water",
+      "input": "shade_kit",
+      "fee": 12,
+      "seconds": 26,
+      "description": "降低该栖地水点的蒸发，也减少植被生长光照。不是净水设备，不产生水。",
+      "domain": "habitat"
     }
   },
   "trial_products": {
@@ -267,6 +297,8 @@
     "harvest_box": 6,
     "drinking_barrel": 4,
     "frame_bundle": 3,
-    "tool_chest": 3
+    "tool_chest": 3,
+    "habitat_bridge": 2,
+    "shade_canopy": 2
   }
 }

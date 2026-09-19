@@ -95,5 +95,5 @@ func _initialize() -> void:
 	for version in ["v0121","v013"]:
 		var legacy=JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/planet_"+version+".json")); var upgraded=Program.new()
 		check(upgraded.restore(legacy,s),"actual "+version+" save migrates")
-		check(not upgraded.worlds.get_world().village.enabled and upgraded.serialize().version==5,"legacy migration adds a dormant village without auto-spending")
+		check(not upgraded.worlds.get_world().village.enabled and upgraded.serialize().version==6,"legacy migration adds a dormant village without auto-spending")
 	s.close_science(); print("VILLAGE: ",checks," checks, ",failures.size()," failures"); quit(0 if failures.is_empty() else 1)

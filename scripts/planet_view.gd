@@ -14,6 +14,7 @@ var highlight_valid=true
 var snapshot: Dictionary={}
 var watershed_view
 var village_view
+var habitat_view
 var material_view
 var ecology_view
 var display_mode="water"
@@ -41,6 +42,7 @@ func _ready() -> void:
 	material_view=preload("res://scripts/material_lab_view.gd").new(); add_child(material_view); material_view.setup(self); material_view.scale=Vector3.ONE*1.22; material_view.hide()
 	watershed_view=preload("res://scripts/planet_watershed_view.gd").new(); add_child(watershed_view); watershed_view.setup(self); watershed_view.hide()
 	village_view=preload("res://scripts/planet_village_view.gd").new(); add_child(village_view); village_view.setup(self); village_view.hide()
+	habitat_view=preload("res://scripts/planet_habitat_view.gd").new(); add_child(habitat_view); habitat_view.setup(self); habitat_view.hide()
 	var moon=Node3D.new(); moon.position=Vector3(3.4,1.6,-1.7); add_child(moon)
 	_sphere(moon,0.23,Vector3.ZERO,"edc58c")
 
@@ -134,14 +136,17 @@ func sync(world: Dictionary) -> void:
 	ecology_view.sync(snapshot)
 	watershed_view.sync(world)
 	village_view.sync(world)
+	habitat_view.sync(world)
 
 func set_mode(mode: String) -> void:
 	display_mode=mode
+	habitat_view.visible=mode=="habitat"
 	globe.visible=mode in ["water","ecology"]; material_view.visible=mode=="materials"; watershed_view.visible=mode=="watershed"; village_view.visible=mode=="village"
 	for info in sites.values(): info.root.visible=mode=="water"
 	ecology_view.visible=mode=="ecology"
 
 func active_sites() -> Dictionary:
+	if display_mode=="habitat": return habitat_view.sites
 	if display_mode=="materials": return {}
 	if display_mode=="watershed": return watershed_view.sites
 	if display_mode=="village": return {"village_depot":village_view.sites.depot}
@@ -172,15 +177,22 @@ func zoom(amount: float) -> void:
 	distance=clampf(distance+amount,7.9,12.4)
 
 func reset_camera() -> void:
-	target_yaw=0; target_pitch=0; distance=9.6
+	target_yaw=0; target_pitch=0; distance=7.9 if display_mode=="habitat" else 9.6
 
 func _process(dt: float) -> void:
 	time+=dt
 	globe.rotation.y=lerp_angle(globe.rotation.y,target_yaw,minf(1,dt*12))
 	globe.rotation.x=lerpf(globe.rotation.x,target_pitch,minf(1,dt*12))
 	camera.position.z=lerpf(camera.position.z,distance,minf(1,dt*10))
-	camera.position.y=lerpf(camera.position.y,6.0 if display_mode in ["materials","watershed","village"] else 2.0,minf(1,dt*10)); camera.look_at(Vector3.ZERO)
+	camera.position.y=lerpf(camera.position.y,6.0 if display_mode in ["materials","watershed","village","habitat"] else 2.0,minf(1,dt*10)); camera.look_at(Vector3.ZERO)
 	material_view.rotation=globe.rotation; watershed_view.rotation=globe.rotation; village_view.rotation=globe.rotation
+	habitat_view.rotation=globe.rotation
+	if display_mode=="habitat":
+		for id in habitat_view.sites:
+			var marker=habitat_view.sites[id].marker
+			if id.begins_with("habitat_"): marker.visible=id==highlighted
+			marker.material_override=_mat(("a5efd1" if highlight_valid else "e7958c") if id==highlighted else "ffd18c")
+		return
 	if display_mode=="watershed":
 		for id in watershed_view.sites:
 			var marker=watershed_view.sites[id].marker; marker.visible=id==highlighted

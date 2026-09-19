@@ -44,20 +44,28 @@ var watershed_widgets: Dictionary={}
 var village_widgets: Dictionary={}
 var watershed_details=false
 var watershed_menu: OptionButton
+var habitat_widgets: Dictionary={}
+var habitat_details=false
+var habitat_site="fern"
 
 func setup(model) -> void:
 	state=model; state.planet.observing=true; state.planet.observer_id=get_instance_id()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var heading=UI.label("材料试验星球",30,UI.MINT); heading.position=Vector2(32,21); add_child(heading)
-	var subtitle=UI.label("EXPERIMENT 05    /    材料改变居民的日常",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
+	var subtitle=UI.label("EXPERIMENT 06    /    材料改变栖地与生命",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1285,27); close.size=Vector2(122,46); add_child(close)
-	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(600,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
-	var scenes=HBoxContainer.new(); scenes.position=Vector2(600,107); add_child(scenes)
+	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(518,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
+	var scenes=HBoxContainer.new(); scenes.position=Vector2(550,107); scenes.add_theme_constant_override("separation",4); add_child(scenes)
 	scenes.add_child(UI.button("水与地形",func(): _scene("water","standard_water_crate")))
 	scenes.add_child(UI.button("生态试验",func(): _scene("ecology","oxygen_station")))
 	scenes.add_child(UI.button("河流湿地",func(): _scene("watershed")))
 	scenes.add_child(UI.button("河湾聚落",func(): _scene("village")))
+	scenes.add_child(UI.button("白垩纪",func(): _scene("habitat","standard_water_crate")))
+	for button in scenes.get_children():
+		button.add_theme_font_size_override("font_size",14)
+		for key in ["normal","hover","pressed","focus"]:
+			var style=UI.style(UI.INNER if key=="normal" else Color("2b4850"),12); style.content_margin_left=10; style.content_margin_right=10; button.add_theme_stylebox_override(key,style)
 	viewport_box=SubViewportContainer.new(); viewport_box.position=Vector2(24,165); viewport_box.size=Vector2(984,550); viewport_box.stretch=true; viewport_box.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(viewport_box)
 	viewport=SubViewport.new(); viewport.size=Vector2i(984,550); viewport.own_world_3d=true; viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; viewport_box.add_child(viewport)
 	if not OS.has_feature("web") and not OS.has_feature("android"): viewport.msaa_3d=Viewport.MSAA_2X
@@ -66,6 +74,9 @@ func setup(model) -> void:
 		var badge=PanelContainer.new(); badge.add_theme_stylebox_override("panel",UI.style(Color("162f3a"),10)); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
 		var label=UI.label({"deep":"深槽蓄水","shelf":"浅台漫流","microbe":"厌氧微生物池","fish":"缺氧鱼湾","headwater":"上游径流口","marsh":"连通湿地","estuary":"下游河口"}[id],14,UI.TEXT); label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; badge.add_child(label); site_labels[id]=badge
 	var vb=PanelContainer.new(); vb.add_theme_stylebox_override("panel",UI.style(Color("162f3a"),10)); vb.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(vb); var vl=UI.label("河湾聚落",14,UI.TEXT); vl.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; vb.add_child(vl); site_labels["village_depot"]=vb
+	for id in state.planet.worlds.habitat.rules.regions:
+		var badge=PanelContainer.new(); var style=UI.style(Color("162f3a"),8); style.content_margin_top=4; style.content_margin_bottom=4; style.content_margin_left=8; style.content_margin_right=8; badge.add_theme_stylebox_override("panel",style); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
+		badge.add_child(UI.label(str(state.planet.worlds.habitat.rules.regions[id].name),13,UI.TEXT)); site_labels["habitat_"+str(id)]=badge
 	var camera_row=HBoxContainer.new(); camera_row.position=Vector2(40,660); camera_row.size=Vector2(550,44); camera_row.add_theme_constant_override("separation",8); add_child(camera_row)
 	camera_row.add_child(UI.button("回到试验湾",func(): _cancel_gesture(); view.reset_camera()))
 	camera_row.add_child(UI.button("＋",func(): view.zoom(-0.8)))
@@ -84,8 +95,8 @@ func setup(model) -> void:
 		choices.add_child(UI.button(item[1],_choose_recipe.bind(item[0])))
 	choices.add_child(UI.button("导热芯",_open_materials))
 	watershed_menu=OptionButton.new(); watershed_menu.custom_minimum_size=Vector2(185,44); choices.add_child(watershed_menu)
-	watershed_menu.add_item("水域 / 聚落成品…")
-	for id in state.planet.worlds.watershed.rules.trial_products.keys()+state.planet.worlds.village.rules.trial_products.keys():
+	watershed_menu.add_item("更多工业成品…")
+	for id in state.planet.worlds.watershed.rules.trial_products.keys()+state.planet.worlds.village.rules.trial_products.keys()+state.planet.worlds.habitat.rules.trial_products.keys():
 		watershed_menu.add_item(str(state.planet.recipe(id).name)); watershed_menu.set_item_metadata(watershed_menu.item_count-1,id)
 	watershed_menu.item_selected.connect(func(index):
 		if index>0: _choose_recipe(str(watershed_menu.get_item_metadata(index))))
@@ -109,15 +120,16 @@ func _fingerprint() -> String:
 
 func _redraw() -> void:
 	if state==null: return
-	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null; eco_widgets={}; watershed_widgets={}; village_widgets={}
+	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null; eco_widgets={}; watershed_widgets={}; village_widgets={}; habitat_widgets={}
 	var p=state.planet
 	for w in p.worlds.worlds:
 		var button=UI.button(w.name,func(): _do("select",{"world_id":str(w.id)}),w.id==p.worlds.active_id)
-		button.custom_minimum_size.x=175; world_tabs.add_child(button)
+		button.custom_minimum_size.x=166; world_tabs.add_child(button)
 	if section=="materials": preload("res://scripts/material_lab_panel.gd").build(self)
 	elif section=="workshop": _workshop()
 	elif view.display_mode=="watershed": preload("res://scripts/planet_watershed_panel.gd").build(self)
 	elif view.display_mode=="village": preload("res://scripts/planet_village_panel.gd").build(self)
+	elif view.display_mode=="habitat": preload("res://scripts/planet_habitat_panel.gd").build(self)
 	elif view.display_mode=="ecology": EcologyPanel.build(self)
 	else: _observations()
 	fingerprint=_fingerprint()
@@ -141,7 +153,8 @@ func _choose_recipe(id: String) -> void:
 	var domain=str(state.planet.recipe(id).get("domain",""))
 	var use_watershed=domain=="watershed" or (domain.is_empty() and (view.display_mode=="watershed" or (view.display_mode=="materials" and material_return_mode=="watershed")))
 	var use_village=domain=="village" or (id=="standard_water_crate" and view.display_mode=="village")
-	view.set_mode("village" if use_village else ("watershed" if use_watershed else ("water" if id=="standard_water_crate" else "ecology")))
+	var use_habitat=domain=="habitat" or (id=="standard_water_crate" and view.display_mode=="habitat")
+	view.set_mode("habitat" if use_habitat else ("village" if use_village else ("watershed" if use_watershed else ("water" if id=="standard_water_crate" else "ecology"))))
 	_redraw(); _live()
 
 func display_snapshot() -> Dictionary:
@@ -154,6 +167,8 @@ func display_snapshot() -> Dictionary:
 		copy.watershed=entry.state.duplicate(true); copy.watershed.history=history
 	elif view.display_mode=="village":
 		copy.village=entry.state.duplicate(true); copy.village.history=history
+	elif view.display_mode=="habitat":
+		copy.habitat=entry.state.duplicate(true); copy.habitat.history=history
 	else:
 		copy.ecology=world.ecology.duplicate(); copy.ecology.regions=entry.regions.duplicate(true)
 	return copy
@@ -162,6 +177,7 @@ func _history() -> Array:
 	var w=state.planet.worlds.get_world()
 	if view.display_mode=="watershed": return w.watershed.history
 	if view.display_mode=="village": return w.village.history
+	if view.display_mode=="habitat": return w.habitat.history
 	return w.ecology.history
 
 func _replay() -> void:
@@ -284,6 +300,7 @@ func _live() -> void:
 	EcologyPanel.live(self)
 	preload("res://scripts/planet_watershed_panel.gd").live(self)
 	preload("res://scripts/planet_village_panel.gd").live(self)
+	preload("res://scripts/planet_habitat_panel.gd").live(self)
 
 func _begin_drag(at: Vector2) -> void:
 	var p=state.planet; var w=p.worlds.get_world()
@@ -367,7 +384,7 @@ func _process(dt: float) -> void:
 	for id in site_labels:
 		var badge: PanelContainer=site_labels[id]
 		badge.visible=view.site_visible(id)
-		badge.position=viewport_box.position+view.project_site(id)*viewport_box.size/Vector2(viewport.size)+Vector2(-badge.size.x*0.5,85)
+		badge.position=viewport_box.position+view.project_site(id)*viewport_box.size/Vector2(viewport.size)+Vector2(-badge.size.x*0.5,35 if id.begins_with("habitat_") else 85)
 	if dragging or armed:
 		ghost.position=pointer+Vector2(14,-40)
 		view.highlighted=_site_at(pointer)

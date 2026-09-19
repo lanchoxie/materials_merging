@@ -40,7 +40,7 @@
 
 ## 仍需补证据的项目
 
-具体聚合物的热、电和机械性能；材料牌号的强度/韧性与加工条件；膜的目标离子截留与耗能；活性炭对指定污染物的容量；具体光伏器件的效率—耐久条件；生物耐受范围；代表恐龙群落的地区/时段；中世纪建筑与工艺的地区参照。
+具体聚合物的热、电和机械性能；材料牌号的强度/韧性与加工条件；膜的目标离子截留与耗能；活性炭对指定污染物的容量；具体光伏器件的效率—耐久条件；生物耐受范围。恐龙和中世纪地区灵感已在0.14/0.15补入，真实生态率和历史产率仍未知。
 
 以上缺口不靠自动线性插值填平。先将用途做成可配置的教学场景，在面向玩家的档案里标明证据状态，再分批引入真实参考。
 
@@ -66,3 +66,11 @@
 - English Heritage：[Wharram Percy Description](https://www.english-heritage.org.uk/visit/places/wharram-percy-deserted-medieval-village/history/description)与[History](https://www.english-heritage.org.uk/visit/places/wharram-percy-deserted-medieval-village/history/)。聚落水磨遗迹和土地/生产生活的定性参考，不把游戏磨轮朝向和水闸当作该遗址结构复原。
 
 运行库planet_village.json以原创规则表达需求、路线、有限泉水、工艺与施工；六名代表居民、物料份额、工时和河道通行指标均属游戏规则。资源守恒校验不等于历史、农业或饮用安全预测。
+
+## 0.15白垩纪地区参考 · 2026-09-19
+
+- [Smithsonian Dinosaurs of Hell Creek](https://naturalhistory.si.edu/education/teaching-resources/paleontology/make-dinosaur-ecosystem-mural/dinosaurs-hell-creek)：三角龙、霸王龙及古生物外观推断存在不确定性。
+- [Smithsonian Plants of Hell Creek](https://naturalhistory.si.edu/education/teaching-resources/paleontology/make-dinosaur-ecosystem-mural/plants)：蕨类、棕榈与水边环境的视觉参考。
+- [USDA Forest Service, Last of the Dinosaurs: Hell Creek Rocks](https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo245543/pdf/GOVPUB-A13-PURL-gpo245543.pdf)，印刷页5（PDF第7页）：埃德蒙顿龙、三角龙与霸王龙的地区背景。未沿用资料中的体重、咬合力、年代和争议行为描述作为游戏数值。
+
+三套恐龙和植被由本项目基础几何原创生成，没有复用网页插画、纹理、3D资产或全文。运行库planet_habitat.json使用原创规则与来源链接；资源当量、遮荫效率、迁徙评分、有限遗骸、个体损失和旱雨时间全部属于教学规则，不是对真实古生态的定量重建。

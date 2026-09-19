@@ -11,7 +11,8 @@ func _initialize() -> void:
 func run() -> void:
 	var game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var s=game.state
-	check(str(ProjectSettings.get_setting("application/config/version"))=="0.14.0","packaged application version")
+	check(str(ProjectSettings.get_setting("application/config/version"))=="0.15.0","packaged application version")
+	check(game.save_label.text.begins_with("v0.15 "),"packaged compiled UI carries the current release label")
 	game._show_planet(); await process_frame
 	check(game.modal.view.sites.size()==2,"packaged planet scene builds both sites")
 	var batch=s.product_snapshot(s.reactors[0]); s.storage.add_product(batch,2)
@@ -76,6 +77,20 @@ func run() -> void:
 	s.campus_assign_post(s.campus.people[0].id,"workshop")
 	check(s.campus.people[0].post=="workshop" and s.layout.config.buildings.has("workshop"),"packaged campus supports workshop building and resident posts")
 	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged new world histories and production mode restore")
+	s.planet.command(s,"cancel_pack"); s.planet.command(s,"production_mode",{"mode":"partner"}); s.planet.command(s,"activate_habitat")
+	for recipe in ["habitat_bridge","shade_canopy"]:
+		info=s.planet.recipe(recipe)
+		s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":recipe}); s.planet.tick(info.seconds)
+		s.planet.command(s,"deploy",{"world_id":"home","site_id":"crossing_fern_ridge" if recipe=="habitat_bridge" else "habitat_fern","recipe":recipe,"token":s.planet.shipment_serial})
+	var habitat=s.planet.worlds.get_world().habitat
+	check(habitat.edges.fern_ridge.built and habitat.regions.fern.shade,"packaged habitat products use paid workshop and real destinations")
+	s.planet.command(s,"step_world"); s.planet.command(s,"step_world")
+	check(habitat.migrations>0 and s.planet.worlds.habitat.valid(habitat,s.planet.worlds.get_world().seconds),"packaged dinosaurs migrate with valid finite resource accounts")
+	game.modal._scene("habitat","standard_water_crate"); game.modal._live(); await process_frame; await process_frame
+	check(game.modal.view.habitat_view.animals.size()==10 and game.modal.view.habitat_view.regions.fern.canopy.visible,"packaged habitat models and installed canopy render")
+	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
+	check(game.modal.view.habitat_view.snapshot.habitat.elapsed==0 and habitat.elapsed==60,"packaged habitat historical preview is read-only")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged habitat histories and earlier chapters restore together")
 	game._close_modal(); s.close_science()
 	print("PACKAGE PLANET SMOKE: ",checks," checks, ",failures.size()," failures")
 	quit(0 if failures.is_empty() else 1)
