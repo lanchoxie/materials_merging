@@ -14,11 +14,15 @@
 
 ## Android 试玩
 
-安装包：[AtomAtelier-0.16.0-android.apk](builds/AtomAtelier-0.16.0-android.apk)，约69 MB。支持 Android 7.0 及以上（API 24）、ARM64 / ARMv7 手机，横屏触屏操作；原子工作台提供旋转、俯仰和缩放按钮。手机存档保存在应用私有目录，切到后台时自动保存。
+安装包：[AtomAtelier-0.17.0-android.apk](builds/AtomAtelier-0.17.0-android.apk)，约69 MB。支持 Android 7.0 及以上（API 24）、ARM64 / ARMv7 手机，横屏触屏操作；原子工作台提供旋转、俯仰和缩放按钮。手机存档保存在应用私有目录，切到后台时自动保存。
 
 这是使用测试版签名的 Demo。已通过 APK 签名、包内资源检查及桌面触屏仿真；**尚未进行 Android 真机测试**。
 
 在项目目录用 PowerShell 7 运行 `./build_android.ps1` 可本地重新构建。下载的工具位于 `tools/`，构建缓存位于 `.runtime/`，输出位于 `builds/`；开发工具与缓存均保留在本项目内。
+
+## 0.17 现代城市
+
+新增昼夜光伏、空电池与有损储能、真实到岗计算、热积累停机、限时照明/冷却调度、有限废料回收与居民建公园。轻屋顶和地面承重不同，硅/钙钛矿采用明确标注的教学器件规格。详见 [0.17试玩说明](docs/V0.17.md)。
 
 ## 0.16 工业港
 

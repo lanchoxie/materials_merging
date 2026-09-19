@@ -145,6 +145,42 @@
     "aluminum_wire_mass_kit": {
       "name": "铝线·等重预切料与绝缘件",
       "price": 30
+    },
+    "modern_silicon_kit": {
+      "name": "硅组件·教学规格标准供料",
+      "price": 90
+    },
+    "modern_perovskite_kit": {
+      "name": "钙钛矿薄膜·教学规格标准供料",
+      "price": 120
+    },
+    "modern_battery_kit": {
+      "name": "空储能模块标准供料",
+      "price": 100
+    },
+    "modern_server_kit": {
+      "name": "计算机组标准供料",
+      "price": 140
+    },
+    "modern_fan_kit": {
+      "name": "闭式风冷回路标准供料",
+      "price": 65
+    },
+    "modern_recycler_kit": {
+      "name": "分选回收设备标准供料",
+      "price": 80
+    },
+    "modern_scrap_kit": {
+      "name": "标准废构件箱标准供料",
+      "price": 24
+    },
+    "modern_copper_sink_kit": {
+      "name": "等重铜散热芯标准供料",
+      "price": 44
+    },
+    "modern_aluminum_sink_kit": {
+      "name": "等重铝散热芯标准供料",
+      "price": 30
     }
   },
   "recipes": {
@@ -416,6 +452,105 @@
       "seconds": 24,
       "description": "按已记录的电学对照组装。拖到住宅、诊所、工厂或通信站；旧线封存，不退回可出售库存。",
       "domain": "industry"
+    },
+    "modern_silicon": {
+      "id": "modern_silicon",
+      "name": "硅组件·教学规格",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_silicon_kit",
+      "fee": 20,
+      "seconds": 32,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_perovskite": {
+      "id": "modern_perovskite",
+      "name": "钙钛矿薄膜·教学规格",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_perovskite_kit",
+      "fee": 24,
+      "seconds": 36,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_battery": {
+      "id": "modern_battery",
+      "name": "空储能模块",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_battery_kit",
+      "fee": 24,
+      "seconds": 36,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_server": {
+      "id": "modern_server",
+      "name": "计算机组",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_server_kit",
+      "fee": 28,
+      "seconds": 40,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_fan": {
+      "id": "modern_fan",
+      "name": "闭式风冷回路",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_fan_kit",
+      "fee": 16,
+      "seconds": 28,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_recycler": {
+      "id": "modern_recycler",
+      "name": "分选回收设备",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_recycler_kit",
+      "fee": 20,
+      "seconds": 32,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_scrap": {
+      "id": "modern_scrap",
+      "name": "标准废构件箱",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_scrap_kit",
+      "fee": 8,
+      "seconds": 18,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_copper_sink": {
+      "id": "modern_copper_sink",
+      "name": "等重铜散热芯",
+      "version": 1,
+      "reference": "fixture:same_mass",
+      "input": "modern_copper_sink_kit",
+      "fee": 12,
+      "seconds": 24,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_aluminum_sink": {
+      "id": "modern_aluminum_sink",
+      "name": "等重铝散热芯",
+      "version": 1,
+      "reference": "fixture:same_mass",
+      "input": "modern_aluminum_sink_kit",
+      "fee": 12,
+      "seconds": 24,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
     }
   },
   "trial_products": {
@@ -443,6 +578,15 @@
     "copper_wire": 4,
     "aluminum_wire": 4,
     "copper_wire_mass": 4,
-    "aluminum_wire_mass": 4
+    "aluminum_wire_mass": 4,
+    "modern_silicon": 2,
+    "modern_perovskite": 2,
+    "modern_battery": 2,
+    "modern_server": 2,
+    "modern_fan": 2,
+    "modern_recycler": 2,
+    "modern_scrap": 4,
+    "modern_copper_sink": 2,
+    "modern_aluminum_sink": 2
   }
 }

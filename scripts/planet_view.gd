@@ -1,6 +1,9 @@
 extends Node3D
 const EcologyView=preload("res://scripts/planet_ecology_view.gd")
 ## Procedural display only: it consumes a world snapshot and never changes inventory.
+var city_sun: DirectionalLight3D
+var city_fill: DirectionalLight3D
+var scene_environment: Environment
 var camera: Camera3D
 var globe: Node3D
 var sites: Dictionary={}
@@ -14,6 +17,8 @@ var highlight_valid=true
 var snapshot: Dictionary={}
 var watershed_view
 var village_view
+var modern_view
+var background_moon: Node3D
 var industry_view
 var habitat_view
 var material_view
@@ -27,9 +32,9 @@ func _ready() -> void:
 	env.environment.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
 	env.environment.ambient_light_color=Color("8fb5cb"); env.environment.ambient_light_energy=0.5
 	env.environment.tonemap_mode=Environment.TONE_MAPPER_FILMIC
-	add_child(env)
-	var sun=DirectionalLight3D.new(); sun.rotation_degrees=Vector3(-35,-35,0); sun.light_color=Color("ffe3ba"); sun.light_energy=1.1; add_child(sun)
-	var fill=DirectionalLight3D.new(); fill.rotation_degrees=Vector3(20,145,0); fill.light_color=Color("76cddb"); fill.light_energy=0.6; add_child(fill)
+	add_child(env); scene_environment=env.environment
+	var sun=DirectionalLight3D.new(); sun.rotation_degrees=Vector3(-35,-35,0); sun.light_color=Color("ffe3ba"); sun.light_energy=1.1; add_child(sun); city_sun=sun
+	var fill=DirectionalLight3D.new(); fill.rotation_degrees=Vector3(20,145,0); fill.light_color=Color("76cddb"); fill.light_energy=0.6; add_child(fill); city_fill=fill
 	camera=Camera3D.new(); camera.fov=43; camera.position=Vector3(0,2.0,distance); add_child(camera); camera.look_at(Vector3.ZERO); camera.current=true
 	globe=Node3D.new(); add_child(globe)
 	_make_surface()
@@ -45,7 +50,8 @@ func _ready() -> void:
 	village_view=preload("res://scripts/planet_village_view.gd").new(); add_child(village_view); village_view.setup(self); village_view.hide()
 	habitat_view=preload("res://scripts/planet_habitat_view.gd").new(); add_child(habitat_view); habitat_view.setup(self); habitat_view.hide()
 	industry_view=preload("res://scripts/planet_industry_view.gd").new(); add_child(industry_view); industry_view.setup(self); industry_view.hide()
-	var moon=Node3D.new(); moon.position=Vector3(3.4,1.6,-1.7); add_child(moon)
+	modern_view=preload("res://scripts/planet_modern_view.gd").new(); add_child(modern_view); modern_view.setup(self); modern_view.hide()
+	var moon=Node3D.new(); moon.position=Vector3(3.4,1.6,-1.7); add_child(moon); background_moon=moon
 	_sphere(moon,0.23,Vector3.ZERO,"edc58c")
 
 func _mat(hex: String,metal: float=0.0) -> StandardMaterial3D:
@@ -140,16 +146,20 @@ func sync(world: Dictionary) -> void:
 	village_view.sync(world)
 	habitat_view.sync(world)
 	industry_view.sync(world)
+	modern_view.sync(world)
 
 func set_mode(mode: String) -> void:
 	display_mode=mode
 	habitat_view.visible=mode=="habitat"
 	industry_view.visible=mode=="industry"
+	modern_view.visible=mode=="modern"
+	background_moon.visible=mode!="modern"
 	globe.visible=mode in ["water","ecology"]; material_view.visible=mode=="materials"; watershed_view.visible=mode=="watershed"; village_view.visible=mode=="village"
 	for info in sites.values(): info.root.visible=mode=="water"
 	ecology_view.visible=mode=="ecology"
 
 func active_sites() -> Dictionary:
+	if display_mode=="modern": return modern_view.sites
 	if display_mode=="industry": return industry_view.sites
 	if display_mode=="habitat": return habitat_view.sites
 	if display_mode=="materials": return {}
@@ -182,16 +192,26 @@ func zoom(amount: float) -> void:
 	distance=clampf(distance+amount,7.9,12.4)
 
 func reset_camera() -> void:
-	target_yaw=0; target_pitch=0; distance=7.9 if display_mode in ["habitat","industry"] else 9.6
+	target_yaw=0; target_pitch=0; distance=7.9 if display_mode in ["habitat","industry","modern"] else 9.6
 
 func _process(dt: float) -> void:
 	time+=dt
+	var modern_night=false
+	if display_mode=="modern" and not modern_view.snapshot.is_empty():
+		modern_night=posmod(int(modern_view.snapshot.modern.elapsed),int(modern_view.rules.day.period))>=modern_view.rules.day.daylight
+	city_sun.light_energy=0.18 if modern_night else 1.1; city_fill.light_energy=0.22 if modern_night else 0.6
+	scene_environment.ambient_light_energy=0.22 if modern_night else 0.5
 	globe.rotation.y=lerp_angle(globe.rotation.y,target_yaw,minf(1,dt*12))
 	globe.rotation.x=lerpf(globe.rotation.x,target_pitch,minf(1,dt*12))
 	camera.position.z=lerpf(camera.position.z,distance,minf(1,dt*10))
-	camera.position.y=lerpf(camera.position.y,6.0 if display_mode in ["materials","watershed","village","habitat","industry"] else 2.0,minf(1,dt*10)); camera.look_at(Vector3.ZERO)
+	camera.position.y=lerpf(camera.position.y,6.0 if display_mode in ["materials","watershed","village","habitat","industry","modern"] else 2.0,minf(1,dt*10)); camera.look_at(Vector3.ZERO)
 	material_view.rotation=globe.rotation; watershed_view.rotation=globe.rotation; village_view.rotation=globe.rotation
-	habitat_view.rotation=globe.rotation; industry_view.rotation=globe.rotation
+	habitat_view.rotation=globe.rotation; industry_view.rotation=globe.rotation; modern_view.rotation=globe.rotation
+	if display_mode=="modern":
+		for id in modern_view.sites:
+			var marker=modern_view.sites[id].marker; marker.visible=id==highlighted
+			marker.material_override=_mat("a5efd1" if highlight_valid else "e7958c")
+		return
 	if display_mode=="industry":
 		for id in industry_view.sites:
 			var marker=industry_view.sites[id].marker; marker.visible=id==highlighted

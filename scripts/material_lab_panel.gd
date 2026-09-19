@@ -3,7 +3,7 @@ const UI=preload("res://scripts/ui.gd")
 
 static func build(p) -> void:
 	var lab=p.state.planet.lab; var mode=p.material_mode
-	p._text("给供氧器选一颗芯",23,UI.MINT)
+	p._text("给城市选散热芯" if p.material_return_mode=="modern" else "给供氧器选一颗芯",23,UI.MINT)
 	p._text("空间有限，还是重量有限？\n换一个约束，材料的优势也会改变。",16,UI.TEXT)
 	var row=UI.row(p.body,8)
 	for entry in [["same_size","同尺寸"],["same_mass","同重量"]]:
@@ -21,9 +21,9 @@ static func build(p) -> void:
 	else:
 		var designs=UI.row(p.body,8)
 		for id in ["copper","aluminum"]:
-			var key=id+("_compact" if mode=="same_size" else "_light")
-			designs.add_child(UI.button("制作"+str(lab.data.designs[key].name),func(): p.section="workshop"; p._choose_recipe(key)))
-	p._text("厌氧池为窄槽支架：截面≤1 cm²。鱼湾为轻量支架：材料≤54 g。安装前看限制，并非越强越适用。",15,UI.TEXT)
+			var key="modern_"+id+"_sink" if mode=="same_mass" and p.material_return_mode=="modern" else id+("_compact" if mode=="same_size" else "_light")
+			designs.add_child(UI.button("制作"+str(p.state.planet.recipe(key).name),func(): p.section="workshop"; p._choose_recipe(key)))
+	p._text("现代城市采用等重芯。这里算的是295 K夹具参考，城市散热使用另行标注的教学映射，不是整机温度预测。" if p.material_return_mode=="modern" else "厌氧池为窄槽支架：截面≤1 cm²。鱼湾为轻量支架：材料≤54 g。安装前看限制，并非越强越适用。",15,UI.TEXT)
 	p._button("收起计算依据" if p.material_details else "查看计算依据与未知性质",func(): p.material_details=not p.material_details; p._redraw())
 	if p.material_details:
 		p._text("参考：NIST NCNR 295 K 金属物性。\n本例 G=kA/L，质量=ρAL；两端296/294 K、侧面绝热、常数导热率的一维稳态估算。流动光点表示热流，不是升温过程。",14)

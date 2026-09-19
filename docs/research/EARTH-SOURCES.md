@@ -83,3 +83,12 @@
 - [GCHQ1916通信资料](https://www.gchq.gov.uk/information/communications-security-in-1916-the-la-boisselle-find)、[IWM一战无线电](https://www.iwm.org.uk/collections/item/object/30005584)、[IWM二战食物与配给课程](https://www.iwm.org.uk/sites/default/files/files/2021-01/Health%20and%20Wellbeing%20-%20Food%20and%20Nutrition-%20Teacher%20Notes.pdf)：通信与民生配给的定性背景；事件强度、车辆统一油耗和居民反应是独立教学规则。
 
 运行数据electrical_lab.json采用少量有出处物理事实、自有字段和中文解释；planet_industry.json独立存游戏参数。未复制整张表、网页文案、图片或模型。未给出的不确定度/毒性等保留未知，没有拿线性插值填补无适用范围的数据。
+
+## 0.17光伏、储能与算力 · 2026-09-19
+
+- [DOE光伏电池基础](https://www.energy.gov/cmei/systems/solar-photovoltaic-cell-basics)：效率为电功率与入射光功率之比，光照与器件决定输出。没有采用网页最新纪录或寿命数字作为平衡参数。
+- [DOE钙钛矿太阳能电池](https://www.energy.gov/cmei/systems/perovskite-solar-cells)：薄膜组件的效率、寿命和制造均需考虑；20%/24%与两种加速衰减为本项目独立教学参数，非材料实验数据库数据。
+- [NLR SAM储能模型说明](https://samrepo.nlr.gov/help/battery_storage_btm.html)：往返效率按放出/充入能量定义。游戏模块独立定义充放各90%、容量150kJ、充放功率上限，不冒称真实电池化学体系或安全数据。
+- [DOE数据中心设计指南](https://www.energy.gov/cmei/femp/articles/best-practices-guide-energy-efficient-data-center-design)：IT、电力、热管理与余热联系的定性来源；没有使用现实需求增长预测或AI节能承诺。
+
+资料和建模明确分开：planet_modern.json全部器件效率、负载、光照周期、衰减、热容/缩放、回收率和任务收益为游戏设计。295K铜铝夹具沿用已有有来源参考，在城市中使用标注的教学映射；没有跨温区声称材料实测。未下载或复用来源的美术、模型、整表或长文本。

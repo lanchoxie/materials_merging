@@ -77,6 +77,15 @@ func sample_candidates(state,reference: String) -> Array:
 
 func command(state,action: String,payload: Dictionary={}) -> String:
 	match action:
+		"activate_modern":
+			if not joined: return "先领取合作补给"
+			return worlds.activate_modern()
+		"modern":
+			if not joined: return "先领取合作补给"
+			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.modern)
+			var result=worlds.modern.control(w.modern,str(payload.get("control","")),str(payload.get("id","")))
+			if before!=worlds.ecology.canonical(w.modern): worlds._event(w,"modern",result)
+			return result
 		"compare_circuits":
 			if not joined: return "先领取合作补给"
 			var mode=str(payload.get("mode","")); var report=electrical.proof(mode)
@@ -231,10 +240,10 @@ func tick(dt: float,effort: float=0.0) -> void:
 	if observing: worlds.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":7,"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
+	return {"version":8,"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7]: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8]: return false
 	data=data.duplicate(true)
 	if data.version<5: data.production_mode="partner"
 	if data.get("production_mode") not in ["partner","island"]: return false
@@ -255,6 +264,9 @@ func restore(data,state) -> bool:
 		if not data.get("supplies") is Dictionary or data.supplies.size()!=14: return false
 		for id in ["generator_kit","gasoline_feed","recovery_kit","repair_kit","industrial_feed","copper_wire_kit","aluminum_wire_kit","copper_wire_mass_kit","aluminum_wire_mass_kit"]: data.supplies[id]=0
 		data.circuit_reports={}
+	if data.version<8:
+		if not data.get("supplies") is Dictionary or data.supplies.size()!=23: return false
+		for id in worlds.modern.rules.trial_products: data.supplies[str(id)+"_kit"]=0
 	if not data.get("circuit_reports") is Dictionary or data.circuit_reports.size()>2: return false
 	for mode in data.circuit_reports:
 		if not electrical.valid_report(data.circuit_reports[mode],str(mode)) or data.get("joined")!=true: return false
@@ -311,6 +323,7 @@ func restore(data,state) -> bool:
 		if restored.get_world("home").village.enabled: return false
 		if restored.get_world("home").habitat.enabled: return false
 		if restored.get_world("home").industry.enabled: return false
+		if restored.get_world("home").modern.enabled: return false
 		for n in data.supplies.values():
 			if int(n)>0: return false
 	production_mode=data.production_mode

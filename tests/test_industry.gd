@@ -89,6 +89,15 @@ func _initialize() -> void:
 	var cargo=exhausted.truck.duplicate(true); step(m,exhausted,40)
 	check(Same.same(cargo,exhausted.truck),"fuel-starved vehicle cannot move or deliver cargo for free")
 	check(exhausted.history.size()==60,"long observation bounds history storage")
+	var arrival=equipped(m); m.control(arrival,"policy","production")
+	# A legacy trip can reach an exact JSON 1 before its old next-tick settlement.
+	for i in range(100):
+		step(m,arrival,1)
+		if arrival.truck.stage=="outbound": break
+	arrival.truck.progress=1.0; var shipped=arrival.shipped.civil; var amount=arrival.truck.amount
+	check(m.valid(JSON.parse_string(JSON.stringify(arrival)),arrival.elapsed),"legacy exact-arrival boundary remains loadable")
+	step(m,arrival,1)
+	check(arrival.truck.stage=="return" and arrival.shipped.civil==shipped+amount and m.valid(arrival,arrival.elapsed),"loaded arrival settles cargo once instead of duplicating or rejecting it")
 	var saved=JSON.parse_string(JSON.stringify(raid)); var continuous=raid.duplicate(true); step(m,saved,240); step(m,continuous,240)
 	check(equivalent(saved,continuous) and m.valid(saved,460),"JSON round-trip preserves deterministic people, energy and logistics")
 	for field in ["energy","fuel","cable","route","event","clock","batch","fractional","cargo","history"]:
@@ -132,6 +141,6 @@ func _initialize() -> void:
 	for version in ["v011","v012","v0121","v013","v014","v015"]:
 		var legacy=JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/planet_"+version+".json")); var upgraded=Program.new()
 		check(upgraded.restore(legacy,s),"real "+version+" fixture migrates")
-		check(not upgraded.worlds.get_world().industry.enabled and upgraded.serialize().version==7,"old saves add dormant industry without consuming supplies: "+version)
+		check(not upgraded.worlds.get_world().industry.enabled and upgraded.serialize().version==8,"old saves add dormant industry without consuming supplies: "+version)
 	s.close_science()
 	print("INDUSTRY: ",checks," checks, ",failures.size()," failures"); quit(0 if failures.is_empty() else 1)

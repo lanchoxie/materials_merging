@@ -152,7 +152,7 @@ func _shipping(w: Dictionary) -> void:
 		w.chemical_J+=energy; w.transport_J+=mechanical; w.transport_loss_J+=energy-mechanical
 		var speed=(1.0+(float(rules.shipping.signal_multiplier)-1.0)*w.signal_service)*fuel/float(rules.shipping.burn_kg_s)
 		t.progress+=speed/float(rules.shipping.travel_seconds)
-		if t.progress>=1:
+		if t.progress>=1-1e-9:
 			t.progress=0.0
 			if t.stage=="outbound":
 				w.shipped[t.kind]+=t.amount; t.amount=0.0; t.stage="return"
@@ -193,7 +193,9 @@ func _valid_state(w,at: int) -> bool:
 		if not w.get(group) is Dictionary or w[group].size()!=rules.initial.size(): return false
 		for key in rules.initial:
 			if not _num(w[group].get(key),0,float(rules.limits.ledger),key!="fuel_kg"): return false
-	if not w.get("truck") is Dictionary or w.truck.get("stage") not in ["idle","outbound","return"] or w.truck.get("kind") not in ["civil","military"] or not _num(w.truck.get("amount"),0,rules.shipping.capacity,true) or not _num(w.truck.get("progress"),0,0.999999999): return false
+	# v0.16 histories can round a nearly completed trip to exactly 1 in JSON.
+	# Accept that arrival boundary; the next simulation step settles it once.
+	if not w.get("truck") is Dictionary or w.truck.get("stage") not in ["idle","outbound","return"] or w.truck.get("kind") not in ["civil","military"] or not _num(w.truck.get("amount"),0,rules.shipping.capacity,true) or not _num(w.truck.get("progress"),0,1): return false
 	if (w.truck.stage=="outbound")!=(w.truck.amount>=1) or (w.truck.stage=="idle" and w.truck.progress!=0): return false
 	for key in rules.initial:
 		var cargo=float(w.truck.amount) if key==w.truck.kind else 0.0

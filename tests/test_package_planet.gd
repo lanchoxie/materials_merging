@@ -12,8 +12,8 @@ func _initialize() -> void:
 func run() -> void:
 	var game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var s=game.state
-	check(str(ProjectSettings.get_setting("application/config/version"))=="0.16.0","packaged application version")
-	check(game.save_label.text.begins_with("v0.16 "),"packaged compiled UI carries the current release label")
+	check(str(ProjectSettings.get_setting("application/config/version"))=="0.17.0","packaged application version")
+	check(game.save_label.text.begins_with("v0.17 "),"packaged compiled UI carries the current release label")
 	game._show_planet(); await process_frame
 	check(game.modal.view.sites.size()==2,"packaged planet scene builds both sites")
 	var batch=s.product_snapshot(s.reactors[0]); s.storage.add_product(batch,2)
@@ -107,6 +107,20 @@ func run() -> void:
 	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
 	check(game.modal.view.industry_view.snapshot.industry.elapsed==0 and industry.elapsed==90,"packaged industrial replay is read-only")
 	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged electrical reports and every earlier chapter restore")
+	game.modal._replay(); s.coins=9000; s.planet.command(s,"activate_modern")
+	for item in [["modern_silicon","field"],["modern_perovskite","roof"],["modern_battery","battery"],["modern_server","compute"],["modern_fan","cooling"],["modern_aluminum_sink","cooling"],["modern_recycler","recycle"],["modern_scrap","recycle"]]:
+		info=s.planet.recipe(item[0]); s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":item[0]}); s.planet.tick(info.seconds)
+		s.planet.command(s,"deploy",{"world_id":"home","site_id":"modern_"+item[1],"recipe":item[0],"token":s.planet.shipment_serial})
+	var modern=s.planet.worlds.get_world().modern
+	check(modern.installed.battery and modern.sink=="modern_aluminum_sink" and modern.battery_J==0,"packaged modern devices manufacture and empty battery installs")
+	s.planet.command(s,"modern",{"control":"policy","id":"circular"}); s.planet.command(s,"modern",{"control":"park"})
+	for i in range(6): s.planet.command(s,"step_world")
+	check(modern.pv_J>0 and modern.discharged_J>0 and modern.completed.lighting>0 and modern.residue>0 and s.planet.worlds.modern.valid(modern,s.planet.worlds.get_world().seconds),"packaged solar, battery, compute and recycling close their ledgers")
+	game.modal._scene("modern","modern_scrap"); await process_frame; await process_frame
+	check(game.modal.view.modern_view.people.size()==6 and game.modal.view.modern_view.moon.visible and game.modal.view.modern_view.park.visible,"packaged night scene and constructed park follow actual state")
+	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
+	check(game.modal.view.modern_view.snapshot.modern.elapsed==0 and modern.elapsed==180,"packaged modern history is read-only")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged complete multi-era program including modern balances restores")
 	game._close_modal(); s.close_science()
 	print("PACKAGE PLANET SMOKE: ",checks," checks, ",failures.size()," failures")
 	quit(0 if failures.is_empty() else 1)
