@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "note": "Gameplay units and timings; no physical planetary cooling or purity prediction.",
   "workshop": {
     "samples_required": 2,
@@ -61,6 +61,31 @@
       "name": "铝构件供料包",
       "price": 30,
       "description": "合作方预切工业材料与安装件；每包用于一个设计，工费另计。"
+    },
+    "nutrient_kit": {
+      "name": "营养实验供料包",
+      "price": 18,
+      "description": "仅用于有限营养当量教学，不是实际施肥配方。"
+    },
+    "screen_kit": {
+      "name": "过滤机组件包",
+      "price": 46,
+      "description": "机械滤网、壳体与管件；另需滤盒和动力。"
+    },
+    "screen_feed": {
+      "name": "颗粒滤盒供料包",
+      "price": 22,
+      "description": "匹配颗粒目标的滤网、封存容器和已充能模块。"
+    },
+    "buffer_kit": {
+      "name": "植被缓冲组件包",
+      "price": 44,
+      "description": "合作方提供的活体植被、基质和浮岛试验支架。"
+    },
+    "harvest_kit": {
+      "name": "收割封存供料包",
+      "price": 16,
+      "description": "可回收作业工具和有限收集容器；收集物留在世界封存账本。"
     }
   },
   "recipes": {
@@ -123,6 +148,61 @@
       "fee": 16,
       "seconds": 24,
       "description": "按已对照的几何方案组装导热芯。拖到已安装的供氧器；换下的构件回到原世界库存。"
+    },
+    "runoff_feed": {
+      "id": "runoff_feed",
+      "version": 1,
+      "name": "营养实验供料",
+      "reference": "water",
+      "input": "nutrient_kit",
+      "fee": 8,
+      "seconds": 18,
+      "description": "给上游有限营养舱补充60教学当量；开启输入后逐渐进入河流。",
+      "domain": "watershed"
+    },
+    "screen_station": {
+      "id": "screen_station",
+      "version": 1,
+      "name": "颗粒过滤机",
+      "reference": "water",
+      "input": "screen_kit",
+      "fee": 20,
+      "seconds": 30,
+      "description": "截留藻与有机碎屑颗粒，溶解营养仍会通过。安装后需要滤盒。",
+      "domain": "watershed"
+    },
+    "screen_cartridge": {
+      "id": "screen_cartridge",
+      "version": 1,
+      "name": "颗粒滤盒与动力",
+      "reference": "water",
+      "input": "screen_feed",
+      "fee": 10,
+      "seconds": 22,
+      "description": "容量30营养当量、动力80工作秒，均为教学设置。更换时旧盒截留物封存。",
+      "domain": "watershed"
+    },
+    "buffer_raft": {
+      "id": "buffer_raft",
+      "version": 1,
+      "name": "植被缓冲带",
+      "reference": "water",
+      "input": "buffer_kit",
+      "fee": 16,
+      "seconds": 28,
+      "description": "增加指定水域的植被吸收空间。生长占用营养，死亡可再释放，需要收割。",
+      "domain": "watershed"
+    },
+    "harvest_box": {
+      "id": "harvest_box",
+      "version": 1,
+      "name": "收割封存箱",
+      "reference": "water",
+      "input": "harvest_kit",
+      "fee": 8,
+      "seconds": 18,
+      "description": "30秒内收割指定藻类或植被，最多封存20营养当量；不会转成可出售的浮岛库存。",
+      "domain": "watershed"
     }
   },
   "trial_products": {
@@ -131,6 +211,11 @@
     "copper_compact": 2,
     "aluminum_compact": 2,
     "copper_light": 2,
-    "aluminum_light": 2
+    "aluminum_light": 2,
+    "runoff_feed": 2,
+    "screen_station": 3,
+    "screen_cartridge": 6,
+    "buffer_raft": 3,
+    "harvest_box": 6
   }
 }

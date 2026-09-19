@@ -94,6 +94,21 @@
       "name": "轻量支架",
       "max_area_m2": 0.0002,
       "max_mass_kg": 0.054
+    },
+    "headwater": {
+      "name": "窄槽支架",
+      "max_area_m2": 0.0001,
+      "max_mass_kg": 0.1
+    },
+    "marsh": {
+      "name": "窄槽支架",
+      "max_area_m2": 0.0001,
+      "max_mass_kg": 0.1
+    },
+    "estuary": {
+      "name": "轻量支架",
+      "max_area_m2": 0.0002,
+      "max_mass_kg": 0.054
     }
   },
   "formula_source": {

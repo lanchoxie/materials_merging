@@ -51,3 +51,11 @@
 [NIST NCNR Reference Tables](https://www.nist.gov/ncnr/neutron-instruments/sample-environment/sample-mounting/reference-tables)：仅选铜/铝295 K密度、导热率四个数值，密度换算为SI，自有JSON模式与中文说明。原表引用White 1979和CRC 1975；未复制整表或图像，不声称第三方书籍获得开放许可。电导率、比热、毒性与误差不在本次运行数据中。
 
 [NASA TFAWS 2012课件](https://tfaws.nasa.gov/TFAWS12/Proceedings/Form%20Factors%20Grey%20Bodies%20and%20Radks%20Course.pdf)，第25页：核对一维热流与构件热导关系。几何、边界温度、接触/外部热阻均是本项目夹具条件；不将295 K资料外推到高温，不把热流光点当瞬态温度求解。设备负载与保护阈值在独立游戏规则中配置。
+
+## 0.13连通水域复核 · 2026-09-19
+
+- [NOAA营养污染](https://oceanservice.noaa.gov/facts/nutpollution.html)、[NOAA缺氧区](https://oceanservice.noaa.gov/facts/deadzone.html)：采用营养、藻类、残体分解耗氧和动物迁移的定性因果。没有导入真实河流速率或生物致死浓度。
+- [EPA处理技术概述](https://www.epa.gov/sdwa/overview-drinking-water-treatment-technologies)、[人工湿地概述](https://www.epa.gov/wetlands/constructed-wetlands)：处理具有目标选择性，植被等过程共同参与；本版滤网只去颗粒，湿地容量和收割量为游戏规则。
+- [NPS泥盆纪](https://www.nps.gov/articles/000/devonian-period.htm)、[宾夕法尼亚世](https://www.nps.gov/articles/000/pennsylvanian-period.htm)：鱼类、早期林地与沼泽植被的原创程序化美术方向。未复制图片/模型，未采纳具体年代数字或声称复原特定古群落。
+
+运行库 `planet_watershed.json` 自有字段与原创说明，只将以上定性方向用于教学。所有营养池追踪同一当量，氧、群体权重和模拟秒数是独立游戏指标。科学边界与守恒式见V0.13.md；不是饮用安全、治理工程或古气候预测。

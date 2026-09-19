@@ -38,25 +38,31 @@ var eco_widgets: Dictionary={}
 var replay_index=-1
 var material_mode="same_size"
 var material_details=false
+var material_return_mode="ecology"
+var watershed_site="estuary"
+var watershed_widgets: Dictionary={}
+var watershed_details=false
+var watershed_menu: OptionButton
 
 func setup(model) -> void:
 	state=model; state.planet.observing=true; state.planet.observer_id=get_instance_id()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var heading=UI.label("材料试验星球",30,UI.MINT); heading.position=Vector2(32,21); add_child(heading)
-	var subtitle=UI.label("EXPERIMENT 03    /    给材料一个任务，让世界作出回应",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
+	var subtitle=UI.label("EXPERIMENT 04    /    河流记得你投下的东西",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1285,27); close.size=Vector2(122,46); add_child(close)
 	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(600,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
 	var scenes=HBoxContainer.new(); scenes.position=Vector2(672,107); add_child(scenes)
-	scenes.add_child(UI.button("水与地形",func(): _choose_recipe("standard_water_crate")))
-	scenes.add_child(UI.button("生态试验",func(): _choose_recipe("oxygen_station"); section="observe"; _redraw()))
+	scenes.add_child(UI.button("水与地形",func(): _scene("water","standard_water_crate")))
+	scenes.add_child(UI.button("生态试验",func(): _scene("ecology","oxygen_station")))
+	scenes.add_child(UI.button("河流湿地",func(): _scene("watershed")))
 	viewport_box=SubViewportContainer.new(); viewport_box.position=Vector2(24,165); viewport_box.size=Vector2(984,550); viewport_box.stretch=true; viewport_box.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(viewport_box)
 	viewport=SubViewport.new(); viewport.size=Vector2i(984,550); viewport.own_world_3d=true; viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; viewport_box.add_child(viewport)
 	if not OS.has_feature("web") and not OS.has_feature("android"): viewport.msaa_3d=Viewport.MSAA_2X
 	view=View.new(); viewport.add_child(view)
-	for id in ["deep","shelf","microbe","fish"]:
+	for id in ["deep","shelf","microbe","fish","headwater","marsh","estuary"]:
 		var badge=PanelContainer.new(); badge.add_theme_stylebox_override("panel",UI.style(Color("162f3a"),10)); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
-		var label=UI.label({"deep":"深槽蓄水","shelf":"浅台漫流","microbe":"厌氧微生物池","fish":"缺氧鱼湾"}[id],14,UI.TEXT); label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; badge.add_child(label); site_labels[id]=badge
+		var label=UI.label({"deep":"深槽蓄水","shelf":"浅台漫流","microbe":"厌氧微生物池","fish":"缺氧鱼湾","headwater":"上游径流口","marsh":"连通湿地","estuary":"下游河口"}[id],14,UI.TEXT); label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; badge.add_child(label); site_labels[id]=badge
 	var camera_row=HBoxContainer.new(); camera_row.position=Vector2(40,660); camera_row.size=Vector2(550,44); camera_row.add_theme_constant_override("separation",8); add_child(camera_row)
 	camera_row.add_child(UI.button("回到试验湾",func(): _cancel_gesture(); view.reset_camera()))
 	camera_row.add_child(UI.button("＋",func(): view.zoom(-0.8)))
@@ -74,6 +80,12 @@ func setup(model) -> void:
 	for item in [["standard_water_crate","水箱"],["oxygen_station","供氧器"],["oxygen_cartridge","补给盒"]]:
 		choices.add_child(UI.button(item[1],_choose_recipe.bind(item[0])))
 	choices.add_child(UI.button("导热芯",_open_materials))
+	watershed_menu=OptionButton.new(); watershed_menu.custom_minimum_size=Vector2(185,44); choices.add_child(watershed_menu)
+	watershed_menu.add_item("水域成品…")
+	for id in state.planet.worlds.watershed.rules.trial_products:
+		watershed_menu.add_item(str(state.planet.recipe(id).name)); watershed_menu.set_item_metadata(watershed_menu.item_count-1,id)
+	watershed_menu.item_selected.connect(func(index):
+		if index>0: _choose_recipe(str(watershed_menu.get_item_metadata(index))))
 	caption=UI.paragraph("",15,UI.MUTED); hint.add_child(caption)
 	var panel=UI.box(self,Rect2(1024,107,392,737))
 	var right=UI.column(panel,12)
@@ -94,19 +106,26 @@ func _fingerprint() -> String:
 
 func _redraw() -> void:
 	if state==null: return
-	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null; eco_widgets={}
+	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null; eco_widgets={}; watershed_widgets={}
 	var p=state.planet
 	for w in p.worlds.worlds:
 		var button=UI.button(w.name,func(): _do("select",{"world_id":str(w.id)}),w.id==p.worlds.active_id)
 		button.custom_minimum_size.x=185; world_tabs.add_child(button)
 	if section=="materials": preload("res://scripts/material_lab_panel.gd").build(self)
 	elif section=="workshop": _workshop()
+	elif view.display_mode=="watershed": preload("res://scripts/planet_watershed_panel.gd").build(self)
 	elif view.display_mode=="ecology": EcologyPanel.build(self)
 	else: _observations()
 	fingerprint=_fingerprint()
 	view.sync(display_snapshot())
 
+func _scene(mode: String,id: String="") -> void:
+	_cancel_gesture(); replay_index=-1; section="observe"
+	if not id.is_empty(): selected_recipe=id
+	view.set_mode(mode); view.reset_camera(); _redraw(); _live()
+
 func _open_materials() -> void:
+	material_return_mode=view.display_mode
 	_cancel_gesture(); replay_index=-1; section="materials"
 	if not state.planet.worlds.get_world().paused: state.planet.command(state,"pause")
 	view.set_mode("materials"); view.reset_camera(); view.material_view.set_mode(material_mode)
@@ -115,16 +134,25 @@ func _open_materials() -> void:
 func _choose_recipe(id: String) -> void:
 	_cancel_gesture(); selected_recipe=id; replay_index=-1
 	if section=="materials": section="workshop"
-	view.set_mode("water" if id=="standard_water_crate" else "ecology")
+	var use_watershed=view.display_mode=="watershed" or state.planet.recipe(id).get("domain","")=="watershed" or (view.display_mode=="materials" and material_return_mode=="watershed")
+	view.set_mode("watershed" if use_watershed else ("water" if id=="standard_water_crate" else "ecology"))
 	_redraw(); _live()
 
 func display_snapshot() -> Dictionary:
 	var world=state.planet.worlds.get_world()
 	if replay_index<0: return world
-	var copy=world.duplicate(true); var history=world.ecology.history
+	var copy=world.duplicate(); var history=_history()
 	var entry=history[clampi(replay_index,0,history.size()-1)]
-	copy.seconds=entry.at; copy.paused=true; copy.ecology.regions=entry.regions.duplicate(true)
+	copy.seconds=entry.at; copy.paused=true
+	if view.display_mode=="watershed":
+		copy.watershed=entry.state.duplicate(true); copy.watershed.history=history
+	else:
+		copy.ecology=world.ecology.duplicate(); copy.ecology.regions=entry.regions.duplicate(true)
 	return copy
+
+func _history() -> Array:
+	var w=state.planet.worlds.get_world()
+	return w.watershed.history if view.display_mode=="watershed" else w.ecology.history
 
 func _replay() -> void:
 	_cancel_gesture()
@@ -132,7 +160,7 @@ func _replay() -> void:
 	else:
 		var world=state.planet.worlds.get_world()
 		if not world.paused: state.planet.command(state,"pause")
-		replay_index=world.ecology.history.size()-1
+		replay_index=_history().size()-1
 	_redraw(); _live()
 
 func _text(text: String,size: int=16,color: Color=UI.MUTED) -> void:
@@ -168,18 +196,21 @@ func _workshop() -> void:
 		_text("1份供料 + %d金币 → 1件成品\n用时%d秒 · 独立合作工坊" % [int(info.fee),int(info.seconds)],17,UI.TEXT)
 		_text("供料 %d份  /  成品 %d件\n金币 %d" % [p.input_count(info.input),p.available_products(selected_recipe),int(state.coins)],18,UI.GOLD)
 		if p.job.is_empty():
-			_button(("开始装罐" if ref=="water" else "开始制作")+" · %d金币" % int(info.fee),func(): _do("pack",{"recipe":selected_recipe}),true)
+			_button(("开始装罐" if info.input=="feed" else "开始制作")+" · %d金币" % int(info.fee),func(): _do("pack",{"recipe":selected_recipe}),true)
 		else:
 			progress_text=UI.paragraph("",17,UI.MINT); body.add_child(progress_text)
 			progress=ProgressBar.new(); progress.custom_minimum_size.y=12; progress.show_percentage=false; body.add_child(progress)
 			_button("取消制作 · 退供料，费用不退",func(): _do("cancel_pack"))
-	var input_info={"name":"标准水供料","price":int(rules.feed_cost)} if ref=="water" else p.config.supplies[info.input]
+	var input_info={"name":"标准水供料","price":int(rules.feed_cost)} if info.input=="feed" else p.config.supplies[info.input]
 	_text("%s · 库存%d份" % [input_info.name,p.input_count(info.input)],16,UI.MINT)
 	_button("补充1份供料 · %d金币" % int(input_info.price),func(): _do("buy_feed",{"input":info.input}))
 	_text("工业构件采用295 K参考物性和已对照几何；供料包含对应预切件。它不是玩家分子的实测性能。" if ref.begins_with("fixture:") else "结构身份不等于宏观纯度。标准组件、气源与已充能模块由合作方供给。",14)
 	if ref.begins_with("fixture:"): _button("更换设计 · 材料对照",_open_materials)
+	if info.get("domain","")=="watershed": _text("水样只用于合作入门资格；滤材、活体植被与供料规格由合作方提供，不由水分子几何推出。",14,UI.GOLD)
 	_text("③ 选择落点",21,UI.MINT)
-	_text("深槽集中蓄水，浅台水面更宽。\n主世界总容量3箱。" if ref=="water" else "先安装供氧器，再放补给或导热芯。\n厌氧池窄槽：截面≤1 cm²。\n鱼湾轻量：材料≤54 g。换件退旧件。",16,UI.TEXT)
+	if view.display_mode=="watershed":
+		_text("拖到上游、湿地或河口。营养包只能投上游；过滤机先安装再加滤盒。上游/湿地限制截面1 cm²，河口限制材料54 g。",16,UI.TEXT)
+	else: _text("深槽集中蓄水，浅台水面更宽。\n主世界总容量3箱。" if ref=="water" else "先安装供氧器，再放补给或导热芯。\n厌氧池窄槽：截面≤1 cm²。\n鱼湾轻量：材料≤54 g。换件退旧件。",16,UI.TEXT)
 	_button("查看观察记录与实验副本",func(): section="observe"; _choose_recipe(selected_recipe))
 
 func _observations() -> void:
@@ -236,6 +267,7 @@ func _live() -> void:
 		progress_text.text="%s · 剩余%d秒" % [p.recipe(str(p.job.recipe)).name,ceili(float(p.job.left))]
 	view.sync(display_snapshot())
 	EcologyPanel.live(self)
+	preload("res://scripts/planet_watershed_panel.gd").live(self)
 
 func _begin_drag(at: Vector2) -> void:
 	var p=state.planet; var w=p.worlds.get_world()

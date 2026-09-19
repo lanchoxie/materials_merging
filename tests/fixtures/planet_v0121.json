@@ -1,0 +1,1376 @@
+{
+	"extra_qualifications": {
+		"oxygen": {
+			"batch_id": "892ca95149c3",
+			"method": "reference_identity_v1",
+			"reference": "oxygen",
+			"work": {
+				"atoms": [
+					"O",
+					"O"
+				],
+				"baseline_id": "oxygen",
+				"bonds": [
+					[
+						0.0,
+						1.0,
+						2.0
+					]
+				],
+				"cell": [
+					6.0,
+					6.0,
+					6.0
+				],
+				"mode": "science",
+				"name": "氧气双星",
+				"periodic": false,
+				"positions": [
+					[
+						-0.604,
+						0.0,
+						0.0
+					],
+					[
+						0.604,
+						0.0,
+						0.0
+					]
+				]
+			}
+		}
+	},
+	"feed": 2,
+	"job": {},
+	"joined": true,
+	"products": [
+		{
+			"id": 3.0,
+			"recipe": "oxygen_cartridge",
+			"recipe_version": 1.0,
+			"source_batch": "892ca95149c3"
+		},
+		{
+			"id": 4,
+			"recipe": "oxygen_cartridge",
+			"recipe_version": 1,
+			"source_batch": "892ca95149c3"
+		}
+	],
+	"qualification": {},
+	"qualified": false,
+	"reports": {
+		"same_mass": {
+			"aluminum": {
+				"area_m2": 0.0002,
+				"assembly_conductance_W_K": 0.242268041237113,
+				"conductance_W_K": 0.47,
+				"heat_flow_W": 0.94,
+				"length_m": 0.1,
+				"mass_kg": 0.054,
+				"material": "aluminum",
+				"mode": "same_mass",
+				"model": "thermal_fixture_v1",
+				"source": "nist_ncnr_295k"
+			},
+			"batch_id": "reference:thermal_fixture_v1:same_mass",
+			"copper": {
+				"area_m2": 0.0000602678571428571,
+				"assembly_conductance_W_K": 0.162650602409639,
+				"conductance_W_K": 0.241071428571429,
+				"heat_flow_W": 0.482142857142857,
+				"length_m": 0.1,
+				"mass_kg": 0.054,
+				"material": "copper",
+				"mode": "same_mass",
+				"model": "thermal_fixture_v1",
+				"source": "nist_ncnr_295k"
+			},
+			"method": "thermal_fixture_v1",
+			"mode": "same_mass",
+			"source": "nist_ncnr_295k"
+		}
+	},
+	"serial": 6,
+	"shipment_serial": 4,
+	"supplies": {
+		"aluminum_kit": 0,
+		"copper_kit": 0,
+		"oxygen_feed": 0.0,
+		"station_parts": 0.0
+	},
+	"version": 3,
+	"worlds": {
+		"active_id": "home",
+		"version": 3,
+		"worlds": [
+			{
+				"allowance": 0.0,
+				"base": {},
+				"base_key": "",
+				"eco_allowance": {
+					"aluminum_compact": 2,
+					"aluminum_light": 2,
+					"copper_compact": 2,
+					"copper_light": 2,
+					"oxygen_cartridge": 4.0,
+					"oxygen_station": 2.0
+				},
+				"ecology": {
+					"history": [
+						{
+							"at": 0.0,
+							"regions": {
+								"fish": {
+									"bay": 6.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 18.0,
+									"oxygen": 8.0,
+									"stress": 0.0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 4.0,
+									"refuge": 18.0,
+									"sealed": true,
+									"sensitive": 80.0,
+									"tolerant": 20.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 5.0,
+							"regions": {
+								"fish": {
+									"bay": 3.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 55.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 55.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 60.0,
+									"outer": 21.0,
+									"oxygen": 12.0,
+									"stress": 5.0,
+									"trips": 0,
+									"used": 5.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.5,
+									"refuge": 18.1,
+									"sealed": true,
+									"sensitive": 80.5,
+									"tolerant": 19.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 10.0,
+							"regions": {
+								"fish": {
+									"bay": 0.00000000000000066,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 50.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 50.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 60.0,
+									"outer": 24.0,
+									"oxygen": 16.0,
+									"stress": 7.0,
+									"trips": 0,
+									"used": 10.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.2,
+									"sealed": true,
+									"sensitive": 81.0,
+									"tolerant": 19.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 15,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {
+										"id": 5,
+										"recipe": "aluminum_light",
+										"recipe_version": 1,
+										"source_batch": "reference:thermal_fixture_v1:same_mass"
+									},
+									"cooling": false,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 45.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 45.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 60.0,
+									"outer": 24.0,
+									"oxygen": 20.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 15.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.3,
+									"sealed": true,
+									"sensitive": 81.5,
+									"tolerant": 18.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 20,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {
+										"id": 5,
+										"recipe": "aluminum_light",
+										"recipe_version": 1,
+										"source_batch": "reference:thermal_fixture_v1:same_mass"
+									},
+									"cooling": false,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 40.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 40.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 60.0,
+									"outer": 24.0,
+									"oxygen": 24.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 20.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.4,
+									"sealed": true,
+									"sensitive": 82.0,
+									"tolerant": 18.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 25,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {
+										"id": 5,
+										"recipe": "aluminum_light",
+										"recipe_version": 1,
+										"source_batch": "reference:thermal_fixture_v1:same_mass"
+									},
+									"cooling": false,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 35.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 35.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 60.0,
+									"outer": 24.0,
+									"oxygen": 28.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 25.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.5,
+									"sealed": true,
+									"sensitive": 82.5,
+									"tolerant": 17.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						}
+					],
+					"model": "oxygen_teaching_v1",
+					"regions": {
+						"fish": {
+							"bay": 0.0,
+							"component": {
+								"id": 5,
+								"recipe": "aluminum_light",
+								"recipe_version": 1,
+								"source_batch": "reference:thermal_fixture_v1:same_mass"
+							},
+							"cooling": false,
+							"dead": 0.0,
+							"device": true,
+							"enabled": true,
+							"energy": 35.0,
+							"flags": [
+								"leave"
+							],
+							"flow": 1.0,
+							"gas": 35.0,
+							"gate_open": true,
+							"heat": 0.0,
+							"loaded": 60.0,
+							"outer": 24.0,
+							"oxygen": 28.0,
+							"stress": 0,
+							"trips": 0,
+							"used": 25.0
+						},
+						"microbe": {
+							"component": {},
+							"cooling": false,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"flags": [],
+							"flow": 1.0,
+							"gas": 0.0,
+							"heat": 0.0,
+							"loaded": 0.0,
+							"oxygen": 0.0,
+							"refuge": 18.5,
+							"sealed": true,
+							"sensitive": 82.5,
+							"tolerant": 17.5,
+							"trips": 0,
+							"used": 0.0
+						}
+					},
+					"thermal_model": "device_heat_v1"
+				},
+				"event_serial": 4,
+				"events": [
+					{
+						"at": 0.0,
+						"id": 1.0,
+						"kind": "ecology",
+						"message": "缺氧鱼湾：供氧器就位，等待氧气与动力补给。",
+						"shipment": 1.0
+					},
+					{
+						"at": 0.0,
+						"id": 2.0,
+						"kind": "ecology",
+						"message": "缺氧鱼湾：已更换氧气与动力补给盒。",
+						"shipment": 2.0
+					},
+					{
+						"at": 1.0,
+						"id": 3.0,
+						"kind": "ecology",
+						"message": "鱼湾：低氧驱使鱼群沿开放通道游向外湾；迁移不等于死亡。",
+						"shipment": 0.0
+					},
+					{
+						"at": 13,
+						"id": 4,
+						"kind": "ecology",
+						"message": "缺氧鱼湾：装入铝芯·等重，旧构件退回本世界库存。",
+						"shipment": 3
+					}
+				],
+				"fraction": 0.0,
+				"id": "home",
+				"mode": "career",
+				"name": "试验湾 · 主世界",
+				"observation": false,
+				"paused": false,
+				"seconds": 25,
+				"seed": 9192026.0,
+				"zones": [
+					{
+						"id": "deep",
+						"target": 0.0,
+						"water": 0.0
+					},
+					{
+						"id": "shelf",
+						"target": 0.0,
+						"water": 0.0
+					}
+				]
+			},
+			{
+				"allowance": 3.0,
+				"base": {
+					"ecology": {
+						"history": [
+							{
+								"at": 0.0,
+								"regions": {
+									"fish": {
+										"bay": 6.0,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"outer": 18.0,
+										"oxygen": 8.0,
+										"stress": 0.0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 4.0,
+										"refuge": 18.0,
+										"sealed": true,
+										"sensitive": 80.0,
+										"tolerant": 20.0,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 5.0,
+								"regions": {
+									"fish": {
+										"bay": 3.0,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": true,
+										"enabled": true,
+										"energy": 55.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 55.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 60.0,
+										"outer": 21.0,
+										"oxygen": 12.0,
+										"stress": 5.0,
+										"trips": 0,
+										"used": 5.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.5,
+										"refuge": 18.1,
+										"sealed": true,
+										"sensitive": 80.5,
+										"tolerant": 19.5,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 10.0,
+								"regions": {
+									"fish": {
+										"bay": 0.00000000000000066,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": true,
+										"enabled": true,
+										"energy": 50.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 50.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 60.0,
+										"outer": 24.0,
+										"oxygen": 16.0,
+										"stress": 7.0,
+										"trips": 0,
+										"used": 10.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.0,
+										"refuge": 18.2,
+										"sealed": true,
+										"sensitive": 81.0,
+										"tolerant": 19.0,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							}
+						],
+						"model": "oxygen_teaching_v1",
+						"regions": {
+							"fish": {
+								"bay": 0.0,
+								"component": {},
+								"cooling": false,
+								"dead": 0.0,
+								"device": true,
+								"enabled": true,
+								"energy": 47.0,
+								"flags": [
+									"leave"
+								],
+								"flow": 1.0,
+								"gas": 47.0,
+								"gate_open": true,
+								"heat": 0.0,
+								"loaded": 60.0,
+								"outer": 24.0,
+								"oxygen": 18.4,
+								"stress": 1.0,
+								"trips": 0,
+								"used": 13.0
+							},
+							"microbe": {
+								"component": {},
+								"cooling": false,
+								"device": false,
+								"enabled": true,
+								"energy": 0.0,
+								"flags": [],
+								"flow": 1.0,
+								"gas": 0.0,
+								"heat": 0.0,
+								"loaded": 0.0,
+								"oxygen": 0.0,
+								"refuge": 18.26,
+								"sealed": true,
+								"sensitive": 81.3,
+								"tolerant": 18.7,
+								"trips": 0,
+								"used": 0.0
+							}
+						},
+						"thermal_model": "device_heat_v1"
+					},
+					"fraction": 0.0,
+					"observation": false,
+					"seconds": 13.0,
+					"seed": 9192026.0,
+					"zones": [
+						{
+							"id": "deep",
+							"target": 0.0,
+							"water": 0.0
+						},
+						{
+							"id": "shelf",
+							"target": 0.0,
+							"water": 0.0
+						}
+					]
+				},
+				"base_key": "6fa63826c8c56bc66263613ecf6f1cf38b9ccdbbf8eaca06562fa44f0ec8ac98",
+				"eco_allowance": {
+					"aluminum_compact": 2,
+					"aluminum_light": 2,
+					"copper_compact": 2,
+					"copper_light": 2,
+					"oxygen_cartridge": 4.0,
+					"oxygen_station": 2.0
+				},
+				"ecology": {
+					"history": [
+						{
+							"at": 0.0,
+							"regions": {
+								"fish": {
+									"bay": 6.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 18.0,
+									"oxygen": 8.0,
+									"stress": 0.0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 4.0,
+									"refuge": 18.0,
+									"sealed": true,
+									"sensitive": 80.0,
+									"tolerant": 20.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 5.0,
+							"regions": {
+								"fish": {
+									"bay": 3.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 55.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 55.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 60.0,
+									"outer": 21.0,
+									"oxygen": 12.0,
+									"stress": 5.0,
+									"trips": 0,
+									"used": 5.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.5,
+									"refuge": 18.1,
+									"sealed": true,
+									"sensitive": 80.5,
+									"tolerant": 19.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 10.0,
+							"regions": {
+								"fish": {
+									"bay": 0.00000000000000066,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 50.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 50.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 60.0,
+									"outer": 24.0,
+									"oxygen": 16.0,
+									"stress": 7.0,
+									"trips": 0,
+									"used": 10.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.2,
+									"sealed": true,
+									"sensitive": 81.0,
+									"tolerant": 19.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						}
+					],
+					"model": "oxygen_teaching_v1",
+					"regions": {
+						"fish": {
+							"bay": 0.0,
+							"component": {},
+							"cooling": false,
+							"dead": 0.0,
+							"device": true,
+							"enabled": true,
+							"energy": 47.0,
+							"flags": [
+								"leave"
+							],
+							"flow": 1.0,
+							"gas": 47.0,
+							"gate_open": true,
+							"heat": 0.0,
+							"loaded": 60.0,
+							"outer": 24.0,
+							"oxygen": 18.4,
+							"stress": 1.0,
+							"trips": 0,
+							"used": 13.0
+						},
+						"microbe": {
+							"component": {},
+							"cooling": false,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"flags": [],
+							"flow": 1.0,
+							"gas": 0.0,
+							"heat": 0.0,
+							"loaded": 0.0,
+							"oxygen": 0.0,
+							"refuge": 18.26,
+							"sealed": true,
+							"sensitive": 81.3,
+							"tolerant": 18.7,
+							"trips": 0,
+							"used": 0.0
+						}
+					},
+					"thermal_model": "device_heat_v1"
+				},
+				"event_serial": 1.0,
+				"events": [
+					{
+						"at": 13.0,
+						"id": 1.0,
+						"kind": "fork",
+						"message": "同起点试验已就绪 · 先放置水箱，再开始观察",
+						"shipment": 0.0
+					}
+				],
+				"fraction": 0.0,
+				"id": "trial_a",
+				"mode": "experiment",
+				"name": "实验 A",
+				"observation": false,
+				"paused": true,
+				"seconds": 13.0,
+				"seed": 9192026.0,
+				"zones": [
+					{
+						"id": "deep",
+						"target": 0.0,
+						"water": 0.0
+					},
+					{
+						"id": "shelf",
+						"target": 0.0,
+						"water": 0.0
+					}
+				]
+			},
+			{
+				"allowance": 3.0,
+				"base": {
+					"ecology": {
+						"history": [
+							{
+								"at": 0.0,
+								"regions": {
+									"fish": {
+										"bay": 6.0,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"outer": 18.0,
+										"oxygen": 8.0,
+										"stress": 0.0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 4.0,
+										"refuge": 18.0,
+										"sealed": true,
+										"sensitive": 80.0,
+										"tolerant": 20.0,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 5.0,
+								"regions": {
+									"fish": {
+										"bay": 3.0,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": true,
+										"enabled": true,
+										"energy": 55.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 55.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 60.0,
+										"outer": 21.0,
+										"oxygen": 12.0,
+										"stress": 5.0,
+										"trips": 0,
+										"used": 5.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.5,
+										"refuge": 18.1,
+										"sealed": true,
+										"sensitive": 80.5,
+										"tolerant": 19.5,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 10.0,
+								"regions": {
+									"fish": {
+										"bay": 0.00000000000000066,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": true,
+										"enabled": true,
+										"energy": 50.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 50.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 60.0,
+										"outer": 24.0,
+										"oxygen": 16.0,
+										"stress": 7.0,
+										"trips": 0,
+										"used": 10.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.0,
+										"refuge": 18.2,
+										"sealed": true,
+										"sensitive": 81.0,
+										"tolerant": 19.0,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							}
+						],
+						"model": "oxygen_teaching_v1",
+						"regions": {
+							"fish": {
+								"bay": 0.0,
+								"component": {},
+								"cooling": false,
+								"dead": 0.0,
+								"device": true,
+								"enabled": true,
+								"energy": 47.0,
+								"flags": [
+									"leave"
+								],
+								"flow": 1.0,
+								"gas": 47.0,
+								"gate_open": true,
+								"heat": 0.0,
+								"loaded": 60.0,
+								"outer": 24.0,
+								"oxygen": 18.4,
+								"stress": 1.0,
+								"trips": 0,
+								"used": 13.0
+							},
+							"microbe": {
+								"component": {},
+								"cooling": false,
+								"device": false,
+								"enabled": true,
+								"energy": 0.0,
+								"flags": [],
+								"flow": 1.0,
+								"gas": 0.0,
+								"heat": 0.0,
+								"loaded": 0.0,
+								"oxygen": 0.0,
+								"refuge": 18.26,
+								"sealed": true,
+								"sensitive": 81.3,
+								"tolerant": 18.7,
+								"trips": 0,
+								"used": 0.0
+							}
+						},
+						"thermal_model": "device_heat_v1"
+					},
+					"fraction": 0.0,
+					"observation": false,
+					"seconds": 13.0,
+					"seed": 9192026.0,
+					"zones": [
+						{
+							"id": "deep",
+							"target": 0.0,
+							"water": 0.0
+						},
+						{
+							"id": "shelf",
+							"target": 0.0,
+							"water": 0.0
+						}
+					]
+				},
+				"base_key": "6fa63826c8c56bc66263613ecf6f1cf38b9ccdbbf8eaca06562fa44f0ec8ac98",
+				"eco_allowance": {
+					"aluminum_compact": 2,
+					"aluminum_light": 2,
+					"copper_compact": 2,
+					"copper_light": 2,
+					"oxygen_cartridge": 4.0,
+					"oxygen_station": 2.0
+				},
+				"ecology": {
+					"history": [
+						{
+							"at": 0.0,
+							"regions": {
+								"fish": {
+									"bay": 6.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 18.0,
+									"oxygen": 8.0,
+									"stress": 0.0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 4.0,
+									"refuge": 18.0,
+									"sealed": true,
+									"sensitive": 80.0,
+									"tolerant": 20.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 5.0,
+							"regions": {
+								"fish": {
+									"bay": 3.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 55.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 55.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 60.0,
+									"outer": 21.0,
+									"oxygen": 12.0,
+									"stress": 5.0,
+									"trips": 0,
+									"used": 5.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.5,
+									"refuge": 18.1,
+									"sealed": true,
+									"sensitive": 80.5,
+									"tolerant": 19.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 10.0,
+							"regions": {
+								"fish": {
+									"bay": 0.00000000000000066,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 50.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 50.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 60.0,
+									"outer": 24.0,
+									"oxygen": 16.0,
+									"stress": 7.0,
+									"trips": 0,
+									"used": 10.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.2,
+									"sealed": true,
+									"sensitive": 81.0,
+									"tolerant": 19.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						}
+					],
+					"model": "oxygen_teaching_v1",
+					"regions": {
+						"fish": {
+							"bay": 0.0,
+							"component": {},
+							"cooling": false,
+							"dead": 0.0,
+							"device": true,
+							"enabled": true,
+							"energy": 47.0,
+							"flags": [
+								"leave"
+							],
+							"flow": 1.0,
+							"gas": 47.0,
+							"gate_open": true,
+							"heat": 0.0,
+							"loaded": 60.0,
+							"outer": 24.0,
+							"oxygen": 18.4,
+							"stress": 1.0,
+							"trips": 0,
+							"used": 13.0
+						},
+						"microbe": {
+							"component": {},
+							"cooling": false,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"flags": [],
+							"flow": 1.0,
+							"gas": 0.0,
+							"heat": 0.0,
+							"loaded": 0.0,
+							"oxygen": 0.0,
+							"refuge": 18.26,
+							"sealed": true,
+							"sensitive": 81.3,
+							"tolerant": 18.7,
+							"trips": 0,
+							"used": 0.0
+						}
+					},
+					"thermal_model": "device_heat_v1"
+				},
+				"event_serial": 1.0,
+				"events": [
+					{
+						"at": 13.0,
+						"id": 1.0,
+						"kind": "fork",
+						"message": "同起点试验已就绪 · 先放置水箱，再开始观察",
+						"shipment": 0.0
+					}
+				],
+				"fraction": 0.0,
+				"id": "trial_b",
+				"mode": "experiment",
+				"name": "实验 B",
+				"observation": false,
+				"paused": true,
+				"seconds": 13.0,
+				"seed": 9192026.0,
+				"zones": [
+					{
+						"id": "deep",
+						"target": 0.0,
+						"water": 0.0
+					},
+					{
+						"id": "shelf",
+						"target": 0.0,
+						"water": 0.0
+					}
+				]
+			}
+		]
+	}
+}

@@ -3,6 +3,7 @@ extends RefCounted
 const Rules=preload("res://scripts/island_storage.gd")
 const Ecology=preload("res://scripts/planet_ecology.gd")
 var ecology=Ecology.new()
+var watershed=preload("res://scripts/planet_watershed.gd").new()
 var config: Dictionary
 var worlds: Array=[]
 var active_id="home"
@@ -17,7 +18,7 @@ func _new_world(id: String,title: String,mode: String) -> Dictionary:
 	for site in config.sites: zones.append({"id":site.id,"target":0,"water":0.0})
 	return {"id":id,"name":title,"mode":mode,"seed":int(config.world.seed),"seconds":0,"fraction":0.0,
 		"paused":mode=="experiment","zones":zones,"events":[],"event_serial":0,"allowance":int(config.world.trial_allowance) if mode=="experiment" else 0,
-		"base":{},"base_key":"","observation":false,"ecology":ecology.fresh(),"eco_allowance":config.trial_products.duplicate(true)}
+		"base":{},"base_key":"","observation":false,"watershed":watershed.fresh(),"ecology":ecology.fresh(),"eco_allowance":config.trial_products.duplicate(true)}
 
 func get_world(id: String="") -> Dictionary:
 	for item in worlds:
@@ -32,6 +33,7 @@ func total(world: Dictionary, field: String="target") -> float:
 func can_deploy(id: String, site_id: String,recipe: String="standard_water_crate") -> bool:
 	var w=get_world(id)
 	if w.is_empty(): return false
+	if site_id in watershed.ids(): return watershed.can_deploy(w.watershed,site_id,recipe)
 	if recipe!="standard_water_crate": return ecology.can_deploy(w.ecology,site_id,recipe)
 	if w.is_empty() or total(w)>=int(config.world.capacity): return false
 	for zone in w.zones:
@@ -40,6 +42,10 @@ func can_deploy(id: String, site_id: String,recipe: String="standard_water_crate
 
 func deploy(id: String,site_id: String,shipment: int,recipe: String="standard_water_crate",component: Dictionary={}) -> void:
 	var w=get_world(id)
+	if site_id in watershed.ids():
+		watershed.deploy(w.watershed,site_id,recipe,component)
+		_event(w,"watershed","%s已部署到%s" % ["标准水箱" if recipe=="standard_water_crate" else config.recipes[recipe].name,watershed.rules.regions[watershed.ids().find(site_id)].name],shipment)
+		return
 	if recipe!="standard_water_crate":
 		ecology.deploy(w.ecology,site_id,recipe,component)
 		if ecology.thermal.lab.is_component(recipe):
@@ -65,6 +71,7 @@ func tick_world(w: Dictionary,dt: float) -> void:
 		if int(w.seconds)>=int(config.world.max_seconds): w.fraction=0.0; break
 		w.fraction=float(w.fraction)-1.0
 		w.seconds=mini(int(config.world.max_seconds),int(w.seconds)+1)
+		for message in watershed.step(w.watershed,int(w.seconds)): _event(w,"watershed",message)
 		for message in ecology.step(w.ecology,int(w.seconds)): _event(w,"ecology",message)
 		for zone in w.zones:
 			zone.water=minf(float(zone.target),float(zone.water)+1.0/float(config.world.delivery_seconds))
@@ -77,18 +84,21 @@ func tick(dt: float) -> void:
 	if not w.paused: tick_world(w,dt)
 
 func base_snapshot(w: Dictionary) -> Dictionary:
-	return {"seed":int(w.seed),"seconds":int(w.seconds),"fraction":float(w.fraction),"zones":w.zones.duplicate(true),"observation":w.observation,"ecology":w.ecology.duplicate(true)}
+	return {"seed":int(w.seed),"seconds":int(w.seconds),"fraction":float(w.fraction),"zones":w.zones.duplicate(true),"observation":w.observation,"watershed":w.watershed.duplicate(true),"ecology":w.ecology.duplicate(true)}
 
 func _base_key(base: Dictionary) -> String:
 	# JSON parses integer fields as floats. Hash semantic values, not their storage types.
 	var parts=["%d:%d:%.6f:%d" % [int(base.seed),int(base.seconds),float(base.fraction),int(base.observation)]]
 	for zone in base.zones: parts.append("%s:%d:%.6f" % [str(zone.id),int(zone.target),float(zone.water)])
 	if base.has("ecology"): parts.append(ecology.canonical(base.ecology))
+	if base.has("watershed"): parts.append(ecology.canonical(base.watershed))
 	return "|".join(parts).sha256_text()
 
-func fork(dry: bool=false) -> String:
+func fork(dry: bool=false,era: String="") -> String:
 	if worlds.size()>=3: return "两个实验位已使用，可重置已有实验继续比较"
-	var source=_new_world("source","","career") if dry else get_world()
+	if not era.is_empty() and not watershed.rules.eras.has(era): return "未知时代起点"
+	var source=_new_world("source","","career") if dry or not era.is_empty() else get_world()
+	if not era.is_empty(): source.watershed=watershed.fresh(era,0,true)
 	var base=base_snapshot(source)
 	var id="trial_a" if get_world("trial_a").is_empty() else "trial_b"
 	var w=_new_world(id,"实验 A" if id=="trial_a" else "实验 B","experiment")
@@ -103,22 +113,26 @@ func _reset_from_base(w: Dictionary) -> void:
 	for key in ["seed","seconds","fraction","observation"]: w[key]=w.base[key]
 	w.zones=w.base.zones.duplicate(true)
 	w.ecology=w.base.ecology.duplicate(true)
+	w.watershed=w.base.watershed.duplicate(true)
 	w.eco_allowance=config.trial_products.duplicate(true)
 	w.paused=true; w.allowance=int(config.world.trial_allowance)
 	w.events=[]; w.event_serial=0
 	_event(w,"fork","同起点试验已就绪 · 先放置水箱，再开始观察")
 
-func reset_trial(fresh_start: bool=false) -> String:
+func reset_trial(fresh_start: bool=false,era: String="") -> String:
 	var w=get_world()
 	if w.mode!="experiment": return "主世界不会重置；请在实验副本中试验"
-	if fresh_start:
-		w.base=base_snapshot(_new_world("source","","career")); w.base_key=_base_key(w.base)
+	if not era.is_empty() and not watershed.rules.eras.has(era): return "未知时代起点"
+	if fresh_start or not era.is_empty():
+		var source=_new_world("source","","career")
+		if w.watershed.enabled or not era.is_empty(): source.watershed=watershed.fresh(str(w.watershed.era) if era.is_empty() else era,0,true)
+		w.base=base_snapshot(source); w.base_key=_base_key(w.base)
 	_reset_from_base(w)
 	return "已回到这个实验的起点，独立配给已重置"
 
 func can_step_pair() -> bool:
 	var a=get_world("trial_a"); var b=get_world("trial_b")
-	return not a.is_empty() and not b.is_empty() and a.base_key==b.base_key and int(a.seconds)==int(b.seconds) and is_equal_approx(float(a.fraction),float(b.fraction))
+	return not a.is_empty() and not b.is_empty() and a.base_key==b.base_key and a.watershed.enabled==b.watershed.enabled and a.watershed.elapsed==b.watershed.elapsed and int(a.seconds)==int(b.seconds) and is_equal_approx(float(a.fraction),float(b.fraction))
 
 func step_pair() -> String:
 	if not can_step_pair(): return "同步比较需要两个实验拥有相同起点与时刻；可先分别重置实验"
@@ -127,7 +141,7 @@ func step_pair() -> String:
 	return "两个实验共同推进了10秒，现已暂停，方便比较"
 
 func serialize() -> Dictionary:
-	return {"version":3,"active_id":active_id,"worlds":worlds.duplicate(true)}
+	return {"version":4,"active_id":active_id,"worlds":worlds.duplicate(true)}
 
 func _number(value,lo: float,hi: float,integer: bool=false) -> bool:
 	return (value is int or value is float) and is_finite(float(value)) and value>=lo and value<=hi and (not integer or float(value)==floor(float(value)))
@@ -142,23 +156,28 @@ func _valid_base(w,legacy_eco: bool=false) -> bool:
 		if not zone is Dictionary or zone.get("id")!=config.sites[i].id: return false
 		if not _number(zone.get("target"),0,float(config.world.capacity),true): return false
 		if not _number(zone.get("water"),0,float(zone.target)): return false
+	if w.has("watershed") and not watershed.valid(w.watershed,int(w.seconds)): return false
 	return total(w)<=int(config.world.capacity) and (not w.has("ecology") or ecology.valid(w.ecology,int(w.seconds),legacy_eco))
 
 func restore(data) -> bool:
 	if not data is Dictionary or not data.get("worlds") is Array or not data.get("active_id") is String: return false
-	if not _number(data.get("version",1),1,3,true): return false
+	if not _number(data.get("version",1),1,4,true): return false
 	var legacy=data.get("version",1)==1
 	var legacy_eco=data.get("version",1)<3
 	if data.worlds.size()<1 or data.worlds.size()>3: return false
 	var ids=[]
 	for w in data.worlds:
 		if not _valid_base(w,legacy_eco): return false
+		if data.get("version",1)>=4 and not w.has("watershed"): return false
 		if not legacy and (not w.has("ecology") or not w.get("eco_allowance") is Dictionary): return false
 		if not legacy:
-			var limits={"oxygen_station":2,"oxygen_cartridge":4} if legacy_eco else config.trial_products
+			var limits=config.trial_products.duplicate(true)
+			if data.get("version",1)<4:
+				for key in watershed.rules.trial_products: limits.erase(key)
+			if legacy_eco: limits={"oxygen_station":2,"oxygen_cartridge":4}
 			if w.eco_allowance.size()!=limits.size(): return false
 			for key in limits:
-				if not _number(w.eco_allowance.get(key),0,int(limits[key])+(2 if ecology.thermal.lab.is_component(key) else 0),true): return false
+				if not _number(w.eco_allowance.get(key),0,int(limits[key])+(5 if ecology.thermal.lab.is_component(key) else 0),true): return false
 		if w.get("id") not in ["home","trial_a","trial_b"] or w.id in ids: return false
 		ids.append(w.id)
 		if not w.get("name") is String or w.name.length()>32 or not w.get("paused") is bool: return false
@@ -169,12 +188,13 @@ func restore(data) -> bool:
 		if w.mode=="experiment":
 			if not _valid_base(w.base,legacy_eco) or w.base_key!=_base_key(w.base): return false
 			if not legacy and not w.base.has("ecology"): return false
+			if data.get("version",1)>=4 and not w.base.has("watershed"): return false
 		elif not w.base.is_empty() or not w.base_key.is_empty(): return false
 		if not legacy_eco and w.mode=="experiment":
 			for key in ecology.thermal.lab.data.designs:
 				var onboard=0; var baseline=0
-				for r in w.ecology.regions.values(): onboard+=int(r.component.get("recipe","")==key)
-				for r in w.base.ecology.regions.values(): baseline+=int(r.component.get("recipe","")==key)
+				for r in component_regions(w): onboard+=int(r.component.get("recipe","")==key)
+				for r in component_regions(w.base): baseline+=int(r.component.get("recipe","")==key)
 				if int(w.eco_allowance[key])+onboard!=int(config.trial_products[key])+baseline: return false
 		if not _number(w.get("event_serial"),0,10000000,true): return false
 		if not w.get("events") is Array or w.events.size()>int(config.world.max_events): return false
@@ -183,7 +203,7 @@ func restore(data) -> bool:
 			if not event is Dictionary or not _number(event.get("id"),last+1,int(w.event_serial),true): return false
 			last=int(event.id)
 			if not _number(event.get("at"),0,int(w.seconds),true) or not _number(event.get("shipment"),0,10000000,true): return false
-			if event.get("kind") not in ["shipment","observation","fork","ecology"] or not event.get("message") is String or event.message.length()>160: return false
+			if event.get("kind") not in ["shipment","observation","fork","ecology","watershed"] or not event.get("message") is String or event.message.length()>160: return false
 	if "home" not in ids or data.active_id not in ids: return false
 	worlds=data.worlds.duplicate(true); active_id=data.active_id
 	if legacy:
@@ -197,4 +217,28 @@ func restore(data) -> bool:
 			for key in ecology.thermal.lab.data.designs: w.eco_allowance[key]=int(config.trial_products[key])
 			if w.mode=="experiment":
 				ecology.migrate_thermal(w.base.ecology); w.base_key=_base_key(w.base)
+	if data.get("version",1)<4:
+		for w in worlds:
+			w.watershed=watershed.fresh("devonian",int(w.seconds))
+			for key in watershed.rules.trial_products: w.eco_allowance[key]=int(config.trial_products[key])
+			if w.mode=="experiment":
+				w.base.watershed=watershed.fresh("devonian",int(w.base.seconds)); w.base_key=_base_key(w.base)
 	return true
+
+func component_regions(w: Dictionary) -> Array:
+	var result=w.ecology.regions.values()
+	if w.has("watershed"): result+=w.watershed.regions.values()
+	return result
+
+func component_region(w: Dictionary,site: String) -> Dictionary:
+	return w.watershed.regions[site] if site in watershed.ids() else w.ecology.regions[site]
+
+func activate_watershed(era: String) -> String:
+	var w=get_world()
+	if not watershed.rules.eras.has(era): return "未知时代"
+	if w.watershed.enabled: return "水域已经开启；可创建另一时代的实验副本"
+	w.watershed=watershed.fresh(era,int(w.seconds),true); w.paused=true
+	if w.mode=="experiment":
+		w.base.watershed=watershed.fresh(era,int(w.base.seconds),true); w.base_key=_base_key(w.base)
+	_event(w,"watershed","已开启"+str(watershed.rules.eras[era].name)+"，先布置，再继续观察。")
+	return "水域已开启并暂停，营养输入与设备现在可调节"

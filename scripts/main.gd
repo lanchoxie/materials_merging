@@ -130,7 +130,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.12.1 材料对照  ·  广场邮箱进入星球  ·  按尺寸或重量选择导热芯  ·  生态与设备负载为教学规则", 11, UI.MUTED)
+	save_label = UI.label("v0.13 河流与湿地  ·  广场邮箱进入星球  ·  过滤、控源与收割  ·  生态与设备负载为教学规则", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 

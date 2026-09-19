@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "model": "watershed_teaching_v1",
+  "scope": "Nutrient-equivalent gameplay pools; no molar ratios, mg/L, drinking-water claim or ancient climate reconstruction.",
+  "sources": [
+    {
+      "id": "noaa_nutrients",
+      "url": "https://oceanservice.noaa.gov/facts/nutpollution.html",
+      "use": "Nutrient input can stimulate algae and delayed hypoxia."
+    },
+    {
+      "id": "epa_treatment",
+      "url": "https://www.epa.gov/sdwa/overview-drinking-water-treatment-technologies",
+      "use": "Treatment target and process must match; physical clarification is not universal safety."
+    },
+    {
+      "id": "epa_wetlands",
+      "url": "https://www.epa.gov/wetlands/constructed-wetlands",
+      "use": "Vegetation, soil and microbes interact; operation and maintenance matter."
+    },
+    {
+      "id": "nps_devonian",
+      "url": "https://home.nps.gov/articles/000/devonian-period.htm",
+      "use": "Fish diversity and early forests as visual inspiration."
+    },
+    {
+      "id": "nps_pennsylvanian",
+      "url": "https://home.nps.gov/articles/000/pennsylvanian-period.htm",
+      "use": "Tall lycophytes and wetland forest visual inspiration."
+    }
+  ],
+  "history": {
+    "every_seconds": 5,
+    "limit": 120
+  },
+  "flow": {
+    "normal": 0.018,
+    "flush": 0.07,
+    "flush_seconds": 30,
+    "algae_fraction": 0.6
+  },
+  "biology": {
+    "algae_growth": 0.095,
+    "nutrient_half": 3.0,
+    "algae_capacity": 55.0,
+    "algae_death": 0.022,
+    "detritus_decay": 0.025,
+    "plant_growth": 0.032,
+    "plant_death": 0.0015,
+    "oxygen_equilibrium": 82.0,
+    "reaeration": 0.019,
+    "background_oxygen_use": 0.16,
+    "algae_respiration": 0.028,
+    "plant_respiration": 0.014,
+    "decomposition_oxygen": 5.0,
+    "oxygen_release_per_growth": 0.3,
+    "fish_leave_below": 30.0,
+    "fish_return_above": 55.0,
+    "fish_migrate_rate": 0.22,
+    "fish_death_below": 12.0,
+    "stress_seconds": 18,
+    "fish_death_rate": 0.06,
+    "benthos_death_below": 22.0,
+    "benthos_death_rate": 0.05,
+    "benthos_recovery": 0.012
+  },
+  "devices": {
+    "nutrient_pack": 60.0,
+    "max_added_nutrient": 10000.0,
+    "screen_capacity": 30.0,
+    "screen_energy": 80.0,
+    "screen_rate": 0.75,
+    "buffer_nutrient": 6.0,
+    "buffer_capacity": 28.0,
+    "harvest_capacity": 20.0,
+    "harvest_seconds": 30,
+    "harvest_rate": 0.8
+  },
+  "eras": {
+    "devonian": {
+      "name": "晚泥盆纪 · 河口林地",
+      "description": "鱼群与早期林地的灵感沙盘；试验装置来自浮岛。",
+      "source": 150.0,
+      "runoff_rate": 0.95,
+      "plant_capacities": [
+        12.0,
+        24.0,
+        10.0
+      ],
+      "initial_plants": [
+        2.0,
+        12.0,
+        2.0
+      ]
+    },
+    "carboniferous": {
+      "name": "晚石炭纪 · 沼泽森林",
+      "description": "高大石松、木贼式植被与低地湿地的灵感沙盘。",
+      "source": 180.0,
+      "runoff_rate": 0.8,
+      "plant_capacities": [
+        18.0,
+        44.0,
+        14.0
+      ],
+      "initial_plants": [
+        3.0,
+        26.0,
+        3.0
+      ]
+    }
+  },
+  "regions": [
+    {
+      "id": "headwater",
+      "name": "上游径流口",
+      "nutrient": 8.0,
+      "algae": 3.0,
+      "detritus": 2.0,
+      "fish": 6.0,
+      "benthos": 10.0
+    },
+    {
+      "id": "marsh",
+      "name": "连通湿地",
+      "nutrient": 4.0,
+      "algae": 5.0,
+      "detritus": 4.0,
+      "fish": 10.0,
+      "benthos": 10.0
+    },
+    {
+      "id": "estuary",
+      "name": "下游河口",
+      "nutrient": 2.0,
+      "algae": 4.0,
+      "detritus": 3.0,
+      "fish": 12.0,
+      "benthos": 10.0
+    }
+  ],
+  "refuge_fish": 24.0,
+  "trial_products": {
+    "runoff_feed": 2,
+    "screen_station": 3,
+    "screen_cartridge": 6,
+    "buffer_raft": 3,
+    "harvest_box": 6
+  }
+}

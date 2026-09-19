@@ -10,7 +10,7 @@ var joined=false
 var qualified=false
 var qualification: Dictionary={}
 var extra_qualifications: Dictionary={}
-var supplies: Dictionary={"station_parts":0,"oxygen_feed":0,"copper_kit":0,"aluminum_kit":0}
+var supplies: Dictionary={}
 var feed=0
 var products: Array=[]
 var job: Dictionary={}
@@ -20,6 +20,9 @@ var observing=false
 var observer_id=0
 var _reference_cache: Dictionary={}
 var notice=""
+
+func _init() -> void:
+	for id in config.supplies: supplies[id]=0
 
 func recipe_ids() -> Array:
 	return ["standard_water_crate"]+config.recipes.keys()
@@ -126,7 +129,7 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			if not Count.count_ok(payload.get("token")) or int(payload.token)!=shipment_serial: return "这次投放已处理或已过期，请重新选择水箱"
 			if not joined or not worlds.can_deploy(id,site,recipe_id): return "落点不适用：请检查支架的尺寸/重量限制、已有设备或剩余补给"
 			var w=worlds.get_world(id); var component: Dictionary={}; var old: Dictionary={}
-			if lab.is_component(recipe_id): old=w.ecology.regions[site].component.duplicate(true)
+			if lab.is_component(recipe_id): old=worlds.component_region(w,site).component.duplicate(true)
 			if w.mode=="career":
 				if available_products(recipe_id)<=0: return "主仓库暂无这个成品，请先制作"
 				for i in range(products.size()):
@@ -149,8 +152,17 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			worlds.active_id=id; return "已切换到%s" % worlds.get_world().name
 		"fork":
 			if not joined: return "先领取试验湾合作"
-			return worlds.fork(bool(payload.get("dry",false)))
-		"reset_trial": return worlds.reset_trial(bool(payload.get("fresh",false)))
+			return worlds.fork(bool(payload.get("dry",false)),str(payload.get("era","")))
+		"reset_trial": return worlds.reset_trial(bool(payload.get("fresh",false)),str(payload.get("era","")))
+		"activate_watershed":
+			if not joined: return "先领取合作补给"
+			return worlds.activate_watershed(str(payload.get("era","devonian")))
+		"watershed":
+			if not joined: return "先领取合作补给"
+			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.watershed)
+			var result=worlds.watershed.control(w.watershed,str(payload.get("site","")),str(payload.get("control","")))
+			if before!=worlds.ecology.canonical(w.watershed): worlds._event(w,"watershed",result)
+			return result
 		"ecology":
 			if not joined: return "先领取合作补给"
 			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.ecology)
@@ -160,6 +172,9 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 		"pause":
 			var w=worlds.get_world(); w.paused=not w.paused
 			return "观察已暂停" if w.paused else "观察继续"
+		"step_world":
+			var w=worlds.get_world(); w.paused=true; worlds.tick_world(w,30.0)
+			return "当前世界推进30秒，已暂停"
 		"step_pair": return worlds.step_pair()
 	return "未知的星球操作"
 
@@ -173,15 +188,19 @@ func tick(dt: float) -> void:
 	if observing: worlds.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":3,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
+	return {"version":4,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3]: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4]: return false
 	data=data.duplicate(true)
 	if data.version==1: data.extra_qualifications={}; data.supplies={"station_parts":0,"oxygen_feed":0}
 	if data.version<3:
 		if not data.get("supplies") is Dictionary or data.supplies.size()!=2: return false
 		data.reports={}; data.supplies.copper_kit=0; data.supplies.aluminum_kit=0
+	if data.version<4:
+		if not data.get("supplies") is Dictionary or data.supplies.size()!=4: return false
+		for id in config.supplies:
+			if id not in ["station_parts","oxygen_feed","copper_kit","aluminum_kit"]: data.supplies[id]=0
 	if not data.get("reports") is Dictionary or data.reports.size()>2: return false
 	for mode in data.reports:
 		if not lab.valid_report(data.reports[mode],str(mode)) or data.get("joined")!=true: return false
@@ -226,7 +245,7 @@ func restore(data,state) -> bool:
 	if int(data.version)>=2 and (not data.get("worlds") is Dictionary or data.worlds.get("version")!=data.version): return false
 	if not restored.restore(data.get("worlds")): return false
 	if not data.job.is_empty(): ids.append(int(data.job.id))
-	for r in restored.get_world("home").ecology.regions.values():
+	for r in restored.component_regions(restored.get_world("home")):
 		if not r.component.is_empty():
 			if not _valid_product(r.component,data,ids): return false
 			ids.append(int(r.component.id))
