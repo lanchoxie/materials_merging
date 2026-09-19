@@ -9,11 +9,21 @@
       "url": "https://doi.org/10.1107/S0567739476001551",
       "name": "Shannon (1976), Revised effective ionic radii, Table 1",
       "scope": "有效离子半径（IR列）：Cs+ CN12 1.88 Å、Pb2+ CN6 1.19 Å、Br- CN6 1.96 Å、Cl- CN6 1.81 Å；不可与晶体半径（CR列）混用"
+    },
+    {
+      "name": "RSC Periodic Table: copper",
+      "url": "https://periodic-table.rsc.org/element/29/copper",
+      "scope": "Cu covalent radius 1.22 Angstrom, display only; reviewed 2026-09-19"
+    },
+    {
+      "name": "RSC Periodic Table: aluminium",
+      "url": "https://periodic-table.rsc.org/element/13/aluminium",
+      "scope": "Al covalent radius 1.24 Angstrom, display only; reviewed 2026-09-19"
     }
   ],
   "note": "元素是种类；半径属于具体成键环境。radius 为展示默认值，结构中的 atom_contexts 优先。分子共价半径的 oxidation_state=null 表示本展示未指派形式氧化态，并非零价。未知数据不能自动当作零能量或精品。",
   "units": "Å",
-  "version": 4,
+  "version": 5,
   "elements": {
     "H": {
       "name": "氢",
@@ -150,6 +160,26 @@
       "oxidation_state": 1,
       "coordination": 6,
       "source": "Shannon 1976, Table 1, effective ionic radius (IR); https://doi.org/10.1107/S0567739476001551"
+    },
+    "Cu": {
+      "name": "铜",
+      "radius": 1.22,
+      "radius_type": "共价半径（RSC展示参考）",
+      "color": "d99367",
+      "atomic_number": 29,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "https://periodic-table.rsc.org/element/29/copper ; display only, not metallic nearest-neighbor distance"
+    },
+    "Al": {
+      "name": "铝",
+      "radius": 1.24,
+      "radius_type": "共价半径（RSC展示参考）",
+      "color": "c5d9df",
+      "atomic_number": 13,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "https://periodic-table.rsc.org/element/13/aluminium ; display only, not metallic nearest-neighbor distance"
     }
   }
 }

@@ -12,8 +12,8 @@ func _initialize() -> void:
 func run() -> void:
 	var game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var s=game.state
-	check(str(ProjectSettings.get_setting("application/config/version"))=="0.18.0","packaged application version")
-	check(game.save_label.text.begins_with("v0.18 "),"packaged compiled UI carries the current release label")
+	check(str(ProjectSettings.get_setting("application/config/version"))=="0.19.0","packaged application version")
+	check(game.save_label.text.begins_with("v0.19 "),"packaged compiled UI carries the current release label")
 	game._show_planet(); await process_frame
 	check(game.modal.view.sites.size()==2,"packaged planet scene builds both sites")
 	var batch=s.product_snapshot(s.reactors[0]); s.storage.add_product(batch,2)
@@ -134,6 +134,35 @@ func run() -> void:
 	s.planet.command(s,"deploy",{"world_id":"trial_a","site_id":"modern_cooling","recipe":design18,"token":s.planet.shipment_serial})
 	check(s.planet.worlds.get_world().modern.custom_sink.get("id","")==design18,"packaged player design installs only into experimental world")
 	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize(),"",true,true)),s),"packaged full provenance and installed custom devices round-trip")
+
+	s.coins=20000; s.materials=[10000,10000,10000]; s.campus.rng.seed=194
+	for entry in [[3,"workshop"],[5,"institute"],[7,"doctor_dorm"],[0,"professor_apartment"]]:
+		if not s.plots[entry[0]].unlocked: s.buy_plot(entry[0])
+		s.campus_build(entry[0],entry[1]); s.campus_road(entry[0])
+	s.campus_hire("doctor"); s.campus_hire("doctor"); s.campus_hire("professor"); s.campus.elapsed=100
+	s.campus_assign_post(s.campus.people[0].id,"workshop"); s.planet.command(s,"laminate_research")
+	for i in range(1800):
+		if s.planet.laminates.unlocked(s): break
+		s.tick(1)
+	check(s.planet.laminates.unlocked(s),"packaged paid campus project completes through actual staff scheduling")
+	var proposal=s.new_sandbox_structure("包内铜铝层芯")
+	for i in range(3): s.sandbox_add_atom(proposal,"Cu" if i<2 else "Al",[float(i)*1.6,0.0,0.0])
+	s.storage.add_product({"id":"packaged-laminate","name":proposal.name,"formula":s.sandbox_formula(proposal),"reference":"","quality":0.0,"work":proposal},1)
+	s.planet.command(s,"archive_material",{"batch_id":"packaged-laminate"}); var rid19=s.planet.materials.identity(proposal)
+	s.planet.command(s,"propose_laminate",{"record_id":rid19,"orientation":"parallel","mode":"same_size"})
+	var id19=str(s.planet.materials.designs.keys()[-1])
+	check(s.planet.materials.designs[id19].basis=="family_model","packaged element data and layer method admit a sourced model")
+	for element in ["Cu","Al"]: s.planet.command(s,"laminate_buy",{"element":element})
+	s.planet.command(s,"laminate_pack",{"design_id":id19})
+	for i in range(960):
+		if s.planet.laminates.count(id19)>0: break
+		s.tick(1)
+	check(s.planet.laminates.count(id19)==1 and s.planet.laminates.quote(s.planet.materials.designs[id19],"compact").premium,"packaged real engineer produces a finite premium-contract component")
+	s.planet.command(s,"select",{"world_id":"home"}); s.planet.command(s,"deploy",{"world_id":"home","site_id":"modern_cooling","recipe":id19,"token":s.planet.shipment_serial})
+	check(s.planet.worlds.get_world().modern.custom_sink.get("id")==id19 and s.planet.laminates.count(id19)==0,"packaged career consumes manufactured family component exactly once")
+	game.modal._open_dossiers(); game.modal.dossier_family=true; game.modal.dossier_id=rid19; game.modal._redraw(); await process_frame; await process_frame
+	check(game.modal.view.player_view.laminate.visible and game.modal.view.player_view.heat_particles.size()==5,"packaged layer preview and heat-flow animation build")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize(),"",true,true)),s),"packaged factory ledger and career family receipts restore")
 	game._close_modal(); s.close_science()
 	print("PACKAGE PLANET SMOKE: ",checks," checks, ",failures.size()," failures")
 	quit(0 if failures.is_empty() else 1)

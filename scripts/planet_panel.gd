@@ -52,6 +52,10 @@ var industry_details=false
 var circuit_mode="same_size"
 var modern_widgets: Dictionary={}
 var modern_details=false
+var dossier_family=false
+var laminate_orientation="parallel"
+var laminate_details=false
+var laminate_progress: Label
 var dossier_id=""
 var dossier_kind="sink"
 var dossier_mode="same_size"
@@ -64,7 +68,7 @@ func setup(model) -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var heading=UI.label("材料试验星球",30,UI.MINT); heading.position=Vector2(32,21); add_child(heading)
-	var subtitle=UI.label("EXPERIMENT 09    /    你的结构，有据可查",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
+	var subtitle=UI.label("EXPERIMENT 10    /    研发、分层与真实用途",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1285,27); close.size=Vector2(122,46); add_child(close)
 	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(518,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
 	var scenes=HBoxContainer.new(); scenes.position=Vector2(550,107); scenes.add_theme_constant_override("separation",2); add_child(scenes)
@@ -138,11 +142,13 @@ func _fingerprint() -> String:
 	var batches=[]
 	for item in state.storage.batches: batches.append([item.id,item.quantity])
 	var p=state.planet; var w=p.worlds.get_world()
-	return str([p.joined,p.qualified,p.extra_qualifications.keys(),p.reports.keys(),p.circuit_reports.keys(),p.materials.records.size(),p.materials.designs.size(),p.feed,p.supplies,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.eco_allowance,w.zones,w.event_serial,int(w.seconds)/5,p.worlds.worlds.size(),batches])
+	var research=[]
+	for item in state.campus.research_jobs: research.append([item.id,int(item.progress)/5])
+	return str([p.joined,p.qualified,p.extra_qualifications.keys(),p.reports.keys(),p.circuit_reports.keys(),p.materials.records.size(),p.materials.designs.size(),p.laminates.stock,p.laminates.feed,p.laminates.job.get("id",0),int(p.laminates.cooldown)/5,state.campus.unlocked_materials,research,p.feed,p.supplies,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.eco_allowance,w.zones,w.event_serial,int(w.seconds)/5,p.worlds.worlds.size(),batches])
 
 func _redraw() -> void:
 	if state==null: return
-	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null; eco_widgets={}; watershed_widgets={}; village_widgets={}; habitat_widgets={}; industry_widgets={}; modern_widgets={}
+	UI.clear(body); UI.clear(world_tabs); laminate_progress=null; progress=null; progress_text=null; eco_widgets={}; watershed_widgets={}; village_widgets={}; habitat_widgets={}; industry_widgets={}; modern_widgets={}
 	var p=state.planet
 	for w in p.worlds.worlds:
 		var button=UI.button(w.name,func(): _do("select",{"world_id":str(w.id)}),w.id==p.worlds.active_id)
@@ -230,6 +236,7 @@ func _button(text: String,callback: Callable,primary: bool=false,disabled: bool=
 
 func _workshop() -> void:
 	var p=state.planet; var rules=p.config.workshop
+	if p.materials.designs.get(selected_recipe,{}).get("basis")=="family_model": preload("res://scripts/laminate_panel.gd").workshop(self,selected_recipe); return
 	if selected_recipe.begins_with("custom:"):
 		_text(str(p.recipe(selected_recipe).name),23,UI.LILAC)
 		_text("这是已保存的假设方案，无需扣金币加工。复制一个实验副本后，把左侧构件拖到对应落点；安装占用有限实验配给。",17,UI.TEXT)
@@ -336,7 +343,7 @@ func _do(action: String,data: Dictionary={}) -> void:
 func _live() -> void:
 	var p=state.planet; var w=p.worlds.get_world()
 	var count=p.available_in(w,selected_recipe)
-	tray_title.text="◈ 假设散热芯" if p.materials.designs.get(selected_recipe,{}).get("kind","")=="sink" else "◈ 假设导线" if selected_recipe.begins_with("custom:") else "▣  "+str(p.recipe(selected_recipe).name).replace("氧气动力补给盒","氧气补给盒")
+	tray_title.text="◈ 铜铝模型层芯" if p.materials.designs.get(selected_recipe,{}).get("basis")=="family_model" else "◈ 假设散热芯" if p.materials.designs.get(selected_recipe,{}).get("kind","")=="sink" else "◈ 假设导线" if selected_recipe.begins_with("custom:") else "▣  "+str(p.recipe(selected_recipe).name).replace("氧气动力补给盒","氧气补给盒")
 	tray_label.text="%s %d件 · 按住拖放" % ["主仓库" if w.mode=="career" else "实验配给",count]
 	caption.text="%s · %s\n拖动左侧成品到落点；点选后也可点击放置。" % [w.name,"历史回看" if replay_index>=0 else ("暂停中" if w.paused else "观察中")]
 	if section=="materials":
@@ -348,6 +355,8 @@ func _live() -> void:
 	if section=="circuits":
 		tray_title.text="◈  导线对照"; tray_label.text="选约束 → 记录 → 制作"
 		caption.text="20°C恒温直流参考 · 等截面与等重量的选择不同\n较低线损不代表任何安装槽都放得下。"
+	if is_instance_valid(laminate_progress) and not p.laminates.job.is_empty():
+		laminate_progress.text="本岛装配 · 余%.1f工秒\n当前工程师到岗速率 %.2f倍" % [p.laminates.job.left,state.campus.industrial_rate(state.campus_context())]
 	if is_instance_valid(progress) and not p.job.is_empty():
 		progress.value=100*(1-float(p.job.left)/float(p.job.duration))
 		progress_text.text="%s · 余%d秒标准工时" % [p.recipe(str(p.job.recipe)).name,ceili(float(p.job.left))]

@@ -48,6 +48,7 @@ func build(record_id: String,kind: String,mode: String,values: Dictionary) -> Di
 	return proof
 
 func valid(proof) -> bool:
+	if proof is Dictionary and proof.get("basis")=="family_model": return preload("res://scripts/laminate_model.gd").new().valid(proof)
 	if not proof is Dictionary or not proof.get("record_id") is String or proof.record_id.length()!=32 or not proof.get("properties") is Dictionary: return false
 	var expected=build(proof.record_id,str(proof.get("kind","")),str(proof.get("mode","")),proof.properties)
 	return not expected.is_empty() and electrical._same(proof,expected)

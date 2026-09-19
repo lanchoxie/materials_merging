@@ -145,6 +145,7 @@ func _process(dt: float) -> void:
 		rack.visible=w.installed.server
 		for lamp in rack.get_children(): lamp.material_override=_lit("dd9c88" if w.tripped else "9be7d1") if w.tripped or w.flow.compute>0 else builder._mat("526a77")
 	custom_badge.visible=not w.get("custom_sink",{}).is_empty()
+	if custom_badge.visible: custom_badge.material_override=builder._mat("d99367" if w.custom_sink.basis=="family_model" else "bbbcff")
 	fan.visible=w.installed.fan
 	if not snapshot.paused:
 		fan.rotation.y+=dt*w.flow.fan*.025

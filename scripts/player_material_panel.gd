@@ -1,11 +1,13 @@
 extends RefCounted
 const UI=preload("res://scripts/ui.gd")
 static func menu(parent: Node) -> OptionButton:
-	var select=OptionButton.new(); select.custom_minimum_size=Vector2(0,44); select.size_flags_horizontal=Control.SIZE_EXPAND_FILL; select.fit_to_longest_item=false; parent.add_child(select); return select
+	var select=OptionButton.new(); select.mouse_filter=Control.MOUSE_FILTER_PASS; select.action_mode=BaseButton.ACTION_MODE_BUTTON_RELEASE; select.custom_minimum_size=Vector2(0,44); select.size_flags_horizontal=Control.SIZE_EXPAND_FILL; select.fit_to_longest_item=false; parent.add_child(select); return select
 static func build(p) -> void:
 	var program=p.state.planet; var archive=program.materials; var f=archive.fixture
 	p._text("我的材料档案",23,UI.LILAC)
-	p._text("留存结构 → 提出假设 → 用途试验",16,UI.TEXT)
+	p._text("留存结构 → 选择方法 → 制作与用途",16,UI.TEXT)
+	var tabs=UI.row(p.body,6)
+	for item in [[false,"自由假设"],[true,"铜铝分层研发"]]: tabs.add_child(UI.button(item[1],func(): p.dossier_family=item[0]; p._redraw(),p.dossier_family==item[0]))
 	if not program.joined: p._button("领取合作与首次供料",func(): p._do("join"),true); return
 	var batches=p.state.storage.batches
 	if not batches.is_empty():
@@ -30,7 +32,9 @@ static func build(p) -> void:
 	p.view.player_view.show_record(record,p.state.elements)
 	p._text("%s · %d个原子" % [record.formula,record.work.atoms.size()],21,UI.MINT)
 	p._text("结构指纹 "+record.id.substr(0,12)+"\n"+("几何身份匹配："+str(p.state.templates.get(record.reference,{}).get("name",record.reference)) if not record.reference.is_empty() else "身份：未匹配参考的玩家作品"),14)
-	p._text("档案物性：密度、导热率、电阻率均未知。身份匹配与键长分数不能证明这些性质。",15,UI.GOLD)
+	p._text("原始结构物性仍未知；下面的模型只适用于另行装配的标准层料构件。" if p.dossier_family else "档案物性：密度、导热率、电阻率均未知。身份匹配与键长分数不能证明这些性质。",15,UI.GOLD)
+	if p.dossier_family: preload("res://scripts/laminate_panel.gd").build(p,record); return
+	p.view.player_view.hide_laminate()
 	p._text("建立一个有条件的方案",20,UI.LILAC)
 	var kind=menu(p.body)
 	for item in [["sink","现代城市 · 散热芯"],["wire","工业港 · 导线"]]: kind.add_item(item[1]); kind.set_item_metadata(kind.item_count-1,item[0])
@@ -44,7 +48,7 @@ static func build(p) -> void:
 		var spec=f.rules.properties[key]; var scale=1e9 if key=="resistivity_ohm_m" else 1.0
 		p._text("假设"+str(spec.name)+"（"+("nΩ·m" if scale>1 else str(spec.unit))+"）",15,UI.TEXT)
 		row=UI.row(p.body,6)
-		var known=CheckButton.new(); known.text="填写"; known.button_pressed=p.dossier_draft[key]!=null; row.add_child(known)
+		var known=CheckButton.new(); known.mouse_filter=Control.MOUSE_FILTER_PASS; known.text="填写"; known.button_pressed=p.dossier_draft[key]!=null; row.add_child(known)
 		var input=SpinBox.new(); input.min_value=float(spec.min)*scale; input.max_value=float(spec.max)*scale; input.step=.01 if key!="density_kg_m3" else 1; input.allow_greater=false; input.custom_minimum_size=Vector2(155,44); row.add_child(input)
 		input.editable=known.button_pressed; input.value=float(spec.min)*scale if p.dossier_draft[key]==null else float(p.dossier_draft[key])*scale
 		input.value_changed.connect(func(v): p.dossier_draft[key]=v/scale; update_quote(p))
@@ -57,7 +61,7 @@ static func build(p) -> void:
 	var count=0
 	for id in archive.designs:
 		var d=archive.designs[id]
-		if d.record_id!=p.dossier_id: continue
+		if d.record_id!=p.dossier_id or d.basis!="player_hypothesis": continue
 		count+=1
 		p._text("假设密度 %.0f kg/m³；%s\n截面 %.3f mm² · 质量 %.2f g" % [d.properties.density_kg_m3,"导热率 %.2f W/(m·K) · 295 K" % d.properties.conductivity_W_mK if d.kind=="sink" else "电阻率 %.3f nΩ·m · 293.15 K" % (d.properties.resistivity_ohm_m*1e9),d.result.area_m2*1e6,d.result.mass_kg*1000],14)
 		p._button("试用%s · %s · %s" % ["散热芯" if d.kind=="sink" else "导线","等重" if d.mode=="same_mass" else "等尺寸",id.right(5)],func(): p.section="observe"; p._choose_recipe(id))

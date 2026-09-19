@@ -92,3 +92,11 @@
 - [DOE数据中心设计指南](https://www.energy.gov/cmei/femp/articles/best-practices-guide-energy-efficient-data-center-design)：IT、电力、热管理与余热联系的定性来源；没有使用现实需求增长预测或AI节能承诺。
 
 资料和建模明确分开：planet_modern.json全部器件效率、负载、光照周期、衰减、热容/缩放、回收率和任务收益为游戏设计。295K铜铝夹具沿用已有有来源参考，在城市中使用标注的教学映射；没有跨温区声称材料实测。未下载或复用来源的美术、模型、整表或长文本。
+
+## 0.19标准铜铝层料与热阻网络 · 2026-09-19
+
+- [NIST295 K参考表](https://www.nist.gov/ncnr/neutron-instruments/sample-environment/sample-mounting/reference-tables)：沿用295 K密度/导热率，不混用电学章节20°C的铜/EC-H19铝数据。
+- [MIT Unified Engineering热传导说明](https://web.mit.edu/16.unified/www/SPRING/propulsion/notes/node118.html)：串联累加热阻、并联累加热导，用于致密无反应分层构件的理想方向比较。
+- [RSC铜](https://periodic-table.rsc.org/element/29/copper)和[RSC铝](https://periodic-table.rsc.org/element/13/aluminium)：采用所列相对原子质量63.546和26.982；显示共价半径分别1.22Å和1.24Å。半径不用于认证金属平衡结构，投料摩尔比不等于体积比。
+
+详细公式和条件见V0.19.md。没有下载网页模型、插画或整表，没有插值出电阻率、毒性或寿命。研究时长、采购价、层料包重量、订单阈值、人工上限与收入属于原创游戏规则；热流光点只是传热方向示意。

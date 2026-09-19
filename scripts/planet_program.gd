@@ -8,6 +8,7 @@ var lab=preload("res://scripts/material_lab.gd").new()
 var reports: Dictionary={}
 var circuit_reports: Dictionary={}
 var electrical=preload("res://scripts/electrical_lab.gd").new()
+var laminates=preload("res://scripts/laminate_workshop.gd").new()
 var materials=preload("res://scripts/player_materials.gd").new()
 var production_mode="partner"
 var joined=false
@@ -35,6 +36,7 @@ func recipe_ids() -> Array:
 func recipe(id: String) -> Dictionary:
 	if materials.designs.has(id):
 		var d=materials.designs[id]; var name=str(materials.records[d.record_id].name)
+		if d.basis=="family_model": return {"id":id,"version":1,"name":laminates.model.name(d),"domain":"modern","reference":"laminate","input":"","fee":int(laminates.model.rules.manufacturing.fee),"seconds":float(laminates.model.rules.manufacturing.seconds),"description":"标准铜铝层料的理想装配模型，非合金实测。"}
 		return {"id":id,"version":1,"name":name+(" · 假设散热芯" if d.kind=="sink" else " · 假设导线"),"domain":"modern" if d.kind=="sink" else "industry","reference":"hypothesis","input":"","fee":0,"seconds":0,"description":"条件计算方案，仅供实验副本使用；不进入真实成品仓。"}
 	if id=="standard_water_crate":
 		return {"id":id,"version":int(config.recipe.version),"name":str(config.recipe.name),"reference":"water","input":"feed","fee":int(config.workshop.packing_cost),"seconds":float(config.workshop.packing_seconds),"description":"把合作方标准供料装入回收水箱。"}
@@ -58,6 +60,7 @@ func _input_add(id: String,amount: int) -> void:
 	else: supplies[id]=input_count(id)+amount
 
 func available_products(recipe_id: String="standard_water_crate") -> int:
+	if materials.designs.get(recipe_id,{}).get("basis")=="family_model": return laminates.count(recipe_id)
 	var result=0
 	for item in products:
 		if item.recipe==recipe_id: result+=1
@@ -65,6 +68,7 @@ func available_products(recipe_id: String="standard_water_crate") -> int:
 
 func available_in(world: Dictionary,recipe_id: String) -> int:
 	if materials.designs.has(recipe_id):
+		if materials.designs[recipe_id].basis=="family_model": return laminates.count(recipe_id) if world.mode=="career" else worlds.family_remaining(world)
 		if world.mode!="experiment": return 0
 		var key="modern" if materials.designs[recipe_id].kind=="sink" else "industry"
 		return int(materials.fixture.rules.trial_placements)-world[key].custom_receipts.size()
@@ -86,6 +90,16 @@ func sample_candidates(state,reference: String) -> Array:
 
 func command(state,action: String,payload: Dictionary={}) -> String:
 	match action:
+		"laminate_research":
+			if not joined: return "先领取合作补给"
+			return state.campus_start_research(laminates.model.rules.project)
+		"propose_laminate":
+			if not joined: return "先领取合作补给"
+			return materials.propose_laminate(state,str(payload.get("record_id","")),str(payload.get("orientation","")),str(payload.get("mode","")))
+		"laminate_buy": return laminates.buy(state,str(payload.get("element",""))) if joined else "先领取合作补给"
+		"laminate_pack": return laminates.start(state,materials.designs.get(str(payload.get("design_id","")),{})) if joined else "先领取合作补给"
+		"laminate_cancel": return laminates.cancel()
+		"laminate_deliver": return laminates.deliver(state,materials.designs.get(str(payload.get("design_id","")),{}),str(payload.get("order_id",""))) if joined else "先领取合作补给"
 		"archive_material":
 			if not joined: return "先领取合作补给"
 			return materials.archive(state,str(payload.get("batch_id","")))
@@ -180,6 +194,8 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			if lab.is_component(recipe_id): old=worlds.component_region(w,site).component.duplicate(true)
 			if w.mode=="career":
 				if available_products(recipe_id)<=0: return "主仓库暂无这个成品，请先制作"
+				if materials.designs.get(recipe_id,{}).get("basis")=="family_model":
+					if not laminates.take(recipe_id,"installed"): return "层芯库存不足"
 				for i in range(products.size()):
 					if products[i].recipe==recipe_id:
 						if lab.is_component(recipe_id): component=products[i].duplicate(true)
@@ -248,6 +264,7 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 func tick(dt: float,effort: float=0.0) -> void:
 	if not is_finite(dt) or dt<=0 or dt>60: return
 	var rate=1.0 if production_mode=="partner" else (clampf(effort,0,100) if is_finite(effort) else 0.0)
+	laminates.tick(dt,effort if production_mode=="partner" or job.is_empty() else 0.0)
 	if not job.is_empty():
 		job.left=maxf(0,float(job.left)-dt*rate)
 		if float(job.left)<=0:
@@ -256,10 +273,10 @@ func tick(dt: float,effort: float=0.0) -> void:
 	if observing: worlds.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":9,"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
+	return {"version":10,"laminates":laminates.serialize(),"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8,9]: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8,9,10]: return false
 	data=data.duplicate(true)
 	if data.version<5: data.production_mode="partner"
 	if data.get("production_mode") not in ["partner","island"]: return false
@@ -328,6 +345,8 @@ func restore(data,state) -> bool:
 		if not Count.count_ok(data.job.get("fee")) or int(data.job.fee)>1000000: return false
 	var archive=preload("res://scripts/player_materials.gd").new()
 	if int(data.version)>=9 and not archive.restore(data.get("materials"),state): return false
+	var factory=preload("res://scripts/laminate_workshop.gd").new()
+	if int(data.version)>=10 and not factory.restore(data.get("laminates"),archive.designs): return false
 	if not data.joined and (not archive.records.is_empty() or not archive.designs.is_empty()): return false
 	var restored=Worlds.new(config)
 	if int(data.version)>=2 and (not data.get("worlds") is Dictionary or data.worlds.get("version")!=data.version): return false
@@ -347,7 +366,10 @@ func restore(data,state) -> bool:
 		if restored.get_world("home").modern.enabled: return false
 		for n in data.supplies.values():
 			if int(n)>0: return false
-	materials=archive; restored.custom_designs=materials.designs
+	for id in archive.designs:
+		if archive.designs[id].basis=="family_model" and int(factory.installed.get(id,0))!=int(restored.get_world("home").modern.family_receipts.get(id,0)): return false
+	if not data.joined and (factory.purchased.Cu>0 or factory.purchased.Al>0 or not factory.job.is_empty()): return false
+	laminates=factory; materials=archive; restored.custom_designs=materials.designs
 	production_mode=data.production_mode
 	reports=data.reports.duplicate(true)
 	circuit_reports=data.circuit_reports.duplicate(true)

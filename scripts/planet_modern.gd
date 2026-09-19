@@ -6,7 +6,7 @@ var custom=preload("res://scripts/player_fixture.gd").new()
 const ENERGY=["sun_J","pv_J","unconverted_J","charged_J","discharged_J","battery_loss_J","load_J","curtailed_J","compute_J","removed_heat_J"]
 const ROLES=["operator","operator","recycler","resident","resident","resident"]
 func fresh(at: int=0,enabled: bool=false) -> Dictionary:
-	var w={"model":rules.model,"custom_sink":{},"custom_receipts":[],"enabled":enabled,"elapsed":0,"policy":"residents","storage_mode":"auto","running":true,"recycling":true,"park_requested":false,"park":false,"park_progress":0.0,"park_spent":0.0,"panels":{},"installed":{"battery":false,"server":false,"fan":false,"recycler":false},"sink":"","received":{},"scrapped":{},"battery_J":0.0,"heat_J":0.0,"tripped":false,"trips":0,"flow":{},"solar_W":0.0,"irradiance":0.0,"charge_W":0.0,"discharge_W":0.0,"cooling_W":0.0,"service":70.0,"job_kind":"lighting","job":{"kind":"lighting","progress":0.0},"completed":{"lighting":0,"cooling":0},"boost_until":{"lighting":0,"cooling":0},"scrap":0.0,"scrap_added":0.0,"scrap_used":0.0,"parts":0.0,"recovered":0.0,"residue":0.0,"recycle_progress":0.0,"recycle_active":false,"cycles":0,"people":[],"flags":[],"history":[]}
+	var w={"model":rules.model,"custom_sink":{},"custom_receipts":[],"family_receipts":{},"enabled":enabled,"elapsed":0,"policy":"residents","storage_mode":"auto","running":true,"recycling":true,"park_requested":false,"park":false,"park_progress":0.0,"park_spent":0.0,"panels":{},"installed":{"battery":false,"server":false,"fan":false,"recycler":false},"sink":"","received":{},"scrapped":{},"battery_J":0.0,"heat_J":0.0,"tripped":false,"trips":0,"flow":{},"solar_W":0.0,"irradiance":0.0,"charge_W":0.0,"discharge_W":0.0,"cooling_W":0.0,"service":70.0,"job_kind":"lighting","job":{"kind":"lighting","progress":0.0},"completed":{"lighting":0,"cooling":0},"boost_until":{"lighting":0,"cooling":0},"scrap":0.0,"scrap_added":0.0,"scrap_used":0.0,"parts":0.0,"recovered":0.0,"residue":0.0,"recycle_progress":0.0,"recycle_active":false,"cycles":0,"people":[],"flags":[],"history":[]}
 	for id in rules.solar: w.panels[id]={"recipe":"","quality":1.0}
 	for id in rules.trial_products: w.received[id]=0; w.scrapped[id]=0
 	for id in rules.loads: w.flow[id]=0.0
@@ -164,10 +164,16 @@ func _valid(w,at: int) -> bool:
 	for key in ["enabled","running","recycling","park_requested","park","tripped","recycle_active"]:
 		if not w.get(key) is bool: return false
 	if not w.enabled and w.elapsed!=0: return false
+	if not w.get("family_receipts",{}) is Dictionary or w.get("family_receipts",{}).size()>96: return false
+	for id in w.get("family_receipts",{}):
+		if not id is String or not id.begins_with("custom:") or id.length()!=31 or not _num(w.family_receipts[id],1,1000000,true): return false
 	if not custom.valid_receipts(w.get("custom_receipts",[])) or not w.get("custom_sink",{}) is Dictionary: return false
 	if not w.get("custom_sink",{}).is_empty():
 		var d=w.custom_sink
-		if not w.enabled or not custom.valid(d) or d.kind!="sink" or d.id not in w.get("custom_receipts",[]) or not custom_fits(d): return false
+		if not w.enabled or not custom.valid(d) or d.kind!="sink" or not custom_fits(d): return false
+		if d.basis=="family_model":
+			if int(w.get("family_receipts",{}).get(d.id,0))<1: return false
+		elif d.id not in w.get("custom_receipts",[]): return false
 	if not rules.policies.has(w.get("policy")) or w.get("storage_mode") not in ["auto","reserve","off"] or not rules.jobs.has(w.get("job_kind")): return false
 	for key in ENERGY+["battery_J","heat_J","scrap","scrap_added","scrap_used","parts","recovered","residue","park_spent"]:
 		if not _num(w.get(key)): return false
@@ -248,7 +254,9 @@ func valid(w,at: int) -> bool:
 func custom_fits(d: Dictionary) -> bool:
 	return d.result.area_m2<=float(custom.rules.sink_mount.max_area_m2)+1e-12 and d.result.mass_kg<=float(custom.rules.sink_mount.max_mass_kg)+1e-9
 func can_custom(w: Dictionary,site: String,d: Dictionary) -> bool:
-	return w.enabled and site=="modern_cooling" and custom.valid(d) and d.kind=="sink" and w.get("custom_receipts",[]).size()<int(custom.rules.trial_placements) and w.get("custom_sink",{}).get("id","")!=d.id and custom_fits(d)
+	return w.enabled and site=="modern_cooling" and custom.valid(d) and d.kind=="sink" and (w.get("custom_receipts",[]).size()<int(custom.rules.trial_placements) if d.basis=="player_hypothesis" else int(w.get("family_receipts",{}).get(d.id,0))<1000000) and w.get("custom_sink",{}).get("id","")!=d.id and custom_fits(d)
 func deploy_custom(w: Dictionary,site: String,d: Dictionary) -> void:
 	if not can_custom(w,site,d): return
-	w.custom_sink=d.duplicate(true); w.custom_receipts.append(d.id)
+	w.custom_sink=d.duplicate(true)
+	if d.basis=="family_model": w.family_receipts[d.id]=int(w.family_receipts.get(d.id,0))+1
+	else: w.custom_receipts.append(d.id)

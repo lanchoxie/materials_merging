@@ -39,8 +39,10 @@ func can_deploy(id: String, site_id: String,recipe: String="standard_water_crate
 	var w=get_world(id)
 	if w.is_empty(): return false
 	if recipe.begins_with("custom:"):
-		if w.mode!="experiment" or not custom_designs.has(recipe): return false
+		if not custom_designs.has(recipe): return false
 		var d=custom_designs[recipe]
+		if w.mode!="experiment" and d.basis!="family_model": return false
+		if d.basis=="family_model" and w.mode=="experiment" and family_remaining(w)<=0: return false
 		return modern.can_custom(w.modern,site_id,d) if d.kind=="sink" else industry.can_custom(w.industry,site_id,d)
 	if site_id in modern.ids(): return modern.can_deploy(w.modern,site_id,recipe)
 	if site_id in industry.ids(): return industry.can_deploy(w.industry,site_id,recipe)
@@ -60,7 +62,7 @@ func deploy(id: String,site_id: String,shipment: int,recipe: String="standard_wa
 		var d=custom_designs[recipe]
 		if d.kind=="sink": modern.deploy_custom(w.modern,site_id,d)
 		else: industry.deploy_custom(w.industry,site_id,d)
-		_event(w,"modern" if d.kind=="sink" else "industry","玩家假设构件已安装；仅改变本实验，未认证实际材料性质。",shipment)
+		_event(w,"modern" if d.kind=="sink" else "industry","标准铜铝层芯已安装；性能采用295 K分层模型。" if d.basis=="family_model" else "玩家假设构件已安装；仅改变本实验，未认证实际材料性质。",shipment)
 		return
 	if site_id in modern.ids():
 		modern.deploy(w.modern,site_id,recipe); _event(w,"modern","%s已交付现代城市" % str(config.recipes[recipe].name),shipment); return
@@ -193,7 +195,7 @@ func step_pair() -> String:
 	return "两个实验共同推进了10秒，现已暂停，方便比较"
 
 func serialize() -> Dictionary:
-	return {"version":9,"active_id":active_id,"worlds":worlds.duplicate(true)}
+	return {"version":10,"active_id":active_id,"worlds":worlds.duplicate(true)}
 
 func _number(value,lo: float,hi: float,integer: bool=false) -> bool:
 	return (value is int or value is float) and is_finite(float(value)) and value>=lo and value<=hi and (not integer or float(value)==floor(float(value)))
@@ -217,7 +219,7 @@ func _valid_base(w,legacy_eco: bool=false) -> bool:
 
 func restore(data) -> bool:
 	if not data is Dictionary or not data.get("worlds") is Array or not data.get("active_id") is String: return false
-	if not _number(data.get("version",1),1,9,true): return false
+	if not _number(data.get("version",1),1,10,true): return false
 	var legacy=data.get("version",1)==1
 	var legacy_eco=data.get("version",1)<3
 	if data.worlds.size()<1 or data.worlds.size()>3: return false
@@ -225,6 +227,7 @@ func restore(data) -> bool:
 	for w in data.worlds:
 		if not _valid_base(w,legacy_eco): return false
 		if data.get("version",1)>=9 and not _custom_fields(w): return false
+		if data.get("version",1)>=10 and not _family_fields(w): return false
 		if data.get("version",1)>=4 and not w.has("watershed"): return false
 		if data.get("version",1)>=5 and not w.has("village"): return false
 		if data.get("version",1)>=6 and not w.has("habitat"): return false
@@ -257,6 +260,7 @@ func restore(data) -> bool:
 		if w.mode=="experiment":
 			if not _valid_base(w.base,legacy_eco) or w.base_key!=_base_key(w.base,data.get("version",1)<9): return false
 			if data.get("version",1)>=9 and not _custom_fields(w.base): return false
+			if data.get("version",1)>=10 and (not _family_fields(w.base) or family_remaining(w)<0 or not _family_monotonic(w.base.modern,w.modern)): return false
 			if not legacy and not w.base.has("ecology"): return false
 			if data.get("version",1)>=4 and not w.base.has("watershed"): return false
 			if data.get("version",1)>=5 and not w.base.has("village"): return false
@@ -325,6 +329,11 @@ func restore(data) -> bool:
 		for w in worlds:
 			_migrate_custom(w)
 			if w.mode=="experiment": _migrate_custom(w.base); w.base_key=_base_key(w.base)
+
+	if data.get("version",1)<10:
+		for w in worlds:
+			_migrate_family(w)
+			if w.mode=="experiment": _migrate_family(w.base); w.base_key=_base_key(w.base)
 
 	return true
 
@@ -395,3 +404,23 @@ func _migrate_custom(w: Dictionary) -> void:
 		for item in w[kind].history: values.append(item.state)
 		for value in values:
 			value.custom_receipts=[]; value["custom_sink" if kind=="modern" else "custom_cables"]={}
+
+func family_remaining(w: Dictionary) -> int:
+	var count=0
+	for n in w.modern.get("family_receipts",{}).values(): count+=int(n)
+	var baseline=0
+	if w.mode=="experiment":
+		for n in w.base.modern.get("family_receipts",{}).values(): baseline+=int(n)
+	return 6-count+baseline
+func _family_fields(w: Dictionary) -> bool:
+	if not w.modern.has("family_receipts"): return false
+	for h in w.modern.history:
+		if not h.state.has("family_receipts") or not _family_monotonic(h.state,w.modern): return false
+	return true
+func _family_monotonic(before: Dictionary,after: Dictionary) -> bool:
+	for id in before.get("family_receipts",{}):
+		if int(after.get("family_receipts",{}).get(id,0))<int(before.family_receipts[id]): return false
+	return true
+func _migrate_family(w: Dictionary) -> void:
+	w.modern.family_receipts={}
+	for h in w.modern.history: h.state.family_receipts={}

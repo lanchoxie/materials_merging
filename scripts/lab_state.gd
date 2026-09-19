@@ -542,7 +542,7 @@ func tick(delta: float):
 		for step in range(int(delta)): tick(1.0)
 		if delta-floor(delta)>0.0: tick(delta-floor(delta))
 		return
-	planet.tick(delta,campus.industrial_rate(campus_context()) if planet.production_mode=="island" and not planet.job.is_empty() else 1.0)
+	planet.tick(delta,campus.industrial_rate(campus_context()) if not planet.laminates.job.is_empty() or (planet.production_mode=="island" and not planet.job.is_empty()) else 1.0)
 	_campus_clock += delta
 	while _campus_clock >= 1.0:
 		var payroll_result: Dictionary=payroll.tick(1.0,campus.people,campus.config,coins)
@@ -1011,7 +1011,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 19, "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 20, "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1073,7 +1073,7 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 19, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 20, true):
 		return false
 	if int(data.version)>=11 and not PlanetProgram.new().restore(data.get("planet"),self): return false
 	if int(data.version)==12 and data.planet.version!=2: return false
@@ -1083,7 +1083,8 @@ func _validate_save(data) -> bool:
 	if int(data.version)==16 and data.planet.version!=6: return false
 	if int(data.version)==17 and data.planet.version!=7: return false
 	if int(data.version)==18 and data.planet.version!=8: return false
-	if int(data.version)>=19 and data.planet.version!=9: return false
+	if int(data.version)==19 and data.planet.version!=9: return false
+	if int(data.version)>=20 and data.planet.version!=10: return false
 	if int(data.version) >= 3:
 		# v0.3 saves may predate newly discoverable elements. Keep every
 		# existing quantity and initialize only symbols introduced in v0.4.
@@ -1198,6 +1199,12 @@ func _validate_save(data) -> bool:
 				if int(resident.get(location,-1))>=data.plots.size(): return false
 			for location in resident.get("travel_route",[]):
 				if int(location)>=data.plots.size(): return false
+	if int(data.version)>=20:
+		var uses_family=false
+		for d in data.planet.materials.designs.values():
+			if d.get("basis")=="family_model": uses_family=true
+		if uses_family or data.planet.laminates.purchased.Cu>0 or data.planet.laminates.purchased.Al>0:
+			if "laminate_design" not in data.campus.unlocked_materials: return false
 	if int(data.version)>=9:
 		if not IslandStorage.new().restore(data.get("storage"),layout.config.props.keys()+["road"],island_rules.consumables.keys(),data.plots): return false
 		for batch in data.storage.batches:
