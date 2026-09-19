@@ -84,6 +84,16 @@
       "upgrade_cost": 55,
       "role": "leisure",
       "description": "博士会来散步；适当休息恢复心情。"
+    },
+    "workshop": {
+      "name": "工艺车间",
+      "cost": 150,
+      "capacity": 2,
+      "capacity_per_level": 1,
+      "max_level": 3,
+      "upgrade_cost": 120,
+      "role": "manufacturing",
+      "description": "工程师到岗后加工星球成品；与反应炉施工共享人手，需连通广场。"
     }
   },
   "props": {

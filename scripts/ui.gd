@@ -66,6 +66,9 @@ static func paragraph(text: String, font_size: int = 14, color: Color = MUTED) -
 
 static func button(text: String, action: Callable, primary: bool = false) -> Button:
 	var b = Button.new()
+	# Native touch must bubble to an enclosing ScrollContainer. Its scroll-begin
+	# notification cancels the pending button press, so a swipe is never a purchase.
+	b.mouse_filter = Control.MOUSE_FILTER_PASS
 	b.text = text
 	b.custom_minimum_size.y = 44
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -88,12 +91,16 @@ static func box(parent: Node, rect: Rect2, color: Color = PANEL) -> PanelContain
 
 static func column(parent: Node, separation: int = 10) -> VBoxContainer:
 	var v = VBoxContainer.new()
+	v.mouse_filter = Control.MOUSE_FILTER_PASS
+	if parent is PanelContainer: parent.mouse_filter = Control.MOUSE_FILTER_PASS
 	v.add_theme_constant_override("separation", separation)
 	parent.add_child(v)
 	return v
 
 static func row(parent: Node, separation: int = 10) -> HBoxContainer:
 	var h = HBoxContainer.new()
+	h.mouse_filter = Control.MOUSE_FILTER_PASS
+	if parent is PanelContainer: parent.mouse_filter = Control.MOUSE_FILTER_PASS
 	h.add_theme_constant_override("separation", separation)
 	parent.add_child(h)
 	return h
@@ -105,5 +112,6 @@ static func clear(node: Node) -> void:
 
 static func spacer(parent: Node, height: float = 8.0) -> void:
 	var c = Control.new()
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.custom_minimum_size.y = height
 	parent.add_child(c)

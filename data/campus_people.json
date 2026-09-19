@@ -22,7 +22,7 @@
       "name": "工程师",
       "cost": 85,
       "daily_pay": 8,
-      "description": "负责反应炉施工、巡检和送餐。",
+      "description": "可调岗参与反应炉施工、巡检送餐，或到工艺车间加工。",
       "housing": [
         "engineer_house",
         "house"
@@ -196,5 +196,14 @@
       },
       "note": "院士主持开发筛选方法：批量查看库存中各批次的参考几何评分，辅助选择订单样品。只适用于已有参考的结构。"
     }
+  },
+  "posts": {
+    "auto": "自动安排",
+    "workshop": "车间生产",
+    "logistics": "装炉收集",
+    "research": "团队研发"
+  },
+  "production": {
+    "maximum_rate": 3.0
   }
 }

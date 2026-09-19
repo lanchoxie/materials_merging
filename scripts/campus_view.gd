@@ -243,7 +243,7 @@ func _sync_people() -> void:
 			actors[id].node.position=state.layout.hub(state.plots,int(actors[id].plot))
 		var actor: Dictionary=actors[id]
 		actor.activity=person.activity
-		actor.tool.visible=person.activity in ["construct","maintain","deliver_meal","collect","install","snack"]
+		actor.tool.visible=person.activity in ["construct","maintain","factory","deliver_meal","collect","install","snack"]
 		_sync_actor_route(actor,person,target)
 	while _actor_pool.size()>limit:
 		var retired: Dictionary=_actor_pool.pop_back(); retired.node.queue_free()
@@ -283,7 +283,7 @@ func _path_point(path: Array, progress: float) -> Vector3:
 func _animate_actor(actor: Dictionary, moving: bool, phase: float) -> void:
 	actor.body.position.y=absf(sin(phase))*0.018 if moving else 0.0
 	for index in range(2): actor.legs[index].rotation.x=sin(phase+index*PI)*0.35 if moving else 0.0
-	actor.tool.rotation.x=sin(time*5)*0.7 if not moving and actor.activity in ["construct","maintain","collect","install"] and actor.arrived else 0.0
+	actor.tool.rotation.x=sin(time*5)*0.7 if not moving and actor.activity in ["construct","maintain","factory","collect","install"] and actor.arrived else 0.0
 
 func _process(delta: float) -> void:
 	if state==null: return

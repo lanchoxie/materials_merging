@@ -80,3 +80,8 @@ static func _public(v,p: Node3D,kind: String,level: int,detail: bool) -> void:
 	if kind=="canteen":
 		v.box(p,Vector3(1.96,0.10,0.62),Vector3(0,0.80,0.85),roof)
 		for x in [-0.80,0.80]: v.box(p,Vector3(0.055,0.63,0.055),Vector3(x,0.48,1.02),Color("eadbbb"))
+	if kind=="workshop":
+		v.box(p,Vector3(0.9,0.6,0.06),Vector3(0,0.45,0.81),Color("668b91"))
+		for x in [-0.65,0.1]:
+			var light=v.box(p,Vector3(0.48,0.13,1.25),Vector3(x,height+0.32,0),Color("a1c6c5")); light.rotation.z=0.22
+		v.box(p,Vector3(0.42,0.32,0.36),Vector3(0.8,0.26,0.95),Color("c19d6b"))

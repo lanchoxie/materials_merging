@@ -6,6 +6,7 @@ var config: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://da
 var worlds=Worlds.new(config)
 var lab=preload("res://scripts/material_lab.gd").new()
 var reports: Dictionary={}
+var production_mode="partner"
 var joined=false
 var qualified=false
 var qualification: Dictionary={}
@@ -72,6 +73,11 @@ func sample_candidates(state,reference: String) -> Array:
 
 func command(state,action: String,payload: Dictionary={}) -> String:
 	match action:
+		"production_mode":
+			var mode=str(payload.get("mode",""))
+			if mode not in ["partner","island"]: return "未知工坊模式"
+			production_mode=mode
+			return "已交给合作工坊" if mode=="partner" else "已交给本岛车间；工程师到岗后才开始加工"
 		"join":
 			if joined: return "合作补给已领取"
 			joined=true; feed=int(config.workshop.starter_feed)
@@ -116,7 +122,7 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			_input_add(str(info.input),-1); state.coins-=float(info.fee)
 			job={"id":serial,"recipe":str(info.id),"recipe_version":int(info.version),"left":float(info.seconds),"duration":float(info.seconds),"fee":int(info.fee),"source_batch":str(evidence(str(info.reference)).batch_id)}
 			serial+=1
-			return "%s制作中 · %d秒后自动入库" % [info.name,int(info.seconds)]
+			return "%s制作中 · 标准工时%d秒，完工后自动入库" % [info.name,int(info.seconds)]
 		"cancel_pack":
 			if job.is_empty(): return "装罐台当前空闲"
 			# Supply is reserved until completion; service fee covers interrupted work.
@@ -154,6 +160,15 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			if not joined: return "先领取试验湾合作"
 			return worlds.fork(bool(payload.get("dry",false)),str(payload.get("era","")))
 		"reset_trial": return worlds.reset_trial(bool(payload.get("fresh",false)),str(payload.get("era","")))
+		"activate_village":
+			if not joined: return "先领取合作补给"
+			return worlds.activate_village()
+		"village":
+			if not joined: return "先领取合作补给"
+			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.village)
+			var result=worlds.village.control(w.village,str(payload.get("control","")),str(payload.get("id","")))
+			if before!=worlds.ecology.canonical(w.village): worlds._event(w,"village",result)
+			return result
 		"activate_watershed":
 			if not joined: return "先领取合作补给"
 			return worlds.activate_watershed(str(payload.get("era","devonian")))
@@ -178,29 +193,34 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 		"step_pair": return worlds.step_pair()
 	return "未知的星球操作"
 
-func tick(dt: float) -> void:
+func tick(dt: float,effort: float=0.0) -> void:
 	if not is_finite(dt) or dt<=0 or dt>60: return
+	var rate=1.0 if production_mode=="partner" else (clampf(effort,0,100) if is_finite(effort) else 0.0)
 	if not job.is_empty():
-		job.left=maxf(0,float(job.left)-dt)
+		job.left=maxf(0,float(job.left)-dt*rate)
 		if float(job.left)<=0:
 			products.append({"id":int(job.id),"recipe":str(job.recipe),"recipe_version":int(job.recipe_version),"source_batch":str(job.source_batch)})
 			notice="%s制作完成，已收入工业成品仓" % recipe(str(job.recipe)).name; job.clear()
 	if observing: worlds.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":4,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
+	return {"version":5,"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4]: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5]: return false
 	data=data.duplicate(true)
+	if data.version<5: data.production_mode="partner"
+	if data.get("production_mode") not in ["partner","island"]: return false
 	if data.version==1: data.extra_qualifications={}; data.supplies={"station_parts":0,"oxygen_feed":0}
 	if data.version<3:
 		if not data.get("supplies") is Dictionary or data.supplies.size()!=2: return false
 		data.reports={}; data.supplies.copper_kit=0; data.supplies.aluminum_kit=0
 	if data.version<4:
 		if not data.get("supplies") is Dictionary or data.supplies.size()!=4: return false
-		for id in config.supplies:
-			if id not in ["station_parts","oxygen_feed","copper_kit","aluminum_kit"]: data.supplies[id]=0
+		for id in ["nutrient_kit","screen_kit","screen_feed","buffer_kit","harvest_kit"]: data.supplies[id]=0
+	if data.version<5:
+		if not data.get("supplies") is Dictionary or data.supplies.size()!=9: return false
+		for id in ["drinking_kit","frame_kit","tool_chest_kit"]: data.supplies[id]=0
 	if not data.get("reports") is Dictionary or data.reports.size()>2: return false
 	for mode in data.reports:
 		if not lab.valid_report(data.reports[mode],str(mode)) or data.get("joined")!=true: return false
@@ -251,8 +271,10 @@ func restore(data,state) -> bool:
 			ids.append(int(r.component.id))
 	if not data.joined and (int(data.feed)>0 or not data.products.is_empty() or not data.job.is_empty() or restored.worlds.size()>1): return false
 	if not data.joined:
+		if restored.get_world("home").village.enabled: return false
 		for n in data.supplies.values():
 			if int(n)>0: return false
+	production_mode=data.production_mode
 	reports=data.reports.duplicate(true)
 	joined=data.joined; qualified=data.qualified; qualification=data.qualification.duplicate(true)
 	feed=int(data.feed); products=data.products.duplicate(true); job=data.job.duplicate(true)

@@ -41,6 +41,7 @@ var material_details=false
 var material_return_mode="ecology"
 var watershed_site="estuary"
 var watershed_widgets: Dictionary={}
+var village_widgets: Dictionary={}
 var watershed_details=false
 var watershed_menu: OptionButton
 
@@ -49,13 +50,14 @@ func setup(model) -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var heading=UI.label("材料试验星球",30,UI.MINT); heading.position=Vector2(32,21); add_child(heading)
-	var subtitle=UI.label("EXPERIMENT 04    /    河流记得你投下的东西",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
+	var subtitle=UI.label("EXPERIMENT 05    /    材料改变居民的日常",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1285,27); close.size=Vector2(122,46); add_child(close)
 	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(600,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
-	var scenes=HBoxContainer.new(); scenes.position=Vector2(672,107); add_child(scenes)
+	var scenes=HBoxContainer.new(); scenes.position=Vector2(600,107); add_child(scenes)
 	scenes.add_child(UI.button("水与地形",func(): _scene("water","standard_water_crate")))
 	scenes.add_child(UI.button("生态试验",func(): _scene("ecology","oxygen_station")))
 	scenes.add_child(UI.button("河流湿地",func(): _scene("watershed")))
+	scenes.add_child(UI.button("河湾聚落",func(): _scene("village")))
 	viewport_box=SubViewportContainer.new(); viewport_box.position=Vector2(24,165); viewport_box.size=Vector2(984,550); viewport_box.stretch=true; viewport_box.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(viewport_box)
 	viewport=SubViewport.new(); viewport.size=Vector2i(984,550); viewport.own_world_3d=true; viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; viewport_box.add_child(viewport)
 	if not OS.has_feature("web") and not OS.has_feature("android"): viewport.msaa_3d=Viewport.MSAA_2X
@@ -63,6 +65,7 @@ func setup(model) -> void:
 	for id in ["deep","shelf","microbe","fish","headwater","marsh","estuary"]:
 		var badge=PanelContainer.new(); badge.add_theme_stylebox_override("panel",UI.style(Color("162f3a"),10)); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
 		var label=UI.label({"deep":"深槽蓄水","shelf":"浅台漫流","microbe":"厌氧微生物池","fish":"缺氧鱼湾","headwater":"上游径流口","marsh":"连通湿地","estuary":"下游河口"}[id],14,UI.TEXT); label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; badge.add_child(label); site_labels[id]=badge
+	var vb=PanelContainer.new(); vb.add_theme_stylebox_override("panel",UI.style(Color("162f3a"),10)); vb.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(vb); var vl=UI.label("河湾聚落",14,UI.TEXT); vl.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; vb.add_child(vl); site_labels["village_depot"]=vb
 	var camera_row=HBoxContainer.new(); camera_row.position=Vector2(40,660); camera_row.size=Vector2(550,44); camera_row.add_theme_constant_override("separation",8); add_child(camera_row)
 	camera_row.add_child(UI.button("回到试验湾",func(): _cancel_gesture(); view.reset_camera()))
 	camera_row.add_child(UI.button("＋",func(): view.zoom(-0.8)))
@@ -81,8 +84,8 @@ func setup(model) -> void:
 		choices.add_child(UI.button(item[1],_choose_recipe.bind(item[0])))
 	choices.add_child(UI.button("导热芯",_open_materials))
 	watershed_menu=OptionButton.new(); watershed_menu.custom_minimum_size=Vector2(185,44); choices.add_child(watershed_menu)
-	watershed_menu.add_item("水域成品…")
-	for id in state.planet.worlds.watershed.rules.trial_products:
+	watershed_menu.add_item("水域 / 聚落成品…")
+	for id in state.planet.worlds.watershed.rules.trial_products.keys()+state.planet.worlds.village.rules.trial_products.keys():
 		watershed_menu.add_item(str(state.planet.recipe(id).name)); watershed_menu.set_item_metadata(watershed_menu.item_count-1,id)
 	watershed_menu.item_selected.connect(func(index):
 		if index>0: _choose_recipe(str(watershed_menu.get_item_metadata(index))))
@@ -106,14 +109,15 @@ func _fingerprint() -> String:
 
 func _redraw() -> void:
 	if state==null: return
-	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null; eco_widgets={}; watershed_widgets={}
+	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null; eco_widgets={}; watershed_widgets={}; village_widgets={}
 	var p=state.planet
 	for w in p.worlds.worlds:
 		var button=UI.button(w.name,func(): _do("select",{"world_id":str(w.id)}),w.id==p.worlds.active_id)
-		button.custom_minimum_size.x=185; world_tabs.add_child(button)
+		button.custom_minimum_size.x=175; world_tabs.add_child(button)
 	if section=="materials": preload("res://scripts/material_lab_panel.gd").build(self)
 	elif section=="workshop": _workshop()
 	elif view.display_mode=="watershed": preload("res://scripts/planet_watershed_panel.gd").build(self)
+	elif view.display_mode=="village": preload("res://scripts/planet_village_panel.gd").build(self)
 	elif view.display_mode=="ecology": EcologyPanel.build(self)
 	else: _observations()
 	fingerprint=_fingerprint()
@@ -134,8 +138,10 @@ func _open_materials() -> void:
 func _choose_recipe(id: String) -> void:
 	_cancel_gesture(); selected_recipe=id; replay_index=-1
 	if section=="materials": section="workshop"
-	var use_watershed=view.display_mode=="watershed" or state.planet.recipe(id).get("domain","")=="watershed" or (view.display_mode=="materials" and material_return_mode=="watershed")
-	view.set_mode("watershed" if use_watershed else ("water" if id=="standard_water_crate" else "ecology"))
+	var domain=str(state.planet.recipe(id).get("domain",""))
+	var use_watershed=domain=="watershed" or (domain.is_empty() and (view.display_mode=="watershed" or (view.display_mode=="materials" and material_return_mode=="watershed")))
+	var use_village=domain=="village" or (id=="standard_water_crate" and view.display_mode=="village")
+	view.set_mode("village" if use_village else ("watershed" if use_watershed else ("water" if id=="standard_water_crate" else "ecology")))
 	_redraw(); _live()
 
 func display_snapshot() -> Dictionary:
@@ -146,13 +152,17 @@ func display_snapshot() -> Dictionary:
 	copy.seconds=entry.at; copy.paused=true
 	if view.display_mode=="watershed":
 		copy.watershed=entry.state.duplicate(true); copy.watershed.history=history
+	elif view.display_mode=="village":
+		copy.village=entry.state.duplicate(true); copy.village.history=history
 	else:
 		copy.ecology=world.ecology.duplicate(); copy.ecology.regions=entry.regions.duplicate(true)
 	return copy
 
 func _history() -> Array:
 	var w=state.planet.worlds.get_world()
-	return w.watershed.history if view.display_mode=="watershed" else w.ecology.history
+	if view.display_mode=="watershed": return w.watershed.history
+	if view.display_mode=="village": return w.village.history
+	return w.ecology.history
 
 func _replay() -> void:
 	_cancel_gesture()
@@ -179,6 +189,9 @@ func _workshop() -> void:
 		_button("领取合作与首次供料",func(): _do("join"),true)
 		return
 	_text(str(info.name),23,UI.MINT); _text(str(info.description),16,UI.TEXT)
+	_text("合作方工坊 · 标准速度" if p.production_mode=="partner" else "本岛车间 · 到岗效率 %.2f倍" % state.campus.industrial_rate(),16,UI.GOLD)
+	_button("改用本岛车间" if p.production_mode=="partner" else "交回合作方托管",func(): _do("production_mode",{"mode":"island" if p.production_mode=="partner" else "partner"}))
+	if p.production_mode=="island": _text("在浮岛建造并连通工艺车间，给工程师选择「车间生产」。行路和用餐不计入加工；调岗后不再参与反应炉施工。工资照常支付。",14)
 	if ref.begins_with("fixture:") and not p.qualified_for(ref):
 		_text("先到材料对照台选择约束，记录计算结果。",17,UI.GOLD)
 		_button("打开材料对照",_open_materials,true)
@@ -193,7 +206,7 @@ func _workshop() -> void:
 			_button("提交%s · 库存%d份" % [sample_name,int(batch.quantity)],func(): _do("qualify",{"batch_id":str(batch.id),"reference":ref}),true,int(batch.quantity)<int(rules.samples_required))
 	else:
 		_text("② 准备供料与制作",21,UI.MINT)
-		_text("1份供料 + %d金币 → 1件成品\n用时%d秒 · 独立合作工坊" % [int(info.fee),int(info.seconds)],17,UI.TEXT)
+		_text("1份供料 + %d金币 → 1件成品\n标准工时%d秒 · %s" % [int(info.fee),int(info.seconds),"合作方加工" if p.production_mode=="partner" else "由本岛到岗效率决定耗时"],17,UI.TEXT)
 		_text("供料 %d份  /  成品 %d件\n金币 %d" % [p.input_count(info.input),p.available_products(selected_recipe),int(state.coins)],18,UI.GOLD)
 		if p.job.is_empty():
 			_button(("开始装罐" if info.input=="feed" else "开始制作")+" · %d金币" % int(info.fee),func(): _do("pack",{"recipe":selected_recipe}),true)
@@ -206,9 +219,11 @@ func _workshop() -> void:
 	_button("补充1份供料 · %d金币" % int(input_info.price),func(): _do("buy_feed",{"input":info.input}))
 	_text("工业构件采用295 K参考物性和已对照几何；供料包含对应预切件。它不是玩家分子的实测性能。" if ref.begins_with("fixture:") else "结构身份不等于宏观纯度。标准组件、气源与已充能模块由合作方供给。",14)
 	if ref.begins_with("fixture:"): _button("更换设计 · 材料对照",_open_materials)
-	if info.get("domain","")=="watershed": _text("水样只用于合作入门资格；滤材、活体植被与供料规格由合作方提供，不由水分子几何推出。",14,UI.GOLD)
+	if info.get("domain","") in ["watershed","village"]: _text("水样只用于合作入门资格；组件与供料规格由合作方提供，不由水分子几何推出。",14,UI.GOLD)
 	_text("③ 选择落点",21,UI.MINT)
-	if view.display_mode=="watershed":
+	if view.display_mode=="village":
+		_text("拖到河湾仓库。水箱进入农作用水，生活饮水桶单独入库；构件和工具由居民取用。",16,UI.TEXT)
+	elif view.display_mode=="watershed":
 		_text("拖到上游、湿地或河口。营养包只能投上游；过滤机先安装再加滤盒。上游/湿地限制截面1 cm²，河口限制材料54 g。",16,UI.TEXT)
 	else: _text("深槽集中蓄水，浅台水面更宽。\n主世界总容量3箱。" if ref=="water" else "先安装供氧器，再放补给或导热芯。\n厌氧池窄槽：截面≤1 cm²。\n鱼湾轻量：材料≤54 g。换件退旧件。",16,UI.TEXT)
 	_button("查看观察记录与实验副本",func(): section="observe"; _choose_recipe(selected_recipe))
@@ -264,10 +279,11 @@ func _live() -> void:
 		caption.text="橙端296 K → 青端294 K · 一维稳态导热估算\n光点表示热流；同尺寸与同重量是两道不同的设计题。"
 	if is_instance_valid(progress) and not p.job.is_empty():
 		progress.value=100*(1-float(p.job.left)/float(p.job.duration))
-		progress_text.text="%s · 剩余%d秒" % [p.recipe(str(p.job.recipe)).name,ceili(float(p.job.left))]
+		progress_text.text="%s · 余%d秒标准工时" % [p.recipe(str(p.job.recipe)).name,ceili(float(p.job.left))]
 	view.sync(display_snapshot())
 	EcologyPanel.live(self)
 	preload("res://scripts/planet_watershed_panel.gd").live(self)
+	preload("res://scripts/planet_village_panel.gd").live(self)
 
 func _begin_drag(at: Vector2) -> void:
 	var p=state.planet; var w=p.worlds.get_world()

@@ -1,0 +1,282 @@
+{
+  "version": 1,
+  "model": "village_teaching_v1",
+  "era": "weald_1400",
+  "name": "晚中世纪灵感 · 河湾聚落",
+  "sources": [
+    "https://www.wealddown.co.uk/buildings/bayleaf-farmstead-chiddingstone/",
+    "https://www.english-heritage.org.uk/visit/places/wharram-percy-deserted-medieval-village/history/description"
+  ],
+  "boundary": "英国晚中世纪灵感的原创聚落；资源份额、工时、需求和河道通行均为游戏规则，非历史或水质预测。",
+  "history": {
+    "every_seconds": 10,
+    "limit": 60
+  },
+  "stock_limit": 500,
+  "input_limit": 100000,
+  "initial": {
+    "drink": 14,
+    "water": 16,
+    "grain": 10,
+    "food": 8,
+    "frames": 0,
+    "tools": 6,
+    "goods": 0
+  },
+  "names": {
+    "drink": "生活饮水",
+    "water": "农作用水",
+    "grain": "谷物",
+    "food": "加工食品",
+    "frames": "结构件",
+    "tools": "工具耐用量",
+    "goods": "工艺品"
+  },
+  "deliveries": {
+    "standard_water_crate": {
+      "water": 20
+    },
+    "drinking_barrel": {
+      "drink": 24
+    },
+    "frame_bundle": {
+      "frames": 6
+    },
+    "tool_chest": {
+      "tools": 24
+    }
+  },
+  "trial_products": {
+    "drinking_barrel": 4,
+    "frame_bundle": 3,
+    "tool_chest": 3
+  },
+  "spring": {
+    "initial": 24,
+    "capacity": 36,
+    "inflow": 0.12,
+    "fetch": 4
+  },
+  "needs": {
+    "thirst_rate": 0.22,
+    "hunger_rate": 0.16,
+    "threshold": 36,
+    "critical": 75,
+    "drink_cost": 2,
+    "food_cost": 1,
+    "drink_recovery": 52,
+    "food_recovery": 52
+  },
+  "travel_seconds": 2.4,
+  "road_factor": 0.55,
+  "work_seconds": {
+    "drink": 3,
+    "eat": 4,
+    "fetch": 4,
+    "farm": 12,
+    "mill": 16,
+    "craft": 18
+  },
+  "jobs": {
+    "farm": {
+      "inputs": {
+        "water": 2,
+        "tools": 0.2
+      },
+      "outputs": {
+        "grain": 4
+      }
+    },
+    "mill": {
+      "inputs": {
+        "grain": 2
+      },
+      "outputs": {
+        "food": 2
+      }
+    },
+    "craft": {
+      "inputs": {
+        "frames": 1,
+        "tools": 0.5
+      },
+      "outputs": {
+        "goods": 2
+      }
+    }
+  },
+  "nodes": {
+    "depot": [
+      -1.7,
+      0.4
+    ],
+    "well": [
+      -2.7,
+      -1.4
+    ],
+    "field": [
+      -0.7,
+      -1.8
+    ],
+    "bridge": [
+      -0.1,
+      0.4
+    ],
+    "mill": [
+      1.9,
+      -1.1
+    ],
+    "market": [
+      2.2,
+      1.05
+    ],
+    "home": [
+      -1.6,
+      1.7
+    ]
+  },
+  "edges": [
+    [
+      "depot",
+      "well"
+    ],
+    [
+      "depot",
+      "field"
+    ],
+    [
+      "depot",
+      "bridge"
+    ],
+    [
+      "bridge",
+      "mill"
+    ],
+    [
+      "bridge",
+      "market"
+    ],
+    [
+      "depot",
+      "home"
+    ]
+  ],
+  "people": [
+    {
+      "name": "艾拉",
+      "role": "农户",
+      "work": "farm"
+    },
+    {
+      "name": "托姆",
+      "role": "挑水人",
+      "work": "fetch"
+    },
+    {
+      "name": "罗恩",
+      "role": "磨坊工",
+      "work": "mill"
+    },
+    {
+      "name": "梅",
+      "role": "营造匠",
+      "work": "build"
+    },
+    {
+      "name": "芬",
+      "role": "手艺人",
+      "work": "craft"
+    },
+    {
+      "name": "莉娅",
+      "role": "农户",
+      "work": "farm"
+    }
+  ],
+  "projects": {
+    "road": {
+      "name": "石铺步道与木桥",
+      "node": "bridge",
+      "inputs": {
+        "frames": 2,
+        "tools": 1
+      },
+      "work": 42,
+      "requires": [],
+      "approval": false,
+      "benefit": "往返时间缩短，桥面和石铺步道成形"
+    },
+    "cistern": {
+      "name": "社区蓄水棚",
+      "node": "well",
+      "inputs": {
+        "frames": 2,
+        "tools": 1
+      },
+      "work": 45,
+      "requires": [],
+      "approval": false,
+      "benefit": "挑水每趟从4份增至6份；本地泉水仍有限"
+    },
+    "mill": {
+      "name": "河湾水磨坊",
+      "node": "mill",
+      "inputs": {
+        "frames": 4,
+        "tools": 2
+      },
+      "work": 72,
+      "requires": [
+        "road"
+      ],
+      "approval": true,
+      "benefit": "引水驱动磨轮，磨粮提速；拦引水会降低鱼类通行"
+    },
+    "market": {
+      "name": "工匠集市",
+      "node": "market",
+      "inputs": {
+        "frames": 3,
+        "tools": 1
+      },
+      "work": 60,
+      "requires": [
+        "road"
+      ],
+      "approval": true,
+      "benefit": "工艺品留在本地换取生活饮水与食品，不可兑换浮岛金币"
+    }
+  },
+  "policy_scores": {
+    "care": {
+      "road": 50,
+      "cistern": 65,
+      "mill": 35,
+      "market": 25
+    },
+    "workshop": {
+      "road": 80,
+      "cistern": 25,
+      "mill": 70,
+      "market": 60
+    },
+    "river": {
+      "road": 45,
+      "cistern": 70,
+      "mill": 15,
+      "market": 60
+    }
+  },
+  "market": {
+    "seconds": 30,
+    "goods": 2,
+    "drink": 4,
+    "food": 2
+  },
+  "river": {
+    "passage_recovery": 0.2,
+    "diversion_penalty": 0.35,
+    "mill_speed_bonus": 2
+  },
+  "rules_note": "原料领取后记为已承诺消耗，携带中的输入不再次入账；成品完成后在返程携带池中，入仓不重复记产出。"
+}

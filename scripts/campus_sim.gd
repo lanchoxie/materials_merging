@@ -20,7 +20,7 @@ var _request_serial: int = 1
 var _notifications: Array = []
 var work_factor: float=1.0
 
-const ACTIVITY_NAMES = {"install":"装载新样品", "collect":"收集待领取产物", "snack":"回公寓吃补给", "supply_wait":"等公寓补给", "construct":"正在施工", "maintain":"维护反应炉", "deliver_meal":"给院士送餐", "research":"在科研院所工作", "eat":"食堂用餐", "home":"回家休息", "park":"在公园休息", "stroll":"散步整理思路", "idle":"在广场待命"}
+const ACTIVITY_NAMES = {"factory":"车间加工","install":"装载新样品", "collect":"收集待领取产物", "snack":"回公寓吃补给", "supply_wait":"等公寓补给", "construct":"正在施工", "maintain":"维护反应炉", "deliver_meal":"给院士送餐", "research":"在科研院所工作", "eat":"食堂用餐", "home":"回家休息", "park":"在公园休息", "stroll":"散步整理思路", "idle":"在广场待命"}
 
 func _init():
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string("res://data/campus_people.json"))
@@ -39,7 +39,7 @@ func setup(legacy_engineers: int = 1, legacy_scientists: int = 0):
 func _new_person(role: String, home: int, legacy: bool = false) -> Dictionary:
 	var names = ["小林", "小余", "小陈", "小苏", "小周", "小温", "小许", "小叶"]
 	var specs: Array = config.roles[role].specialties
-	var p = {"id":_serial, "name":str(names[(_serial - 1) % names.size()]) + str(_serial), "role":role,
+	var p = {"post":"auto","id":_serial, "name":str(names[(_serial - 1) % names.size()]) + str(_serial), "role":role,
 		"traits":{"diligence":rng.randf_range(0.45,0.95),"leisure":rng.randf_range(0.15,0.85),"sociability":rng.randf_range(0.15,0.95)},
 		"specialty":specs[rng.randi_range(0,specs.size()-1)],"hunger":10.0,"morale":75.0,
 		"home_plot":home,"work_plot":-1,"activity":"idle","activity_label":ACTIVITY_NAMES.idle,"target_plot":home,
@@ -57,6 +57,36 @@ func role_count(role: String) -> int:
 
 func role_data(role: String) -> Dictionary:
 	return config.roles.get(role, {}).duplicate(true)
+
+func posts_for(role: String) -> Array:
+	return ["auto","workshop"] if role=="engineer" else (["auto","logistics","research"] if role=="doctor" else ["auto","research"])
+
+func assign_post(id: int,post: String) -> String:
+	var p=person(id)
+	if p.is_empty() or post not in posts_for(str(p.role)): return "这个岗位不适合该居民"
+	if int(p.research_job)>=0 and post not in ["auto","research"]: return "正在参加课题，完成后才能调往其他岗位"
+	if p.post==post: return "已经安排这个岗位"
+	p.post=post; p.next_rethink=0.0; p.meal_recipient=-1; p.meal_stage="none"; p.delivery_left=0.0
+	# Keep the current road segment; the travel solver reroutes at the next node.
+	_set_activity(p,"idle",int(p.current_plot)); p.arrived=false
+	return p.name+"已改为"+str(config.posts[post])+"，下一次安排生效"
+
+func _factory_workplaces(context: Dictionary) -> Dictionary:
+	var remaining={}; var result={}
+	for b in _buildings(context,["workshop"]): remaining[int(b.plot)]=int(b.capacity)
+	for p in people:
+		if p.role!="engineer" or p.get("post","auto")!="workshop": continue
+		for plot in remaining:
+			if int(remaining[plot])>0: result[int(p.id)]=plot; remaining[plot]-=1; break
+	return result
+
+func industrial_rate(context: Dictionary={}) -> float:
+	var total=0.0
+	var seats=_factory_workplaces(context) if not context.is_empty() else {}
+	for p in people:
+		if not context.is_empty() and int(seats.get(int(p.id),-1))!=int(p.current_plot): continue
+		if p.role=="engineer" and p.get("post","auto")=="workshop" and p.activity=="factory" and p.arrived: total+=_efficiency(p)
+	return minf(float(config.production.maximum_rate),total)
 
 func _buildings(context: Dictionary, kinds: Array, connected_only: bool = true) -> Array:
 	var result: Array = []
@@ -150,6 +180,7 @@ func _step(dt: float, context: Dictionary):
 	var plaza = int(context.get("plaza_plot",-1))
 	_house_temporary_residents(context)
 	var workplaces = _assign_workplaces(context)
+	var factories = _factory_workplaces(context)
 	var canteen = _first_plot(context,["canteen"],-1)
 	var park = _first_plot(context,["park","garden"],-1)
 	var unfinished: Array = []
@@ -171,7 +202,11 @@ func _step(dt: float, context: Dictionary):
 		p.hunger = minf(100.0,float(p.hunger) + dt * float(config.hunger_per_second))
 		var home = int(p.home_plot) if int(p.home_plot) >= 0 else plaza
 		if p.role == "engineer":
-			if int(p.meal_recipient) >= 0 and not person(int(p.meal_recipient)).is_empty():
+			if p.get("post","auto")=="workshop":
+				var factory=int(factories.get(int(p.id),-1)); p.work_plot=factory
+				if (float(p.hunger)>=70 or (p.activity=="eat" and float(p.hunger)>20)) and canteen>=0: _set_activity(p,"eat",canteen)
+				else: _set_activity(p,"factory" if factory>=0 else "idle",factory if factory>=0 else plaza)
+			elif int(p.meal_recipient) >= 0 and not person(int(p.meal_recipient)).is_empty():
 				_choose_meal_destination(p,canteen)
 			elif not meal_targets.is_empty() and eng_index == 0:
 				p.meal_recipient = int(meal_targets[0].id); p.meal_stage = "pickup"; p.delivery_left = float(config.meal_pickup_seconds)
@@ -182,7 +217,7 @@ func _step(dt: float, context: Dictionary):
 			elif not finished.is_empty():
 				_set_activity(p,"maintain",int(finished[eng_index % finished.size()])); p.work_plot = p.target_plot
 			else: _set_activity(p,"idle",plaza)
-			eng_index += 1
+			if p.get("post","auto")!="workshop": eng_index += 1
 		elif not on_duty: _set_activity(p,"home",home)
 		elif context.get("logistics",{}).has(int(p.id)):
 			var task: Dictionary=context.logistics[int(p.id)]
@@ -389,7 +424,7 @@ func _pick_team(rule: Dictionary, existing: Array) -> Array:
 			if person(int(id)).get("role","") == role: have += 1
 		var candidates: Array = []
 		for p in people:
-			if p.role == role and int(p.research_job) < 0 and not int(p.id) in team: candidates.append(p)
+			if p.role == role and p.get("post","auto") in ["auto","research"] and int(p.research_job) < 0 and not int(p.id) in team: candidates.append(p)
 		candidates.sort_custom(func(a,b): return _research_efficiency(a,rule) > _research_efficiency(b,rule))
 		for p in candidates:
 			if have >= int(slots[role]): break
@@ -523,7 +558,7 @@ func resolve_request(id: int, choice: String, context: Dictionary) -> Dictionary
 	return q
 
 func serialize() -> Dictionary:
-	return {"version":2,"people":people.duplicate(true),"research_jobs":research_jobs.duplicate(true),"unlocked_materials":unlocked_materials.duplicate(),"pending_requests":pending_requests.duplicate(true),"day_time":day_time,"elapsed":elapsed,"accumulator":_accumulator,"event_clock":_event_clock,"daily_requests":_daily_requests,"request_day":_request_day,"serial":_serial,"job_serial":_job_serial,"request_serial":_request_serial}
+	return {"version":3,"people":people.duplicate(true),"research_jobs":research_jobs.duplicate(true),"unlocked_materials":unlocked_materials.duplicate(),"pending_requests":pending_requests.duplicate(true),"day_time":day_time,"elapsed":elapsed,"accumulator":_accumulator,"event_clock":_event_clock,"daily_requests":_daily_requests,"request_day":_request_day,"serial":_serial,"job_serial":_job_serial,"request_serial":_request_serial}
 
 func _number(value, lo: float, hi: float, integer: bool = false) -> bool:
 	return (value is float or value is int) and is_finite(float(value)) and float(value) >= lo and float(value) <= hi and (not integer or float(value) == floor(float(value)))
@@ -531,7 +566,7 @@ func _number(value, lo: float, hi: float, integer: bool = false) -> bool:
 func restore(data: Dictionary) -> bool:
 	# Validate the complete snapshot first. A malformed file cannot partially
 	# replace the population, unlock a material, or create duplicate job workers.
-	if data.get("version") != 1 and data.get("version") != 2: return false
+	if not _number(data.get("version"),1,3,true): return false
 	data = data.duplicate(true)
 	for key in ["people","research_jobs","unlocked_materials","pending_requests"]:
 		if not data.get(key) is Array: return false
@@ -546,6 +581,9 @@ func restore(data: Dictionary) -> bool:
 	var ids: Dictionary = {}
 	for p in data.people:
 		if not p is Dictionary or not config.roles.has(p.get("role","")) or not p.get("name") is String or str(p.name).length() > 80: return false
+		if int(data.version)<3: p.post="auto"
+		if p.get("post") not in posts_for(str(p.role)): return false
+		if p.post not in ["auto","research"] and int(p.get("research_job",-1))>=0: return false
 		if not _number(p.get("id"),1,float(data.serial)-1,true) or ids.has(int(p.id)): return false
 		ids[int(p.id)] = p
 		if not p.get("traits") is Dictionary: return false

@@ -542,7 +542,7 @@ func tick(delta: float):
 		for step in range(int(delta)): tick(1.0)
 		if delta-floor(delta)>0.0: tick(delta-floor(delta))
 		return
-	planet.tick(delta)
+	planet.tick(delta,campus.industrial_rate(campus_context()) if planet.production_mode=="island" and not planet.job.is_empty() else 1.0)
 	_campus_clock += delta
 	while _campus_clock >= 1.0:
 		var payroll_result: Dictionary=payroll.tick(1.0,campus.people,campus.config,coins)
@@ -1011,7 +1011,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 14, "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 15, "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1072,12 +1072,13 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 14, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 15, true):
 		return false
 	if int(data.version)>=11 and not PlanetProgram.new().restore(data.get("planet"),self): return false
 	if int(data.version)==12 and data.planet.version!=2: return false
 	if int(data.version)==13 and data.planet.version!=3: return false
-	if int(data.version)>=14 and data.planet.version!=4: return false
+	if int(data.version)>=14 and int(data.version)<15 and data.planet.version!=4: return false
+	if int(data.version)>=15 and data.planet.version!=5: return false
 	if int(data.version) >= 3:
 		# v0.3 saves may predate newly discoverable elements. Keep every
 		# existing quantity and initialize only symbols introduced in v0.4.
@@ -1339,6 +1340,9 @@ func campus_resolve_request(id: int, choice: String) -> String:
 
 func campus_start_research(project_id: String) -> String:
 	return _campus_transaction(campus.start_research(project_id,campus_context()))
+
+func campus_assign_post(id: int,post: String) -> String:
+	return campus.assign_post(id,post)
 
 func campus_pay_arrears() -> String:
 	if payroll.arrears<=0: return "目前没有欠薪"

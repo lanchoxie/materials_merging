@@ -59,3 +59,10 @@
 - [NPS泥盆纪](https://www.nps.gov/articles/000/devonian-period.htm)、[宾夕法尼亚世](https://www.nps.gov/articles/000/pennsylvanian-period.htm)：鱼类、早期林地与沼泽植被的原创程序化美术方向。未复制图片/模型，未采纳具体年代数字或声称复原特定古群落。
 
 运行库 `planet_watershed.json` 自有字段与原创说明，只将以上定性方向用于教学。所有营养池追踪同一当量，氧、群体权重和模拟秒数是独立游戏指标。科学边界与守恒式见V0.13.md；不是饮用安全、治理工程或古气候预测。
+
+## 0.14聚落历史参考 · 2026-09-19
+
+- Weald & Downland Living Museum：[Bayleaf Farmstead](https://www.wealddown.co.uk/buildings/bayleaf-farmstead-chiddingstone/)。木构Wealden厅屋的轮廓与农庄生活作为视觉灵感；不复用页面图片、3D文件或文案。
+- English Heritage：[Wharram Percy Description](https://www.english-heritage.org.uk/visit/places/wharram-percy-deserted-medieval-village/history/description)与[History](https://www.english-heritage.org.uk/visit/places/wharram-percy-deserted-medieval-village/history/)。聚落水磨遗迹和土地/生产生活的定性参考，不把游戏磨轮朝向和水闸当作该遗址结构复原。
+
+运行库planet_village.json以原创规则表达需求、路线、有限泉水、工艺与施工；六名代表居民、物料份额、工时和河道通行指标均属游戏规则。资源守恒校验不等于历史、农业或饮用安全预测。

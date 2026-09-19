@@ -11,7 +11,7 @@ func _initialize() -> void:
 func run() -> void:
 	var game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var s=game.state
-	check(str(ProjectSettings.get_setting("application/config/version"))=="0.13.0","packaged application version")
+	check(str(ProjectSettings.get_setting("application/config/version"))=="0.14.0","packaged application version")
 	game._show_planet(); await process_frame
 	check(game.modal.view.sites.size()==2,"packaged planet scene builds both sites")
 	var batch=s.product_snapshot(s.reactors[0]); s.storage.add_product(batch,2)
@@ -56,6 +56,26 @@ func run() -> void:
 	check(game.modal.view.watershed_view.snapshot.watershed.elapsed==0 and river.elapsed==30,"packaged watershed history changes only the view")
 	game.modal._replay(); s.planet.command(s,"fork",{"era":"devonian"})
 	check(s.planet.worlds.get_world().watershed.era=="devonian" and river.era=="carboniferous","packaged worlds preserve separate era starting points")
+	s.planet.command(s,"select",{"world_id":"home"}); s.planet.command(s,"activate_village")
+	for recipe in ["drinking_barrel","frame_bundle","tool_chest"]:
+		info=s.planet.recipe(recipe)
+		s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":recipe}); s.planet.tick(info.seconds)
+		s.planet.command(s,"deploy",{"world_id":"home","site_id":"village_depot","recipe":recipe,"token":s.planet.shipment_serial})
+	var village=s.planet.worlds.get_world().village
+	check(village.added.drink==24 and village.added.frames==6 and village.added.tools==24,"packaged village supply recipes manufacture and deliver distinct resources")
+	s.planet.command(s,"step_world")
+	check(village.projects.cistern.committed and s.planet.worlds.village.valid(village,s.planet.worlds.get_world().seconds),"packaged residents walk, reserve and construct with valid ledgers")
+	game.modal._scene("village","frame_bundle"); game.modal._live(); await process_frame
+	check(game.modal.view.village_view.people.size()==6 and game.modal.view.village_view.scaffolds.cistern.visible,"packaged village view exposes six residents and construction scaffold")
+	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
+	check(game.modal.view.village_view.snapshot.village.elapsed==0 and village.elapsed==30,"packaged village replay leaves the present intact")
+	game.modal._replay()
+	s.planet.command(s,"buy_feed",{"input":"frame_kit"}); s.planet.command(s,"pack",{"recipe":"frame_bundle"}); s.planet.command(s,"production_mode",{"mode":"island"})
+	var left=s.planet.job.left; s.planet.tick(20,0)
+	check(s.planet.job.left==left,"packaged island workshop waits for real staffing")
+	s.campus_assign_post(s.campus.people[0].id,"workshop")
+	check(s.campus.people[0].post=="workshop" and s.layout.config.buildings.has("workshop"),"packaged campus supports workshop building and resident posts")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged new world histories and production mode restore")
 	game._close_modal(); s.close_science()
 	print("PACKAGE PLANET SMOKE: ",checks," checks, ",failures.size()," failures")
 	quit(0 if failures.is_empty() else 1)

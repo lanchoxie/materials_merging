@@ -8,7 +8,7 @@ func prepare(people: Array, reactors: Array, reachable: Array, storage, config: 
 	var reserved={}
 	var next_tasks={}
 	for p in people:
-		if p.role!="doctor" or int(p.research_job)>=0: continue
+		if p.role!="doctor" or p.get("post","auto") not in ["auto","logistics"] or int(p.research_job)>=0: continue
 		var id=str(int(p.id))
 		var home=int(p.home_plot)
 		var task={}

@@ -83,6 +83,9 @@ func _people() -> void:
 		var card=_card("%s  ·  %s  ·  擅长%s" % [p.name,state.campus.role_data(p.role).name,p.specialty])
 		card.add_child(UI.paragraph("认真程度 %d%% · 休闲倾向 %d%% · 社交倾向 %d%%\n性格影响工作效率与日程；休息可以恢复心情。" % [roundi(float(p.traits.diligence)*100),roundi(float(p.traits.leisure)*100),roundi(float(p.traits.sociability)*100)],16))
 		var activity=UI.paragraph("",17,UI.GOLD); card.add_child(activity); live_labels.append({"kind":"person","id":int(p.id),"label":activity})
+		var posts=UI.row(card,8)
+		for post in state.campus.posts_for(str(p.role)):
+			posts.add_child(UI.button(str(state.campus.config.posts[post]),func(): _done(state.campus_assign_post(int(p.id),str(post))),p.post==post))
 		card.add_child(UI.paragraph("住所："+(state.plot_label(int(p.home_plot)) if int(p.home_plot)>=0 else "旧居民临时宿舍（可建住宅安排入住）"),15))
 		if int(p.get("supervisor_id",-1))>=0:
 			var supervisor: Dictionary=state.campus.person(int(p.supervisor_id))
