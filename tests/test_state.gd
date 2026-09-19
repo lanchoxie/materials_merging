@@ -168,7 +168,7 @@ func _initialize():
 	valid_file.plots[0].rid = 0
 	check(not loaded._validate_save(valid_file), "save rejects inconsistent plot ownership")
 	var baseline = JSON.parse_string(FileAccess.get_file_as_string(save_path + ".bak"))
-	check(int(baseline.version) == 18, "new saves use version eighteen")
+	check(int(baseline.version) == 19, "new saves use version nineteen")
 	valid_file = baseline.duplicate(true)
 	valid_file.plots[9].x = valid_file.plots[4].x
 	valid_file.plots[9].z = valid_file.plots[4].z
@@ -196,7 +196,7 @@ func _initialize():
 		p.erase("x")
 		p.erase("z")
 	var legacy_file = FileAccess.open(legacy_path, FileAccess.WRITE)
-	legacy_file.store_string(JSON.stringify(legacy))
+	legacy_file.store_string(JSON.stringify(legacy,"",true,true))
 	legacy_file.close()
 	var migrated = State.new()
 	check(migrated.load_game(legacy_path), "version one save migrates successfully")
@@ -205,7 +205,7 @@ func _initialize():
 	check(migrated.plot_at(-1, -1) == 0 and migrated.plot_at(0, 0) == 4 and migrated.can_expand(migrated.plot_at(2, 0)), "migration adds coordinate frontier without replacing old plots")
 	check(migrated.save_game(legacy_path).begins_with("已保存"), "migrated island saves in new format")
 	var legacy_backup = JSON.parse_string(FileAccess.get_file_as_string(legacy_path + ".bak"))
-	check(int(legacy_backup.version) == 1 and FileAccess.get_file_as_string(legacy_path + ".bak") == JSON.stringify(legacy), "first migrated save preserves original version one backup")
+	check(int(legacy_backup.version) == 1 and FileAccess.get_file_as_string(legacy_path + ".bak") == JSON.stringify(legacy,"",true,true), "first migrated save preserves original version one backup")
 	var frontier = State.new()
 	frontier.materials = [1000000, 1000000, 1000000]
 	frontier.coins = 10000.0

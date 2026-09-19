@@ -8,6 +8,7 @@ var people=[]
 var windows=[]
 var cells=[]
 var servers=[]
+var custom_badge: Node3D
 var fan: Node3D
 var park: Node3D
 var scaffold: Node3D
@@ -55,6 +56,7 @@ func setup(b) -> void:
 					servers.append(rack)
 			"cooling":
 				b._cylinder(fixed,.36,.45,Vector3(0,.23,0),"b5c8bb")
+				custom_badge=b._box(root,Vector3(.22,.06,.22),Vector3(.33,.57,0),"bbbcff"); custom_badge.hide()
 				fan=Node3D.new(); fan.position=Vector3(0,.49,0); root.add_child(fan)
 				for i in range(4):
 					var blade=b._box(fan,Vector3(.52,.025,.085),Vector3.ZERO,"648994"); blade.rotation.y=i*PI/4
@@ -142,6 +144,7 @@ func _process(dt: float) -> void:
 	for rack in servers:
 		rack.visible=w.installed.server
 		for lamp in rack.get_children(): lamp.material_override=_lit("dd9c88" if w.tripped else "9be7d1") if w.tripped or w.flow.compute>0 else builder._mat("526a77")
+	custom_badge.visible=not w.get("custom_sink",{}).is_empty()
 	fan.visible=w.installed.fan
 	if not snapshot.paused:
 		fan.rotation.y+=dt*w.flow.fan*.025

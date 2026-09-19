@@ -9,6 +9,7 @@ var habitat=preload("res://scripts/planet_habitat.gd").new()
 var modern=preload("res://scripts/planet_modern.gd").new()
 var industry=preload("res://scripts/planet_industry.gd").new()
 var config: Dictionary
+var custom_designs: Dictionary={}
 var worlds: Array=[]
 var active_id="home"
 
@@ -37,6 +38,10 @@ func total(world: Dictionary, field: String="target") -> float:
 func can_deploy(id: String, site_id: String,recipe: String="standard_water_crate") -> bool:
 	var w=get_world(id)
 	if w.is_empty(): return false
+	if recipe.begins_with("custom:"):
+		if w.mode!="experiment" or not custom_designs.has(recipe): return false
+		var d=custom_designs[recipe]
+		return modern.can_custom(w.modern,site_id,d) if d.kind=="sink" else industry.can_custom(w.industry,site_id,d)
 	if site_id in modern.ids(): return modern.can_deploy(w.modern,site_id,recipe)
 	if site_id in industry.ids(): return industry.can_deploy(w.industry,site_id,recipe)
 	if site_id in habitat.ids(): return habitat.can_deploy(w.habitat,site_id,recipe)
@@ -50,6 +55,13 @@ func can_deploy(id: String, site_id: String,recipe: String="standard_water_crate
 
 func deploy(id: String,site_id: String,shipment: int,recipe: String="standard_water_crate",component: Dictionary={}) -> void:
 	var w=get_world(id)
+	if recipe.begins_with("custom:"):
+		if not can_deploy(id,site_id,recipe): return
+		var d=custom_designs[recipe]
+		if d.kind=="sink": modern.deploy_custom(w.modern,site_id,d)
+		else: industry.deploy_custom(w.industry,site_id,d)
+		_event(w,"modern" if d.kind=="sink" else "industry","玩家假设构件已安装；仅改变本实验，未认证实际材料性质。",shipment)
+		return
 	if site_id in modern.ids():
 		modern.deploy(w.modern,site_id,recipe); _event(w,"modern","%s已交付现代城市" % str(config.recipes[recipe].name),shipment); return
 	if site_id in industry.ids():
@@ -112,7 +124,8 @@ func tick(dt: float) -> void:
 func base_snapshot(w: Dictionary) -> Dictionary:
 	return {"seed":int(w.seed),"seconds":int(w.seconds),"fraction":float(w.fraction),"zones":w.zones.duplicate(true),"observation":w.observation,"watershed":w.watershed.duplicate(true),"village":w.village.duplicate(true),"habitat":w.habitat.duplicate(true),"modern":w.modern.duplicate(true),"industry":w.industry.duplicate(true),"ecology":w.ecology.duplicate(true)}
 
-func _base_key(base: Dictionary) -> String:
+func _base_key(base: Dictionary,legacy_hash: bool=false) -> String:
+	if not legacy_hash: return preload("res://scripts/stable_identity.gd").canonical(base,true).sha256_text()
 	# JSON parses integer fields as floats. Hash semantic values, not their storage types.
 	var parts=["%d:%d:%.6f:%d" % [int(base.seed),int(base.seconds),float(base.fraction),int(base.observation)]]
 	for zone in base.zones: parts.append("%s:%d:%.6f" % [str(zone.id),int(zone.target),float(zone.water)])
@@ -180,7 +193,7 @@ func step_pair() -> String:
 	return "两个实验共同推进了10秒，现已暂停，方便比较"
 
 func serialize() -> Dictionary:
-	return {"version":8,"active_id":active_id,"worlds":worlds.duplicate(true)}
+	return {"version":9,"active_id":active_id,"worlds":worlds.duplicate(true)}
 
 func _number(value,lo: float,hi: float,integer: bool=false) -> bool:
 	return (value is int or value is float) and is_finite(float(value)) and value>=lo and value<=hi and (not integer or float(value)==floor(float(value)))
@@ -204,13 +217,14 @@ func _valid_base(w,legacy_eco: bool=false) -> bool:
 
 func restore(data) -> bool:
 	if not data is Dictionary or not data.get("worlds") is Array or not data.get("active_id") is String: return false
-	if not _number(data.get("version",1),1,8,true): return false
+	if not _number(data.get("version",1),1,9,true): return false
 	var legacy=data.get("version",1)==1
 	var legacy_eco=data.get("version",1)<3
 	if data.worlds.size()<1 or data.worlds.size()>3: return false
 	var ids=[]
 	for w in data.worlds:
 		if not _valid_base(w,legacy_eco): return false
+		if data.get("version",1)>=9 and not _custom_fields(w): return false
 		if data.get("version",1)>=4 and not w.has("watershed"): return false
 		if data.get("version",1)>=5 and not w.has("village"): return false
 		if data.get("version",1)>=6 and not w.has("habitat"): return false
@@ -241,7 +255,8 @@ func restore(data) -> bool:
 		if w.id=="home" and int(w.allowance)!=0: return false
 		if not w.get("base") is Dictionary or not w.get("base_key") is String: return false
 		if w.mode=="experiment":
-			if not _valid_base(w.base,legacy_eco) or w.base_key!=_base_key(w.base): return false
+			if not _valid_base(w.base,legacy_eco) or w.base_key!=_base_key(w.base,data.get("version",1)<9): return false
+			if data.get("version",1)>=9 and not _custom_fields(w.base): return false
 			if not legacy and not w.base.has("ecology"): return false
 			if data.get("version",1)>=4 and not w.base.has("watershed"): return false
 			if data.get("version",1)>=5 and not w.base.has("village"): return false
@@ -306,6 +321,11 @@ func restore(data) -> bool:
 			for key in modern.rules.trial_products: w.eco_allowance[key]=int(config.trial_products[key])
 			if w.mode=="experiment":
 				w.base.modern=modern.fresh(int(w.base.seconds)); w.base_key=_base_key(w.base)
+	if data.get("version",1)<9:
+		for w in worlds:
+			_migrate_custom(w)
+			if w.mode=="experiment": _migrate_custom(w.base); w.base_key=_base_key(w.base)
+
 	return true
 
 func component_regions(w: Dictionary) -> Array:
@@ -361,3 +381,17 @@ func activate_modern() -> String:
 	if w.mode=="experiment": w.base.modern=modern.fresh(int(w.base.seconds),true); w.base_key=_base_key(w.base)
 	_event(w,"modern","现代城市已开启并暂停；先安装光伏，储能模块出厂为空。")
 	return "现代城市已开启并暂停"
+
+func _custom_fields(w: Dictionary) -> bool:
+	for kind in ["modern","industry"]:
+		var values=[w[kind]]
+		for item in w[kind].history: values.append(item.state)
+		for value in values:
+			if not value.has("custom_receipts") or not value.has("custom_sink" if kind=="modern" else "custom_cables"): return false
+	return true
+func _migrate_custom(w: Dictionary) -> void:
+	for kind in ["modern","industry"]:
+		var values=[w[kind]]
+		for item in w[kind].history: values.append(item.state)
+		for value in values:
+			value.custom_receipts=[]; value["custom_sink" if kind=="modern" else "custom_cables"]={}

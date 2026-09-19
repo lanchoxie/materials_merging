@@ -1011,7 +1011,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 18, "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 19, "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1020,7 +1020,8 @@ func save_game(path: String = "") -> String:
 		"visitor_cooldown": visitor_cooldown, "visitor_visits": visitor_visits, "visitor_skips": visitor_skips,
 		"science_unlocked": science_unlocked, "science_runs": science_runs, "science_pending": science_pending}
 	var temporary = path + ".tmp"
-	var encoded=JSON.stringify(snapshot,"\t")
+	# Retain tiny SI inputs and atomic coordinates across save/load cycles.
+	var encoded=JSON.stringify(snapshot,"\t",true,true)
 	if encoded.to_utf8_buffer().size()>MAX_SAVE_BYTES: return "保存失败：存档容量已满，请交付部分产物；旧存档仍保留"
 	var file = FileAccess.open(temporary, FileAccess.WRITE)
 	if file == null:
@@ -1072,7 +1073,7 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 18, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 19, true):
 		return false
 	if int(data.version)>=11 and not PlanetProgram.new().restore(data.get("planet"),self): return false
 	if int(data.version)==12 and data.planet.version!=2: return false
@@ -1081,7 +1082,8 @@ func _validate_save(data) -> bool:
 	if int(data.version)==15 and data.planet.version!=5: return false
 	if int(data.version)==16 and data.planet.version!=6: return false
 	if int(data.version)==17 and data.planet.version!=7: return false
-	if int(data.version)>=18 and data.planet.version!=8: return false
+	if int(data.version)==18 and data.planet.version!=8: return false
+	if int(data.version)>=19 and data.planet.version!=9: return false
 	if int(data.version) >= 3:
 		# v0.3 saves may predate newly discoverable elements. Keep every
 		# existing quantity and initialize only symbols introduced in v0.4.

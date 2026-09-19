@@ -52,13 +52,19 @@ var industry_details=false
 var circuit_mode="same_size"
 var modern_widgets: Dictionary={}
 var modern_details=false
+var dossier_id=""
+var dossier_kind="sink"
+var dossier_mode="same_size"
+var dossier_draft={"density_kg_m3":null,"conductivity_W_mK":null,"resistivity_ohm_m":null}
+var dossier_quote: Label
+var dossier_save: Button
 
 func setup(model) -> void:
 	state=model; state.planet.observing=true; state.planet.observer_id=get_instance_id()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var heading=UI.label("材料试验星球",30,UI.MINT); heading.position=Vector2(32,21); add_child(heading)
-	var subtitle=UI.label("EXPERIMENT 08    /    日照、储能与智慧城市",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
+	var subtitle=UI.label("EXPERIMENT 09    /    你的结构，有据可查",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1285,27); close.size=Vector2(122,46); add_child(close)
 	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(518,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
 	var scenes=HBoxContainer.new(); scenes.position=Vector2(550,107); scenes.add_theme_constant_override("separation",2); add_child(scenes)
@@ -120,6 +126,8 @@ func setup(model) -> void:
 	var tabs=UI.row(right,8)
 	tabs.add_child(UI.button("生产工坊",func(): section="workshop"; _choose_recipe(selected_recipe)))
 	tabs.add_child(UI.button("观察 / 对照",func(): section="observe"; _choose_recipe(selected_recipe)))
+	tabs.add_child(UI.button("我的材料",_open_dossiers))
+	for b in tabs.get_children(): b.add_theme_font_size_override("font_size",14)
 	var scroll=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; right.add_child(scroll)
 	body=UI.column(scroll,12); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	status=UI.paragraph("",15,UI.GOLD); status.position=Vector2(32,859); status.size=Vector2(1370,36); add_child(status)
@@ -130,7 +138,7 @@ func _fingerprint() -> String:
 	var batches=[]
 	for item in state.storage.batches: batches.append([item.id,item.quantity])
 	var p=state.planet; var w=p.worlds.get_world()
-	return str([p.joined,p.qualified,p.extra_qualifications.keys(),p.reports.keys(),p.circuit_reports.keys(),p.feed,p.supplies,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.eco_allowance,w.zones,w.event_serial,int(w.seconds)/5,p.worlds.worlds.size(),batches])
+	return str([p.joined,p.qualified,p.extra_qualifications.keys(),p.reports.keys(),p.circuit_reports.keys(),p.materials.records.size(),p.materials.designs.size(),p.feed,p.supplies,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.eco_allowance,w.zones,w.event_serial,int(w.seconds)/5,p.worlds.worlds.size(),batches])
 
 func _redraw() -> void:
 	if state==null: return
@@ -139,7 +147,8 @@ func _redraw() -> void:
 	for w in p.worlds.worlds:
 		var button=UI.button(w.name,func(): _do("select",{"world_id":str(w.id)}),w.id==p.worlds.active_id)
 		button.custom_minimum_size.x=166; world_tabs.add_child(button)
-	if section=="materials": preload("res://scripts/material_lab_panel.gd").build(self)
+	if section=="dossiers": preload("res://scripts/player_material_panel.gd").build(self)
+	elif section=="materials": preload("res://scripts/material_lab_panel.gd").build(self)
 	elif section=="circuits": preload("res://scripts/planet_industry_panel.gd").circuit(self)
 	elif section=="workshop": _workshop()
 	elif view.display_mode=="watershed": preload("res://scripts/planet_watershed_panel.gd").build(self)
@@ -167,7 +176,7 @@ func _open_materials() -> void:
 
 func _choose_recipe(id: String) -> void:
 	_cancel_gesture(); selected_recipe=id; replay_index=-1
-	if section in ["materials","circuits"]: section="workshop"
+	if section in ["materials","circuits","dossiers"]: section="workshop"
 	var domain=str(state.planet.recipe(id).get("domain",""))
 	var use_watershed=domain=="watershed" or (domain.is_empty() and (view.display_mode=="watershed" or (view.display_mode=="materials" and material_return_mode=="watershed")))
 	var use_village=domain=="village" or (id=="standard_water_crate" and view.display_mode=="village")
@@ -221,6 +230,12 @@ func _button(text: String,callback: Callable,primary: bool=false,disabled: bool=
 
 func _workshop() -> void:
 	var p=state.planet; var rules=p.config.workshop
+	if selected_recipe.begins_with("custom:"):
+		_text(str(p.recipe(selected_recipe).name),23,UI.LILAC)
+		_text("这是已保存的假设方案，无需扣金币加工。复制一个实验副本后，把左侧构件拖到对应落点；安装占用有限实验配给。",17,UI.TEXT)
+		_button("查看材料档案",_open_dossiers)
+		_button("观察用途与建立副本",func(): section="observe"; _redraw(); _live())
+		return
 	var info=p.recipe(selected_recipe); var ref=str(info.reference)
 	if not p.joined:
 		_text("第一封星际来信",23,UI.MINT)
@@ -321,12 +336,15 @@ func _do(action: String,data: Dictionary={}) -> void:
 func _live() -> void:
 	var p=state.planet; var w=p.worlds.get_world()
 	var count=p.available_in(w,selected_recipe)
-	tray_title.text="▣  "+str(p.recipe(selected_recipe).name).replace("氧气动力补给盒","氧气补给盒")
+	tray_title.text="◈ 假设散热芯" if p.materials.designs.get(selected_recipe,{}).get("kind","")=="sink" else "◈ 假设导线" if selected_recipe.begins_with("custom:") else "▣  "+str(p.recipe(selected_recipe).name).replace("氧气动力补给盒","氧气补给盒")
 	tray_label.text="%s %d件 · 按住拖放" % ["主仓库" if w.mode=="career" else "实验配给",count]
 	caption.text="%s · %s\n拖动左侧成品到落点；点选后也可点击放置。" % [w.name,"历史回看" if replay_index>=0 else ("暂停中" if w.paused else "观察中")]
 	if section=="materials":
 		tray_title.text="◈  材料对照台"; tray_label.text="选约束 → 记录 → 制作"
 		caption.text="橙端296 K → 青端294 K · 一维稳态导热估算\n光点表示热流；同尺寸与同重量是两道不同的设计题。"
+	if section=="dossiers":
+		tray_title.text="◈  我的留样"; tray_label.text="结构身份 / 未知性质 / 假设"
+		caption.text="拖动模型可旋转 · 展示原始坐标，未自动优化\n参考数据不自动赋给玩家样品；保存方案后进入实验世界试用。"
 	if section=="circuits":
 		tray_title.text="◈  导线对照"; tray_label.text="选约束 → 记录 → 制作"
 		caption.text="20°C恒温直流参考 · 等截面与等重量的选择不同\n较低线损不代表任何安装槽都放得下。"
@@ -343,7 +361,7 @@ func _live() -> void:
 
 func _begin_drag(at: Vector2) -> void:
 	var p=state.planet; var w=p.worlds.get_world()
-	if section in ["materials","circuits"]: status.text="先在右侧记录对照，再选择制作构件"; return
+	if section in ["materials","circuits","dossiers"]: status.text="先在右侧记录对照，再选择制作构件"; return
 	if replay_index>=0: status.text="回看中的世界不可投放，请先回到当前时刻"; return
 	var count=p.available_in(w,selected_recipe)
 	if not p.joined or count<1:
@@ -441,3 +459,8 @@ func _close() -> void:
 
 func _exit_tree() -> void:
 	if state!=null and state.planet.observer_id==get_instance_id(): state.planet.observing=false
+
+func _open_dossiers() -> void:
+	_cancel_gesture(); replay_index=-1; section="dossiers"
+	state.planet.worlds.get_world().paused=true
+	view.set_mode("dossiers"); view.reset_camera(); _redraw(); _live()

@@ -131,5 +131,5 @@ func _initialize() -> void:
 	for version in ["v011","v012","v0121","v013","v014","v015","v016"]:
 		var legacy=JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/planet_"+version+".json")); var upgraded=Program.new()
 		check(upgraded.restore(legacy,s),"real "+version+" fixture migrates")
-		check(not upgraded.worlds.get_world().modern.enabled and upgraded.serialize().version==8,"migration leaves modern chapter dormant: "+version)
+		check(not upgraded.worlds.get_world().modern.enabled and upgraded.serialize().version==9,"migration leaves modern chapter dormant: "+version)
 	s.close_science(); print("MODERN: ",checks," checks, ",failures.size()," failures"); quit(0 if failures.is_empty() else 1)

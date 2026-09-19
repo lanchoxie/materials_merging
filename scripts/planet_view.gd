@@ -21,6 +21,7 @@ var modern_view
 var background_moon: Node3D
 var industry_view
 var habitat_view
+var player_view
 var material_view
 var ecology_view
 var display_mode="water"
@@ -51,6 +52,7 @@ func _ready() -> void:
 	habitat_view=preload("res://scripts/planet_habitat_view.gd").new(); add_child(habitat_view); habitat_view.setup(self); habitat_view.hide()
 	industry_view=preload("res://scripts/planet_industry_view.gd").new(); add_child(industry_view); industry_view.setup(self); industry_view.hide()
 	modern_view=preload("res://scripts/planet_modern_view.gd").new(); add_child(modern_view); modern_view.setup(self); modern_view.hide()
+	player_view=preload("res://scripts/player_material_view.gd").new(); add_child(player_view); player_view.setup(self); player_view.hide()
 	var moon=Node3D.new(); moon.position=Vector3(3.4,1.6,-1.7); add_child(moon); background_moon=moon
 	_sphere(moon,0.23,Vector3.ZERO,"edc58c")
 
@@ -150,10 +152,11 @@ func sync(world: Dictionary) -> void:
 
 func set_mode(mode: String) -> void:
 	display_mode=mode
+	player_view.visible=mode=="dossiers"
 	habitat_view.visible=mode=="habitat"
 	industry_view.visible=mode=="industry"
 	modern_view.visible=mode=="modern"
-	background_moon.visible=mode!="modern"
+	background_moon.visible=mode not in ["modern","dossiers"]
 	globe.visible=mode in ["water","ecology"]; material_view.visible=mode=="materials"; watershed_view.visible=mode=="watershed"; village_view.visible=mode=="village"
 	for info in sites.values(): info.root.visible=mode=="water"
 	ecology_view.visible=mode=="ecology"
@@ -162,7 +165,7 @@ func active_sites() -> Dictionary:
 	if display_mode=="modern": return modern_view.sites
 	if display_mode=="industry": return industry_view.sites
 	if display_mode=="habitat": return habitat_view.sites
-	if display_mode=="materials": return {}
+	if display_mode in ["materials","dossiers"]: return {}
 	if display_mode=="watershed": return watershed_view.sites
 	if display_mode=="village": return {"village_depot":village_view.sites.depot}
 	return sites if display_mode=="water" else ecology_view.sites
@@ -232,6 +235,8 @@ func _process(dt: float) -> void:
 		for id in village_view.sites:
 			var marker=village_view.sites[id].marker; marker.visible=id=="depot" and highlighted=="village_depot"; marker.material_override=_mat("a5efd1" if highlight_valid else "e7958c")
 		return
+	if display_mode=="dossiers":
+		player_view.rotation.y=globe.rotation.y; player_view.rotation.x=globe.rotation.x; return
 	if display_mode=="materials": return
 	if display_mode=="ecology":
 		for id in ecology_view.sites:

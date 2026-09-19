@@ -60,7 +60,7 @@ static func live(p) -> void:
 	var lines=[]
 	for id in rules.solar:
 		var panel=w.panels[id]; lines.append("%s：%s" % [rules.names[id],"未安装" if panel.recipe.is_empty() else "%s · 保留性能%.0f%%" % [rules.panels[panel.recipe].name,panel.quality*100]])
-	lines.append("散热芯："+("未安装" if w.sink.is_empty() else str(rules.sinks[w.sink].name)))
+	lines.append("散热芯："+("玩家假设 · "+str(w.custom_sink.id).right(5) if not w.get("custom_sink",{}).is_empty() else "未安装" if w.sink.is_empty() else str(rules.sinks[w.sink].name)))
 	lines.append("废构件 %.1f / 再生件 %.1f / 残渣 %.1f\n回收 %.0f / %.0f工时 · 公园%s" % [w.scrap,w.parts,w.residue,w.recycle_progress,rules.recycling.work,"已建成" if w.park else "施工%.0f / %.0f" % [w.park_progress,rules.recycling.park_work]])
 	for person in w.people:
 		var target=person.route[-1] if not person.route.is_empty() else person.at

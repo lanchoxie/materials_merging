@@ -12,8 +12,8 @@ func _initialize() -> void:
 func run() -> void:
 	var game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var s=game.state
-	check(str(ProjectSettings.get_setting("application/config/version"))=="0.17.0","packaged application version")
-	check(game.save_label.text.begins_with("v0.17 "),"packaged compiled UI carries the current release label")
+	check(str(ProjectSettings.get_setting("application/config/version"))=="0.18.0","packaged application version")
+	check(game.save_label.text.begins_with("v0.18 "),"packaged compiled UI carries the current release label")
 	game._show_planet(); await process_frame
 	check(game.modal.view.sites.size()==2,"packaged planet scene builds both sites")
 	var batch=s.product_snapshot(s.reactors[0]); s.storage.add_product(batch,2)
@@ -121,6 +121,19 @@ func run() -> void:
 	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
 	check(game.modal.view.modern_view.snapshot.modern.elapsed==0 and modern.elapsed==180,"packaged modern history is read-only")
 	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged complete multi-era program including modern balances restores")
+	game.modal._replay()
+	var sample18=s.product_snapshot(s._new_reactor(9,"water",0)); s.storage.add_product(sample18,1)
+	s.planet.command(s,"archive_material",{"batch_id":sample18.id})
+	var archive18=s.planet.materials; var record18=str(archive18.records.keys()[0])
+	s.planet.command(s,"propose_material",{"record_id":record18,"kind":"sink","mode":"same_mass","properties":{"density_kg_m3":2700.0,"conductivity_W_mK":235.0,"resistivity_ohm_m":null}})
+	check(archive18.records.size()==1 and archive18.designs.size()==1,"packaged player specimen archive and conditional design work")
+	game.modal._open_dossiers(); await process_frame; await process_frame
+	check(game.modal.view.player_view.atom_count==3 and game.modal.view.player_view.visible,"packaged archived structure renders actual atoms")
+	s.planet.command(s,"select",{"world_id":"trial_a"}); s.planet.command(s,"activate_modern")
+	var design18=str(archive18.designs.keys()[0])
+	s.planet.command(s,"deploy",{"world_id":"trial_a","site_id":"modern_cooling","recipe":design18,"token":s.planet.shipment_serial})
+	check(s.planet.worlds.get_world().modern.custom_sink.get("id","")==design18,"packaged player design installs only into experimental world")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize(),"",true,true)),s),"packaged full provenance and installed custom devices round-trip")
 	game._close_modal(); s.close_science()
 	print("PACKAGE PLANET SMOKE: ",checks," checks, ",failures.size()," failures")
 	quit(0 if failures.is_empty() else 1)

@@ -156,9 +156,9 @@ func _process(dt: float) -> void:
 	for i in range(smoke.size()):
 		smoke[i].visible=w.generated_W>0; smoke[i].position.y=1.1+fposmod(time*0.22+i*0.15,0.8); smoke[i].scale=Vector3.ONE*(0.6+fposmod(time*0.22+i*0.15,0.8))
 	for id in wires:
-		var v=wires[id]; v.line.visible=not w.cables[id].is_empty(); v.pulse.visible=w.flow[id]>0
+		var v=wires[id]; v.line.visible=not w.cables[id].is_empty() or w.get("custom_cables",{}).has(id); v.pulse.visible=w.flow[id]>0
 		v.pulse.position=v.a.lerp(v.b,fposmod(time*0.25,1.0))
-		v.line.material_override=builder._mat("acccb9" if w.flow[id]>0 else "8b776d")
+		v.line.material_override=builder._mat("bbbcff" if w.get("custom_cables",{}).has(id) else "acccb9" if w.flow[id]>0 else "8b776d")
 		windows[id].material_override=builder._mat("edcf91" if w.flow[id]>float(rules.loads[id].rated_W)*0.4 else "455d68")
 	if not snapshot.paused and w.factory.active and w.flow.factory>0 and not (w.alert and w.era=="ww2"): workshop_rotor.rotation.z+=dt*2
 	for i in range(people.size()):

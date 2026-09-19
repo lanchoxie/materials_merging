@@ -2,6 +2,7 @@ extends RefCounted
 ## Fixed-step world utility and logistics simulation. Rendering and global inventory are separate.
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_industry.json"))
 var electrical=preload("res://scripts/electrical_lab.gd").new()
+var custom=preload("res://scripts/player_fixture.gd").new()
 const ENERGY=["chemical_J","electric_J","heat_J","engine_loss_J","wire_loss_J","load_J","unused_J","recovered_J","useful_heat_J","rejected_heat_J","transport_J","transport_loss_J"]
 const ROLES=["repair","factory","factory","clinic","signal","homes"]
 
@@ -12,7 +13,7 @@ func fresh(era: String="ww1",at: int=0,enabled: bool=false) -> Dictionary:
 	for id in rules.nodes: integrity[id]=1.0
 	for id in electrical.data.designs: installed[id]=0
 	for i in range(ROLES.size()): people.append({"id":i,"role":ROLES[i],"at":"depot","route":[],"progress":0.0,"task":"waiting"})
-	var w={"model":rules.model,"era":era,"enabled":enabled,"elapsed":0,"policy":"care","engine":false,"running":true,"recovery":false,"blackout":false,"repairs":true,
+	var w={"model":rules.model,"custom_cables":{},"custom_receipts":[],"era":era,"enabled":enabled,"elapsed":0,"policy":"care","engine":false,"running":true,"recovery":false,"blackout":false,"repairs":true,
 		"stock":rules.initial.duplicate(true),"added":zero.duplicate(),"used":zero.duplicate(),"produced":zero.duplicate(),"shipped":zero.duplicate(),"cables":cables,"cables_received":installed.duplicate(),"cables_scrapped":installed.duplicate(),
 		"integrity":integrity,"flow":flow,"engine_fuel_kg":0.0,"transport_fuel_kg":0.0,"generated_W":0.0,"wire_loss_W":0.0,"warmth":70.0,"care":70.0,"heat_service":0.0,"signal_service":0.0,"event_done":false,"alert":false,
 		"factory_kind":"civil","factory":{"active":false,"kind":"civil","progress":0.0},"started":0,"completed":0,"repair":{"target":"","progress":0.0},"repairs_started":0,"repairs_completed":0,
@@ -30,7 +31,7 @@ func can_deploy(w: Dictionary,site: String,recipe: String) -> bool:
 	if not w.enabled or not site.begins_with("industry_"): return false
 	var id=site.trim_prefix("industry_")
 	if electrical.data.designs.has(recipe):
-		return rules.loads.has(id) and w.cables[id]!=recipe and electrical.design(recipe).area_m2<=float(rules.loads[id].max_area_m2)+1e-12
+		return rules.loads.has(id) and (w.cables[id]!=recipe or w.get("custom_cables",{}).has(id)) and electrical.design(recipe).area_m2<=float(rules.loads[id].max_area_m2)+1e-12
 	if not rules.deliveries.has(recipe): return false
 	var spec=rules.deliveries[recipe]
 	if spec.has("install"): return id=="power" and not w[spec.install]
@@ -44,6 +45,7 @@ func deploy(w: Dictionary,site: String,recipe: String) -> void:
 	if not can_deploy(w,site,recipe): return
 	var id=site.trim_prefix("industry_")
 	if electrical.data.designs.has(recipe):
+		w.custom_cables.erase(id)
 		if not w.cables[id].is_empty(): w.cables_scrapped[w.cables[id]]+=1
 		w.cables[id]=recipe; w.cables_received[recipe]+=1; return
 	var spec=rules.deliveries[recipe]
@@ -111,8 +113,8 @@ func _power(w: Dictionary) -> void:
 	var budget=electricity
 	for id in rules.loads: w.flow[id]=0.0
 	for id in rules.policies[w.policy]:
-		if w.cables[id].is_empty() or w.integrity[id]<=0 or (id=="homes" and w.blackout): continue
-		var design=electrical.design(w.cables[id]); var spec=rules.loads[id]
+		if (w.cables[id].is_empty() and not w.get("custom_cables",{}).has(id)) or w.integrity[id]<=0 or (id=="homes" and w.blackout): continue
+		var design=w.custom_cables[id].result if w.get("custom_cables",{}).has(id) else electrical.design(w.cables[id]); var spec=rules.loads[id]
 		var flow=electrical.circuit(design.resistance_ohm*float(spec.loop_multiplier),float(spec.rated_W),float(electrical.data.fixture.voltage_V),maxf(0,budget))
 		budget=maxf(0,budget-flow.source_W); w.flow[id]=flow.load_W; w.load_J+=flow.load_W; w.wire_loss_J+=flow.wire_loss_W; w.wire_loss_W+=flow.wire_loss_W
 	w.unused_J+=budget
@@ -220,13 +222,20 @@ func _valid_state(w,at: int) -> bool:
 		if not _num(w.get(key),0,rules.engine.burn_kg_s*electrical.data.fuel.gasoline_lhv_J_kg): return false
 	for key in ["cables","flow"]:
 		if not w.get(key) is Dictionary or w[key].size()!=rules.loads.size(): return false
+	if not custom.valid_receipts(w.get("custom_receipts",[])) or not w.get("custom_cables",{}) is Dictionary or w.get("custom_cables",{}).size()>rules.loads.size(): return false
+	var active_ids=[]
+	for node in w.get("custom_cables",{}):
+		var d=w.custom_cables[node]
+		if not w.enabled or not rules.loads.has(node) or not custom.valid(d) or d.kind!="wire" or not custom_fits(node,d): return false
+		active_ids.append(d.id)
+		if active_ids.count(d.id)>w.get("custom_receipts",[]).count(d.id): return false
 	var load=0.0
 	for id in rules.loads:
 		if not w.cables.get(id) is String or not _num(w.flow.get(id),0,rules.loads[id].rated_W): return false
 		if not w.cables[id].is_empty():
 			var design=electrical.design(w.cables[id])
 			if design.is_empty() or design.area_m2>float(rules.loads[id].max_area_m2)+1e-12: return false
-		elif w.flow[id]!=0: return false
+		elif w.flow[id]!=0 and not w.get("custom_cables",{}).has(id): return false
 		load+=float(w.flow[id])
 	if load+w.wire_loss_W>w.generated_W+1e-6: return false
 	for group in ["cables_received","cables_scrapped"]:
@@ -271,3 +280,12 @@ func valid(w,at: int) -> bool:
 		if item.state.has("history") or item.state.era!=w.era or item.state.elapsed<=elapsed or item.state.elapsed>w.elapsed: return false
 		last=int(item.at); elapsed=int(item.state.elapsed)
 	return true
+
+func custom_fits(node: String,d: Dictionary) -> bool:
+	return rules.loads.has(node) and d.result.area_m2<=float(rules.loads[node].max_area_m2)+1e-12
+func can_custom(w: Dictionary,site: String,d: Dictionary) -> bool:
+	var node=site.trim_prefix("industry_")
+	return w.enabled and site.begins_with("industry_") and custom.valid(d) and d.kind=="wire" and w.get("custom_receipts",[]).size()<int(custom.rules.trial_placements) and w.get("custom_cables",{}).get(node,{}).get("id","")!=d.id and custom_fits(node,d)
+func deploy_custom(w: Dictionary,site: String,d: Dictionary) -> void:
+	if not can_custom(w,site,d): return
+	w.custom_cables[site.trim_prefix("industry_")]=d.duplicate(true); w.custom_receipts.append(d.id)

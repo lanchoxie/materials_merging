@@ -87,6 +87,7 @@ static func live(p) -> void:
 	var lines=[]
 	for id in rules.loads:
 		var wire="未接线" if w.cables[id].is_empty() else str(model.electrical.data.designs[w.cables[id]].name)
+		if w.get("custom_cables",{}).has(id): wire="玩家假设导线 · "+str(w.custom_cables[id].id).right(5)
 		lines.append("%s · %s\n%.0f / %.0f W · 设备%.0f%%" % [rules.names[id],wire,w.flow[id],rules.loads[id].rated_W,w.integrity[id]*100])
 	lines.append("动力站完整度 %.0f%% · 备件 %.0f\n原料 %.0f · 在制 %.0f / %.0f 工时" % [w.integrity.power*100,w.stock.spares,w.stock.stock,w.factory.progress,rules.factory.work])
 	if not w.repair.target.is_empty(): lines.append("工程师检修%s：%.0f / %.0f" % [rules.names[w.repair.target],w.repair.progress,rules.people.repair_work])

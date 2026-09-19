@@ -8,6 +8,7 @@ var lab=preload("res://scripts/material_lab.gd").new()
 var reports: Dictionary={}
 var circuit_reports: Dictionary={}
 var electrical=preload("res://scripts/electrical_lab.gd").new()
+var materials=preload("res://scripts/player_materials.gd").new()
 var production_mode="partner"
 var joined=false
 var qualified=false
@@ -26,11 +27,15 @@ var notice=""
 
 func _init() -> void:
 	for id in config.supplies: supplies[id]=0
+	worlds.custom_designs=materials.designs
 
 func recipe_ids() -> Array:
 	return ["standard_water_crate"]+config.recipes.keys()
 
 func recipe(id: String) -> Dictionary:
+	if materials.designs.has(id):
+		var d=materials.designs[id]; var name=str(materials.records[d.record_id].name)
+		return {"id":id,"version":1,"name":name+(" · 假设散热芯" if d.kind=="sink" else " · 假设导线"),"domain":"modern" if d.kind=="sink" else "industry","reference":"hypothesis","input":"","fee":0,"seconds":0,"description":"条件计算方案，仅供实验副本使用；不进入真实成品仓。"}
 	if id=="standard_water_crate":
 		return {"id":id,"version":int(config.recipe.version),"name":str(config.recipe.name),"reference":"water","input":"feed","fee":int(config.workshop.packing_cost),"seconds":float(config.workshop.packing_seconds),"description":"把合作方标准供料装入回收水箱。"}
 	return config.recipes.get(id,{})
@@ -59,6 +64,10 @@ func available_products(recipe_id: String="standard_water_crate") -> int:
 	return result
 
 func available_in(world: Dictionary,recipe_id: String) -> int:
+	if materials.designs.has(recipe_id):
+		if world.mode!="experiment": return 0
+		var key="modern" if materials.designs[recipe_id].kind=="sink" else "industry"
+		return int(materials.fixture.rules.trial_placements)-world[key].custom_receipts.size()
 	if world.mode=="career": return available_products(recipe_id)
 	return int(world.allowance) if recipe_id=="standard_water_crate" else int(world.eco_allowance.get(recipe_id,0))
 
@@ -77,6 +86,12 @@ func sample_candidates(state,reference: String) -> Array:
 
 func command(state,action: String,payload: Dictionary={}) -> String:
 	match action:
+		"archive_material":
+			if not joined: return "先领取合作补给"
+			return materials.archive(state,str(payload.get("batch_id","")))
+		"propose_material":
+			if not joined or not payload.get("properties") is Dictionary: return "请选择结构并填写用途所需的假设"
+			return materials.propose(str(payload.get("record_id","")),str(payload.get("kind","")),str(payload.get("mode","")),payload.properties)
 		"activate_modern":
 			if not joined: return "先领取合作补给"
 			return worlds.activate_modern()
@@ -172,7 +187,8 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 				if not old.is_empty(): products.append(old)
 			else:
 				if available_in(w,recipe_id)<=0: return "本次实验配给已用完，可以重置实验"
-				if recipe_id=="standard_water_crate": w.allowance=int(w.allowance)-1
+				if recipe_id.begins_with("custom:"): pass
+				elif recipe_id=="standard_water_crate": w.allowance=int(w.allowance)-1
 				else: w.eco_allowance[recipe_id]=int(w.eco_allowance[recipe_id])-1
 				if lab.is_component(recipe_id):
 					component={"id":0,"recipe":recipe_id,"recipe_version":1,"source_batch":lab.proof(str(lab.data.designs[recipe_id].mode)).batch_id}
@@ -240,10 +256,10 @@ func tick(dt: float,effort: float=0.0) -> void:
 	if observing: worlds.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":8,"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
+	return {"version":9,"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8]: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8,9]: return false
 	data=data.duplicate(true)
 	if data.version<5: data.production_mode="partner"
 	if data.get("production_mode") not in ["partner","island"]: return false
@@ -310,9 +326,14 @@ func restore(data,state) -> bool:
 		# Work already paid for retains its quoted duration and fee after balance updates.
 		if float(data.job.duration)<=0 or float(data.job.duration)>86400 or float(data.job.left)<=0 or float(data.job.left)>float(data.job.duration): return false
 		if not Count.count_ok(data.job.get("fee")) or int(data.job.fee)>1000000: return false
+	var archive=preload("res://scripts/player_materials.gd").new()
+	if int(data.version)>=9 and not archive.restore(data.get("materials"),state): return false
+	if not data.joined and (not archive.records.is_empty() or not archive.designs.is_empty()): return false
 	var restored=Worlds.new(config)
 	if int(data.version)>=2 and (not data.get("worlds") is Dictionary or data.worlds.get("version")!=data.version): return false
 	if not restored.restore(data.get("worlds")): return false
+	for w in restored.worlds:
+		if not archive.check_world(w): return false
 	if not data.job.is_empty(): ids.append(int(data.job.id))
 	for r in restored.component_regions(restored.get_world("home")):
 		if not r.component.is_empty():
@@ -326,6 +347,7 @@ func restore(data,state) -> bool:
 		if restored.get_world("home").modern.enabled: return false
 		for n in data.supplies.values():
 			if int(n)>0: return false
+	materials=archive; restored.custom_designs=materials.designs
 	production_mode=data.production_mode
 	reports=data.reports.duplicate(true)
 	circuit_reports=data.circuit_reports.duplicate(true)
