@@ -7,12 +7,13 @@ func check(ok: bool,message: String) -> void:
 	checks+=1
 	if not ok: failures.append(message); push_error(message)
 func _initialize() -> void:
+	if "--release-ui-test" not in OS.get_cmdline_user_args(): push_error("Use -- --release-ui-test to protect player saves"); quit(2); return
 	run.call_deferred()
 func run() -> void:
 	var game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var s=game.state
-	check(str(ProjectSettings.get_setting("application/config/version"))=="0.15.0","packaged application version")
-	check(game.save_label.text.begins_with("v0.15 "),"packaged compiled UI carries the current release label")
+	check(str(ProjectSettings.get_setting("application/config/version"))=="0.16.0","packaged application version")
+	check(game.save_label.text.begins_with("v0.16 "),"packaged compiled UI carries the current release label")
 	game._show_planet(); await process_frame
 	check(game.modal.view.sites.size()==2,"packaged planet scene builds both sites")
 	var batch=s.product_snapshot(s.reactors[0]); s.storage.add_product(batch,2)
@@ -91,6 +92,21 @@ func run() -> void:
 	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
 	check(game.modal.view.habitat_view.snapshot.habitat.elapsed==0 and habitat.elapsed==60,"packaged habitat historical preview is read-only")
 	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged habitat histories and earlier chapters restore together")
+	game.modal._replay(); s.coins=9000; s.planet.command(s,"activate_industry",{"era":"ww2"}); s.planet.command(s,"compare_circuits",{"mode":"same_mass"})
+	for recipe in ["generator_set","fuel_can","heat_recovery","aluminum_wire_mass"]:
+		info=s.planet.recipe(recipe)
+		s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":recipe}); s.planet.tick(info.seconds)
+		var site="industry_factory" if recipe=="aluminum_wire_mass" else ("industry_depot" if recipe=="fuel_can" else "industry_power")
+		s.planet.command(s,"deploy",{"world_id":"home","site_id":site,"recipe":recipe,"token":s.planet.shipment_serial})
+	var industry=s.planet.worlds.get_world().industry
+	check(industry.engine and industry.recovery and industry.cables.factory=="aluminum_wire_mass" and industry.stock.fuel_kg==0.05,"packaged electrical qualification and paid industrial deliveries work")
+	s.planet.command(s,"industry",{"control":"policy","id":"production"}); s.planet.command(s,"step_world"); s.planet.command(s,"step_world"); s.planet.command(s,"step_world")
+	check(industry.shipped.civil>0 and industry.transport_fuel_kg>0 and s.planet.worlds.industry.valid(industry,s.planet.worlds.get_world().seconds),"packaged industrial power, staffing and finite fuel logistics produce valid shipments")
+	game.modal._scene("industry","fuel_can"); await process_frame; await process_frame
+	check(game.modal.view.industry_view.people.size()==6 and game.modal.view.industry_view.truck.visible and game.modal.view.industry_view.heat_pipe.visible,"packaged industrial models and heat pipe reflect installed state")
+	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
+	check(game.modal.view.industry_view.snapshot.industry.elapsed==0 and industry.elapsed==90,"packaged industrial replay is read-only")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged electrical reports and every earlier chapter restore")
 	game._close_modal(); s.close_science()
 	print("PACKAGE PLANET SMOKE: ",checks," checks, ",failures.size()," failures")
 	quit(0 if failures.is_empty() else 1)

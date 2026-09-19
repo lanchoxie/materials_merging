@@ -109,6 +109,42 @@
     "shade_kit": {
       "name": "遮荫织物与支架",
       "price": 34
+    },
+    "generator_kit": {
+      "name": "紧凑动力机组供料",
+      "price": 120
+    },
+    "gasoline_feed": {
+      "name": "标准汽油罐供料",
+      "price": 36
+    },
+    "recovery_kit": {
+      "name": "余热回收器供料",
+      "price": 70
+    },
+    "repair_kit": {
+      "name": "工业维修箱供料",
+      "price": 40
+    },
+    "industrial_feed": {
+      "name": "标准加工料箱供料",
+      "price": 44
+    },
+    "copper_wire_kit": {
+      "name": "铜线·等粗预切料与绝缘件",
+      "price": 44
+    },
+    "aluminum_wire_kit": {
+      "name": "铝线·等粗预切料与绝缘件",
+      "price": 30
+    },
+    "copper_wire_mass_kit": {
+      "name": "铜线·等重预切料与绝缘件",
+      "price": 44
+    },
+    "aluminum_wire_mass_kit": {
+      "name": "铝线·等重预切料与绝缘件",
+      "price": 30
     }
   },
   "recipes": {
@@ -281,6 +317,105 @@
       "seconds": 26,
       "description": "降低该栖地水点的蒸发，也减少植被生长光照。不是净水设备，不产生水。",
       "domain": "habitat"
+    },
+    "generator_set": {
+      "id": "generator_set",
+      "version": 1,
+      "name": "紧凑动力机组",
+      "reference": "water",
+      "input": "generator_kit",
+      "fee": 28,
+      "seconds": 45,
+      "description": "投到动力站。消耗标准燃料产生有限电力和余热。",
+      "domain": "industry"
+    },
+    "fuel_can": {
+      "id": "fuel_can",
+      "version": 1,
+      "name": "标准汽油罐",
+      "reference": "water",
+      "input": "gasoline_feed",
+      "fee": 10,
+      "seconds": 20,
+      "description": "0.05 kg标准汽油供料；低位热值44 MJ/kg。容器、动力机组另计。",
+      "domain": "industry"
+    },
+    "heat_recovery": {
+      "id": "heat_recovery",
+      "version": 1,
+      "name": "余热回收器",
+      "reference": "water",
+      "input": "recovery_kit",
+      "fee": 18,
+      "seconds": 30,
+      "description": "投到动力站，回收部分余热供住宅。不会额外发电。",
+      "domain": "industry"
+    },
+    "repair_crate": {
+      "id": "repair_crate",
+      "version": 1,
+      "name": "工业维修箱",
+      "reference": "water",
+      "input": "repair_kit",
+      "fee": 12,
+      "seconds": 25,
+      "description": "四份标准备件，由工程师到场检修消耗。",
+      "domain": "industry"
+    },
+    "industry_stock": {
+      "id": "industry_stock",
+      "version": 1,
+      "name": "标准加工料箱",
+      "reference": "water",
+      "input": "industrial_feed",
+      "fee": 12,
+      "seconds": 24,
+      "description": "十二份标准加工坯料；需要到岗工人和电力才能变成民用或军需维修物资。",
+      "domain": "industry"
+    },
+    "copper_wire": {
+      "id": "copper_wire",
+      "version": 1,
+      "name": "铜线·等粗",
+      "reference": "circuit:same_size",
+      "input": "copper_wire_kit",
+      "fee": 12,
+      "seconds": 24,
+      "description": "按已记录的电学对照组装。拖到住宅、诊所、工厂或通信站；旧线封存，不退回可出售库存。",
+      "domain": "industry"
+    },
+    "aluminum_wire": {
+      "id": "aluminum_wire",
+      "version": 1,
+      "name": "铝线·等粗",
+      "reference": "circuit:same_size",
+      "input": "aluminum_wire_kit",
+      "fee": 12,
+      "seconds": 24,
+      "description": "按已记录的电学对照组装。拖到住宅、诊所、工厂或通信站；旧线封存，不退回可出售库存。",
+      "domain": "industry"
+    },
+    "copper_wire_mass": {
+      "id": "copper_wire_mass",
+      "version": 1,
+      "name": "铜线·等重",
+      "reference": "circuit:same_mass",
+      "input": "copper_wire_mass_kit",
+      "fee": 12,
+      "seconds": 24,
+      "description": "按已记录的电学对照组装。拖到住宅、诊所、工厂或通信站；旧线封存，不退回可出售库存。",
+      "domain": "industry"
+    },
+    "aluminum_wire_mass": {
+      "id": "aluminum_wire_mass",
+      "version": 1,
+      "name": "铝线·等重",
+      "reference": "circuit:same_mass",
+      "input": "aluminum_wire_mass_kit",
+      "fee": 12,
+      "seconds": 24,
+      "description": "按已记录的电学对照组装。拖到住宅、诊所、工厂或通信站；旧线封存，不退回可出售库存。",
+      "domain": "industry"
     }
   },
   "trial_products": {
@@ -299,6 +434,15 @@
     "frame_bundle": 3,
     "tool_chest": 3,
     "habitat_bridge": 2,
-    "shade_canopy": 2
+    "shade_canopy": 2,
+    "generator_set": 1,
+    "fuel_can": 4,
+    "heat_recovery": 1,
+    "repair_crate": 2,
+    "industry_stock": 2,
+    "copper_wire": 4,
+    "aluminum_wire": 4,
+    "copper_wire_mass": 4,
+    "aluminum_wire_mass": 4
   }
 }

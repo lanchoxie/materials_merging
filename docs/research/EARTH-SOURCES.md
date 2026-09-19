@@ -74,3 +74,12 @@
 - [USDA Forest Service, Last of the Dinosaurs: Hell Creek Rocks](https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo245543/pdf/GOVPUB-A13-PURL-gpo245543.pdf)，印刷页5（PDF第7页）：埃德蒙顿龙、三角龙与霸王龙的地区背景。未沿用资料中的体重、咬合力、年代和争议行为描述作为游戏数值。
 
 三套恐龙和植被由本项目基础几何原创生成，没有复用网页插画、纹理、3D资产或全文。运行库planet_habitat.json使用原创规则与来源链接；资源当量、遮荫效率、迁徙评分、有限遗骸、个体损失和旱雨时间全部属于教学规则，不是对真实古生态的定量重建。
+
+## 0.16电学与工业背景复核 · 2026-09-19
+
+- [NBS Circular 31第二版](https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular31e2.pdf)，印刷页14 / PDF第18页：国际标准退火铜20°C定义，电阻率0.017241 Ω·mm²/m、密度8.89 g/cm³。采用四舍五入参考值而不是当作任意铜材实测。
+- [NBS Handbook 109](https://nvlpubs.nist.gov/nistpubs/Legacy/hb/nbshandbook109.pdf)，表1、印刷页5 / PDF第13页：EC-H19列20°C电阻率0.028264 Ω·mm²/m、密度2.703 g/cm³。没有混入EC-O列或旧导热章295 K密度。
+- [DOE Hydrogen Storage](https://www.energy.gov/cmei/fuels/hydrogen-storage)：按低位热值比较，氢120 MJ/kg、汽油44 MJ/kg。只把汽油参考用于已知供料，不借此推算完整储能系统密度、玩家结构热值或真实发动机效率。
+- [GCHQ1916通信资料](https://www.gchq.gov.uk/information/communications-security-in-1916-the-la-boisselle-find)、[IWM一战无线电](https://www.iwm.org.uk/collections/item/object/30005584)、[IWM二战食物与配给课程](https://www.iwm.org.uk/sites/default/files/files/2021-01/Health%20and%20Wellbeing%20-%20Food%20and%20Nutrition-%20Teacher%20Notes.pdf)：通信与民生配给的定性背景；事件强度、车辆统一油耗和居民反应是独立教学规则。
+
+运行数据electrical_lab.json采用少量有出处物理事实、自有字段和中文解释；planet_industry.json独立存游戏参数。未复制整张表、网页文案、图片或模型。未给出的不确定度/毒性等保留未知，没有拿线性插值填补无适用范围的数据。

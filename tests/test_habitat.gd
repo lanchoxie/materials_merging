@@ -96,7 +96,7 @@ func _initialize() -> void:
 	for version in ["v011","v012","v0121","v013","v014"]:
 		var legacy=JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/planet_"+version+".json")); var upgraded=Program.new()
 		check(upgraded.restore(legacy,s),"actual "+version+" fixture migrates")
-		check(not upgraded.worlds.get_world().habitat.enabled and upgraded.serialize().version==6,"migration adds dormant habitat: "+version)
+		check(not upgraded.worlds.get_world().habitat.enabled and upgraded.serialize().version==7,"migration adds dormant habitat: "+version)
 	s.close_science()
 	print("HABITAT PROBE baseline300=",m.alive(baseline)," linked540=",m.alive(resumed)," migration=",w.migrations," kills=",w.kills)
 	print("HABITAT: ",checks," checks, ",failures.size()," failures"); quit(0 if failures.is_empty() else 1)

@@ -6,6 +6,8 @@ var config: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://da
 var worlds=Worlds.new(config)
 var lab=preload("res://scripts/material_lab.gd").new()
 var reports: Dictionary={}
+var circuit_reports: Dictionary={}
+var electrical=preload("res://scripts/electrical_lab.gd").new()
 var production_mode="partner"
 var joined=false
 var qualified=false
@@ -34,10 +36,12 @@ func recipe(id: String) -> Dictionary:
 	return config.recipes.get(id,{})
 
 func qualified_for(reference: String) -> bool:
+	if reference.begins_with("circuit:"): return circuit_reports.has(reference.trim_prefix("circuit:"))
 	if reference.begins_with("fixture:"): return reports.has(reference.trim_prefix("fixture:"))
 	return qualified if reference=="water" else extra_qualifications.has(reference)
 
 func evidence(reference: String) -> Dictionary:
+	if reference.begins_with("circuit:"): return circuit_reports.get(reference.trim_prefix("circuit:"),{})
 	if reference.begins_with("fixture:"): return reports.get(reference.trim_prefix("fixture:"),{})
 	return qualification if reference=="water" else extra_qualifications.get(reference,{})
 
@@ -73,6 +77,20 @@ func sample_candidates(state,reference: String) -> Array:
 
 func command(state,action: String,payload: Dictionary={}) -> String:
 	match action:
+		"compare_circuits":
+			if not joined: return "先领取合作补给"
+			var mode=str(payload.get("mode","")); var report=electrical.proof(mode)
+			if report.is_empty(): return "未知电学约束"
+			circuit_reports[mode]=report; return "已记录20°C导线计算对照；对应标准导线开放制作。"
+		"activate_industry":
+			if not joined: return "先领取合作补给"
+			return worlds.activate_industry(str(payload.get("era","ww1")))
+		"industry":
+			if not joined: return "先领取合作补给"
+			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.industry)
+			var result=worlds.industry.control(w.industry,str(payload.get("control","")),str(payload.get("id","")))
+			if before!=worlds.ecology.canonical(w.industry): worlds._event(w,"industry",result)
+			return result
 		"production_mode":
 			var mode=str(payload.get("mode",""))
 			if mode not in ["partner","island"]: return "未知工坊模式"
@@ -213,10 +231,10 @@ func tick(dt: float,effort: float=0.0) -> void:
 	if observing: worlds.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":6,"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
+	return {"version":7,"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6]: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7]: return false
 	data=data.duplicate(true)
 	if data.version<5: data.production_mode="partner"
 	if data.get("production_mode") not in ["partner","island"]: return false
@@ -233,6 +251,13 @@ func restore(data,state) -> bool:
 	if data.version<6:
 		if not data.get("supplies") is Dictionary or data.supplies.size()!=12: return false
 		data.supplies.habitat_bridge_kit=0; data.supplies.shade_kit=0
+	if data.version<7:
+		if not data.get("supplies") is Dictionary or data.supplies.size()!=14: return false
+		for id in ["generator_kit","gasoline_feed","recovery_kit","repair_kit","industrial_feed","copper_wire_kit","aluminum_wire_kit","copper_wire_mass_kit","aluminum_wire_mass_kit"]: data.supplies[id]=0
+		data.circuit_reports={}
+	if not data.get("circuit_reports") is Dictionary or data.circuit_reports.size()>2: return false
+	for mode in data.circuit_reports:
+		if not electrical.valid_report(data.circuit_reports[mode],str(mode)) or data.get("joined")!=true: return false
 	if not data.get("reports") is Dictionary or data.reports.size()>2: return false
 	for mode in data.reports:
 		if not lab.valid_report(data.reports[mode],str(mode)) or data.get("joined")!=true: return false
@@ -285,10 +310,12 @@ func restore(data,state) -> bool:
 	if not data.joined:
 		if restored.get_world("home").village.enabled: return false
 		if restored.get_world("home").habitat.enabled: return false
+		if restored.get_world("home").industry.enabled: return false
 		for n in data.supplies.values():
 			if int(n)>0: return false
 	production_mode=data.production_mode
 	reports=data.reports.duplicate(true)
+	circuit_reports=data.circuit_reports.duplicate(true)
 	joined=data.joined; qualified=data.qualified; qualification=data.qualification.duplicate(true)
 	feed=int(data.feed); products=data.products.duplicate(true); job=data.job.duplicate(true)
 	extra_qualifications=data.extra_qualifications.duplicate(true); supplies=data.supplies.duplicate(true)
@@ -302,5 +329,6 @@ func _valid_product(product,data,ids: Array) -> bool:
 	if info.is_empty(): return false
 	var q=data.qualification if info.reference=="water" else data.extra_qualifications.get(info.reference,{})
 	if str(info.reference).begins_with("fixture:"): q=data.reports.get(str(info.reference).trim_prefix("fixture:"),{})
+	if str(info.reference).begins_with("circuit:"): q=data.circuit_reports.get(str(info.reference).trim_prefix("circuit:"),{})
 	if q.is_empty() or (info.reference=="water" and not data.qualified): return false
 	return product.get("recipe_version")==int(info.version) and product.get("source_batch")==str(q.batch_id)

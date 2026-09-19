@@ -9,6 +9,7 @@ func check(ok: bool,msg: String) -> void:
 	checks+=1
 	if not ok: failures.append(msg); push_error(msg)
 func _initialize() -> void:
+	if "--release-ui-test" not in OS.get_cmdline_user_args(): push_error("Use -- --release-ui-test to protect player saves"); quit(2); return
 	# Enable the engine's desktop touchscreen hint; Android provides it natively.
 	Input.emulate_touch_from_mouse=true
 	root.size=Vector2i(1440,900); run.call_deferred()

@@ -47,13 +47,16 @@ var watershed_menu: OptionButton
 var habitat_widgets: Dictionary={}
 var habitat_details=false
 var habitat_site="fern"
+var industry_widgets: Dictionary={}
+var industry_details=false
+var circuit_mode="same_size"
 
 func setup(model) -> void:
 	state=model; state.planet.observing=true; state.planet.observer_id=get_instance_id()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var heading=UI.label("材料试验星球",30,UI.MINT); heading.position=Vector2(32,21); add_child(heading)
-	var subtitle=UI.label("EXPERIMENT 06    /    材料改变栖地与生命",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
+	var subtitle=UI.label("EXPERIMENT 07    /    电线、热量与城市生活",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1285,27); close.size=Vector2(122,46); add_child(close)
 	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(518,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
 	var scenes=HBoxContainer.new(); scenes.position=Vector2(550,107); scenes.add_theme_constant_override("separation",4); add_child(scenes)
@@ -62,6 +65,7 @@ func setup(model) -> void:
 	scenes.add_child(UI.button("河流湿地",func(): _scene("watershed")))
 	scenes.add_child(UI.button("河湾聚落",func(): _scene("village")))
 	scenes.add_child(UI.button("白垩纪",func(): _scene("habitat","standard_water_crate")))
+	scenes.add_child(UI.button("工业港",func(): _scene("industry","generator_set")))
 	for button in scenes.get_children():
 		button.add_theme_font_size_override("font_size",14)
 		for key in ["normal","hover","pressed","focus"]:
@@ -77,6 +81,9 @@ func setup(model) -> void:
 	for id in state.planet.worlds.habitat.rules.regions:
 		var badge=PanelContainer.new(); var style=UI.style(Color("162f3a"),8); style.content_margin_top=4; style.content_margin_bottom=4; style.content_margin_left=8; style.content_margin_right=8; badge.add_theme_stylebox_override("panel",style); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
 		badge.add_child(UI.label(str(state.planet.worlds.habitat.rules.regions[id].name),13,UI.TEXT)); site_labels["habitat_"+str(id)]=badge
+	for id in state.planet.worlds.industry.ids():
+		var badge=PanelContainer.new(); var style=UI.style(Color("162f3a"),8); style.content_margin_top=4; style.content_margin_bottom=4; style.content_margin_left=8; style.content_margin_right=8; badge.add_theme_stylebox_override("panel",style); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
+		badge.add_child(UI.label(str(state.planet.worlds.industry.rules.names[id.trim_prefix("industry_")]),13,UI.TEXT)); site_labels[id]=badge
 	var camera_row=HBoxContainer.new(); camera_row.position=Vector2(40,660); camera_row.size=Vector2(550,44); camera_row.add_theme_constant_override("separation",8); add_child(camera_row)
 	camera_row.add_child(UI.button("回到试验湾",func(): _cancel_gesture(); view.reset_camera()))
 	camera_row.add_child(UI.button("＋",func(): view.zoom(-0.8)))
@@ -96,7 +103,7 @@ func setup(model) -> void:
 	choices.add_child(UI.button("导热芯",_open_materials))
 	watershed_menu=OptionButton.new(); watershed_menu.custom_minimum_size=Vector2(185,44); choices.add_child(watershed_menu)
 	watershed_menu.add_item("更多工业成品…")
-	for id in state.planet.worlds.watershed.rules.trial_products.keys()+state.planet.worlds.village.rules.trial_products.keys()+state.planet.worlds.habitat.rules.trial_products.keys():
+	for id in state.planet.worlds.watershed.rules.trial_products.keys()+state.planet.worlds.village.rules.trial_products.keys()+state.planet.worlds.habitat.rules.trial_products.keys()+state.planet.worlds.industry.rules.trial_products.keys():
 		watershed_menu.add_item(str(state.planet.recipe(id).name)); watershed_menu.set_item_metadata(watershed_menu.item_count-1,id)
 	watershed_menu.item_selected.connect(func(index):
 		if index>0: _choose_recipe(str(watershed_menu.get_item_metadata(index))))
@@ -116,19 +123,21 @@ func _fingerprint() -> String:
 	var batches=[]
 	for item in state.storage.batches: batches.append([item.id,item.quantity])
 	var p=state.planet; var w=p.worlds.get_world()
-	return str([p.joined,p.qualified,p.extra_qualifications.keys(),p.reports.keys(),p.feed,p.supplies,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.eco_allowance,w.zones,w.event_serial,int(w.seconds)/5,p.worlds.worlds.size(),batches])
+	return str([p.joined,p.qualified,p.extra_qualifications.keys(),p.reports.keys(),p.circuit_reports.keys(),p.feed,p.supplies,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.eco_allowance,w.zones,w.event_serial,int(w.seconds)/5,p.worlds.worlds.size(),batches])
 
 func _redraw() -> void:
 	if state==null: return
-	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null; eco_widgets={}; watershed_widgets={}; village_widgets={}; habitat_widgets={}
+	UI.clear(body); UI.clear(world_tabs); progress=null; progress_text=null; eco_widgets={}; watershed_widgets={}; village_widgets={}; habitat_widgets={}; industry_widgets={}
 	var p=state.planet
 	for w in p.worlds.worlds:
 		var button=UI.button(w.name,func(): _do("select",{"world_id":str(w.id)}),w.id==p.worlds.active_id)
 		button.custom_minimum_size.x=166; world_tabs.add_child(button)
 	if section=="materials": preload("res://scripts/material_lab_panel.gd").build(self)
+	elif section=="circuits": preload("res://scripts/planet_industry_panel.gd").circuit(self)
 	elif section=="workshop": _workshop()
 	elif view.display_mode=="watershed": preload("res://scripts/planet_watershed_panel.gd").build(self)
 	elif view.display_mode=="village": preload("res://scripts/planet_village_panel.gd").build(self)
+	elif view.display_mode=="industry": preload("res://scripts/planet_industry_panel.gd").build(self)
 	elif view.display_mode=="habitat": preload("res://scripts/planet_habitat_panel.gd").build(self)
 	elif view.display_mode=="ecology": EcologyPanel.build(self)
 	else: _observations()
@@ -149,12 +158,12 @@ func _open_materials() -> void:
 
 func _choose_recipe(id: String) -> void:
 	_cancel_gesture(); selected_recipe=id; replay_index=-1
-	if section=="materials": section="workshop"
+	if section in ["materials","circuits"]: section="workshop"
 	var domain=str(state.planet.recipe(id).get("domain",""))
 	var use_watershed=domain=="watershed" or (domain.is_empty() and (view.display_mode=="watershed" or (view.display_mode=="materials" and material_return_mode=="watershed")))
 	var use_village=domain=="village" or (id=="standard_water_crate" and view.display_mode=="village")
 	var use_habitat=domain=="habitat" or (id=="standard_water_crate" and view.display_mode=="habitat")
-	view.set_mode("habitat" if use_habitat else ("village" if use_village else ("watershed" if use_watershed else ("water" if id=="standard_water_crate" else "ecology"))))
+	view.set_mode("industry" if domain=="industry" else "habitat" if use_habitat else ("village" if use_village else ("watershed" if use_watershed else ("water" if id=="standard_water_crate" else "ecology"))))
 	_redraw(); _live()
 
 func display_snapshot() -> Dictionary:
@@ -167,6 +176,8 @@ func display_snapshot() -> Dictionary:
 		copy.watershed=entry.state.duplicate(true); copy.watershed.history=history
 	elif view.display_mode=="village":
 		copy.village=entry.state.duplicate(true); copy.village.history=history
+	elif view.display_mode=="industry":
+		copy.industry=entry.state.duplicate(true); copy.industry.history=history
 	elif view.display_mode=="habitat":
 		copy.habitat=entry.state.duplicate(true); copy.habitat.history=history
 	else:
@@ -178,6 +189,7 @@ func _history() -> Array:
 	if view.display_mode=="watershed": return w.watershed.history
 	if view.display_mode=="village": return w.village.history
 	if view.display_mode=="habitat": return w.habitat.history
+	if view.display_mode=="industry": return w.industry.history
 	return w.ecology.history
 
 func _replay() -> void:
@@ -208,6 +220,9 @@ func _workshop() -> void:
 	_text("合作方工坊 · 标准速度" if p.production_mode=="partner" else "本岛车间 · 到岗效率 %.2f倍" % state.campus.industrial_rate(),16,UI.GOLD)
 	_button("改用本岛车间" if p.production_mode=="partner" else "交回合作方托管",func(): _do("production_mode",{"mode":"island" if p.production_mode=="partner" else "partner"}))
 	if p.production_mode=="island": _text("在浮岛建造并连通工艺车间，给工程师选择「车间生产」。行路和用餐不计入加工；调岗后不再参与反应炉施工。工资照常支付。",14)
+	if ref.begins_with("circuit:") and not p.qualified_for(ref):
+		_text("先在导线对照记录同截面或同重量的结果。",17,UI.GOLD)
+		_button("打开导线对照",func(): section="circuits"; _redraw(),true); return
 	if ref.begins_with("fixture:") and not p.qualified_for(ref):
 		_text("先到材料对照台选择约束，记录计算结果。",17,UI.GOLD)
 		_button("打开材料对照",_open_materials,true)
@@ -235,9 +250,14 @@ func _workshop() -> void:
 	_button("补充1份供料 · %d金币" % int(input_info.price),func(): _do("buy_feed",{"input":info.input}))
 	_text("工业构件采用295 K参考物性和已对照几何；供料包含对应预切件。它不是玩家分子的实测性能。" if ref.begins_with("fixture:") else "结构身份不等于宏观纯度。标准组件、气源与已充能模块由合作方供给。",14)
 	if ref.begins_with("fixture:"): _button("更换设计 · 材料对照",_open_materials)
-	if info.get("domain","") in ["watershed","village"]: _text("水样只用于合作入门资格；组件与供料规格由合作方提供，不由水分子几何推出。",14,UI.GOLD)
+	if info.get("domain","") in ["watershed","village","habitat","industry"]: _text("水样只用于合作入门资格；组件与供料规格由合作方提供，不由水分子几何推出。",14,UI.GOLD)
 	_text("③ 选择落点",21,UI.MINT)
-	if view.display_mode=="village":
+	if view.display_mode=="industry":
+		_text("机组与余热回收器投放动力站；燃料、备件和加工料投放运输仓库。导线接住宅、诊所、车间或通信站；诊所和通信站限制截面4 mm²。",16,UI.TEXT)
+		if ref.begins_with("circuit:"): _text("导线采用20°C标准铜/铝电阻率，恒温直流模型；不是玩家分子实测或线缆安全设计。",14)
+	elif view.display_mode=="habitat":
+		_text("水箱与遮荫棚放到栖地；连接桥放在金色过河标记。水源可耗尽，小动物需要真实走到水点。",16,UI.TEXT)
+	elif view.display_mode=="village":
 		_text("拖到河湾仓库。水箱进入农作用水，生活饮水桶单独入库；构件和工具由居民取用。",16,UI.TEXT)
 	elif view.display_mode=="watershed":
 		_text("拖到上游、湿地或河口。营养包只能投上游；过滤机先安装再加滤盒。上游/湿地限制截面1 cm²，河口限制材料54 g。",16,UI.TEXT)
@@ -293,6 +313,9 @@ func _live() -> void:
 	if section=="materials":
 		tray_title.text="◈  材料对照台"; tray_label.text="选约束 → 记录 → 制作"
 		caption.text="橙端296 K → 青端294 K · 一维稳态导热估算\n光点表示热流；同尺寸与同重量是两道不同的设计题。"
+	if section=="circuits":
+		tray_title.text="◈  导线对照"; tray_label.text="选约束 → 记录 → 制作"
+		caption.text="20°C恒温直流参考 · 等截面与等重量的选择不同\n较低线损不代表任何安装槽都放得下。"
 	if is_instance_valid(progress) and not p.job.is_empty():
 		progress.value=100*(1-float(p.job.left)/float(p.job.duration))
 		progress_text.text="%s · 余%d秒标准工时" % [p.recipe(str(p.job.recipe)).name,ceili(float(p.job.left))]
@@ -301,10 +324,11 @@ func _live() -> void:
 	preload("res://scripts/planet_watershed_panel.gd").live(self)
 	preload("res://scripts/planet_village_panel.gd").live(self)
 	preload("res://scripts/planet_habitat_panel.gd").live(self)
+	preload("res://scripts/planet_industry_panel.gd").live(self)
 
 func _begin_drag(at: Vector2) -> void:
 	var p=state.planet; var w=p.worlds.get_world()
-	if section=="materials": status.text="先在右侧记录对照，再选择制作导热芯"; return
+	if section in ["materials","circuits"]: status.text="先在右侧记录对照，再选择制作构件"; return
 	if replay_index>=0: status.text="回看中的世界不可投放，请先回到当前时刻"; return
 	var count=p.available_in(w,selected_recipe)
 	if not p.joined or count<1:
@@ -384,7 +408,7 @@ func _process(dt: float) -> void:
 	for id in site_labels:
 		var badge: PanelContainer=site_labels[id]
 		badge.visible=view.site_visible(id)
-		badge.position=viewport_box.position+view.project_site(id)*viewport_box.size/Vector2(viewport.size)+Vector2(-badge.size.x*0.5,35 if id.begins_with("habitat_") else 85)
+		badge.position=viewport_box.position+view.project_site(id)*viewport_box.size/Vector2(viewport.size)+Vector2(-badge.size.x*0.5,35 if id.begins_with("habitat_") or id.begins_with("industry_") else 85)
 	if dragging or armed:
 		ghost.position=pointer+Vector2(14,-40)
 		view.highlighted=_site_at(pointer)
