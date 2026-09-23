@@ -50,7 +50,7 @@ func _initialize() -> void:
 	act(s,"organic_bottle"); var bottle=str(o.serial-1)
 	check(o.bottles.has(bottle) and s.planet.v2.inventory.entries(s).has("solution:"+bottle),"finite bottled solution enters the existing backpack")
 	check(is_equal_approx(o.bottles[bottle].mass_g,0.625) and balanced(o),"proportional aliquot conserves both solid mass and water")
-	act(s,"organic_apply",{"id":bottle})
+	look(v,Vector2(30,30),0.5); act(s,"organic_apply",{"id":bottle})
 	check(o.bottles.has(bottle),"invalid application target does not consume a bottle")
 	var plot=place(v,"planter",Vector2(17,14)); var control=place(v,"planter",Vector2(19,14))
 	v.field.plant(plot,v.world,v.construction); v.field.plant(control,v.world,v.construction)

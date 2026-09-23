@@ -72,7 +72,7 @@ static func prompt(v,target: Dictionary) -> String:
 			var spec=v.field.rules.resources[target.node.kind]
 			return text+" · E 采集 %d/%d" % [int(v.field.changed.get(target.node.id,{}).get("hits",0)),spec.hits]
 		"block":
-			if target.kind=="mixing_tank": return text+" · E 查看配料 / 背包拿起尿素或水样加料"
+			if target.kind=="mixing_tank": return text+" · E 查看配料 / 背包拿起有机物或水样加料"
 			if target.kind in ["trough","feeder"]:
 				var f=v.ranch.facility(target.key,target.kind); var spec=v.ranch.rules.facilities[target.kind]
 				return text+" · 储料%d/%d · %s" % [f.stock,spec.capacity,"装备水样补充" if target.kind=="trough" else "装备谷穗补充"]

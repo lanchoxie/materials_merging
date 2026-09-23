@@ -8,6 +8,10 @@ static func command(state,action: String,payload: Dictionary) -> String:
 	if not (token is int or token is float) or not is_finite(float(token)) or token!=p.shipment_serial: return "这次配料操作已处理，请重新选择"
 	var target=v.Target.query(v)
 	if action=="organic_apply":
+		if target.get("kind")=="mixing_tank":
+			var id=str(payload.get("id","")); var error=o.return_error(id,str(target.key),v.construction)
+			if not error.is_empty(): return error
+			p.shipment_serial+=1; var result=o.return_bottle(id,str(target.key),v.construction); v.ranch.sync(v); return result
 		if target.get("kind")!="planter": return "这瓶只用于已播种的种植箱；不能作为饮水"
 		var id=str(payload.get("id","")); var error=o.apply_error(id,str(target.key),v.field)
 		if not error.is_empty(): return error
@@ -25,7 +29,7 @@ static func command(state,action: String,payload: Dictionary) -> String:
 		if not state.storage.take_product(str(batch.id),1): return "样品已用完"
 		o.tank(key,v.construction)
 		o.add_input(key,reference,batch); p.shipment_serial+=1; v.ranch.sync(v)
-		return "已加入1份水样；水量增加1教学升" if reference=="water" else "已加入1份尿素；5教学克晶粒等待溶解"
+		return "已加入1份水样；水量增加1教学升" if reference=="water" else "已加入1份"+o.substance_name(reference)+"；5教学克"+("液体等待混合" if o.is_liquid(o.tanks[key]) else "晶粒等待溶解")
 	if action=="organic_bottle":
 		var error=o.bottle_error(key)
 		if not error.is_empty(): return error

@@ -31,7 +31,10 @@ func sync(o,c,at: Vector2) -> void:
 		if t.get("water_l",0)>0:
 			var h=0.05+float(t.water_l)/float(o.rules.game.tank_capacity_l)*0.55
 			G.cube(fluid,p+Vector3(0,0.21+h/2,0),Vector3(0.63,h,0.63),Color(0.41,0.8,0.9,0.58)); nf+=1
-		var count=mini(18,ceili(float(t.get("solid_g",0))*2))
+		var count=0 if o.is_liquid(t) else mini(18,ceili(float(t.get("solid_g",0))*2))
+		if o.is_liquid(t) and float(t.get("solid_g",0))>0:
+			# Liquid aliquot is shown as a clear puddle, never as fake crystals.
+			G.cube(fluid,p+Vector3(0,0.245,0),Vector3(0.56,0.03+float(t.solid_g)*0.006,0.56),Color(0.7,0.85,0.9,0.3)); nf+=1
 		for i in range(count):
 			G.cube(grain,p+Vector3((i%3)*0.16-0.16,0.24+(i/9)*0.075,((i/3)%3)*0.16-0.16),Vector3(0.11,0.065,0.11),Color("fff5e4")); ng+=1
 	liquid.mesh=fluid.commit() if nf>0 else null; crystals.mesh=grain.commit() if ng>0 else null

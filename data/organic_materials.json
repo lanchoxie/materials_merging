@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "references": {
     "urea": {
       "name": "尿素",
@@ -9,7 +9,10 @@
         "value": null,
         "unit": "g/L",
         "qualitative": "易溶于水",
-        "conditions": {"solvent": "water", "temperature_c": 20},
+        "conditions": {
+          "solvent": "water",
+          "temperature_c": 20
+        },
         "evidence": "reported",
         "source": "https://hpvchemicals.oecd.org/UI/handler.axd?id=89564308-0887-4614-8a20-e542ce76221a",
         "note": "来源报告1080 g/L，另有SDS报告624 g/L；体积基准尚待核对，因此不启用定量饱和外推。首版只处理少量尿素的配水。"
@@ -27,6 +30,65 @@
         "conditions": "土壤中水解产生的局部氨/高pH条件；不是任意生物的通用毒性",
         "evidence": "reported",
         "source": "https://extension.umn.edu/agriculture/crop-production/nutrient-management-for-minnesota-crops/fertilizer-urea"
+      },
+      "gameplay": {
+        "phase": "solid",
+        "sample_g": 5.0,
+        "mixing_g_per_second": 0.5,
+        "description": "易溶于水的晶体；配水分装后用于种植箱补肥，过量会伤苗。",
+        "use": "fertilizer"
+      }
+    },
+    "ethanol": {
+      "name": "乙醇",
+      "formula": "C2H6O",
+      "cas": "64-17-5",
+      "water_solubility": {
+        "value": null,
+        "unit": null,
+        "qualitative": "与水互溶",
+        "conditions": {
+          "solvent": "water",
+          "temperature_c": 20
+        },
+        "evidence": "reported",
+        "source": "https://www.cdc.gov/niosh/npg/npgd0262.html",
+        "note": "互溶液体不填有限饱和溶解度；教学配水量不代表真实混合体积。"
+      },
+      "toxicity_endpoints": null,
+      "biodegradation": null,
+      "gameplay": {
+        "phase": "liquid",
+        "sample_g": 5.0,
+        "mixing_g_per_second": 0.5,
+        "description": "与水互溶的无色液体。带到配料罐比较混合、稀释和分装；本版作为实验样品。",
+        "use": "mixing"
+      }
+    },
+    "glycerol": {
+      "name": "甘油",
+      "formula": "C3H8O3",
+      "cas": "56-81-5",
+      "water_solubility": {
+        "value": null,
+        "unit": null,
+        "qualitative": "与水互溶",
+        "conditions": {
+          "solvent": "water",
+          "temperature_c": 20
+        },
+        "evidence": "reported",
+        "source": "https://www.cdc.gov/niosh/npg/npgd0302.html",
+        "note": "互溶液体不填有限饱和溶解度；教学配水量不代表真实混合体积。"
+      },
+      "toxicity_endpoints": null,
+      "biodegradation": null,
+      "gameplay": {
+        "phase": "liquid",
+        "sample_g": 5.0,
+        "mixing_g_per_second": 0.5,
+        "description": "与水互溶的黏稠液体，分子含三个羟基。本版可配水留样；吸湿性仅作知识记录，尚未影响环境。",
+        "use": "mixing"
       }
     }
   },

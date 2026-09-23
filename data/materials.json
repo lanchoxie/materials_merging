@@ -1993,6 +1993,561 @@
           "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
         }
       ]
+    },
+    "ethanol": {
+      "name": "乙醇 · 一滴清澈",
+      "formula": "C₂H₆O",
+      "chapter": "有机物",
+      "atoms": [
+        "C",
+        "C",
+        "O",
+        "H",
+        "H",
+        "H",
+        "H",
+        "H",
+        "H"
+      ],
+      "positions": [
+        [
+          -1.52,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0.48,
+          1.35,
+          0
+        ],
+        [
+          -1.88,
+          0.52,
+          0.89
+        ],
+        [
+          -1.88,
+          0.52,
+          -0.89
+        ],
+        [
+          -1.88,
+          -1.03,
+          0
+        ],
+        [
+          0.36,
+          -0.51,
+          0.89
+        ],
+        [
+          0.36,
+          -0.51,
+          -0.89
+        ],
+        [
+          1.44,
+          1.35,
+          0
+        ]
+      ],
+      "angles": [],
+      "description": "与水互溶的无色液体。带到配料罐比较混合、稀释和分装；本版作为实验样品。",
+      "source": "连接与物质身份：https://www.cdc.gov/niosh/npg/npgd0262.html；坐标、键长为教学构造，非实测低能构象。",
+      "bonds": [
+        [
+          0,
+          1,
+          1.52
+        ],
+        [
+          1,
+          2,
+          1.4328
+        ],
+        [
+          0,
+          3,
+          1.0918
+        ],
+        [
+          0,
+          4,
+          1.0918
+        ],
+        [
+          0,
+          5,
+          1.0911
+        ],
+        [
+          1,
+          6,
+          1.0871
+        ],
+        [
+          1,
+          7,
+          1.0871
+        ],
+        [
+          2,
+          8,
+          0.96
+        ]
+      ],
+      "bond_orders": [
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          2,
+          1
+        ],
+        [
+          0,
+          3,
+          1
+        ],
+        [
+          0,
+          4,
+          1
+        ],
+        [
+          0,
+          5,
+          1
+        ],
+        [
+          1,
+          6,
+          1
+        ],
+        [
+          1,
+          7,
+          1
+        ],
+        [
+          2,
+          8,
+          1
+        ]
+      ],
+      "color": "9fd9e8",
+      "radius_mode": "共价半径示意",
+      "family": "organic_ethanol",
+      "substitution_only": false,
+      "geometry_type": "teaching_approximation",
+      "atom_contexts": [
+        {
+          "radius": 0.76,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.76,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.66,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        }
+      ]
+    },
+    "glycerol": {
+      "name": "甘油 · 三个羟基",
+      "formula": "C₃H₈O₃",
+      "chapter": "有机物",
+      "atoms": [
+        "C",
+        "C",
+        "C",
+        "O",
+        "O",
+        "O",
+        "H",
+        "H",
+        "H",
+        "H",
+        "H",
+        "H",
+        "H",
+        "H"
+      ],
+      "positions": [
+        [
+          -1.25,
+          -0.75,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1.25,
+          -0.75,
+          0
+        ],
+        [
+          -2.45,
+          0,
+          0
+        ],
+        [
+          0,
+          1.43,
+          0
+        ],
+        [
+          2.45,
+          0,
+          0
+        ],
+        [
+          -1.3,
+          -1.38,
+          0.89
+        ],
+        [
+          -1.3,
+          -1.38,
+          -0.89
+        ],
+        [
+          0,
+          0.04,
+          -1.09
+        ],
+        [
+          1.3,
+          -1.38,
+          0.89
+        ],
+        [
+          1.3,
+          -1.38,
+          -0.89
+        ],
+        [
+          -3.25,
+          -0.53,
+          0
+        ],
+        [
+          0.81,
+          1.94,
+          0
+        ],
+        [
+          3.25,
+          -0.53,
+          0
+        ]
+      ],
+      "angles": [],
+      "description": "与水互溶的黏稠液体，分子含三个羟基。本版可配水留样；吸湿性仅作知识记录，尚未影响环境。",
+      "source": "连接与物质身份：https://www.cdc.gov/niosh/npg/npgd0302.html；坐标、键长为教学构造，非实测低能构象。",
+      "bonds": [
+        [
+          0,
+          1,
+          1.4577
+        ],
+        [
+          1,
+          2,
+          1.4577
+        ],
+        [
+          0,
+          3,
+          1.4151
+        ],
+        [
+          1,
+          4,
+          1.43
+        ],
+        [
+          2,
+          5,
+          1.4151
+        ],
+        [
+          0,
+          6,
+          1.0916
+        ],
+        [
+          0,
+          7,
+          1.0916
+        ],
+        [
+          1,
+          8,
+          1.0907
+        ],
+        [
+          2,
+          9,
+          1.0916
+        ],
+        [
+          2,
+          10,
+          1.0916
+        ],
+        [
+          3,
+          11,
+          0.9596
+        ],
+        [
+          4,
+          12,
+          0.9572
+        ],
+        [
+          5,
+          13,
+          0.9596
+        ]
+      ],
+      "bond_orders": [
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          2,
+          1
+        ],
+        [
+          0,
+          3,
+          1
+        ],
+        [
+          1,
+          4,
+          1
+        ],
+        [
+          2,
+          5,
+          1
+        ],
+        [
+          0,
+          6,
+          1
+        ],
+        [
+          0,
+          7,
+          1
+        ],
+        [
+          1,
+          8,
+          1
+        ],
+        [
+          2,
+          9,
+          1
+        ],
+        [
+          2,
+          10,
+          1
+        ],
+        [
+          3,
+          11,
+          1
+        ],
+        [
+          4,
+          12,
+          1
+        ],
+        [
+          5,
+          13,
+          1
+        ]
+      ],
+      "color": "e5c697",
+      "radius_mode": "共价半径示意",
+      "family": "organic_glycerol",
+      "substitution_only": false,
+      "geometry_type": "teaching_approximation",
+      "atom_contexts": [
+        {
+          "radius": 0.76,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.76,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.76,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.66,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.66,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.66,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "radius": 0.31,
+          "radius_type": "共价半径示意；不是具体键长",
+          "oxidation_state": null,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        }
+      ]
     }
   },
   "version": 3

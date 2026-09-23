@@ -9,7 +9,7 @@ static func button_text(action: Dictionary,target: Dictionary) -> String:
 		"plant","tree_plant": return "种植 E"
 		"axe": return "砍树 E"
 		"dig": return "挖土 E"
-		"organic_solution": return "施肥 E"
+		"organic_solution": return "倒回 E" if target.get("kind")=="mixing_tank" or action.get("reference","urea")!="urea" else "施肥 E"
 		"organic_sample": return "加料 E"
 		"feed": return "喂食 E"
 	return "使用 E"
@@ -27,8 +27,10 @@ static func prompt(v,item: Dictionary,target: Dictionary,fallback: String) -> St
 		elif kind=="strike": text+=" · E/F 攻击"
 		else: text+=" · F 攻击 · "+button_text(action,target)
 		return text
-	if kind=="organic_solution": return str(item.name)+" · 瞄准种植箱 E 施肥 · 重复施用会累积"
-	if kind=="organic_sample": return "尿素 · 瞄准配料罐 E 加入5教学克"
+	if kind=="organic_solution":
+		if target.get("kind")=="mixing_tank" or action.get("reference","urea")!="urea": return str(item.name)+" · 瞄准空罐或同种罐 E 倒回再稀释"
+		return str(item.name)+" · 瞄准种植箱 E 施肥 · 重复施用会累积"
+	if kind=="organic_sample": return v.organics.substance_name(str(action.reference))+" · 瞄准配料罐 E 加入5教学克"
 	if target.get("kind")=="mixing_tank" and kind=="sample": return "配料罐 · E 加入1份水样（1教学升）"
 	if kind=="strike": return "挥拳 · 瞄准%.1f米内的动物或人物 · E/F 攻击" % v.combat.rules.reach
 	if kind=="tree_plant": return str(item.name)+" · 瞄准空地，E种植"

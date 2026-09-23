@@ -46,7 +46,9 @@ func entries(state) -> Dictionary:
 			result[key]=_item(key,str(spec.get("name",recipe_id)),category,icon,quantity,description,action)
 	for id in v.organics.bottles:
 		var bottle=v.organics.bottles[id]; var key="solution:"+str(id)
-		result[key]=_item(key,"尿素溶液 #%s" % id,"products","sample",1,"250 mL · %.2f g/L\n这瓶含%.2f教学克尿素。瞄准已播种的种植箱按 E 施用；先比较一箱补肥、一箱不施肥，重复施用会累积。不能用作饮水或饲料。" % [bottle.mass_g/bottle.water_l,bottle.mass_g],{"type":"organic_solution","id":id})
+		var ref=v.organics.substance(bottle); var name=v.organics.substance_name(ref)
+		var use="瞄准已播种的种植箱按 E 施肥；重复施用会累积。" if ref=="urea" else "配水实验留样，未开放生物用途。"
+		result[key]=_item(key,"%s溶液 #%s" % [name,id],"products","sample",1,"250教学mL · %.2f g/L\n这瓶含%.2f教学克%s。%s瞄准空罐或同种配料罐按 E 可倒回再稀释；不能作饮水或饲料。" % [bottle.mass_g/bottle.water_l,bottle.mass_g,name,use],{"type":"organic_solution","id":id,"reference":ref})
 	var live_batches={}
 	for batch in state.storage.batches:
 		var key="sample:"+str(batch.id)
@@ -62,8 +64,8 @@ func entries(state) -> Dictionary:
 		var description="批次 %s · 保留这份结构的来源与身份。\n" % str(batch.id)
 		description+=str(rule.description) if not rule.is_empty() else "尚未定义该样品的星球用途；可留在浮岛用于研究或订单。"
 		var action={} if rule.is_empty() else {"type":"sample","batch_id":str(batch.id),"reference":ref}
-		if ref=="urea":
-			description="批次 %s · 有机物 · 易溶于水。\n拿起后瞄准配料罐加料。1份对应5教学克，适量补肥、过量伤苗，未开放动物毒理推断。" % str(batch.id)
+		if v.organics.rules.references.has(ref):
+			description="批次 %s · %s\n%s\n拿起后瞄准配料罐加料；1份对应5教学克。" % [batch.id,v.organics.substance_name(ref),v.organics.rules.references[ref].gameplay.description]
 			action={"type":"organic_sample","batch_id":str(batch.id),"reference":ref}
 		result[key]=_item(key,str(batch.formula),"samples","sample",int(batch.quantity),description,action)
 	for key in sample_cache.keys():
