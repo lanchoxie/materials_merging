@@ -1,6 +1,6 @@
 # 本地版本记录
 
-2026-09-23：为 GitHub 发布准备导出 `AtomAtelier-0.21.0-homestead-11-android.apk`（72,873,941 字节，versionCode 23），与当前 `homestead-11` 源码对应。SHA-256：`12697863cc0aa51f49847acbc9cdd48adf584cf9c45c3cac64393bad0bd5771d`。签名 v2/v3、包内数据与编译脚本、文件排除检查通过；从 APK 解包运行模型45项、原生 OpenGL 界面31项及资源11项通过。未进行 Android 真机验证。该包是开发预览，未新增正式功能版本计数，GitHub 上传结果见 `docs/GITHUB-PUBLISH.md`。
+2026-09-23：为 GitHub 发布准备导出 `AtomAtelier-0.21.0-homestead-11-android.apk`（72,873,941 字节，versionCode 23），与当前 `homestead-11` 源码对应。SHA-256：`12697863cc0aa51f49847acbc9cdd48adf584cf9c45c3cac64393bad0bd5771d`。签名 v2/v3、包内数据与编译脚本、文件排除检查通过；从 APK 解包运行模型45项、原生 OpenGL 界面31项及资源11项通过。未进行 Android 真机验证。该包是开发预览，未新增正式功能版本计数，检查范围见 [Android 验证](ANDROID-VALIDATION.md)。
 
 最新开发预览：`homestead-11`（2026-09-22，0.21预览）加入第一人称瞄准采集、原料加工建材、局部种植浇水收获、野果喂食及围栏阻挡。试玩 http://127.0.0.1:8771/?preview=homestead-11 ，详见 `docs/V0.21-PREVIEW.md`。最近Android包仍为 `AtomAtelier-0.21.0-backpack-10-android.apk`（versionCode 22，不含本轮新功能）。本轮不是正式功能发布，不新增标签或QQ交付计数。
 
