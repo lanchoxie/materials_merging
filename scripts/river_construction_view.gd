@@ -40,7 +40,7 @@ func preview(model,actor: Dictionary,mode: String,products: Array,recipe_id: Str
 	if hit.is_empty() or hit.has("blocked"): return "瞄准5米内的地面或自建构件"
 	var c: Vector3i=hit.target; var error=""
 	if mode=="remove":
-		if str(hit.hit).is_empty(): return "地形暂不能挖掘；瞄准自建构件拆回"
+		if str(hit.hit).is_empty(): return "拆卸锤用于自建构件；挖地请在背包装备地形铲"
 		c=model.cell(model.blocks[hit.hit]); error="remove"
 	else:
 		error=model.place_error(c,actor)

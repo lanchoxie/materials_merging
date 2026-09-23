@@ -56,7 +56,7 @@ func _run() -> void:
 	await capture("sandbox-miniature")
 	game._show_planet_v2(); await process_frame; panel=game.modal; panel._enter(); panel._equip_item("tool:strike")
 	var person={"id":1,"name":"禾苗","health":1.0,"hunger":0.1,"x":30.0,"z":30.0,"task":"安家"}; v.settlement.era=1; v.settlement.people=[person]
-	look(panel,Vector2(30,32),Vector3(30,t.ground(Vector2(30,30))+1,30)); await key(KEY_E)
+	look(panel,Vector2(30,32),Vector3(30,t.ground(Vector2(30,30))+1,30)); panel._sync(); await process_frame; await key(KEY_E)
 	check(person.health<1 and panel.encounter_hud.target.has("entity"),"rendered human receives strike and target health/anger HUD appears")
 	var hp=v.combat.player_health; await create_timer(1.8).timeout
 	check(v.combat.player_health==hp,"pause freezes retaliation")

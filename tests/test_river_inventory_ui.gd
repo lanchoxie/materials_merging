@@ -80,7 +80,7 @@ func _run() -> void:
 	panel._open_backpack(); await process_frame; inv=panel.backpack
 	var batch_id="sample:"+sample.id
 	await click(item_slot(inv,batch_id)); var quantity=s.storage.batch(sample.id).quantity; var water=v.region().water
-	inv.use_requested.emit(batch_id,""); await process_frame
+	inv.use_requested.emit(batch_id,"deploy"); await process_frame
 	check(s.storage.batch(sample.id).quantity==quantity-1 and v.region().water>water and s.coins==wallet,"backpack uses the actual selected water batch without charging coins")
 	check(inv.feedback.text.contains("送达"),"modal shows the deployment result")
 	# Many batches must scroll by swiping a slot, without selecting or consuming it.

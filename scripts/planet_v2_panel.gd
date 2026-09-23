@@ -7,6 +7,7 @@ const View=preload("res://scripts/planet_v2_view.gd")
 const ExplorationInput=preload("res://scripts/river_exploration_input.gd")
 const InventorySlot=preload("res://scripts/river_inventory_slot.gd")
 const InventoryPanel=preload("res://scripts/river_inventory_panel.gd")
+const InteractionHelp=preload("res://scripts/river_interaction_help.gd")
 var state
 var view
 var viewport: SubViewport
@@ -38,6 +39,7 @@ var closing=false
 var build_mode="observe"
 var play_bar: HBoxContainer
 var action_button: Button
+var attack_button: Button
 var aim_label: Label
 var aim_clock=0.0
 var hotbar_slots=[]
@@ -73,7 +75,8 @@ func setup(model) -> void:
 	explore_input.build_requested.connect(_open_backpack)
 	explore_input.slot_requested.connect(_select_slot)
 	explore_input.slot_cycled.connect(func(direction): _select_slot(posmod(state.planet.v2.inventory.selected+direction,9)))
-	explore_input.primary_requested.connect(_collect)
+	explore_input.primary_requested.connect(_primary)
+	explore_input.attack_requested.connect(_attack)
 	explore_input.zoomed.connect(func(amount): view.zoom=clampf(view.zoom+amount,0.65,1.4))
 	encounter_hud=preload("res://scripts/encounter_hud.gd").new(); encounter_hud.v=state.planet.v2; encounter_hud.position=viewport_box.position; encounter_hud.size=viewport_box.size; add_child(encounter_hud); encounter_hud.hide()
 	faint_button=UI.button("回营地休息",func(): state.planet.v2.combat.respawn(); _travel("home")); faint_button.position=Vector2(650,430); faint_button.hide(); add_child(faint_button)
@@ -99,6 +102,7 @@ func setup(model) -> void:
 	scroll=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; col.add_child(scroll)
 	body=UI.column(scroll,10); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	inspect_button=UI.button("世界 / 远行",_toggle_details); inspect_button.position=Vector2(1240,170); inspect_button.size=Vector2(148,44); inspect_button.hide(); add_child(inspect_button)
+	attack_button=UI.button("攻击 F",_attack); attack_button.focus_mode=Control.FOCUS_NONE; attack_button.size=Vector2(148,44); attack_button.hide(); add_child(attack_button)
 	status=UI.paragraph("M前往采集坡 · 用手套采集原料 → 工艺车间加工 → 背包搭建、播种和浇水。",15,UI.GOLD); status.position=Vector2(32,853); status.size=Vector2(1370,35); add_child(status)
 	play_bar=UI.row(self,4); play_bar.position=Vector2(300,656)
 	for i in range(state.planet.v2.inventory.slots.size()):
@@ -108,7 +112,7 @@ func setup(model) -> void:
 	var jump_button=UI.button("跳跃 ␣",func(): view.walker.jump()); jump_button.focus_mode=Control.FOCUS_NONE; play_bar.add_child(jump_button)
 	var bag_button=UI.button("背包 B",_open_backpack); bag_button.focus_mode=Control.FOCUS_NONE; play_bar.add_child(bag_button)
 	play_bar.hide()
-	aim_label=UI.label("",15,UI.GOLD); aim_label.position=Vector2(350,628); add_child(aim_label); aim_label.hide()
+	aim_label=UI.label("",15,UI.GOLD); aim_label.position=Vector2(350,606); add_child(aim_label); aim_label.hide()
 	_refresh_hotbar(); _redraw(); _sync.call_deferred()
 
 func _map_click(at: Vector2) -> void:
@@ -143,11 +147,13 @@ func _exploration_layout() -> void:
 	encounter_hud.size=viewport_box.size; encounter_hud.visible=view.first_person
 	right_panel.visible=not wide; camera_bar.visible=not view.first_person
 	inspect_button.visible=view.first_person; inspect_button.position.x=1240 if wide else 790
+	attack_button.visible=view.first_person; attack_button.position=Vector2(1240 if wide else 790,224)
 	inspect_button.text="收起面板" if show_details else "世界 / 远行"
 	play_bar.visible=view.first_person; aim_label.visible=view.first_person
-	play_bar.position.x=300 if wide else 150; aim_label.position.x=350 if wide else 220
+	play_bar.position.x=300 if wide else 56; aim_label.position.x=350 if wide else 220
+	aim_label.size=Vector2(890 if wide else 710,44); aim_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	hint.position=Vector2(48,214) if view.first_person else Vector2(48,705)
-	hint.text="WASD走动 · 空格跳跃 · 拖动转向 · E使用 · 1—9 / 滚轮选物品 · B背包 · M远行\n触屏：左下摇杆移动，右侧滑动转向；点快捷格选物品，再点操作" if view.first_person else "点选地形 · 滚轮缩放 · 第一人称走进去"
+	hint.text="WASD走动 · 拖动转向 · F攻击 · E使用/查看 · B背包 · M远行\n拿手套时：左键攻击生物，E查看；手机点攻击或使用按钮" if view.first_person else "点选地形 · 滚轮缩放 · 第一人称走进去"
 	if not view.first_person: state.planet.v2.actor={}; view.construction_view.ghost.hide()
 
 func _in_wilderness() -> bool:
@@ -166,6 +172,26 @@ func _travel(id: String) -> void:
 	if id=="homestead": message="采集坡：装备手套，瞄准枯枝堆、散石或果丛按E；原料可带回工艺车间。"
 	_redraw(); _sync()
 
+func _primary() -> void:
+	if is_instance_valid(backpack): return
+	_update_actor()
+	var v=state.planet.v2
+	var item: Dictionary=inventory_items.get(v.inventory.slots[v.inventory.selected],{})
+	if item.get("action",{}).get("type")=="collect" and v.Target.query(v).has("entity"):
+		_attack()
+	else: _collect()
+
+func _attack() -> void:
+	if not view.first_person or is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
+	_update_actor()
+	var v=state.planet.v2; var target=v.Target.query(v)
+	var before=float(target.entity.row.get("health",1)) if target.has("entity") else 0.0
+	view.hands.swing()
+	_act("v2_strike")
+	if target.has("entity") and float(target.entity.row.get("health",1))<before:
+		encounter_hud.hit_flash=0.3
+		view.field_view.feedback(target.point)
+
 func _collect() -> void:
 	if is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
 	_update_actor()
@@ -181,28 +207,29 @@ func _use_item(id: String,alternate: String="") -> void:
 	var action: Dictionary=item.action
 	if action.is_empty(): message="这件物品目前不能直接在星球使用。"; _live(); return
 	var type=str(action.type)
+	if type=="strike": _attack(); return
 	var target=state.planet.v2.Target.query(state.planet.v2)
 	if alternate=="pantry": _act("v2_field_pantry",{"resource":action.get("resource","")}); return
-	if alternate=="deploy": type="product"
+	if alternate=="deploy" and type=="build": type="product"
 	view.hands.set_tool(type); view.hands.swing()
-	if type in ["axe","dig","fill","strike","tree_plant","mini_pack","mini_unfold"]:
-		var command={"axe":"v2_chop","dig":"v2_dig","fill":"v2_fill","strike":"v2_strike","tree_plant":"v2_tree_plant","mini_pack":"v2_mini_pack","mini_unfold":"v2_mini_unfold"}
+	if type in ["axe","dig","fill","tree_plant","mini_pack","mini_unfold"]:
+		var command={"axe":"v2_chop","dig":"v2_dig","fill":"v2_fill","tree_plant":"v2_tree_plant","mini_pack":"v2_mini_pack","mini_unfold":"v2_mini_unfold"}
 		_act(command[type],action)
 	elif type in ["build","remove"]:
 		_update_actor()
 		_act("v2_dismantle" if type=="remove" else "v2_build",{"kind":action.get("kind","block"),"recipe":action.get("recipe","")})
 	elif type=="plant":
-		if view.first_person and alternate!="reed": _act("v2_field_plant")
+		if view.first_person and alternate not in ["reed","region"]: _act("v2_field_plant")
 		else: _act("v2_plant",{"crop":alternate if alternate=="reed" else "grain"})
 	elif type=="sample":
-		var local=view.first_person and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree")
+		var local=view.first_person and alternate!="deploy" and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree")
 		_act("v2_field_water" if local else "v2_deploy_sample",{"batch_id":action.batch_id,"region_id":selected_region,"token":state.planet.shipment_serial})
 	elif type=="product":
 		var product_id=-1
 		for product in state.planet.products:
 			if product.recipe==action.recipe: product_id=int(product.id); break
 		if product_id<0: message="没有完整的成品包；先拆回构件并在搭建页整包收纳。"; _live(); return
-		var local=view.first_person and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree") and action.recipe=="standard_water_crate"
+		var local=view.first_person and alternate!="deploy" and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree") and action.recipe=="standard_water_crate"
 		_act("v2_field_water" if local else "v2_deploy_product",{"product_id":product_id,"region_id":selected_region,"token":state.planet.shipment_serial})
 	elif type=="collect":
 		if target.has("entity") or target.get("kind") in ["trough","feeder"]:
@@ -262,7 +289,7 @@ func _open_backpack() -> void:
 	backpack.changed.connect(_refresh_hotbar)
 	backpack.use_requested.connect(func(id,alternate):
 		var item=state.planet.v2.inventory.entries(state).get(id,{})
-		if alternate.is_empty() and item.get("action",{}).get("type") in ["build","collect","remove","feed","axe","dig","fill","strike","tree_plant","mini_pack","mini_unfold"]: _equip_item(id)
+		if alternate.is_empty() and not item.get("action",{}).is_empty(): _equip_item(id)
 		else: _use_item(id,alternate))
 	backpack.workshop_requested.connect(func(): workshop_requested.emit(""))
 
@@ -277,7 +304,7 @@ func _open_building() -> void:
 func _update_actor() -> void:
 	var v=state.planet.v2
 	if not view.first_person: v.actor={}; return
-	v.actor={"eye":view.walker.eye(),"direction":-view.camera.global_basis.z,"feet":Vector3(view.walker.position.x,view.walker.feet_y,view.walker.position.y)}
+	v.actor={"eye":view.walker.eye(),"direction":-view.camera.global_basis.z,"feet":Vector3(view.walker.position.x,view.walker.feet_y,view.walker.position.y),"entity_hitboxes":view.entity_hitboxes()}
 
 func _aim() -> void:
 	_update_actor()
@@ -296,10 +323,10 @@ func _aim() -> void:
 			var water=action.get("reference")=="water" or action.get("recipe")=="standard_water_crate"
 			aim_label.text=str(item.get("name","已用完"))+ (" · E 浇水" if water and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree") else (" · 这里需要水" if (target.get("kind") in ["planter","trough"] or target.get("type")=="tree") else " · E 使用于"+str(v.region().name)))
 		elif action.get("type")=="plant": aim_label.text=v.Target.prompt(v,target)+" · E 播种"
-	if target.has("entity"):
-		var rage=v.combat.records.get(target.entity.key,{}).get("anger",0)
-		aim_label.text="%s · 血量 %.0f%% · 怒气 %.0f%% · %s" % [target.name,target.health*100,rage,v.ranch.lives.get(target.entity.key,{}).get("task",v.combat.reaction(target.entity))]+" · 手套 E 查看"
-	action_button.text="采集 E" if action.get("type")=="collect" else ("拆回 E" if build_mode=="remove" else ("放置 E" if action.get("type")=="build" else "使用 E"))
+	aim_label.text=InteractionHelp.prompt(v,item,target,aim_label.text)
+	action_button.text=InteractionHelp.button_text(action,target)
+	attack_button.text="收拳中…" if v.combat.attack_left>0 else "攻击 F"
+	attack_button.disabled=v.combat.player_health<=0 or v.combat.attack_left>0
 
 func _tab(id: String) -> void:
 	if id=="bag": _open_backpack(); return
@@ -496,7 +523,7 @@ func _process(dt: float) -> void:
 	var v=state.planet.v2
 	if view.first_person and not is_instance_valid(backpack):
 		_update_actor()
-		if not v.world.paused: v.combat.tick(minf(dt,0.1),v)
+		v.combat.tick(minf(dt,0.1),v,not v.world.paused)
 		if v.combat.player_health<=0: explore_input.clear_input()
 		faint_button.visible=v.combat.player_health<=0
 	else: faint_button.hide()

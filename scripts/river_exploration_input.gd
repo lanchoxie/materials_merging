@@ -6,6 +6,7 @@ signal journey_requested
 signal collect_requested
 signal build_requested
 signal primary_requested
+signal attack_requested
 signal slot_requested(index: int)
 signal slot_cycled(direction: int)
 var view
@@ -94,9 +95,10 @@ func _input(event: InputEvent) -> void:
 		var code=event.physical_keycode if event.physical_keycode!=0 else event.keycode
 		if event.pressed and not event.echo and code>=KEY_1 and code<=KEY_9:
 			slot_requested.emit(code-KEY_1); get_viewport().set_input_as_handled()
-		if event.pressed and not event.echo and code in [KEY_M,KEY_E,KEY_SPACE,KEY_B,KEY_TAB]:
+		if event.pressed and not event.echo and code in [KEY_M,KEY_E,KEY_F,KEY_SPACE,KEY_B,KEY_TAB]:
 			if code==KEY_M: journey_requested.emit()
 			elif code==KEY_E: collect_requested.emit()
+			elif code==KEY_F: attack_requested.emit()
 			elif code in [KEY_B,KEY_TAB]: build_requested.emit()
 			else: view.walker.jump()
 			get_viewport().set_input_as_handled()

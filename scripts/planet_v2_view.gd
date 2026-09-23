@@ -188,6 +188,26 @@ func sync(w: Dictionary,season: int) -> void:
 		if key not in alive: animal_nodes[key].queue_free(); animal_nodes.erase(key)
 	walker.barriers=terrain.building_barriers(w.regions)
 
+func entity_hitboxes() -> Dictionary:
+	# Target the interpolated, rotated bodies the player actually sees. These
+	# transient bounds never own health or enter a save file.
+	var shapes={}
+	for node in animal_nodes.values():
+		var a: Dictionary=node.get_meta("animal"); var id=str(node.get_meta("region"))
+		_entity_shape(shapes,"animal:"+id+":"+str(int(a.id)),node)
+	for key in life_view.moving:
+		var parts=str(key).split("/")
+		_entity_shape(shapes,("wild:" if parts[1]=="animal" else "visitor:")+parts[0]+":"+parts[2],life_view.moving[key])
+	for id in settlement_view.members:
+		_entity_shape(shapes,"resident:"+str(int(id)),settlement_view.members[id].get_child(0))
+	return shapes
+
+func _entity_shape(shapes: Dictionary,key: String,node: MeshInstance3D) -> void:
+	if not is_instance_valid(node) or node.is_queued_for_deletion() or not node.is_visible_in_tree() or node.mesh==null: return
+	var bounds: AABB=node.global_transform*node.mesh.get_aabb()
+	if bounds.get_center().distance_to(walker.eye())<8:
+		shapes[key]=bounds.grow(0.04)
+
 func focus(id: String,enter: bool=true) -> void:
 	var changed=selected!=id
 	selected=id; close_view=enter; zoom=1.0

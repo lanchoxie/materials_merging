@@ -46,11 +46,15 @@ static func query(v) -> Dictionary:
 				if d>=0 and d<=limit+0.3 and d<=reach:
 					limit=d; best={"type":"facility","recipe":recipe,"region":id,"name":v.rules.products[recipe].name,"distance":d,"point":eye+direction*d}
 	for e in v.combat.entities(v):
-		if e.position.distance_to(at)>reach+1: continue
 		var position=Vector3(e.position.x,c.terrain.ground(e.position),e.position.y)
 		if e.fish: position.y=0.18+v.world.regions[e.region].water*0.15
-		var d=_distance(AABB(position-Vector3(0.3,0.05,0.4),Vector3(0.6,e.height,0.8)),eye,direction)
-		if d>=0 and d<limit:
+		var box=AABB(position-Vector3(0.3,0.05,0.4),Vector3(0.6,e.height,0.8))
+		if actor.has("entity_hitboxes"):
+			if not actor.entity_hitboxes.has(e.key): continue
+			box=actor.entity_hitboxes[e.key]
+		elif e.position.distance_to(at)>reach+1: continue
+		var d=_distance(box,eye,direction)
+		if d>=0 and d<limit and d<=reach:
 			limit=d; best={"type":"animal" if e.type=="animal" else "creature","entity":e,"region":e.get("region",""),"id":e.id,"fish":e.fish,"health":e.row.get("health",1),"hunger":e.row.get("hunger",0),"name":e.name,"distance":d,"point":eye+direction*d}
 	return best
 

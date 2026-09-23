@@ -34,7 +34,7 @@ func setup(s) -> void:
 	var tabs=GridContainer.new(); tabs.columns=5; tabs.position=Vector2(238,176); tabs.add_theme_constant_override("h_separation",6); tabs.add_theme_constant_override("v_separation",4); add_child(tabs)
 	for id in model.rules.categories:
 		var tab=UI.button(str(model.rules.categories[id]),func(): category=id; refresh(true)); tab.custom_minimum_size=Vector2(100,30); tab.add_theme_font_size_override("font_size",14); tabs.add_child(tab)
-	scroll=ScrollContainer.new(); scroll.position=Vector2(238,246); scroll.size=Vector2(614,348); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; add_child(scroll)
+	scroll=ScrollContainer.new(); scroll.position=Vector2(238,280); scroll.size=Vector2(614,314); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; add_child(scroll)
 	grid=GridContainer.new(); grid.mouse_filter=Control.MOUSE_FILTER_PASS; grid.columns=7; grid.add_theme_constant_override("h_separation",7); grid.add_theme_constant_override("v_separation",7); scroll.add_child(grid)
 	var box=UI.box(self,Rect2(875,184,325,410))
 	detail_scroll=ScrollContainer.new(); detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; box.add_child(detail_scroll)
@@ -74,16 +74,26 @@ func _details() -> void:
 	var item: Dictionary=items.get(selected_id,model.missing(selected_id))
 	detail.add_child(UI.paragraph(item.name,23,UI.MINT))
 	detail.add_child(UI.paragraph("不限次数" if item.quantity<0 else "现有 %d" % int(item.quantity),16,UI.GOLD))
-	detail.add_child(UI.paragraph(item.description,15))
 	if not item.action.is_empty():
-		var type=str(item.action.type); var label="拿在手上" if type in ["build","collect","remove","feed","axe","dig","fill","strike","tree_plant","mini_pack","mini_unfold"] else "在当前区域使用 1份"
-		if type in ["plant","sample","product"]: detail.add_child(UI.button("装备到当前快捷格",func(): _assign(model.selected,selected_id)))
-		var b=UI.button(label,func(): use_requested.emit(selected_id,""),true); b.disabled=item.quantity==0; detail.add_child(b)
+		var type=str(item.action.type)
+		var b=UI.button("拿在手上",func(): use_requested.emit(selected_id,""),true); b.disabled=item.quantity==0; detail.add_child(b)
+		var steps="关闭背包后，对准目标按 E 或点使用按钮。"
+		if type=="build": steps="拿起 → 对准5米内地面或构件 → 绿色预览时点放置。红色预览会说明原因；每次消耗1块。"
+		elif type in ["sample","product"]: steps="先拿起再瞄准使用；水样可浇树苗、种植箱或补充水槽。装到手上不会消耗。"
+		elif type=="plant": steps="拿起 → 对准空种植箱 → 点种植。"
+		elif type=="tree_plant": steps="拿起 → 对准近处空地 → 点种植，树苗会慢慢长大。"
+		elif type=="strike": steps="瞄准3.2米内的生物，E/F或攻击按钮挥拳；手套也可左键攻击、E查看。"
+		detail.add_child(UI.paragraph(steps,15,UI.MINT))
+		detail.add_child(UI.paragraph(item.description,15))
+		if type in ["sample","product"]: detail.add_child(UI.button("投放当前区域 · 1份",func(): use_requested.emit(selected_id,"deploy")))
+		if type=="plant": detail.add_child(UI.button("当前区域播谷物 · 1种",func(): use_requested.emit(selected_id,"region")))
 		if type=="plant": detail.add_child(UI.button("改种芦苇 · 1种",func(): use_requested.emit(selected_id,"reed")))
 		if type=="feed": detail.add_child(UI.button("送1份到粮仓",func(): use_requested.emit(selected_id,"pantry")))
 		if type=="build" and state.planet.v2.rules.products.has(item.action.recipe):
 			detail.add_child(UI.button("整包搭成围栏",func(): use_requested.emit(selected_id,"deploy")))
-	else: detail.add_child(UI.paragraph("保留在库存中 · 当前不能直接放置",14,UI.GOLD))
+	else:
+		detail.add_child(UI.paragraph("保留在库存中 · 当前不能直接放置",14,UI.GOLD))
+		detail.add_child(UI.paragraph(item.description,15))
 	if str(item.id).begins_with("recipe:"):
 		detail.add_child(UI.button("到车间补充",func(): workshop_requested.emit()))
 	if str(item.id).begins_with("raw:"): detail.add_child(UI.button("带到工艺车间加工",func(): workshop_requested.emit()))

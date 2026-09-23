@@ -4,7 +4,7 @@
 
 把分子装进透明的反应釜，看它们慢慢生产。用收获的材料扩建工坊、招募伙伴，或走过光桥，去林地里种树、搭屋，再把自己的作品带回家。
 
-**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-ranch-13.1)** · [更新了什么](docs/RANCH-13.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
+**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-ranch-13.2)** · [更新了什么](docs/RANCH-13.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
 
 ![透明反应釜里转动的分子，与周围的浮岛小屋](docs/screenshots/reactors.png)
 
@@ -47,15 +47,18 @@
 
 ## 开始试玩
 
-在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-ranch-13.1) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-ranch-13.1 开发预览**；Android 真机体验仍待验证。
+在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-ranch-13.2) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-ranch-13.2 开发预览**；Android 真机体验仍待验证。
 
 | 操作 | 电脑 | 手机 |
 | --- | --- | --- |
 | 移动、看向四周 | WASD；按住鼠标拖动 | 左摇杆；右侧拖动 |
 | 跳跃 | 空格 | 跳跃按钮 |
-| 使用手中物品 | E 或轻点画面 | 操作按钮 |
+| 使用手中物品 / 查看 | E；拿手套时E查看生物 | 使用 / 查看按钮 |
+| 攻击生物 | F；拿手套时也可左键攻击 | 右上角攻击按钮 |
 | 背包、切换物品 | B / Tab；1—9 或滚轮 | 背包按钮；快捷栏 |
 | 远行 | M | 世界 / 远行 |
+
+放置构件：**B背包 → 构件 → 选物品 → 拿在手上 → 对准地面 → 绿色预览时按E或点放置**。木料和散石先送工艺车间加工；树种、土方可直接使用。详细操作见[攻击与放置指南](docs/INTERACTION-13.2.md)。
 
 建议先试这条小旅程：**收获水样 → 走过光桥 → 砍树收树种 → 在空地种下 → 用水样浇灌**。想盖房子，再把木料送到浮岛的工艺车间加工。
 

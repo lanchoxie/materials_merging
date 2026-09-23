@@ -37,7 +37,7 @@ func entries(state) -> Dictionary:
 			category="components"; icon="solar" if construction.kind=="solar" else "block"
 			if construction.kind in ["floor","roof","fence","planter"]: icon=construction.kind
 			quantity=c.available(str(construction.kind),p.products,recipe_id)
-			description="数量按可放置的块数显示；每包%d块，拆除返还原包。\n" % int(construction.units)+description
+			description="可放置构件：每包%d块，数量按块显示。绿色预览可以落下，红色预览需换位置；拆除返还原包。\n" % int(construction.units)+description
 			action={"type":"build","kind":construction.kind,"recipe":recipe_id}
 		elif v.rules.products.has(recipe_id): action={"type":"product","recipe":recipe_id}
 		else: description+="\n此成品的星球用途尚未开放，继续保存在浮岛仓库。"

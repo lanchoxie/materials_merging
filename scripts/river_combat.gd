@@ -54,8 +54,10 @@ func _remove(e: Dictionary,v) -> void:
 	elif e.type=="visitor": v.population.sites[e.site].visitors.erase(e.row)
 	else: v.settlement.people.erase(e.row)
 
-func tick(dt: float,v) -> void:
+func tick(dt: float,v,advance_encounters: bool=true) -> void:
 	attack_left=maxf(0,attack_left-dt); hurt_flash=maxf(0,hurt_flash-dt)
+	# A paused ecosystem still accepts manual actions; the player's arm must recover.
+	if not advance_encounters: return
 	if v.actor.is_empty() or player_health<=0: return
 	var c=v.construction; var t=c.terrain; var player=Vector2(v.actor.feet.x,v.actor.feet.z)
 	var live={}
