@@ -2,6 +2,7 @@ extends RefCounted
 ## Shared geometry queries: renderer and walker always use the same ground.
 const CENTERS={"wetland":Vector3(-10,0,10),"riverbank":Vector3(-10,0,-10),"meadow":Vector3(10,0,10),"highland":Vector3(10,0,-10)}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_exploration.json"))
+var nature
 var trees: Array[Vector2]=[]
 var tree_cache={}
 const LANDMARKS={"home":{"name":"起始河湾","at":Vector2(10,15)},"homestead":{"name":"采集坡 · 小屋营地","at":Vector2(16,22)},"camp":{"name":"旅人林间营地","at":Vector2(68,68)},"woods":{"name":"西岸林地","at":Vector2(-124,68)},"ridge":{"name":"远方高原","at":Vector2(196,-188)}}
@@ -15,7 +16,7 @@ func chunk_at(p: Vector2) -> Vector2i:
 	var span=float(rules.cell_size)*int(rules.chunk_cells)
 	return Vector2i(floori((p.x+0.5)/span),floori((p.y+0.5)/span))
 
-func chunk_trees(key: Vector2i) -> Array[Vector2]:
+func chunk_tree_origins(key: Vector2i) -> Array[Vector2]:
 	if tree_cache.has(key): return tree_cache[key]
 	var result: Array[Vector2]=[]; var span=float(rules.cell_size)*int(rules.chunk_cells)
 	var start=Vector2(key)*span
@@ -34,6 +35,19 @@ func chunk_trees(key: Vector2i) -> Array[Vector2]:
 	tree_cache[key]=result
 	return result
 
+func chunk_trees(key: Vector2i) -> Array[Vector2]:
+	if nature==null: return chunk_tree_origins(key)
+	var result: Array[Vector2]=[]
+	for tree in nature.records(key,self):
+		if not tree.cut and tree.growth>=0.5: result.append(Vector2(tree.x,tree.z))
+	return result
+
+func tree_records(key: Vector2i) -> Array:
+	if nature!=null: return nature.records(key,self)
+	var result=[]
+	for p in chunk_tree_origins(key): result.append({"id":"","x":p.x,"z":p.y,"species":"oak","growth":1.0,"cut":false,"hits":0,"water":0.0})
+	return result
+
 func region_at(p: Vector2) -> String:
 	return ("riverbank" if p.y<0 else "wetland") if p.x<0 else ("highland" if p.y<0 else "meadow")
 
@@ -47,6 +61,9 @@ func cell_center(p: Vector2) -> Vector2:
 	return (p/float(rules.cell_size)).round()*float(rules.cell_size)
 
 func height_at(p: Vector2) -> float:
+	return natural_height(p)+(float(nature.edits.get(nature.cell_key(cell_center(p)),0)) if nature!=null else 0.0)
+
+func natural_height(p: Vector2) -> float:
 	var c=cell_center(p)
 	if absf(c.x-river_x(c.y))<2.0: return 0.03
 	var h=0.55+floor((sin(c.x*0.22)+cos(c.y*0.23))*1.2)*0.14

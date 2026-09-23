@@ -8,6 +8,8 @@ var blocks: Dictionary = {}
 var revision := 0
 var obstacles: Array = []
 var occupied: Dictionary = {}
+var miniatures={}
+var miniature_serial=1
 
 func key(c: Vector3i) -> String:
 	return "%d:%d:%d" % [c.x, c.y, c.z]
@@ -119,7 +121,7 @@ func interact(mode: String, kind: String, products: Array, actor: Dictionary, re
 	if hit.is_empty() or hit.has("blocked"): return "瞄准5米内的地面或自建构件；不能隔着树木施工"
 	if mode == "remove":
 		var k := str(hit.hit)
-		if k.is_empty(): return "这里只能拆回自己放置的构件，地形暂不能挖掘"
+		if k.is_empty(): return "这里没有自建构件；挖土请装备铲子"
 		if occupied.has(k): return "先收获种植箱里的作物，再拆回种植箱"
 		var rest := blocks.duplicate(); rest.erase(k)
 		if not connected(rest): return "上方或旁边还有依赖它的构件，请从边缘往回拆"
@@ -154,7 +156,7 @@ func repack(id: String, products: Array, limit: int) -> String:
 	return "整包已收入浮岛成品工具箱，保留原编号与来源"
 
 func serialize() -> Dictionary:
-	return {"version":1,"sources":sources.duplicate(true),"blocks":blocks.duplicate(true)}
+	return {"version":1,"sources":sources.duplicate(true),"blocks":blocks.duplicate(true),"miniatures":miniatures.duplicate(true),"miniature_serial":miniature_serial}
 
 func restore(data) -> bool:
 	if not data is Dictionary or data.get("version")!=1 or not data.get("sources") is Dictionary or not data.get("blocks") is Dictionary: return false
@@ -170,15 +172,29 @@ func restore(data) -> bool:
 		if not b is Dictionary or not rules.kinds.has(b.get("kind")) or not data.sources.has(b.get("source")): return false
 		for axis in ["x","z"]:
 			if not _integer(b.get(axis),-int(terrain.rules.radius),int(terrain.rules.radius)): return false
-		if not _integer(b.get("y"),-2,100): return false
+		if not _integer(b.get("y"),-16,100): return false
 		var c:=cell(b)
 		if key(c)!=k or not terrain.inside(Vector2(c.x,c.z),2) or c.y<base(c) or c.y>base(c)+int(rules.height_limit): return false
 		if rules.recipes[data.sources[b.source].product.recipe].kind!=b.kind: return false
 		counts[b.source]+=1
+	var boxes=data.get("miniatures",{})
+	if not boxes is Dictionary or boxes.size()>16 or not _integer(data.get("miniature_serial",1),1,1000000): return false
+	for id in boxes:
+		var box=boxes[id]
+		if not box is Dictionary or box.get("id")!=id or not str(id).is_valid_int() or int(id)<1 or int(id)>=int(data.get("miniature_serial",1)): return false
+		if not box.get("name") is String or box.name.length()>64 or not _integer(box.get("plot"),-1,4096) or not box.get("blocks") is Array or box.blocks.is_empty() or box.blocks.size()>64: return false
+		var seen={}
+		for b in box.blocks:
+			if not b is Dictionary or not rules.kinds.has(b.get("kind")) or not data.sources.has(b.get("source")): return false
+			for axis in ["x","y","z"]:
+				if not _integer(b.get(axis),0,7): return false
+			var k=key(cell(b))
+			if seen.has(k) or rules.recipes[data.sources[b.source].product.recipe].kind!=b.kind: return false
+			seen[k]=true; counts[b.source]+=1
 	for id in counts:
 		if counts[id]!=int(rules.recipes[data.sources[id].product.recipe].units): return false
 	if not connected(data.blocks): return false
-	sources=data.sources.duplicate(true); blocks=data.blocks.duplicate(true); revision+=1
+	sources=data.sources.duplicate(true); blocks=data.blocks.duplicate(true); miniatures=boxes.duplicate(true); miniature_serial=int(data.get("miniature_serial",1)); revision+=1
 	return true
 
 func _integer(value, lo: int, hi: int) -> bool:

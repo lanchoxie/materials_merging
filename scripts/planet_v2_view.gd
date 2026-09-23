@@ -8,6 +8,7 @@ const LifeView=preload("res://scripts/river_life_view.gd")
 const CENTERS=Terrain.CENTERS
 var terrain=Terrain.new()
 var walker=Walker.new(terrain)
+var hands
 var first_person=false
 var has_walk_position=false
 var chunks={}
@@ -44,6 +45,7 @@ func _ready() -> void:
 	add_child(environment)
 	sun=DirectionalLight3D.new(); sun.rotation_degrees=Vector3(-55,-30,0); sun.light_energy=1.3; sun.light_color=Color("ffe6bf"); add_child(sun)
 	camera=Camera3D.new(); camera.projection=Camera3D.PROJECTION_ORTHOGONAL; camera.size=21; add_child(camera); camera.current=true
+	hands=preload("res://scripts/first_person_hands.gd").new(); camera.add_child(hands); hands.hide()
 	terrain_root=Node3D.new(); add_child(terrain_root)
 	var sea=MeshInstance3D.new(); var ocean=PlaneMesh.new()
 	ocean.size=Vector2.ONE*float(terrain.rules.radius)*6
@@ -186,7 +188,7 @@ func focus(id: String,enter: bool=true) -> void:
 
 func set_first_person(enabled: bool) -> void:
 	if first_person==enabled: return
-	first_person=enabled; walker.stop()
+	first_person=enabled; walker.stop(); hands.visible=enabled
 	camera.projection=Camera3D.PROJECTION_PERSPECTIVE if enabled else Camera3D.PROJECTION_ORTHOGONAL
 	camera.near=0.06; camera.far=180; camera.fov=72
 	if enabled and not has_walk_position: walker.enter(selected); has_walk_position=true
@@ -209,7 +211,7 @@ func orbit(amount: float) -> void:
 
 func _camera(dt: float) -> void:
 	if first_person:
-		walker.step(dt); camera.position=walker.eye(); camera.rotation=Vector3(walker.pitch,walker.yaw,0); marker.hide()
+		walker.step(dt); hands.moving=walker.movement.length(); camera.position=walker.eye(); camera.rotation=Vector3(walker.pitch,walker.yaw,0); marker.hide()
 		var id=terrain.region_at(walker.position)
 		if id!=selected: selected=id; region_selected.emit(id)
 		return

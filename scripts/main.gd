@@ -58,6 +58,7 @@ var move_source: int = -1
 var last_factory_recipe="standard_water_crate"
 var light_bridge
 var light_bridge_busy=false
+var miniature_view
 
 func _ready() -> void:
 	if OS.has_feature("web"):
@@ -136,7 +137,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.20 广场契约  ·  样品 → 研发 → 装配 → 来访交付  ·  模型不等于实测", 11, UI.MUTED)
+	save_label = UI.label("v0.21 河湾与浮岛  ·  种树 · 改造地形 · 带回自己的作品", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -157,6 +158,8 @@ func _build_left() -> void:
 	v.add_child(UI.label("你的发现", 13, UI.MUTED))
 	v.add_child(UI.button("▧   结构图鉴", _show_collection))
 	v.add_child(UI.button("☆   研究站", _show_research))
+	v.add_child(UI.button("走进浮岛",_show_island_walk))
+	v.add_child(UI.button("河湾作品",_show_miniatures))
 	v.add_child(UI.paragraph("元素与物品统一放在工具箱。\n公园在下方建造菜单。",13))
 	var help_button = UI.button("怎么玩  ?", _show_help)
 	v.add_child(help_button)
@@ -183,6 +186,7 @@ func _build_world() -> void:
 	campus_view.setup(state,world)
 	light_bridge=preload("res://scripts/island_light_bridge.gd").new()
 	light_bridge.setup(world,state)
+	miniature_view=preload("res://scripts/island_miniature_view.gd").new(); world.add_child(miniature_view); miniature_view.sync(state)
 	world.plot_clicked.connect(_select_plot)
 	world_box.gui_input.connect(_world_input)
 	var eyebrow = UI.label("YOUR LITTLE SCIENCE ISLAND", 11, UI.MINT)
@@ -523,6 +527,7 @@ func _sync_world() -> void:
 	world.sync(state.plots,views,state.templates,state.elements,state.engineers)
 	if is_instance_valid(campus_view): campus_view.sync()
 	if is_instance_valid(light_bridge): light_bridge.sync(state)
+	if is_instance_valid(miniature_view): miniature_view.sync(state)
 
 func _action(message: String) -> void:
 	_toast(message)
@@ -538,6 +543,7 @@ func _toast(message: String) -> void:
 	toast_clock = 4.0
 
 func _close_modal() -> void:
+	if is_instance_valid(world_viewport): world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
 	building_drag.cancel()
 	research_open = false
 	if is_instance_valid(modal):
@@ -1243,3 +1249,39 @@ func _test_touch(pos: Vector2, down: bool) -> void:
 	event.pressed = down
 	Input.parse_input_event(event)
 	await get_tree().process_frame
+
+
+func _show_island_walk() -> void:
+	_close_modal()
+	var panel=preload("res://scripts/island_walk_panel.gd").new(); add_child(panel); modal=panel; panel.setup(state)
+	world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
+	panel.dismissed.connect(func():
+		if modal==panel: modal=null
+		world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS)
+	panel.requested.connect(func(kind: String,index: int):
+		if kind=="planet": _show_planet_v2(); modal._enter()
+		elif kind=="miniatures": _show_miniatures()
+		elif kind=="workshop": _show_factory()
+		elif kind=="reactor": _select_plot(index); _open_editor()
+		else: _close_modal(); _select_plot(index))
+
+func _show_miniatures() -> void:
+	var body=_dialog("河湾作品 · 把探索带回家", "星球上装备微缩器，瞄准自建作品装箱。作品会从原地搬走，材料不会复制。",true)
+	var boxes=state.planet.v2.construction.miniatures
+	if boxes.is_empty():
+		body.add_child(UI.paragraph("还没有带回来的作品。先用工艺车间做出的构件搭一座小屋、一段桥或雕塑，再用背包里的微缩器收纳。\n每件最多64块、8×8×8格；有作物的种植箱先收获。",18))
+		body.add_child(UI.button("走过光桥去河湾",_show_planet_v2,true)); return
+	body.add_child(UI.paragraph("每块地可以放一座展台，摆在地块角落。展品仍属于你：收回后可在河湾重新展开。",16,UI.MUTED))
+	for id in boxes:
+		var item=boxes[id]; var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(Color("213c45"),14)); body.add_child(card)
+		var row=UI.row(card,12); row.add_child(UI.label("%s · %d块" % [item.name,item.blocks.size()],19,UI.MINT))
+		var options=OptionButton.new(); options.custom_minimum_size=Vector2(380,48); row.add_child(options)
+		options.add_item("留在背包",0); options.set_item_metadata(0,-1)
+		for i in range(state.plots.size()):
+			var p=state.plots[i]
+			if not p.unlocked or p.kind=="plaza": continue
+			options.add_item("地块 (%d,%d) · %s" % [p.x,p.z,p.kind]); var at=options.item_count-1; options.set_item_metadata(at,i)
+			if item.plot==i: options.select(at)
+		row.add_child(UI.button("摆放 / 收回",func():
+			_action(state.planet.command(state,"v2_mini_exhibit",{"id":id,"plot":options.get_item_metadata(options.selected)})); _show_miniatures(),true))
+	body.add_child(UI.button("走近展台看看",_show_island_walk))

@@ -7,6 +7,7 @@ var meals=0
 var energy=0.0
 var people: Array=[]
 var irrigation=false
+var combat
 
 func center() -> Vector2:
 	return Vector2(rules.center[0],rules.center[1])
@@ -57,6 +58,7 @@ func tick(world: Dictionary, construction) -> void:
 		person.health=clampf(person.health+(0.0002 if safe else -0.0007),0,1)
 		var night=posmod(int(world.elapsed),60)<12 or posmod(int(world.elapsed),60)>48
 		person.task="缺少食物" if person.hunger>0.65 else ("休息" if night else ("设备巡检" if era>=2 else "田间观察"))
+		if combat!=null and combat.busy("resident:"+str(int(person.id))): continue
 		var target=center()+Vector2(3,3+int(person.id)*0.7) if night else center()+Vector2(2+sin(world.elapsed*0.03+person.id)*2,-2)
 		var pos=Vector2(person.x,person.z).move_toward(target,0.09)
 		if not construction.overlaps(pos,construction.terrain.ground(pos),1.5): person.x=pos.x; person.z=pos.y

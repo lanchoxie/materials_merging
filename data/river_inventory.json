@@ -1,9 +1,57 @@
 {
   "slots": 9,
-  "defaults": ["tool:collect", "tool:remove", "seed:grain", "", "", "", "", "", ""],
+  "defaults": [
+    "tool:collect",
+    "tool:remove",
+    "seed:grain",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
   "tools": {
-    "collect": {"name": "采集手套", "icon": "hand", "description": "瞄准5米内的枯枝、散石、纤维草或果丛，按 E 采集。也可收获成熟种植箱；耗尽的采集点需要等待恢复。"},
-    "remove": {"name": "拆卸锤", "icon": "hammer", "description": "瞄准自己搭建的构件拆回，材料退回原包。地形与树木暂不能破坏。"}
+    "collect": {
+      "name": "采集手套",
+      "icon": "hand",
+      "description": "瞄准5米内的枯枝、散石、纤维草或果丛，按 E 采集。也可收获成熟种植箱；耗尽的采集点需要等待恢复。"
+    },
+    "remove": {
+      "name": "拆卸锤",
+      "icon": "hammer",
+      "description": "拆回自己放置的构件，原材料回原包。改造地形请用地形铲。"
+    },
+    "axe": {
+      "name": "林业斧",
+      "icon": "hammer",
+      "description": "瞄准成熟的树挥动四次，收集木料与对应树种。树桩保留，树种可在空地重新种植。"
+    },
+    "dig": {
+      "name": "地形铲",
+      "icon": "hammer",
+      "description": "瞄准地面挖低一格，获得一份土方。公共桥路、树木与建筑下方暂时不能挖掘。"
+    },
+    "strike": {
+      "name": "挥拳",
+      "icon": "hand",
+      "description": "近距离挥击生物。温顺动物逃跑，护群动物和人类可能反击。"
+    },
+    "mini_pack": {
+      "name": "微缩器",
+      "icon": "crate",
+      "description": "瞄准自建建筑收纳连通作品，最多64块。原物搬离，带回浮岛摆放或再展开。"
+    }
   },
-  "categories": {"all": "全部", "tools": "工具", "raw":"原料", "components": "构件", "products": "成品", "samples": "样品", "supplies": "补给"}
+  "categories": {
+    "all": "全部",
+    "tools": "工具",
+    "raw": "原料",
+    "components": "构件",
+    "products": "成品",
+    "samples": "样品",
+    "supplies": "补给",
+    "trees": "树种",
+    "miniatures": "作品"
+  }
 }

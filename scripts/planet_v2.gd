@@ -11,6 +11,10 @@ var inventory=Inventory.new()
 const Field=preload("res://scripts/river_field.gd")
 const Target=preload("res://scripts/river_target.gd")
 var field=Field.new()
+const Nature=preload("res://scripts/river_nature.gd")
+const Combat=preload("res://scripts/river_combat.gd")
+var nature=Nature.new()
+var combat=Combat.new()
 var actor: Dictionary={}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_v2.json"))
 var world: Dictionary={}
@@ -19,6 +23,12 @@ var observer_id=0
 
 func _init() -> void:
 	world=fresh()
+	_link_geometry()
+
+func _link_geometry() -> void:
+	construction.terrain.nature=nature
+	field.terrain=construction.terrain; population.terrain=construction.terrain
+	population.combat=combat; settlement.combat=combat
 
 func fresh() -> Dictionary:
 	var w={"version":1,"elapsed":0,"remainder":0.0,"paused":false,"speed":1,"current_region":"wetland","next_animal":1,"seeds":int(rules.ecology.initial_seeds),"food":0,"events":[],"receipts":[],"regions":{}}
@@ -95,6 +105,7 @@ func advance(seconds: float) -> void:
 		_step()
 
 func _step() -> void:
+	nature.tick(construction.terrain)
 	field.tick(world,construction)
 	settlement.tick(world,construction)
 	var ds=float(rules.clock.day_seconds)
@@ -139,6 +150,8 @@ func _step() -> void:
 			else: stress+=maxf(0,0.1-r.water)*0.5
 			a.health=clampf(a.health+(0.018-stress)/ds,0,1)
 			a.state="缺氧" if fish and r.oxygen<a.tolerance else ("饥饿" if a.hunger>0.65 else ("圈养" if r.enclosed and not fish else "觅食"))
+			if combat.busy("animal:"+id+":"+str(int(a.id))) and a.health>0:
+				survivors.append(a); continue
 			a.task_left=maxf(0,float(a.task_left)-1)
 			if a.task_left<=0:
 				var key=int(a.id)*97+int(world.elapsed)*31
@@ -243,7 +256,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 	return "已消耗1份库存，将%s送达%s" % [p.name,r.name]
 
 func serialize() -> Dictionary:
-	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize()}
+	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize()}
 
 func _number(v,lo: float,hi: float,whole: bool=false) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
@@ -283,7 +296,7 @@ func restore(data) -> bool:
 			for key in ["health","hunger","tolerance"]:
 				if not _number(a.get(key),0,1): return false
 			for key in ["x","z","target_x","target_z"]:
-				if not _number(a.get(key),-1.5,1.5): return false
+				if not _number(a.get(key),-3.5 if key in ["x","z"] else -1.5,3.5 if key in ["x","z"] else 1.5): return false
 			if not _number(a.get("task_left"),0,20): return false
 			if a.get("state") not in ["觅食","圈养","饥饿","缺氧"]: return false
 			counts[a.species]=int(counts.get(a.species,0))+1
@@ -310,15 +323,22 @@ func restore(data) -> bool:
 		if w.regions[id].filter_fuel>0 and not installed.has("screen_station"): return false
 	var restored_population=Population.new()
 	if data.has("population") and not restored_population.restore(data.population): return false
+	var restored_nature=Nature.new()
 	var restored_construction=Construction.new()
+	if data.has("nature") and not restored_nature.restore(data.nature,restored_construction.terrain): return false
+	restored_construction.terrain.nature=restored_nature
+	var restored_combat=Combat.new()
+	if data.has("combat") and not restored_combat.restore(data.combat): return false
 	if data.has("construction") and not restored_construction.restore(data.construction): return false
 	var restored_settlement=Settlement.new()
 	if data.has("settlement") and not restored_settlement.restore(data.settlement): return false
 	var restored_inventory=Inventory.new()
 	if data.has("inventory") and not restored_inventory.restore(data.inventory): return false
 	var restored_field=Field.new()
+	restored_field.terrain=restored_construction.terrain
 	if data.has("field") and not restored_field.restore(data.field,restored_construction,int(w.elapsed)): return false
 	field=restored_field; restored_construction.occupied=field.gardens
 	inventory=restored_inventory
-	world=w.duplicate(true); population=restored_population; construction=restored_construction; settlement=restored_settlement; actor={}; active=false
+	world=w.duplicate(true); population=restored_population; construction=restored_construction; settlement=restored_settlement; nature=restored_nature; combat=restored_combat; actor={}; active=false
+	_link_geometry()
 	return true

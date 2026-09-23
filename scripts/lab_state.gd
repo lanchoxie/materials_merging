@@ -1220,6 +1220,13 @@ func _validate_save(data) -> bool:
 			var maximum_rounds=0
 			for food in island_rules.consumables.values(): maximum_rounds=maxi(maximum_rounds,int(food.rounds))
 			if not str(id).is_valid_int() or not _number_ok(data.logistics_rounds[id],0,maximum_rounds,true): return false
+	if int(data.version)>=11:
+		var exhibits={}
+		for item in data.planet.get("v2",{}).get("construction",{}).get("miniatures",{}).values():
+			var plot=int(item.plot)
+			if plot<0: continue
+			if plot>=data.plots.size() or not data.plots[plot].unlocked or data.plots[plot].kind=="plaza" or exhibits.has(plot): return false
+			exhibits[plot]=true
 	return open_count <= MAX_UNLOCKED_PLOTS+1
 
 func load_game(path: String = "") -> bool:

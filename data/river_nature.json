@@ -1,0 +1,10 @@
+{
+  "max_edits": 4096, "max_trees": 2048, "height_change_limit": 6,
+  "max_seed_stock": 999, "reach": 5, "chop_hits": 4, "timber_yield": 5,
+  "growth_seconds": 240, "rain_growth": 0.45, "watering_growth": 1.0,
+  "species": {
+    "oak": {"name":"橡树", "seed":"橡果", "wood":"956f4c", "leaf":"629956", "height":3.1},
+    "birch": {"name":"白桦", "seed":"桦树种子", "wood":"e5e2c8", "leaf":"a5bd61", "height":3.8},
+    "pine": {"name":"松树", "seed":"松果", "wood":"815d46", "leaf":"3c7464", "height":4.2}
+  }
+}

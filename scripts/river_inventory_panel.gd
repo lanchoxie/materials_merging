@@ -31,9 +31,9 @@ func setup(s) -> void:
 	var title=UI.label("行囊",30,UI.MINT); title.position=Vector2(238,122); add_child(title)
 	var sub=UI.label("与浮岛共享库存 · 从材料到一片新世界",15,UI.MUTED); sub.position=Vector2(322,135); add_child(sub)
 	var close=UI.button("返回世界  B",_close); close.position=Vector2(1050,119); close.size=Vector2(150,44); add_child(close)
-	var tabs=UI.row(self,8); tabs.position=Vector2(238,184)
+	var tabs=GridContainer.new(); tabs.columns=5; tabs.position=Vector2(238,176); tabs.add_theme_constant_override("h_separation",6); tabs.add_theme_constant_override("v_separation",4); add_child(tabs)
 	for id in model.rules.categories:
-		tabs.add_child(UI.button(str(model.rules.categories[id]),func(): category=id; refresh(true)))
+		var tab=UI.button(str(model.rules.categories[id]),func(): category=id; refresh(true)); tab.custom_minimum_size=Vector2(100,30); tab.add_theme_font_size_override("font_size",14); tabs.add_child(tab)
 	scroll=ScrollContainer.new(); scroll.position=Vector2(238,246); scroll.size=Vector2(614,348); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; add_child(scroll)
 	grid=GridContainer.new(); grid.mouse_filter=Control.MOUSE_FILTER_PASS; grid.columns=7; grid.add_theme_constant_override("h_separation",7); grid.add_theme_constant_override("v_separation",7); scroll.add_child(grid)
 	var box=UI.box(self,Rect2(875,184,325,410))
@@ -76,7 +76,7 @@ func _details() -> void:
 	detail.add_child(UI.paragraph("不限次数" if item.quantity<0 else "现有 %d" % int(item.quantity),16,UI.GOLD))
 	detail.add_child(UI.paragraph(item.description,15))
 	if not item.action.is_empty():
-		var type=str(item.action.type); var label="拿在手上" if type in ["build","collect","remove","feed"] else "在当前区域使用 1份"
+		var type=str(item.action.type); var label="拿在手上" if type in ["build","collect","remove","feed","axe","dig","fill","strike","tree_plant","mini_pack","mini_unfold"] else "在当前区域使用 1份"
 		if type in ["plant","sample","product"]: detail.add_child(UI.button("装备到当前快捷格",func(): _assign(model.selected,selected_id)))
 		var b=UI.button(label,func(): use_requested.emit(selected_id,""),true); b.disabled=item.quantity==0; detail.add_child(b)
 		if type=="plant": detail.add_child(UI.button("改种芦苇 · 1种",func(): use_requested.emit(selected_id,"reed")))

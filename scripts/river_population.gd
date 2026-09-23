@@ -6,6 +6,7 @@ var terrain=Terrain.new()
 var sites={}
 var active_sites=[]
 var enabled=true
+var combat
 
 func _init() -> void:
 	for id in Terrain.CENTERS:
@@ -64,6 +65,7 @@ func advance(regions: Dictionary) -> Array:
 		if not s.home:
 			for a in s.animals:
 				a.age+=1.0/60; a.health=clampf(a.health+(0.0002 if s.flora>0.15 else -0.002),0,1)
+				if combat!=null and combat.busy("wild:"+str(s.id)+":"+str(int(a.id))): continue
 				var target=Vector2(sin(float(s.seconds)*0.03+a.id)*3,cos(float(s.seconds)*0.023+a.id*7)*3)
 				var moved=Vector2(a.x,a.z).move_toward(target,0.10); a.x=moved.x; a.z=moved.y
 				if int(s.seconds)%30==0: s.flora=maxf(0,s.flora-0.01)
@@ -71,6 +73,7 @@ func advance(regions: Dictionary) -> Array:
 		if not s.camp: continue
 		var staying=[]
 		for v in s.visitors:
+			if combat!=null and combat.busy("visitor:"+str(s.id)+":"+str(int(v.id))): staying.append(v); continue
 			var age=int(s.seconds)-int(v.born); var stay=int(rules.visitor_stay_seconds)
 			if age>=stay: continue
 			v.state="离营" if age>stay-20 else ("进营" if age<25 else ("采集" if age%70<30 else "休息"))
@@ -135,5 +138,6 @@ func restore(data) -> bool:
 		for a in s.animals:
 			if a.get("species")!="meadow_herbivore" or not _num(a.get("health"),0,1) or not _num(a.get("age"),0,1e12): return false
 		for v in s.visitors:
+			if v.has("health") and not _num(v.health,0,1): return false
 			if not _num(v.get("born"),0,s.seconds,true) or not v.get("name") is String or v.name.length()>24 or v.get("state") not in ["进营","离营","采集","休息"]: return false
 	enabled=data.enabled; sites=data.sites.duplicate(true); active_sites=[]; return true

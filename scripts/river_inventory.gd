@@ -18,8 +18,14 @@ func entries(state) -> Dictionary:
 	for id in v.field.stock:
 		var spec=v.field.rules.resources[id]; var key="raw:"+str(id)
 		if int(v.field.stock[id])<=0 and key not in slots: continue
-		var action={"type":"feed","resource":id} if id in ["fruit","grain"] else {}
-		result[key]=_item(key,spec.name,"raw",spec.icon,int(v.field.stock[id]),"从河湾采集或收获，回浮岛仍在同一背包中。"+("瞄准小兽可喂食，也可送入粮仓。" if not action.is_empty() else "到工艺车间加工成建材，无需购买标准供料。"),action)
+		var action={"type":"feed","resource":id} if id in ["fruit","grain"] else ({"type":"fill"} if id=="soil" else {})
+		result[key]=_item(key,spec.name,"raw",spec.icon,int(v.field.stock[id]),"从河湾采集或收获，回浮岛仍在同一背包中。"+("瞄准地面填高一格；消耗1份土方，可用铲子挖回。" if id=="soil" else ("瞄准小兽可喂食，也可送入粮仓。" if not action.is_empty() else "到工艺车间加工成建材，无需购买标准供料。")),action)
+	for species in v.nature.seeds:
+		var spec=v.nature.rules.species[species]; var key="tree:"+str(species)
+		if v.nature.seeds[species]>0 or key in slots: result[key]=_item(key,spec.seed,"trees","seed",int(v.nature.seeds[species]),"种在空地长成"+str(spec.name)+"；用水样或标准水箱浇灌可加快生长。",{"type":"tree_plant","species":species})
+	for id in c.miniatures:
+		var box=c.miniatures[id]; var key="mini:"+str(id)
+		result[key]=_item(key,box.name,"miniatures","crate",1,"%d块构件组成的作品。%s" % [box.blocks.size(),"已摆在浮岛展台，先收回才能展开" if box.plot>=0 else "可返回浮岛的作品展台摆放，或瞄准星球空地展开。"],{"type":"mini_unfold","id":id})
 	for recipe_id in p.recipe_ids():
 		var spec=p.recipe(recipe_id); var construction=c.rules.recipes.get(recipe_id,{})
 		var quantity=0
@@ -84,7 +90,7 @@ func restore(data) -> bool:
 		if not id is String or id.length()>160: return false
 		if id.is_empty(): continue
 		if seen.has(id): return false
-		if not (id.begins_with("recipe:") or id.begins_with("sample:") or id.begins_with("raw:") or id=="seed:grain" or id=="food" or (id.begins_with("tool:") and rules.tools.has(id.trim_prefix("tool:")))): return false
+		if not (id.begins_with("recipe:") or id.begins_with("sample:") or id.begins_with("raw:") or id.begins_with("tree:") or id.begins_with("mini:") or id=="seed:grain" or id=="food" or (id.begins_with("tool:") and rules.tools.has(id.trim_prefix("tool:")))): return false
 		seen[id]=true
 	slots=data.slots.duplicate(); selected=int(n)
 	return true

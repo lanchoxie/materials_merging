@@ -3,6 +3,8 @@ extends RefCounted
 ## No scene nodes or UI callbacks; the program owns transactional calls.
 const Terrain=preload("res://scripts/river_terrain.gd")
 var terrain=Terrain.new()
+# Resource identities are anchored to the original terrain, even after terraforming.
+var origins=Terrain.new()
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/river_field.json"))
 var stock={}
 var changed={}
@@ -22,7 +24,7 @@ func nodes(at: Vector2,radius: float=36) -> Array:
 	for z in range(floori((at.y-radius)/16),ceili((at.y+radius)/16)+1):
 		for x in range(floori((at.x-radius)/16),ceili((at.x+radius)/16)+1):
 			var p=Vector2(x*16+5+sin(x*7+z*13)*2,z*16+5+cos(z*11+x*3)*2)
-			if p.length()<30 or p.distance_to(at)>radius or not terrain.inside(p,4) or terrain.height_at(p)<0.2 or terrain.blocked(p): continue
+			if p.length()<30 or p.distance_to(at)>radius or not terrain.inside(p,4) or origins.height_at(p)<0.2 or origins.blocked(p): continue
 			result.append(_node("site:%d:%d" % [x,z],kinds[posmod(x*7+z*11,4)],p))
 	return result
 
@@ -30,7 +32,7 @@ func _node(id: String,kind: String,at: Vector2) -> Dictionary:
 	# Keep authored starter sites off tree trunks, using the same stable offset for
 	# rendering, aiming, and save identity.
 	for offset in [Vector2.ZERO,Vector2(1,0),Vector2(-1,0),Vector2(0,1),Vector2(0,-1)]:
-		if not terrain.blocked(at+offset): at+=offset; break
+		if not origins.blocked(at+offset): at+=offset; break
 	return {"id":id,"kind":kind,"x":at.x,"z":at.y,"y":terrain.ground(at)}
 
 func node(id: String) -> Dictionary:
@@ -137,9 +139,11 @@ func restore(data,c,now: int) -> bool:
 	if not data is Dictionary or data.get("version")!=1: return false
 	for field in ["stock","changed","crafts","gardens"]:
 		if not data.get(field) is Dictionary: return false
-	if data.stock.size()!=rules.resources.size() or data.changed.size()>int(rules.max_changed_nodes) or data.crafts.size()>int(rules.max_craft_records) or data.gardens.size()>c.blocks.size(): return false
+	if data.stock.size()>rules.resources.size() or data.changed.size()>int(rules.max_changed_nodes) or data.crafts.size()>int(rules.max_craft_records) or data.gardens.size()>c.blocks.size(): return false
+	for id in data.stock:
+		if not rules.resources.has(id): return false
 	for id in rules.resources:
-		if not _num(data.stock.get(id),0,rules.max_stock,true): return false
+		if not _num(data.stock.get(id,0) if id=="soil" else data.stock.get(id),0,rules.max_stock,true): return false
 	for id in data.changed:
 		var n=node(str(id)); var row=data.changed[id]
 		if n.is_empty() or not row is Dictionary: return false
@@ -154,7 +158,7 @@ func restore(data,c,now: int) -> bool:
 		var row=data.gardens[key]
 		if c.blocks.get(key,{}).get("kind")!="planter" or not row is Dictionary: return false
 		if not _num(row.get("growth"),0,1) or not _num(row.get("moisture"),0,1) or not _num(row.get("waterings"),0,1000000,true): return false
-	stock=data.stock.duplicate(); changed=data.changed.duplicate(true); crafts=data.crafts.duplicate(true); gardens=data.gardens.duplicate(true); revision+=1
+	stock=data.stock.duplicate(); stock["soil"]=int(stock.get("soil",0)); changed=data.changed.duplicate(true); crafts=data.crafts.duplicate(true); gardens=data.gardens.duplicate(true); revision+=1
 	return true
 
 func _num(v,lo: float,hi: float,whole: bool=false) -> bool:

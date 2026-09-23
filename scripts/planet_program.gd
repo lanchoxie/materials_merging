@@ -172,6 +172,25 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			return "已退回预留供料；本次装罐费不退还"
 		"v2_enter":
 			return v2.enter(str(payload.get("region_id","wetland")))
+		"v2_chop", "v2_dig", "v2_fill", "v2_tree_plant", "v2_strike", "v2_mini_pack", "v2_mini_unfold":
+			if not v2.active or v2.actor.is_empty(): return "进入星球第一人称后再操作"
+			if v2.combat.player_health<=0: return "先回营地休息"
+			var aim=v2.Target.query(v2)
+			match action:
+				"v2_chop": return v2.nature.chop(str(aim.get("tree_id","")),v2.field,v2.construction.terrain)
+				"v2_dig", "v2_fill":
+					if aim.get("type")!="terrain": return "请瞄准没有植物或构件遮挡的地面"
+					return v2.nature.terraform(-1 if action=="v2_dig" else 1,aim.point,v2)
+				"v2_tree_plant":
+					if aim.get("type")!="terrain": return "请瞄准空地种树"
+					return v2.nature.plant(str(payload.get("species","")),Vector2(aim.point.x,aim.point.z),v2)
+				"v2_strike": return v2.combat.strike(aim,v2)
+				"v2_mini_pack":
+					v2.construction.occupied=v2.field.gardens
+					return preload("res://scripts/river_miniatures.gd").pack(v2.construction,aim)
+				"v2_mini_unfold": return preload("res://scripts/river_miniatures.gd").unfold(v2.construction,str(payload.get("id","")),v2.actor)
+		"v2_mini_exhibit":
+			return preload("res://scripts/river_miniatures.gd").exhibit(v2.construction,str(payload.get("id","")),int(payload.get("plot",-1)),state.plots)
 		"v2_build", "v2_dismantle":
 			if not v2.active: return "请先进入星球"
 			v2.construction.occupied=v2.field.gardens
@@ -274,8 +293,9 @@ func _field_action(state,action: String,payload: Dictionary) -> String:
 			v2.field.stock[resource]-=1; v2.field.revision+=1; animal.hunger=maxf(0,animal.hunger-float(v2.field.rules.feeding.hunger_reduction))
 			return "%s吃了一份%s，饥饿降到%.0f%%" % [target.name,v2.field.rules.resources[resource].name,animal.hunger*100]
 	if action=="v2_field_water":
-		if target.type!="block" or target.kind!="planter": return "瞄准已播种的种植箱浇水"
-		var reason=v2.field.water_error(target.key)
+		var is_tree=target.type=="tree"
+		if not is_tree and (target.type!="block" or target.kind!="planter"): return "瞄准幼树或已播种的种植箱浇水"
+		var reason=v2.nature.water_error(target.tree_id,v2.construction.terrain) if is_tree else v2.field.water_error(target.key)
 		if not reason.is_empty(): return reason
 		if not Count.count_ok(payload.get("token")) or int(payload.token)!=shipment_serial: return "这次浇水已处理"
 		if payload.has("batch_id"):
@@ -288,7 +308,11 @@ func _field_action(state,action: String,payload: Dictionary) -> String:
 				if products[i].id==payload.get("product_id") and products[i].recipe=="standard_water_crate": index=i; break
 			if index<0: return "没有这件标准水箱"
 			products.remove_at(index)
-		shipment_serial+=1; v2.field.water(target.key)
+		shipment_serial+=1
+		if is_tree:
+			v2.nature.water(target.tree_id,v2.construction.terrain)
+			return "消耗一份水，幼树土壤变湿，生长加快"
+		v2.field.water(target.key)
 		var source="水样批次 "+str(payload.batch_id).left(80) if payload.has("batch_id") else "标准水箱 #"+str(payload.product_id)
 		v2._event("种植箱%s收到1份%s；湿润只作用于这一箱。" % [target.key,source])
 		return "这一箱土壤变湿了；已消耗1份水，旁边种植箱不受影响"
