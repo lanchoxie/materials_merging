@@ -1,0 +1,7572 @@
+{
+	"circuit_reports": {
+		"same_mass": {
+			"aluminum": {
+				"area_m2": 0.00000822234554199038,
+				"conductivity_S_m": 35380696.292103,
+				"current_A": 15.2139607931747,
+				"load_W": 333.309028343408,
+				"mass_kg": 0.889,
+				"material": "aluminum",
+				"mode": "same_mass",
+				"model": "dc_reference_20c_v1",
+				"resistance_ohm": 0.137498478290214,
+				"source": "aluminum",
+				"temperature_K": 293.15,
+				"wire_loss_W": 31.8260306927836
+			},
+			"batch_id": "reference:dc_reference_20c_v1:same_mass",
+			"copper": {
+				"area_m2": 0.0000025,
+				"conductivity_S_m": 58001276.0280726,
+				"current_A": 13.9871877360338,
+				"load_W": 281.723645898798,
+				"mass_kg": 0.889,
+				"material": "copper",
+				"mode": "same_mass",
+				"model": "dc_reference_20c_v1",
+				"resistance_ohm": 0.275856,
+				"source": "copper",
+				"temperature_K": 293.15,
+				"wire_loss_W": 53.9688597660131
+			},
+			"method": "dc_reference_20c_v1",
+			"mode": "same_mass"
+		}
+	},
+	"extra_qualifications": {},
+	"feed": 2,
+	"job": {},
+	"joined": true,
+	"production_mode": "partner",
+	"products": [],
+	"qualification": {},
+	"qualified": false,
+	"reports": {},
+	"serial": 1,
+	"shipment_serial": 1,
+	"supplies": {
+		"aluminum_kit": 0,
+		"aluminum_wire_kit": 0,
+		"aluminum_wire_mass_kit": 0,
+		"buffer_kit": 0,
+		"copper_kit": 0,
+		"copper_wire_kit": 0,
+		"copper_wire_mass_kit": 0,
+		"drinking_kit": 0,
+		"frame_kit": 0,
+		"gasoline_feed": 0,
+		"generator_kit": 0,
+		"habitat_bridge_kit": 0,
+		"harvest_kit": 0,
+		"industrial_feed": 0,
+		"nutrient_kit": 0,
+		"oxygen_feed": 0,
+		"recovery_kit": 0,
+		"repair_kit": 0,
+		"screen_feed": 0,
+		"screen_kit": 0,
+		"shade_kit": 0,
+		"station_parts": 0,
+		"tool_chest_kit": 0
+	},
+	"version": 7,
+	"worlds": {
+		"active_id": "trial_a",
+		"version": 7,
+		"worlds": [
+			{
+				"allowance": 0,
+				"base": {},
+				"base_key": "",
+				"eco_allowance": {
+					"aluminum_compact": 2.0,
+					"aluminum_light": 2.0,
+					"aluminum_wire": 4.0,
+					"aluminum_wire_mass": 4.0,
+					"buffer_raft": 3.0,
+					"copper_compact": 2.0,
+					"copper_light": 2.0,
+					"copper_wire": 4.0,
+					"copper_wire_mass": 4.0,
+					"drinking_barrel": 4.0,
+					"frame_bundle": 3.0,
+					"fuel_can": 4.0,
+					"generator_set": 1.0,
+					"habitat_bridge": 2.0,
+					"harvest_box": 6.0,
+					"heat_recovery": 1.0,
+					"industry_stock": 2.0,
+					"oxygen_cartridge": 4.0,
+					"oxygen_station": 2.0,
+					"repair_crate": 2.0,
+					"runoff_feed": 2.0,
+					"screen_cartridge": 6.0,
+					"screen_station": 3.0,
+					"shade_canopy": 2.0,
+					"tool_chest": 3.0
+				},
+				"ecology": {
+					"history": [
+						{
+							"at": 0,
+							"regions": {
+								"fish": {
+									"bay": 6.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 18.0,
+									"oxygen": 8.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 4.0,
+									"refuge": 18.0,
+									"sealed": true,
+									"sensitive": 80.0,
+									"tolerant": 20.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 5,
+							"regions": {
+								"fish": {
+									"bay": 3.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 21.0,
+									"oxygen": 3.0,
+									"stress": 5,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.5,
+									"refuge": 18.1,
+									"sealed": true,
+									"sensitive": 80.5,
+									"tolerant": 19.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 10,
+							"regions": {
+								"fish": {
+									"bay": 0.000000000000000666133814775094,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 24.0,
+									"oxygen": 0.0,
+									"stress": 10,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.2,
+									"sealed": true,
+									"sensitive": 81.0,
+									"tolerant": 19.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 15,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 24.0,
+									"oxygen": 0.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.3,
+									"sealed": true,
+									"sensitive": 81.5,
+									"tolerant": 18.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 20,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 24.0,
+									"oxygen": 0.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.4,
+									"sealed": true,
+									"sensitive": 82.0,
+									"tolerant": 18.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 25,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 24.0,
+									"oxygen": 0.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.5,
+									"sealed": true,
+									"sensitive": 82.5,
+									"tolerant": 17.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 30,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 24.0,
+									"oxygen": 0.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.6,
+									"sealed": true,
+									"sensitive": 83.0,
+									"tolerant": 17.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						}
+					],
+					"model": "oxygen_teaching_v1",
+					"regions": {
+						"fish": {
+							"bay": 0.0,
+							"component": {},
+							"cooling": false,
+							"dead": 0.0,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"flags": [
+								"leave"
+							],
+							"flow": 1.0,
+							"gas": 0.0,
+							"gate_open": true,
+							"heat": 0.0,
+							"loaded": 0.0,
+							"outer": 24.0,
+							"oxygen": 0.0,
+							"stress": 0,
+							"trips": 0,
+							"used": 0.0
+						},
+						"microbe": {
+							"component": {},
+							"cooling": false,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"flags": [],
+							"flow": 1.0,
+							"gas": 0.0,
+							"heat": 0.0,
+							"loaded": 0.0,
+							"oxygen": 0.0,
+							"refuge": 18.6,
+							"sealed": true,
+							"sensitive": 83.0,
+							"tolerant": 17.0,
+							"trips": 0,
+							"used": 0.0
+						}
+					},
+					"thermal_model": "device_heat_v1"
+				},
+				"event_serial": 2,
+				"events": [
+					{
+						"at": 0,
+						"id": 1,
+						"kind": "industry",
+						"message": "工业港已开启并暂停；先投放动力设备、燃料和导线。",
+						"shipment": 0
+					},
+					{
+						"at": 1,
+						"id": 2,
+						"kind": "ecology",
+						"message": "鱼湾：低氧驱使鱼群沿开放通道游向外湾；迁移不等于死亡。",
+						"shipment": 0
+					}
+				],
+				"fraction": 0.0,
+				"habitat": {
+					"animals": [
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "fern",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 16.0,
+							"id": 0,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "triceratops",
+							"thirst": 12.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "fern",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 17.0,
+							"id": 1,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "triceratops",
+							"thirst": 13.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "fern",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 18.0,
+							"id": 2,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "triceratops",
+							"thirst": 14.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "lagoon",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 19.0,
+							"id": 3,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "triceratops",
+							"thirst": 15.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "wood",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 20.0,
+							"id": 4,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "edmontosaurus",
+							"thirst": 16.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "wood",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 21.0,
+							"id": 5,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "edmontosaurus",
+							"thirst": 17.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "lagoon",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 22.0,
+							"id": 6,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "edmontosaurus",
+							"thirst": 18.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "fern",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 23.0,
+							"id": 7,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "edmontosaurus",
+							"thirst": 19.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "wood",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 24.0,
+							"id": 8,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "tyrannosaurus",
+							"thirst": 20.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "lagoon",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 25.0,
+							"id": 9,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "tyrannosaurus",
+							"thirst": 21.0,
+							"to": ""
+						}
+					],
+					"edges": {
+						"fern_lagoon": {
+							"built": true,
+							"open": true
+						},
+						"fern_ridge": {
+							"built": false,
+							"open": false
+						},
+						"lagoon_wood": {
+							"built": true,
+							"open": true
+						},
+						"wood_ridge": {
+							"built": false,
+							"open": false
+						}
+					},
+					"elapsed": 0,
+					"enabled": false,
+					"era": "creta_hell_creek",
+					"flags": [],
+					"history": [
+						{
+							"at": 0,
+							"state": {
+								"animals": [
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "fern",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 16.0,
+										"id": 0,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "triceratops",
+										"thirst": 12.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "fern",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 17.0,
+										"id": 1,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "triceratops",
+										"thirst": 13.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "fern",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 18.0,
+										"id": 2,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "triceratops",
+										"thirst": 14.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "lagoon",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 19.0,
+										"id": 3,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "triceratops",
+										"thirst": 15.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "wood",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 20.0,
+										"id": 4,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "edmontosaurus",
+										"thirst": 16.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "wood",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 21.0,
+										"id": 5,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "edmontosaurus",
+										"thirst": 17.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "lagoon",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 22.0,
+										"id": 6,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "edmontosaurus",
+										"thirst": 18.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "fern",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 23.0,
+										"id": 7,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "edmontosaurus",
+										"thirst": 19.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "wood",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 24.0,
+										"id": 8,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "tyrannosaurus",
+										"thirst": 20.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "lagoon",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 25.0,
+										"id": 9,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "tyrannosaurus",
+										"thirst": 21.0,
+										"to": ""
+									}
+								],
+								"edges": {
+									"fern_lagoon": {
+										"built": true,
+										"open": true
+									},
+									"fern_ridge": {
+										"built": false,
+										"open": false
+									},
+									"lagoon_wood": {
+										"built": true,
+										"open": true
+									},
+									"wood_ridge": {
+										"built": false,
+										"open": false
+									}
+								},
+								"elapsed": 0,
+								"enabled": false,
+								"era": "creta_hell_creek",
+								"flags": [],
+								"kills": 0,
+								"migrations": 0,
+								"model": "hell_creek_habitat_v1",
+								"regions": {
+									"fern": {
+										"added": 0.0,
+										"carrion": 0.0,
+										"decayed": 0.0,
+										"drunk": 0.0,
+										"evaporated": 0.0,
+										"grazed": 0.0,
+										"grown": 0.0,
+										"growth_water": 0.0,
+										"overflow": 0.0,
+										"plants": 72.0,
+										"rain": 0.0,
+										"remains": 0.0,
+										"scavenged": 0.0,
+										"shade": false,
+										"water": 22.0,
+										"wilted": 0.0
+									},
+									"lagoon": {
+										"added": 0.0,
+										"carrion": 0.0,
+										"decayed": 0.0,
+										"drunk": 0.0,
+										"evaporated": 0.0,
+										"grazed": 0.0,
+										"grown": 0.0,
+										"growth_water": 0.0,
+										"overflow": 0.0,
+										"plants": 38.0,
+										"rain": 0.0,
+										"remains": 0.0,
+										"scavenged": 0.0,
+										"shade": false,
+										"water": 95.0,
+										"wilted": 0.0
+									},
+									"ridge": {
+										"added": 0.0,
+										"carrion": 0.0,
+										"decayed": 0.0,
+										"drunk": 0.0,
+										"evaporated": 0.0,
+										"grazed": 0.0,
+										"grown": 0.0,
+										"growth_water": 0.0,
+										"overflow": 0.0,
+										"plants": 100.0,
+										"rain": 0.0,
+										"remains": 0.0,
+										"scavenged": 0.0,
+										"shade": false,
+										"water": 70.0,
+										"wilted": 0.0
+									},
+									"wood": {
+										"added": 0.0,
+										"carrion": 0.0,
+										"decayed": 0.0,
+										"drunk": 0.0,
+										"evaporated": 0.0,
+										"grazed": 0.0,
+										"grown": 0.0,
+										"growth_water": 0.0,
+										"overflow": 0.0,
+										"plants": 90.0,
+										"rain": 0.0,
+										"remains": 0.0,
+										"scavenged": 0.0,
+										"shade": false,
+										"water": 30.0,
+										"wilted": 0.0
+									}
+								}
+							}
+						}
+					],
+					"kills": 0,
+					"migrations": 0,
+					"model": "hell_creek_habitat_v1",
+					"regions": {
+						"fern": {
+							"added": 0.0,
+							"carrion": 0.0,
+							"decayed": 0.0,
+							"drunk": 0.0,
+							"evaporated": 0.0,
+							"grazed": 0.0,
+							"grown": 0.0,
+							"growth_water": 0.0,
+							"overflow": 0.0,
+							"plants": 72.0,
+							"rain": 0.0,
+							"remains": 0.0,
+							"scavenged": 0.0,
+							"shade": false,
+							"water": 22.0,
+							"wilted": 0.0
+						},
+						"lagoon": {
+							"added": 0.0,
+							"carrion": 0.0,
+							"decayed": 0.0,
+							"drunk": 0.0,
+							"evaporated": 0.0,
+							"grazed": 0.0,
+							"grown": 0.0,
+							"growth_water": 0.0,
+							"overflow": 0.0,
+							"plants": 38.0,
+							"rain": 0.0,
+							"remains": 0.0,
+							"scavenged": 0.0,
+							"shade": false,
+							"water": 95.0,
+							"wilted": 0.0
+						},
+						"ridge": {
+							"added": 0.0,
+							"carrion": 0.0,
+							"decayed": 0.0,
+							"drunk": 0.0,
+							"evaporated": 0.0,
+							"grazed": 0.0,
+							"grown": 0.0,
+							"growth_water": 0.0,
+							"overflow": 0.0,
+							"plants": 100.0,
+							"rain": 0.0,
+							"remains": 0.0,
+							"scavenged": 0.0,
+							"shade": false,
+							"water": 70.0,
+							"wilted": 0.0
+						},
+						"wood": {
+							"added": 0.0,
+							"carrion": 0.0,
+							"decayed": 0.0,
+							"drunk": 0.0,
+							"evaporated": 0.0,
+							"grazed": 0.0,
+							"grown": 0.0,
+							"growth_water": 0.0,
+							"overflow": 0.0,
+							"plants": 90.0,
+							"rain": 0.0,
+							"remains": 0.0,
+							"scavenged": 0.0,
+							"shade": false,
+							"water": 30.0,
+							"wilted": 0.0
+						}
+					}
+				},
+				"id": "home",
+				"industry": {
+					"added": {
+						"civil": 0.0,
+						"fuel_kg": 0.05,
+						"military": 0.0,
+						"spares": 0.0,
+						"stock": 0.0
+					},
+					"alert": false,
+					"blackout": false,
+					"cables": {
+						"clinic": "",
+						"factory": "",
+						"homes": "",
+						"signal": ""
+					},
+					"cables_received": {
+						"aluminum_wire": 0,
+						"aluminum_wire_mass": 0,
+						"copper_wire": 0,
+						"copper_wire_mass": 0
+					},
+					"cables_scrapped": {
+						"aluminum_wire": 0,
+						"aluminum_wire_mass": 0,
+						"copper_wire": 0,
+						"copper_wire_mass": 0
+					},
+					"care": 65.4999999999998,
+					"chemical_J": 132000.0,
+					"completed": 0,
+					"elapsed": 30,
+					"electric_J": 33000.0,
+					"enabled": true,
+					"engine": true,
+					"engine_fuel_kg": 0.003,
+					"engine_loss_J": 19800.0,
+					"era": "ww2",
+					"event_done": false,
+					"factory": {
+						"active": false,
+						"kind": "civil",
+						"progress": 0.0
+					},
+					"factory_kind": "civil",
+					"flags": [],
+					"flow": {
+						"clinic": 0.0,
+						"factory": 0.0,
+						"homes": 0.0,
+						"signal": 0.0
+					},
+					"generated_W": 1100.0,
+					"heat_J": 79200.0,
+					"heat_service": 0.0,
+					"history": [
+						{
+							"at": 0,
+							"state": {
+								"added": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"alert": false,
+								"blackout": false,
+								"cables": {
+									"clinic": "",
+									"factory": "",
+									"homes": "",
+									"signal": ""
+								},
+								"cables_received": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"cables_scrapped": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"care": 70.0,
+								"chemical_J": 0.0,
+								"completed": 0,
+								"elapsed": 0,
+								"electric_J": 0.0,
+								"enabled": true,
+								"engine": false,
+								"engine_fuel_kg": 0.0,
+								"engine_loss_J": 0.0,
+								"era": "ww2",
+								"event_done": false,
+								"factory": {
+									"active": false,
+									"kind": "civil",
+									"progress": 0.0
+								},
+								"factory_kind": "civil",
+								"flags": [],
+								"flow": {
+									"clinic": 0.0,
+									"factory": 0.0,
+									"homes": 0.0,
+									"signal": 0.0
+								},
+								"generated_W": 0.0,
+								"heat_J": 0.0,
+								"heat_service": 0.0,
+								"integrity": {
+									"clinic": 1.0,
+									"depot": 1.0,
+									"factory": 1.0,
+									"homes": 1.0,
+									"junction": 1.0,
+									"power": 1.0,
+									"signal": 1.0
+								},
+								"load_J": 0.0,
+								"model": "industrial_harbor_v1",
+								"people": [
+									{
+										"at": "depot",
+										"id": 0,
+										"progress": 0.0,
+										"role": "repair",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 1,
+										"progress": 0.0,
+										"role": "factory",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 2,
+										"progress": 0.0,
+										"role": "factory",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 3,
+										"progress": 0.0,
+										"role": "clinic",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 4,
+										"progress": 0.0,
+										"role": "signal",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 5,
+										"progress": 0.0,
+										"role": "homes",
+										"route": [],
+										"task": "waiting"
+									}
+								],
+								"policy": "care",
+								"produced": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"recovered_J": 0.0,
+								"recovery": false,
+								"rejected_heat_J": 0.0,
+								"repair": {
+									"progress": 0.0,
+									"target": ""
+								},
+								"repairs": true,
+								"repairs_completed": 0,
+								"repairs_started": 0,
+								"running": true,
+								"shipped": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"signal_service": 0.0,
+								"started": 0,
+								"stock": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 1.0,
+									"stock": 2.0
+								},
+								"transport_J": 0.0,
+								"transport_fuel_kg": 0.0,
+								"transport_loss_J": 0.0,
+								"truck": {
+									"amount": 0.0,
+									"kind": "civil",
+									"progress": 0.0,
+									"stage": "idle"
+								},
+								"unused_J": 0.0,
+								"used": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"useful_heat_J": 0.0,
+								"warmth": 70.0,
+								"wire_loss_J": 0.0,
+								"wire_loss_W": 0.0
+							}
+						},
+						{
+							"at": 10,
+							"state": {
+								"added": {
+									"civil": 0.0,
+									"fuel_kg": 0.05,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"alert": false,
+								"blackout": false,
+								"cables": {
+									"clinic": "",
+									"factory": "",
+									"homes": "",
+									"signal": ""
+								},
+								"cables_received": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"cables_scrapped": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"care": 68.4999999999999,
+								"chemical_J": 44000.0,
+								"completed": 0,
+								"elapsed": 10,
+								"electric_J": 11000.0,
+								"enabled": true,
+								"engine": true,
+								"engine_fuel_kg": 0.001,
+								"engine_loss_J": 6600.0,
+								"era": "ww2",
+								"event_done": false,
+								"factory": {
+									"active": false,
+									"kind": "civil",
+									"progress": 0.0
+								},
+								"factory_kind": "civil",
+								"flags": [],
+								"flow": {
+									"clinic": 0.0,
+									"factory": 0.0,
+									"homes": 0.0,
+									"signal": 0.0
+								},
+								"generated_W": 1100.0,
+								"heat_J": 26400.0,
+								"heat_service": 0.0,
+								"integrity": {
+									"clinic": 1.0,
+									"depot": 1.0,
+									"factory": 1.0,
+									"homes": 1.0,
+									"junction": 1.0,
+									"power": 1.0,
+									"signal": 1.0
+								},
+								"load_J": 0.0,
+								"model": "industrial_harbor_v1",
+								"people": [
+									{
+										"at": "depot",
+										"id": 0,
+										"progress": 0.0,
+										"role": "repair",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 1,
+										"progress": 0.9,
+										"role": "factory",
+										"route": [
+											"junction",
+											"factory"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "depot",
+										"id": 2,
+										"progress": 0.9,
+										"role": "factory",
+										"route": [
+											"junction",
+											"factory"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "depot",
+										"id": 3,
+										"progress": 0.9,
+										"role": "clinic",
+										"route": [
+											"junction",
+											"clinic"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "depot",
+										"id": 4,
+										"progress": 0.9,
+										"role": "signal",
+										"route": [
+											"junction",
+											"signal"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "depot",
+										"id": 5,
+										"progress": 0.9,
+										"role": "homes",
+										"route": [
+											"junction",
+											"homes"
+										],
+										"task": "travel"
+									}
+								],
+								"policy": "care",
+								"produced": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"recovered_J": 0.0,
+								"recovery": false,
+								"rejected_heat_J": 26400.0,
+								"repair": {
+									"progress": 0.0,
+									"target": ""
+								},
+								"repairs": true,
+								"repairs_completed": 0,
+								"repairs_started": 0,
+								"running": true,
+								"shipped": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"signal_service": 0.0,
+								"started": 0,
+								"stock": {
+									"civil": 0.0,
+									"fuel_kg": 0.049,
+									"military": 0.0,
+									"spares": 1.0,
+									"stock": 2.0
+								},
+								"transport_J": 0.0,
+								"transport_fuel_kg": 0.0,
+								"transport_loss_J": 0.0,
+								"truck": {
+									"amount": 0.0,
+									"kind": "civil",
+									"progress": 0.0,
+									"stage": "idle"
+								},
+								"unused_J": 11000.0,
+								"used": {
+									"civil": 0.0,
+									"fuel_kg": 0.001,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"useful_heat_J": 0.0,
+								"warmth": 68.0,
+								"wire_loss_J": 0.0,
+								"wire_loss_W": 0.0
+							}
+						},
+						{
+							"at": 20,
+							"state": {
+								"added": {
+									"civil": 0.0,
+									"fuel_kg": 0.05,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"alert": false,
+								"blackout": false,
+								"cables": {
+									"clinic": "",
+									"factory": "",
+									"homes": "",
+									"signal": ""
+								},
+								"cables_received": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"cables_scrapped": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"care": 66.9999999999999,
+								"chemical_J": 88000.0,
+								"completed": 0,
+								"elapsed": 20,
+								"electric_J": 22000.0,
+								"enabled": true,
+								"engine": true,
+								"engine_fuel_kg": 0.002,
+								"engine_loss_J": 13200.0,
+								"era": "ww2",
+								"event_done": false,
+								"factory": {
+									"active": false,
+									"kind": "civil",
+									"progress": 0.0
+								},
+								"factory_kind": "civil",
+								"flags": [],
+								"flow": {
+									"clinic": 0.0,
+									"factory": 0.0,
+									"homes": 0.0,
+									"signal": 0.0
+								},
+								"generated_W": 1100.0,
+								"heat_J": 52800.0,
+								"heat_service": 0.0,
+								"integrity": {
+									"clinic": 1.0,
+									"depot": 1.0,
+									"factory": 1.0,
+									"homes": 1.0,
+									"junction": 1.0,
+									"power": 1.0,
+									"signal": 1.0
+								},
+								"load_J": 0.0,
+								"model": "industrial_harbor_v1",
+								"people": [
+									{
+										"at": "depot",
+										"id": 0,
+										"progress": 0.0,
+										"role": "repair",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "junction",
+										"id": 1,
+										"progress": 0.9,
+										"role": "factory",
+										"route": [
+											"factory"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "junction",
+										"id": 2,
+										"progress": 0.9,
+										"role": "factory",
+										"route": [
+											"factory"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "junction",
+										"id": 3,
+										"progress": 0.9,
+										"role": "clinic",
+										"route": [
+											"clinic"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "junction",
+										"id": 4,
+										"progress": 0.9,
+										"role": "signal",
+										"route": [
+											"signal"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "junction",
+										"id": 5,
+										"progress": 0.9,
+										"role": "homes",
+										"route": [
+											"homes"
+										],
+										"task": "travel"
+									}
+								],
+								"policy": "care",
+								"produced": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"recovered_J": 0.0,
+								"recovery": false,
+								"rejected_heat_J": 52800.0,
+								"repair": {
+									"progress": 0.0,
+									"target": ""
+								},
+								"repairs": true,
+								"repairs_completed": 0,
+								"repairs_started": 0,
+								"running": true,
+								"shipped": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"signal_service": 0.0,
+								"started": 0,
+								"stock": {
+									"civil": 0.0,
+									"fuel_kg": 0.0479999999999999,
+									"military": 0.0,
+									"spares": 1.0,
+									"stock": 2.0
+								},
+								"transport_J": 0.0,
+								"transport_fuel_kg": 0.0,
+								"transport_loss_J": 0.0,
+								"truck": {
+									"amount": 0.0,
+									"kind": "civil",
+									"progress": 0.0,
+									"stage": "idle"
+								},
+								"unused_J": 22000.0,
+								"used": {
+									"civil": 0.0,
+									"fuel_kg": 0.002,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"useful_heat_J": 0.0,
+								"warmth": 65.9999999999999,
+								"wire_loss_J": 0.0,
+								"wire_loss_W": 0.0
+							}
+						},
+						{
+							"at": 30,
+							"state": {
+								"added": {
+									"civil": 0.0,
+									"fuel_kg": 0.05,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"alert": false,
+								"blackout": false,
+								"cables": {
+									"clinic": "",
+									"factory": "",
+									"homes": "",
+									"signal": ""
+								},
+								"cables_received": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"cables_scrapped": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"care": 65.4999999999998,
+								"chemical_J": 132000.0,
+								"completed": 0,
+								"elapsed": 30,
+								"electric_J": 33000.0,
+								"enabled": true,
+								"engine": true,
+								"engine_fuel_kg": 0.003,
+								"engine_loss_J": 19800.0,
+								"era": "ww2",
+								"event_done": false,
+								"factory": {
+									"active": false,
+									"kind": "civil",
+									"progress": 0.0
+								},
+								"factory_kind": "civil",
+								"flags": [],
+								"flow": {
+									"clinic": 0.0,
+									"factory": 0.0,
+									"homes": 0.0,
+									"signal": 0.0
+								},
+								"generated_W": 1100.0,
+								"heat_J": 79200.0,
+								"heat_service": 0.0,
+								"integrity": {
+									"clinic": 1.0,
+									"depot": 1.0,
+									"factory": 1.0,
+									"homes": 1.0,
+									"junction": 1.0,
+									"power": 1.0,
+									"signal": 1.0
+								},
+								"load_J": 0.0,
+								"model": "industrial_harbor_v1",
+								"people": [
+									{
+										"at": "depot",
+										"id": 0,
+										"progress": 0.0,
+										"role": "repair",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "factory",
+										"id": 1,
+										"progress": 0.0,
+										"role": "factory",
+										"route": [],
+										"task": "work"
+									},
+									{
+										"at": "factory",
+										"id": 2,
+										"progress": 0.0,
+										"role": "factory",
+										"route": [],
+										"task": "work"
+									},
+									{
+										"at": "clinic",
+										"id": 3,
+										"progress": 0.0,
+										"role": "clinic",
+										"route": [],
+										"task": "work"
+									},
+									{
+										"at": "signal",
+										"id": 4,
+										"progress": 0.0,
+										"role": "signal",
+										"route": [],
+										"task": "work"
+									},
+									{
+										"at": "homes",
+										"id": 5,
+										"progress": 0.0,
+										"role": "homes",
+										"route": [],
+										"task": "work"
+									}
+								],
+								"policy": "care",
+								"produced": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"recovered_J": 0.0,
+								"recovery": false,
+								"rejected_heat_J": 79200.0,
+								"repair": {
+									"progress": 0.0,
+									"target": ""
+								},
+								"repairs": true,
+								"repairs_completed": 0,
+								"repairs_started": 0,
+								"running": true,
+								"shipped": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"signal_service": 0.0,
+								"started": 0,
+								"stock": {
+									"civil": 0.0,
+									"fuel_kg": 0.0469999999999999,
+									"military": 0.0,
+									"spares": 1.0,
+									"stock": 2.0
+								},
+								"transport_J": 0.0,
+								"transport_fuel_kg": 0.0,
+								"transport_loss_J": 0.0,
+								"truck": {
+									"amount": 0.0,
+									"kind": "civil",
+									"progress": 0.0,
+									"stage": "idle"
+								},
+								"unused_J": 33000.0,
+								"used": {
+									"civil": 0.0,
+									"fuel_kg": 0.003,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"useful_heat_J": 0.0,
+								"warmth": 63.9999999999999,
+								"wire_loss_J": 0.0,
+								"wire_loss_W": 0.0
+							}
+						}
+					],
+					"integrity": {
+						"clinic": 1.0,
+						"depot": 1.0,
+						"factory": 1.0,
+						"homes": 1.0,
+						"junction": 1.0,
+						"power": 1.0,
+						"signal": 1.0
+					},
+					"load_J": 0.0,
+					"model": "industrial_harbor_v1",
+					"people": [
+						{
+							"at": "depot",
+							"id": 0,
+							"progress": 0.0,
+							"role": "repair",
+							"route": [],
+							"task": "waiting"
+						},
+						{
+							"at": "factory",
+							"id": 1,
+							"progress": 0.0,
+							"role": "factory",
+							"route": [],
+							"task": "work"
+						},
+						{
+							"at": "factory",
+							"id": 2,
+							"progress": 0.0,
+							"role": "factory",
+							"route": [],
+							"task": "work"
+						},
+						{
+							"at": "clinic",
+							"id": 3,
+							"progress": 0.0,
+							"role": "clinic",
+							"route": [],
+							"task": "work"
+						},
+						{
+							"at": "signal",
+							"id": 4,
+							"progress": 0.0,
+							"role": "signal",
+							"route": [],
+							"task": "work"
+						},
+						{
+							"at": "homes",
+							"id": 5,
+							"progress": 0.0,
+							"role": "homes",
+							"route": [],
+							"task": "work"
+						}
+					],
+					"policy": "care",
+					"produced": {
+						"civil": 0.0,
+						"fuel_kg": 0.0,
+						"military": 0.0,
+						"spares": 0.0,
+						"stock": 0.0
+					},
+					"recovered_J": 0.0,
+					"recovery": false,
+					"rejected_heat_J": 79200.0,
+					"repair": {
+						"progress": 0.0,
+						"target": ""
+					},
+					"repairs": true,
+					"repairs_completed": 0,
+					"repairs_started": 0,
+					"running": true,
+					"shipped": {
+						"civil": 0.0,
+						"fuel_kg": 0.0,
+						"military": 0.0,
+						"spares": 0.0,
+						"stock": 0.0
+					},
+					"signal_service": 0.0,
+					"started": 0,
+					"stock": {
+						"civil": 0.0,
+						"fuel_kg": 0.0469999999999999,
+						"military": 0.0,
+						"spares": 1.0,
+						"stock": 2.0
+					},
+					"transport_J": 0.0,
+					"transport_fuel_kg": 0.0,
+					"transport_loss_J": 0.0,
+					"truck": {
+						"amount": 0.0,
+						"kind": "civil",
+						"progress": 0.0,
+						"stage": "idle"
+					},
+					"unused_J": 33000.0,
+					"used": {
+						"civil": 0.0,
+						"fuel_kg": 0.003,
+						"military": 0.0,
+						"spares": 0.0,
+						"stock": 0.0
+					},
+					"useful_heat_J": 0.0,
+					"warmth": 63.9999999999999,
+					"wire_loss_J": 0.0,
+					"wire_loss_W": 0.0
+				},
+				"mode": "career",
+				"name": "试验湾 · 主世界",
+				"observation": false,
+				"paused": true,
+				"seconds": 30,
+				"seed": 9192026,
+				"village": {
+					"active_project": "",
+					"added": {
+						"drink": 0.0,
+						"food": 0.0,
+						"frames": 0.0,
+						"goods": 0.0,
+						"grain": 0.0,
+						"tools": 0.0,
+						"water": 0.0
+					},
+					"completed": {
+						"craft": 0,
+						"drink": 0,
+						"eat": 0,
+						"farm": 0,
+						"mill": 0
+					},
+					"diversion": 0.5,
+					"elapsed": 0,
+					"enabled": false,
+					"era": "weald_1400",
+					"exported": {
+						"drink": 0.0,
+						"food": 0.0,
+						"frames": 0.0,
+						"goods": 0.0,
+						"grain": 0.0,
+						"tools": 0.0,
+						"water": 0.0
+					},
+					"flags": [],
+					"history": [
+						{
+							"at": 0,
+							"state": {
+								"active_project": "",
+								"added": {
+									"drink": 0.0,
+									"food": 0.0,
+									"frames": 0.0,
+									"goods": 0.0,
+									"grain": 0.0,
+									"tools": 0.0,
+									"water": 0.0
+								},
+								"completed": {
+									"craft": 0,
+									"drink": 0,
+									"eat": 0,
+									"farm": 0,
+									"mill": 0
+								},
+								"diversion": 0.5,
+								"elapsed": 0,
+								"enabled": false,
+								"era": "weald_1400",
+								"exported": {
+									"drink": 0.0,
+									"food": 0.0,
+									"frames": 0.0,
+									"goods": 0.0,
+									"grain": 0.0,
+									"tools": 0.0,
+									"water": 0.0
+								},
+								"flags": [],
+								"mill_running": false,
+								"model": "village_teaching_v1",
+								"passage": 100.0,
+								"people": [
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 0.0,
+										"id": 0,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 0.0,
+										"work": 0.0
+									},
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 2.0,
+										"id": 1,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 3.0,
+										"work": 0.0
+									},
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 4.0,
+										"id": 2,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 6.0,
+										"work": 0.0
+									},
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 6.0,
+										"id": 3,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 9.0,
+										"work": 0.0
+									},
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 8.0,
+										"id": 4,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 12.0,
+										"work": 0.0
+									},
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 10.0,
+										"id": 5,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 15.0,
+										"work": 0.0
+									}
+								],
+								"policy": "care",
+								"produced": {
+									"drink": 0.0,
+									"food": 0.0,
+									"frames": 0.0,
+									"goods": 0.0,
+									"grain": 0.0,
+									"tools": 0.0,
+									"water": 0.0
+								},
+								"projects": {
+									"cistern": {
+										"approved": true,
+										"committed": false,
+										"complete": false,
+										"paused": false,
+										"progress": 0.0
+									},
+									"market": {
+										"approved": false,
+										"committed": false,
+										"complete": false,
+										"paused": false,
+										"progress": 0.0
+									},
+									"mill": {
+										"approved": false,
+										"committed": false,
+										"complete": false,
+										"paused": false,
+										"progress": 0.0
+									},
+									"road": {
+										"approved": true,
+										"committed": false,
+										"complete": false,
+										"paused": false,
+										"progress": 0.0
+									}
+								},
+								"spring": 24.0,
+								"spring_overflow": 0.0,
+								"spring_taken": 0.0,
+								"started": {
+									"craft": 0,
+									"drink": 0,
+									"eat": 0,
+									"farm": 0,
+									"mill": 0
+								},
+								"stock": {
+									"drink": 14.0,
+									"food": 8.0,
+									"frames": 0.0,
+									"goods": 0.0,
+									"grain": 10.0,
+									"tools": 6.0,
+									"water": 16.0
+								},
+								"trade_clock": 0,
+								"trades": 0,
+								"used": {
+									"drink": 0.0,
+									"food": 0.0,
+									"frames": 0.0,
+									"goods": 0.0,
+									"grain": 0.0,
+									"tools": 0.0,
+									"water": 0.0
+								}
+							}
+						}
+					],
+					"mill_running": false,
+					"model": "village_teaching_v1",
+					"passage": 100.0,
+					"people": [
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 0.0,
+							"id": 0,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 0.0,
+							"work": 0.0
+						},
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 2.0,
+							"id": 1,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 3.0,
+							"work": 0.0
+						},
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 4.0,
+							"id": 2,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 6.0,
+							"work": 0.0
+						},
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 6.0,
+							"id": 3,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 9.0,
+							"work": 0.0
+						},
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 8.0,
+							"id": 4,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 12.0,
+							"work": 0.0
+						},
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 10.0,
+							"id": 5,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 15.0,
+							"work": 0.0
+						}
+					],
+					"policy": "care",
+					"produced": {
+						"drink": 0.0,
+						"food": 0.0,
+						"frames": 0.0,
+						"goods": 0.0,
+						"grain": 0.0,
+						"tools": 0.0,
+						"water": 0.0
+					},
+					"projects": {
+						"cistern": {
+							"approved": true,
+							"committed": false,
+							"complete": false,
+							"paused": false,
+							"progress": 0.0
+						},
+						"market": {
+							"approved": false,
+							"committed": false,
+							"complete": false,
+							"paused": false,
+							"progress": 0.0
+						},
+						"mill": {
+							"approved": false,
+							"committed": false,
+							"complete": false,
+							"paused": false,
+							"progress": 0.0
+						},
+						"road": {
+							"approved": true,
+							"committed": false,
+							"complete": false,
+							"paused": false,
+							"progress": 0.0
+						}
+					},
+					"spring": 24.0,
+					"spring_overflow": 0.0,
+					"spring_taken": 0.0,
+					"started": {
+						"craft": 0,
+						"drink": 0,
+						"eat": 0,
+						"farm": 0,
+						"mill": 0
+					},
+					"stock": {
+						"drink": 14.0,
+						"food": 8.0,
+						"frames": 0.0,
+						"goods": 0.0,
+						"grain": 10.0,
+						"tools": 6.0,
+						"water": 16.0
+					},
+					"trade_clock": 0,
+					"trades": 0,
+					"used": {
+						"drink": 0.0,
+						"food": 0.0,
+						"frames": 0.0,
+						"goods": 0.0,
+						"grain": 0.0,
+						"tools": 0.0,
+						"water": 0.0
+					}
+				},
+				"watershed": {
+					"added": 0.0,
+					"bypass": false,
+					"dead": 0.0,
+					"elapsed": 0,
+					"enabled": false,
+					"era": "devonian",
+					"exported": 0.0,
+					"history": [
+						{
+							"at": 0,
+							"state": {
+								"added": 0.0,
+								"bypass": false,
+								"dead": 0.0,
+								"elapsed": 0,
+								"enabled": false,
+								"era": "devonian",
+								"exported": 0.0,
+								"migration_open": true,
+								"model": "watershed_teaching_v1",
+								"refuge": 24.0,
+								"regions": {
+									"estuary": {
+										"algae": 4.0,
+										"benthos": 10.0,
+										"buffer": false,
+										"component": {},
+										"cooling": false,
+										"detritus": 3.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"fish": 12.0,
+										"flags": [],
+										"flow": 1.0,
+										"flush": 0,
+										"gas": 0.0,
+										"harvest": {},
+										"harvest_target": "algae",
+										"heat": 0.0,
+										"loaded": 0.0,
+										"nutrient": 2.0,
+										"oxygen": 82.0,
+										"plants": 2.0,
+										"retained": 0.0,
+										"screen": false,
+										"screen_charges": 0,
+										"screen_discarded": 0.0,
+										"screen_enabled": true,
+										"screen_energy": 0.0,
+										"screen_loaded": false,
+										"screen_used": 0.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"headwater": {
+										"algae": 3.0,
+										"benthos": 10.0,
+										"buffer": false,
+										"component": {},
+										"cooling": false,
+										"detritus": 2.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"fish": 6.0,
+										"flags": [],
+										"flow": 1.0,
+										"flush": 0,
+										"gas": 0.0,
+										"harvest": {},
+										"harvest_target": "algae",
+										"heat": 0.0,
+										"loaded": 0.0,
+										"nutrient": 8.0,
+										"oxygen": 82.0,
+										"plants": 2.0,
+										"retained": 0.0,
+										"screen": false,
+										"screen_charges": 0,
+										"screen_discarded": 0.0,
+										"screen_enabled": true,
+										"screen_energy": 0.0,
+										"screen_loaded": false,
+										"screen_used": 0.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"marsh": {
+										"algae": 5.0,
+										"benthos": 10.0,
+										"buffer": false,
+										"component": {},
+										"cooling": false,
+										"detritus": 4.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"fish": 10.0,
+										"flags": [],
+										"flow": 1.0,
+										"flush": 0,
+										"gas": 0.0,
+										"harvest": {},
+										"harvest_target": "algae",
+										"heat": 0.0,
+										"loaded": 0.0,
+										"nutrient": 4.0,
+										"oxygen": 82.0,
+										"plants": 12.0,
+										"retained": 0.0,
+										"screen": false,
+										"screen_charges": 0,
+										"screen_discarded": 0.0,
+										"screen_enabled": true,
+										"screen_energy": 0.0,
+										"screen_loaded": false,
+										"screen_used": 0.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									}
+								},
+								"source": 150.0,
+								"source_open": true,
+								"waste": 0.0
+							}
+						}
+					],
+					"migration_open": true,
+					"model": "watershed_teaching_v1",
+					"refuge": 24.0,
+					"regions": {
+						"estuary": {
+							"algae": 4.0,
+							"benthos": 10.0,
+							"buffer": false,
+							"component": {},
+							"cooling": false,
+							"detritus": 3.0,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"fish": 12.0,
+							"flags": [],
+							"flow": 1.0,
+							"flush": 0,
+							"gas": 0.0,
+							"harvest": {},
+							"harvest_target": "algae",
+							"heat": 0.0,
+							"loaded": 0.0,
+							"nutrient": 2.0,
+							"oxygen": 82.0,
+							"plants": 2.0,
+							"retained": 0.0,
+							"screen": false,
+							"screen_charges": 0,
+							"screen_discarded": 0.0,
+							"screen_enabled": true,
+							"screen_energy": 0.0,
+							"screen_loaded": false,
+							"screen_used": 0.0,
+							"stress": 0,
+							"trips": 0,
+							"used": 0.0
+						},
+						"headwater": {
+							"algae": 3.0,
+							"benthos": 10.0,
+							"buffer": false,
+							"component": {},
+							"cooling": false,
+							"detritus": 2.0,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"fish": 6.0,
+							"flags": [],
+							"flow": 1.0,
+							"flush": 0,
+							"gas": 0.0,
+							"harvest": {},
+							"harvest_target": "algae",
+							"heat": 0.0,
+							"loaded": 0.0,
+							"nutrient": 8.0,
+							"oxygen": 82.0,
+							"plants": 2.0,
+							"retained": 0.0,
+							"screen": false,
+							"screen_charges": 0,
+							"screen_discarded": 0.0,
+							"screen_enabled": true,
+							"screen_energy": 0.0,
+							"screen_loaded": false,
+							"screen_used": 0.0,
+							"stress": 0,
+							"trips": 0,
+							"used": 0.0
+						},
+						"marsh": {
+							"algae": 5.0,
+							"benthos": 10.0,
+							"buffer": false,
+							"component": {},
+							"cooling": false,
+							"detritus": 4.0,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"fish": 10.0,
+							"flags": [],
+							"flow": 1.0,
+							"flush": 0,
+							"gas": 0.0,
+							"harvest": {},
+							"harvest_target": "algae",
+							"heat": 0.0,
+							"loaded": 0.0,
+							"nutrient": 4.0,
+							"oxygen": 82.0,
+							"plants": 12.0,
+							"retained": 0.0,
+							"screen": false,
+							"screen_charges": 0,
+							"screen_discarded": 0.0,
+							"screen_enabled": true,
+							"screen_energy": 0.0,
+							"screen_loaded": false,
+							"screen_used": 0.0,
+							"stress": 0,
+							"trips": 0,
+							"used": 0.0
+						}
+					},
+					"source": 150.0,
+					"source_open": true,
+					"waste": 0.0
+				},
+				"zones": [
+					{
+						"id": "deep",
+						"target": 0,
+						"water": 0.0
+					},
+					{
+						"id": "shelf",
+						"target": 0,
+						"water": 0.0
+					}
+				]
+			},
+			{
+				"allowance": 3,
+				"base": {
+					"ecology": {
+						"history": [
+							{
+								"at": 0,
+								"regions": {
+									"fish": {
+										"bay": 6.0,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"outer": 18.0,
+										"oxygen": 8.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 4.0,
+										"refuge": 18.0,
+										"sealed": true,
+										"sensitive": 80.0,
+										"tolerant": 20.0,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 5,
+								"regions": {
+									"fish": {
+										"bay": 3.0,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"outer": 21.0,
+										"oxygen": 3.0,
+										"stress": 5,
+										"trips": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.5,
+										"refuge": 18.1,
+										"sealed": true,
+										"sensitive": 80.5,
+										"tolerant": 19.5,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 10,
+								"regions": {
+									"fish": {
+										"bay": 0.000000000000000666133814775094,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"outer": 24.0,
+										"oxygen": 0.0,
+										"stress": 10,
+										"trips": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.0,
+										"refuge": 18.2,
+										"sealed": true,
+										"sensitive": 81.0,
+										"tolerant": 19.0,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 15,
+								"regions": {
+									"fish": {
+										"bay": 0.0,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"outer": 24.0,
+										"oxygen": 0.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.0,
+										"refuge": 18.3,
+										"sealed": true,
+										"sensitive": 81.5,
+										"tolerant": 18.5,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 20,
+								"regions": {
+									"fish": {
+										"bay": 0.0,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"outer": 24.0,
+										"oxygen": 0.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.0,
+										"refuge": 18.4,
+										"sealed": true,
+										"sensitive": 82.0,
+										"tolerant": 18.0,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 25,
+								"regions": {
+									"fish": {
+										"bay": 0.0,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"outer": 24.0,
+										"oxygen": 0.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.0,
+										"refuge": 18.5,
+										"sealed": true,
+										"sensitive": 82.5,
+										"tolerant": 17.5,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 30,
+								"regions": {
+									"fish": {
+										"bay": 0.0,
+										"component": {},
+										"cooling": false,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"outer": 24.0,
+										"oxygen": 0.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"component": {},
+										"cooling": false,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"heat": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.0,
+										"refuge": 18.6,
+										"sealed": true,
+										"sensitive": 83.0,
+										"tolerant": 17.0,
+										"trips": 0,
+										"used": 0.0
+									}
+								}
+							}
+						],
+						"model": "oxygen_teaching_v1",
+						"regions": {
+							"fish": {
+								"bay": 0.0,
+								"component": {},
+								"cooling": false,
+								"dead": 0.0,
+								"device": false,
+								"enabled": true,
+								"energy": 0.0,
+								"flags": [
+									"leave"
+								],
+								"flow": 1.0,
+								"gas": 0.0,
+								"gate_open": true,
+								"heat": 0.0,
+								"loaded": 0.0,
+								"outer": 24.0,
+								"oxygen": 0.0,
+								"stress": 0,
+								"trips": 0,
+								"used": 0.0
+							},
+							"microbe": {
+								"component": {},
+								"cooling": false,
+								"device": false,
+								"enabled": true,
+								"energy": 0.0,
+								"flags": [],
+								"flow": 1.0,
+								"gas": 0.0,
+								"heat": 0.0,
+								"loaded": 0.0,
+								"oxygen": 0.0,
+								"refuge": 18.6,
+								"sealed": true,
+								"sensitive": 83.0,
+								"tolerant": 17.0,
+								"trips": 0,
+								"used": 0.0
+							}
+						},
+						"thermal_model": "device_heat_v1"
+					},
+					"fraction": 0.0,
+					"habitat": {
+						"animals": [
+							{
+								"action": "rest",
+								"alive": true,
+								"at": "fern",
+								"cause": "",
+								"cooldown": 0,
+								"edge": "",
+								"health": 100.0,
+								"hunger": 16.0,
+								"id": 0,
+								"journeys": 0,
+								"progress": 0.0,
+								"species": "triceratops",
+								"thirst": 12.0,
+								"to": ""
+							},
+							{
+								"action": "rest",
+								"alive": true,
+								"at": "fern",
+								"cause": "",
+								"cooldown": 0,
+								"edge": "",
+								"health": 100.0,
+								"hunger": 17.0,
+								"id": 1,
+								"journeys": 0,
+								"progress": 0.0,
+								"species": "triceratops",
+								"thirst": 13.0,
+								"to": ""
+							},
+							{
+								"action": "rest",
+								"alive": true,
+								"at": "fern",
+								"cause": "",
+								"cooldown": 0,
+								"edge": "",
+								"health": 100.0,
+								"hunger": 18.0,
+								"id": 2,
+								"journeys": 0,
+								"progress": 0.0,
+								"species": "triceratops",
+								"thirst": 14.0,
+								"to": ""
+							},
+							{
+								"action": "rest",
+								"alive": true,
+								"at": "lagoon",
+								"cause": "",
+								"cooldown": 0,
+								"edge": "",
+								"health": 100.0,
+								"hunger": 19.0,
+								"id": 3,
+								"journeys": 0,
+								"progress": 0.0,
+								"species": "triceratops",
+								"thirst": 15.0,
+								"to": ""
+							},
+							{
+								"action": "rest",
+								"alive": true,
+								"at": "wood",
+								"cause": "",
+								"cooldown": 0,
+								"edge": "",
+								"health": 100.0,
+								"hunger": 20.0,
+								"id": 4,
+								"journeys": 0,
+								"progress": 0.0,
+								"species": "edmontosaurus",
+								"thirst": 16.0,
+								"to": ""
+							},
+							{
+								"action": "rest",
+								"alive": true,
+								"at": "wood",
+								"cause": "",
+								"cooldown": 0,
+								"edge": "",
+								"health": 100.0,
+								"hunger": 21.0,
+								"id": 5,
+								"journeys": 0,
+								"progress": 0.0,
+								"species": "edmontosaurus",
+								"thirst": 17.0,
+								"to": ""
+							},
+							{
+								"action": "rest",
+								"alive": true,
+								"at": "lagoon",
+								"cause": "",
+								"cooldown": 0,
+								"edge": "",
+								"health": 100.0,
+								"hunger": 22.0,
+								"id": 6,
+								"journeys": 0,
+								"progress": 0.0,
+								"species": "edmontosaurus",
+								"thirst": 18.0,
+								"to": ""
+							},
+							{
+								"action": "rest",
+								"alive": true,
+								"at": "fern",
+								"cause": "",
+								"cooldown": 0,
+								"edge": "",
+								"health": 100.0,
+								"hunger": 23.0,
+								"id": 7,
+								"journeys": 0,
+								"progress": 0.0,
+								"species": "edmontosaurus",
+								"thirst": 19.0,
+								"to": ""
+							},
+							{
+								"action": "rest",
+								"alive": true,
+								"at": "wood",
+								"cause": "",
+								"cooldown": 0,
+								"edge": "",
+								"health": 100.0,
+								"hunger": 24.0,
+								"id": 8,
+								"journeys": 0,
+								"progress": 0.0,
+								"species": "tyrannosaurus",
+								"thirst": 20.0,
+								"to": ""
+							},
+							{
+								"action": "rest",
+								"alive": true,
+								"at": "lagoon",
+								"cause": "",
+								"cooldown": 0,
+								"edge": "",
+								"health": 100.0,
+								"hunger": 25.0,
+								"id": 9,
+								"journeys": 0,
+								"progress": 0.0,
+								"species": "tyrannosaurus",
+								"thirst": 21.0,
+								"to": ""
+							}
+						],
+						"edges": {
+							"fern_lagoon": {
+								"built": true,
+								"open": true
+							},
+							"fern_ridge": {
+								"built": false,
+								"open": false
+							},
+							"lagoon_wood": {
+								"built": true,
+								"open": true
+							},
+							"wood_ridge": {
+								"built": false,
+								"open": false
+							}
+						},
+						"elapsed": 0,
+						"enabled": false,
+						"era": "creta_hell_creek",
+						"flags": [],
+						"history": [
+							{
+								"at": 0,
+								"state": {
+									"animals": [
+										{
+											"action": "rest",
+											"alive": true,
+											"at": "fern",
+											"cause": "",
+											"cooldown": 0,
+											"edge": "",
+											"health": 100.0,
+											"hunger": 16.0,
+											"id": 0,
+											"journeys": 0,
+											"progress": 0.0,
+											"species": "triceratops",
+											"thirst": 12.0,
+											"to": ""
+										},
+										{
+											"action": "rest",
+											"alive": true,
+											"at": "fern",
+											"cause": "",
+											"cooldown": 0,
+											"edge": "",
+											"health": 100.0,
+											"hunger": 17.0,
+											"id": 1,
+											"journeys": 0,
+											"progress": 0.0,
+											"species": "triceratops",
+											"thirst": 13.0,
+											"to": ""
+										},
+										{
+											"action": "rest",
+											"alive": true,
+											"at": "fern",
+											"cause": "",
+											"cooldown": 0,
+											"edge": "",
+											"health": 100.0,
+											"hunger": 18.0,
+											"id": 2,
+											"journeys": 0,
+											"progress": 0.0,
+											"species": "triceratops",
+											"thirst": 14.0,
+											"to": ""
+										},
+										{
+											"action": "rest",
+											"alive": true,
+											"at": "lagoon",
+											"cause": "",
+											"cooldown": 0,
+											"edge": "",
+											"health": 100.0,
+											"hunger": 19.0,
+											"id": 3,
+											"journeys": 0,
+											"progress": 0.0,
+											"species": "triceratops",
+											"thirst": 15.0,
+											"to": ""
+										},
+										{
+											"action": "rest",
+											"alive": true,
+											"at": "wood",
+											"cause": "",
+											"cooldown": 0,
+											"edge": "",
+											"health": 100.0,
+											"hunger": 20.0,
+											"id": 4,
+											"journeys": 0,
+											"progress": 0.0,
+											"species": "edmontosaurus",
+											"thirst": 16.0,
+											"to": ""
+										},
+										{
+											"action": "rest",
+											"alive": true,
+											"at": "wood",
+											"cause": "",
+											"cooldown": 0,
+											"edge": "",
+											"health": 100.0,
+											"hunger": 21.0,
+											"id": 5,
+											"journeys": 0,
+											"progress": 0.0,
+											"species": "edmontosaurus",
+											"thirst": 17.0,
+											"to": ""
+										},
+										{
+											"action": "rest",
+											"alive": true,
+											"at": "lagoon",
+											"cause": "",
+											"cooldown": 0,
+											"edge": "",
+											"health": 100.0,
+											"hunger": 22.0,
+											"id": 6,
+											"journeys": 0,
+											"progress": 0.0,
+											"species": "edmontosaurus",
+											"thirst": 18.0,
+											"to": ""
+										},
+										{
+											"action": "rest",
+											"alive": true,
+											"at": "fern",
+											"cause": "",
+											"cooldown": 0,
+											"edge": "",
+											"health": 100.0,
+											"hunger": 23.0,
+											"id": 7,
+											"journeys": 0,
+											"progress": 0.0,
+											"species": "edmontosaurus",
+											"thirst": 19.0,
+											"to": ""
+										},
+										{
+											"action": "rest",
+											"alive": true,
+											"at": "wood",
+											"cause": "",
+											"cooldown": 0,
+											"edge": "",
+											"health": 100.0,
+											"hunger": 24.0,
+											"id": 8,
+											"journeys": 0,
+											"progress": 0.0,
+											"species": "tyrannosaurus",
+											"thirst": 20.0,
+											"to": ""
+										},
+										{
+											"action": "rest",
+											"alive": true,
+											"at": "lagoon",
+											"cause": "",
+											"cooldown": 0,
+											"edge": "",
+											"health": 100.0,
+											"hunger": 25.0,
+											"id": 9,
+											"journeys": 0,
+											"progress": 0.0,
+											"species": "tyrannosaurus",
+											"thirst": 21.0,
+											"to": ""
+										}
+									],
+									"edges": {
+										"fern_lagoon": {
+											"built": true,
+											"open": true
+										},
+										"fern_ridge": {
+											"built": false,
+											"open": false
+										},
+										"lagoon_wood": {
+											"built": true,
+											"open": true
+										},
+										"wood_ridge": {
+											"built": false,
+											"open": false
+										}
+									},
+									"elapsed": 0,
+									"enabled": false,
+									"era": "creta_hell_creek",
+									"flags": [],
+									"kills": 0,
+									"migrations": 0,
+									"model": "hell_creek_habitat_v1",
+									"regions": {
+										"fern": {
+											"added": 0.0,
+											"carrion": 0.0,
+											"decayed": 0.0,
+											"drunk": 0.0,
+											"evaporated": 0.0,
+											"grazed": 0.0,
+											"grown": 0.0,
+											"growth_water": 0.0,
+											"overflow": 0.0,
+											"plants": 72.0,
+											"rain": 0.0,
+											"remains": 0.0,
+											"scavenged": 0.0,
+											"shade": false,
+											"water": 22.0,
+											"wilted": 0.0
+										},
+										"lagoon": {
+											"added": 0.0,
+											"carrion": 0.0,
+											"decayed": 0.0,
+											"drunk": 0.0,
+											"evaporated": 0.0,
+											"grazed": 0.0,
+											"grown": 0.0,
+											"growth_water": 0.0,
+											"overflow": 0.0,
+											"plants": 38.0,
+											"rain": 0.0,
+											"remains": 0.0,
+											"scavenged": 0.0,
+											"shade": false,
+											"water": 95.0,
+											"wilted": 0.0
+										},
+										"ridge": {
+											"added": 0.0,
+											"carrion": 0.0,
+											"decayed": 0.0,
+											"drunk": 0.0,
+											"evaporated": 0.0,
+											"grazed": 0.0,
+											"grown": 0.0,
+											"growth_water": 0.0,
+											"overflow": 0.0,
+											"plants": 100.0,
+											"rain": 0.0,
+											"remains": 0.0,
+											"scavenged": 0.0,
+											"shade": false,
+											"water": 70.0,
+											"wilted": 0.0
+										},
+										"wood": {
+											"added": 0.0,
+											"carrion": 0.0,
+											"decayed": 0.0,
+											"drunk": 0.0,
+											"evaporated": 0.0,
+											"grazed": 0.0,
+											"grown": 0.0,
+											"growth_water": 0.0,
+											"overflow": 0.0,
+											"plants": 90.0,
+											"rain": 0.0,
+											"remains": 0.0,
+											"scavenged": 0.0,
+											"shade": false,
+											"water": 30.0,
+											"wilted": 0.0
+										}
+									}
+								}
+							}
+						],
+						"kills": 0,
+						"migrations": 0,
+						"model": "hell_creek_habitat_v1",
+						"regions": {
+							"fern": {
+								"added": 0.0,
+								"carrion": 0.0,
+								"decayed": 0.0,
+								"drunk": 0.0,
+								"evaporated": 0.0,
+								"grazed": 0.0,
+								"grown": 0.0,
+								"growth_water": 0.0,
+								"overflow": 0.0,
+								"plants": 72.0,
+								"rain": 0.0,
+								"remains": 0.0,
+								"scavenged": 0.0,
+								"shade": false,
+								"water": 22.0,
+								"wilted": 0.0
+							},
+							"lagoon": {
+								"added": 0.0,
+								"carrion": 0.0,
+								"decayed": 0.0,
+								"drunk": 0.0,
+								"evaporated": 0.0,
+								"grazed": 0.0,
+								"grown": 0.0,
+								"growth_water": 0.0,
+								"overflow": 0.0,
+								"plants": 38.0,
+								"rain": 0.0,
+								"remains": 0.0,
+								"scavenged": 0.0,
+								"shade": false,
+								"water": 95.0,
+								"wilted": 0.0
+							},
+							"ridge": {
+								"added": 0.0,
+								"carrion": 0.0,
+								"decayed": 0.0,
+								"drunk": 0.0,
+								"evaporated": 0.0,
+								"grazed": 0.0,
+								"grown": 0.0,
+								"growth_water": 0.0,
+								"overflow": 0.0,
+								"plants": 100.0,
+								"rain": 0.0,
+								"remains": 0.0,
+								"scavenged": 0.0,
+								"shade": false,
+								"water": 70.0,
+								"wilted": 0.0
+							},
+							"wood": {
+								"added": 0.0,
+								"carrion": 0.0,
+								"decayed": 0.0,
+								"drunk": 0.0,
+								"evaporated": 0.0,
+								"grazed": 0.0,
+								"grown": 0.0,
+								"growth_water": 0.0,
+								"overflow": 0.0,
+								"plants": 90.0,
+								"rain": 0.0,
+								"remains": 0.0,
+								"scavenged": 0.0,
+								"shade": false,
+								"water": 30.0,
+								"wilted": 0.0
+							}
+						}
+					},
+					"industry": {
+						"added": {
+							"civil": 0.0,
+							"fuel_kg": 0.05,
+							"military": 0.0,
+							"spares": 0.0,
+							"stock": 0.0
+						},
+						"alert": false,
+						"blackout": false,
+						"cables": {
+							"clinic": "",
+							"factory": "",
+							"homes": "",
+							"signal": ""
+						},
+						"cables_received": {
+							"aluminum_wire": 0,
+							"aluminum_wire_mass": 0,
+							"copper_wire": 0,
+							"copper_wire_mass": 0
+						},
+						"cables_scrapped": {
+							"aluminum_wire": 0,
+							"aluminum_wire_mass": 0,
+							"copper_wire": 0,
+							"copper_wire_mass": 0
+						},
+						"care": 65.4999999999998,
+						"chemical_J": 132000.0,
+						"completed": 0,
+						"elapsed": 30,
+						"electric_J": 33000.0,
+						"enabled": true,
+						"engine": true,
+						"engine_fuel_kg": 0.003,
+						"engine_loss_J": 19800.0,
+						"era": "ww2",
+						"event_done": false,
+						"factory": {
+							"active": false,
+							"kind": "civil",
+							"progress": 0.0
+						},
+						"factory_kind": "civil",
+						"flags": [],
+						"flow": {
+							"clinic": 0.0,
+							"factory": 0.0,
+							"homes": 0.0,
+							"signal": 0.0
+						},
+						"generated_W": 1100.0,
+						"heat_J": 79200.0,
+						"heat_service": 0.0,
+						"history": [
+							{
+								"at": 0,
+								"state": {
+									"added": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"alert": false,
+									"blackout": false,
+									"cables": {
+										"clinic": "",
+										"factory": "",
+										"homes": "",
+										"signal": ""
+									},
+									"cables_received": {
+										"aluminum_wire": 0,
+										"aluminum_wire_mass": 0,
+										"copper_wire": 0,
+										"copper_wire_mass": 0
+									},
+									"cables_scrapped": {
+										"aluminum_wire": 0,
+										"aluminum_wire_mass": 0,
+										"copper_wire": 0,
+										"copper_wire_mass": 0
+									},
+									"care": 70.0,
+									"chemical_J": 0.0,
+									"completed": 0,
+									"elapsed": 0,
+									"electric_J": 0.0,
+									"enabled": true,
+									"engine": false,
+									"engine_fuel_kg": 0.0,
+									"engine_loss_J": 0.0,
+									"era": "ww2",
+									"event_done": false,
+									"factory": {
+										"active": false,
+										"kind": "civil",
+										"progress": 0.0
+									},
+									"factory_kind": "civil",
+									"flags": [],
+									"flow": {
+										"clinic": 0.0,
+										"factory": 0.0,
+										"homes": 0.0,
+										"signal": 0.0
+									},
+									"generated_W": 0.0,
+									"heat_J": 0.0,
+									"heat_service": 0.0,
+									"integrity": {
+										"clinic": 1.0,
+										"depot": 1.0,
+										"factory": 1.0,
+										"homes": 1.0,
+										"junction": 1.0,
+										"power": 1.0,
+										"signal": 1.0
+									},
+									"load_J": 0.0,
+									"model": "industrial_harbor_v1",
+									"people": [
+										{
+											"at": "depot",
+											"id": 0,
+											"progress": 0.0,
+											"role": "repair",
+											"route": [],
+											"task": "waiting"
+										},
+										{
+											"at": "depot",
+											"id": 1,
+											"progress": 0.0,
+											"role": "factory",
+											"route": [],
+											"task": "waiting"
+										},
+										{
+											"at": "depot",
+											"id": 2,
+											"progress": 0.0,
+											"role": "factory",
+											"route": [],
+											"task": "waiting"
+										},
+										{
+											"at": "depot",
+											"id": 3,
+											"progress": 0.0,
+											"role": "clinic",
+											"route": [],
+											"task": "waiting"
+										},
+										{
+											"at": "depot",
+											"id": 4,
+											"progress": 0.0,
+											"role": "signal",
+											"route": [],
+											"task": "waiting"
+										},
+										{
+											"at": "depot",
+											"id": 5,
+											"progress": 0.0,
+											"role": "homes",
+											"route": [],
+											"task": "waiting"
+										}
+									],
+									"policy": "care",
+									"produced": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"recovered_J": 0.0,
+									"recovery": false,
+									"rejected_heat_J": 0.0,
+									"repair": {
+										"progress": 0.0,
+										"target": ""
+									},
+									"repairs": true,
+									"repairs_completed": 0,
+									"repairs_started": 0,
+									"running": true,
+									"shipped": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"signal_service": 0.0,
+									"started": 0,
+									"stock": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 1.0,
+										"stock": 2.0
+									},
+									"transport_J": 0.0,
+									"transport_fuel_kg": 0.0,
+									"transport_loss_J": 0.0,
+									"truck": {
+										"amount": 0.0,
+										"kind": "civil",
+										"progress": 0.0,
+										"stage": "idle"
+									},
+									"unused_J": 0.0,
+									"used": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"useful_heat_J": 0.0,
+									"warmth": 70.0,
+									"wire_loss_J": 0.0,
+									"wire_loss_W": 0.0
+								}
+							},
+							{
+								"at": 10,
+								"state": {
+									"added": {
+										"civil": 0.0,
+										"fuel_kg": 0.05,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"alert": false,
+									"blackout": false,
+									"cables": {
+										"clinic": "",
+										"factory": "",
+										"homes": "",
+										"signal": ""
+									},
+									"cables_received": {
+										"aluminum_wire": 0,
+										"aluminum_wire_mass": 0,
+										"copper_wire": 0,
+										"copper_wire_mass": 0
+									},
+									"cables_scrapped": {
+										"aluminum_wire": 0,
+										"aluminum_wire_mass": 0,
+										"copper_wire": 0,
+										"copper_wire_mass": 0
+									},
+									"care": 68.4999999999999,
+									"chemical_J": 44000.0,
+									"completed": 0,
+									"elapsed": 10,
+									"electric_J": 11000.0,
+									"enabled": true,
+									"engine": true,
+									"engine_fuel_kg": 0.001,
+									"engine_loss_J": 6600.0,
+									"era": "ww2",
+									"event_done": false,
+									"factory": {
+										"active": false,
+										"kind": "civil",
+										"progress": 0.0
+									},
+									"factory_kind": "civil",
+									"flags": [],
+									"flow": {
+										"clinic": 0.0,
+										"factory": 0.0,
+										"homes": 0.0,
+										"signal": 0.0
+									},
+									"generated_W": 1100.0,
+									"heat_J": 26400.0,
+									"heat_service": 0.0,
+									"integrity": {
+										"clinic": 1.0,
+										"depot": 1.0,
+										"factory": 1.0,
+										"homes": 1.0,
+										"junction": 1.0,
+										"power": 1.0,
+										"signal": 1.0
+									},
+									"load_J": 0.0,
+									"model": "industrial_harbor_v1",
+									"people": [
+										{
+											"at": "depot",
+											"id": 0,
+											"progress": 0.0,
+											"role": "repair",
+											"route": [],
+											"task": "waiting"
+										},
+										{
+											"at": "depot",
+											"id": 1,
+											"progress": 0.9,
+											"role": "factory",
+											"route": [
+												"junction",
+												"factory"
+											],
+											"task": "travel"
+										},
+										{
+											"at": "depot",
+											"id": 2,
+											"progress": 0.9,
+											"role": "factory",
+											"route": [
+												"junction",
+												"factory"
+											],
+											"task": "travel"
+										},
+										{
+											"at": "depot",
+											"id": 3,
+											"progress": 0.9,
+											"role": "clinic",
+											"route": [
+												"junction",
+												"clinic"
+											],
+											"task": "travel"
+										},
+										{
+											"at": "depot",
+											"id": 4,
+											"progress": 0.9,
+											"role": "signal",
+											"route": [
+												"junction",
+												"signal"
+											],
+											"task": "travel"
+										},
+										{
+											"at": "depot",
+											"id": 5,
+											"progress": 0.9,
+											"role": "homes",
+											"route": [
+												"junction",
+												"homes"
+											],
+											"task": "travel"
+										}
+									],
+									"policy": "care",
+									"produced": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"recovered_J": 0.0,
+									"recovery": false,
+									"rejected_heat_J": 26400.0,
+									"repair": {
+										"progress": 0.0,
+										"target": ""
+									},
+									"repairs": true,
+									"repairs_completed": 0,
+									"repairs_started": 0,
+									"running": true,
+									"shipped": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"signal_service": 0.0,
+									"started": 0,
+									"stock": {
+										"civil": 0.0,
+										"fuel_kg": 0.049,
+										"military": 0.0,
+										"spares": 1.0,
+										"stock": 2.0
+									},
+									"transport_J": 0.0,
+									"transport_fuel_kg": 0.0,
+									"transport_loss_J": 0.0,
+									"truck": {
+										"amount": 0.0,
+										"kind": "civil",
+										"progress": 0.0,
+										"stage": "idle"
+									},
+									"unused_J": 11000.0,
+									"used": {
+										"civil": 0.0,
+										"fuel_kg": 0.001,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"useful_heat_J": 0.0,
+									"warmth": 68.0,
+									"wire_loss_J": 0.0,
+									"wire_loss_W": 0.0
+								}
+							},
+							{
+								"at": 20,
+								"state": {
+									"added": {
+										"civil": 0.0,
+										"fuel_kg": 0.05,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"alert": false,
+									"blackout": false,
+									"cables": {
+										"clinic": "",
+										"factory": "",
+										"homes": "",
+										"signal": ""
+									},
+									"cables_received": {
+										"aluminum_wire": 0,
+										"aluminum_wire_mass": 0,
+										"copper_wire": 0,
+										"copper_wire_mass": 0
+									},
+									"cables_scrapped": {
+										"aluminum_wire": 0,
+										"aluminum_wire_mass": 0,
+										"copper_wire": 0,
+										"copper_wire_mass": 0
+									},
+									"care": 66.9999999999999,
+									"chemical_J": 88000.0,
+									"completed": 0,
+									"elapsed": 20,
+									"electric_J": 22000.0,
+									"enabled": true,
+									"engine": true,
+									"engine_fuel_kg": 0.002,
+									"engine_loss_J": 13200.0,
+									"era": "ww2",
+									"event_done": false,
+									"factory": {
+										"active": false,
+										"kind": "civil",
+										"progress": 0.0
+									},
+									"factory_kind": "civil",
+									"flags": [],
+									"flow": {
+										"clinic": 0.0,
+										"factory": 0.0,
+										"homes": 0.0,
+										"signal": 0.0
+									},
+									"generated_W": 1100.0,
+									"heat_J": 52800.0,
+									"heat_service": 0.0,
+									"integrity": {
+										"clinic": 1.0,
+										"depot": 1.0,
+										"factory": 1.0,
+										"homes": 1.0,
+										"junction": 1.0,
+										"power": 1.0,
+										"signal": 1.0
+									},
+									"load_J": 0.0,
+									"model": "industrial_harbor_v1",
+									"people": [
+										{
+											"at": "depot",
+											"id": 0,
+											"progress": 0.0,
+											"role": "repair",
+											"route": [],
+											"task": "waiting"
+										},
+										{
+											"at": "junction",
+											"id": 1,
+											"progress": 0.9,
+											"role": "factory",
+											"route": [
+												"factory"
+											],
+											"task": "travel"
+										},
+										{
+											"at": "junction",
+											"id": 2,
+											"progress": 0.9,
+											"role": "factory",
+											"route": [
+												"factory"
+											],
+											"task": "travel"
+										},
+										{
+											"at": "junction",
+											"id": 3,
+											"progress": 0.9,
+											"role": "clinic",
+											"route": [
+												"clinic"
+											],
+											"task": "travel"
+										},
+										{
+											"at": "junction",
+											"id": 4,
+											"progress": 0.9,
+											"role": "signal",
+											"route": [
+												"signal"
+											],
+											"task": "travel"
+										},
+										{
+											"at": "junction",
+											"id": 5,
+											"progress": 0.9,
+											"role": "homes",
+											"route": [
+												"homes"
+											],
+											"task": "travel"
+										}
+									],
+									"policy": "care",
+									"produced": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"recovered_J": 0.0,
+									"recovery": false,
+									"rejected_heat_J": 52800.0,
+									"repair": {
+										"progress": 0.0,
+										"target": ""
+									},
+									"repairs": true,
+									"repairs_completed": 0,
+									"repairs_started": 0,
+									"running": true,
+									"shipped": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"signal_service": 0.0,
+									"started": 0,
+									"stock": {
+										"civil": 0.0,
+										"fuel_kg": 0.0479999999999999,
+										"military": 0.0,
+										"spares": 1.0,
+										"stock": 2.0
+									},
+									"transport_J": 0.0,
+									"transport_fuel_kg": 0.0,
+									"transport_loss_J": 0.0,
+									"truck": {
+										"amount": 0.0,
+										"kind": "civil",
+										"progress": 0.0,
+										"stage": "idle"
+									},
+									"unused_J": 22000.0,
+									"used": {
+										"civil": 0.0,
+										"fuel_kg": 0.002,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"useful_heat_J": 0.0,
+									"warmth": 65.9999999999999,
+									"wire_loss_J": 0.0,
+									"wire_loss_W": 0.0
+								}
+							},
+							{
+								"at": 30,
+								"state": {
+									"added": {
+										"civil": 0.0,
+										"fuel_kg": 0.05,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"alert": false,
+									"blackout": false,
+									"cables": {
+										"clinic": "",
+										"factory": "",
+										"homes": "",
+										"signal": ""
+									},
+									"cables_received": {
+										"aluminum_wire": 0,
+										"aluminum_wire_mass": 0,
+										"copper_wire": 0,
+										"copper_wire_mass": 0
+									},
+									"cables_scrapped": {
+										"aluminum_wire": 0,
+										"aluminum_wire_mass": 0,
+										"copper_wire": 0,
+										"copper_wire_mass": 0
+									},
+									"care": 65.4999999999998,
+									"chemical_J": 132000.0,
+									"completed": 0,
+									"elapsed": 30,
+									"electric_J": 33000.0,
+									"enabled": true,
+									"engine": true,
+									"engine_fuel_kg": 0.003,
+									"engine_loss_J": 19800.0,
+									"era": "ww2",
+									"event_done": false,
+									"factory": {
+										"active": false,
+										"kind": "civil",
+										"progress": 0.0
+									},
+									"factory_kind": "civil",
+									"flags": [],
+									"flow": {
+										"clinic": 0.0,
+										"factory": 0.0,
+										"homes": 0.0,
+										"signal": 0.0
+									},
+									"generated_W": 1100.0,
+									"heat_J": 79200.0,
+									"heat_service": 0.0,
+									"integrity": {
+										"clinic": 1.0,
+										"depot": 1.0,
+										"factory": 1.0,
+										"homes": 1.0,
+										"junction": 1.0,
+										"power": 1.0,
+										"signal": 1.0
+									},
+									"load_J": 0.0,
+									"model": "industrial_harbor_v1",
+									"people": [
+										{
+											"at": "depot",
+											"id": 0,
+											"progress": 0.0,
+											"role": "repair",
+											"route": [],
+											"task": "waiting"
+										},
+										{
+											"at": "factory",
+											"id": 1,
+											"progress": 0.0,
+											"role": "factory",
+											"route": [],
+											"task": "work"
+										},
+										{
+											"at": "factory",
+											"id": 2,
+											"progress": 0.0,
+											"role": "factory",
+											"route": [],
+											"task": "work"
+										},
+										{
+											"at": "clinic",
+											"id": 3,
+											"progress": 0.0,
+											"role": "clinic",
+											"route": [],
+											"task": "work"
+										},
+										{
+											"at": "signal",
+											"id": 4,
+											"progress": 0.0,
+											"role": "signal",
+											"route": [],
+											"task": "work"
+										},
+										{
+											"at": "homes",
+											"id": 5,
+											"progress": 0.0,
+											"role": "homes",
+											"route": [],
+											"task": "work"
+										}
+									],
+									"policy": "care",
+									"produced": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"recovered_J": 0.0,
+									"recovery": false,
+									"rejected_heat_J": 79200.0,
+									"repair": {
+										"progress": 0.0,
+										"target": ""
+									},
+									"repairs": true,
+									"repairs_completed": 0,
+									"repairs_started": 0,
+									"running": true,
+									"shipped": {
+										"civil": 0.0,
+										"fuel_kg": 0.0,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"signal_service": 0.0,
+									"started": 0,
+									"stock": {
+										"civil": 0.0,
+										"fuel_kg": 0.0469999999999999,
+										"military": 0.0,
+										"spares": 1.0,
+										"stock": 2.0
+									},
+									"transport_J": 0.0,
+									"transport_fuel_kg": 0.0,
+									"transport_loss_J": 0.0,
+									"truck": {
+										"amount": 0.0,
+										"kind": "civil",
+										"progress": 0.0,
+										"stage": "idle"
+									},
+									"unused_J": 33000.0,
+									"used": {
+										"civil": 0.0,
+										"fuel_kg": 0.003,
+										"military": 0.0,
+										"spares": 0.0,
+										"stock": 0.0
+									},
+									"useful_heat_J": 0.0,
+									"warmth": 63.9999999999999,
+									"wire_loss_J": 0.0,
+									"wire_loss_W": 0.0
+								}
+							}
+						],
+						"integrity": {
+							"clinic": 1.0,
+							"depot": 1.0,
+							"factory": 1.0,
+							"homes": 1.0,
+							"junction": 1.0,
+							"power": 1.0,
+							"signal": 1.0
+						},
+						"load_J": 0.0,
+						"model": "industrial_harbor_v1",
+						"people": [
+							{
+								"at": "depot",
+								"id": 0,
+								"progress": 0.0,
+								"role": "repair",
+								"route": [],
+								"task": "waiting"
+							},
+							{
+								"at": "factory",
+								"id": 1,
+								"progress": 0.0,
+								"role": "factory",
+								"route": [],
+								"task": "work"
+							},
+							{
+								"at": "factory",
+								"id": 2,
+								"progress": 0.0,
+								"role": "factory",
+								"route": [],
+								"task": "work"
+							},
+							{
+								"at": "clinic",
+								"id": 3,
+								"progress": 0.0,
+								"role": "clinic",
+								"route": [],
+								"task": "work"
+							},
+							{
+								"at": "signal",
+								"id": 4,
+								"progress": 0.0,
+								"role": "signal",
+								"route": [],
+								"task": "work"
+							},
+							{
+								"at": "homes",
+								"id": 5,
+								"progress": 0.0,
+								"role": "homes",
+								"route": [],
+								"task": "work"
+							}
+						],
+						"policy": "care",
+						"produced": {
+							"civil": 0.0,
+							"fuel_kg": 0.0,
+							"military": 0.0,
+							"spares": 0.0,
+							"stock": 0.0
+						},
+						"recovered_J": 0.0,
+						"recovery": false,
+						"rejected_heat_J": 79200.0,
+						"repair": {
+							"progress": 0.0,
+							"target": ""
+						},
+						"repairs": true,
+						"repairs_completed": 0,
+						"repairs_started": 0,
+						"running": true,
+						"shipped": {
+							"civil": 0.0,
+							"fuel_kg": 0.0,
+							"military": 0.0,
+							"spares": 0.0,
+							"stock": 0.0
+						},
+						"signal_service": 0.0,
+						"started": 0,
+						"stock": {
+							"civil": 0.0,
+							"fuel_kg": 0.0469999999999999,
+							"military": 0.0,
+							"spares": 1.0,
+							"stock": 2.0
+						},
+						"transport_J": 0.0,
+						"transport_fuel_kg": 0.0,
+						"transport_loss_J": 0.0,
+						"truck": {
+							"amount": 0.0,
+							"kind": "civil",
+							"progress": 0.0,
+							"stage": "idle"
+						},
+						"unused_J": 33000.0,
+						"used": {
+							"civil": 0.0,
+							"fuel_kg": 0.003,
+							"military": 0.0,
+							"spares": 0.0,
+							"stock": 0.0
+						},
+						"useful_heat_J": 0.0,
+						"warmth": 63.9999999999999,
+						"wire_loss_J": 0.0,
+						"wire_loss_W": 0.0
+					},
+					"observation": false,
+					"seconds": 30,
+					"seed": 9192026,
+					"village": {
+						"active_project": "",
+						"added": {
+							"drink": 0.0,
+							"food": 0.0,
+							"frames": 0.0,
+							"goods": 0.0,
+							"grain": 0.0,
+							"tools": 0.0,
+							"water": 0.0
+						},
+						"completed": {
+							"craft": 0,
+							"drink": 0,
+							"eat": 0,
+							"farm": 0,
+							"mill": 0
+						},
+						"diversion": 0.5,
+						"elapsed": 0,
+						"enabled": false,
+						"era": "weald_1400",
+						"exported": {
+							"drink": 0.0,
+							"food": 0.0,
+							"frames": 0.0,
+							"goods": 0.0,
+							"grain": 0.0,
+							"tools": 0.0,
+							"water": 0.0
+						},
+						"flags": [],
+						"history": [
+							{
+								"at": 0,
+								"state": {
+									"active_project": "",
+									"added": {
+										"drink": 0.0,
+										"food": 0.0,
+										"frames": 0.0,
+										"goods": 0.0,
+										"grain": 0.0,
+										"tools": 0.0,
+										"water": 0.0
+									},
+									"completed": {
+										"craft": 0,
+										"drink": 0,
+										"eat": 0,
+										"farm": 0,
+										"mill": 0
+									},
+									"diversion": 0.5,
+									"elapsed": 0,
+									"enabled": false,
+									"era": "weald_1400",
+									"exported": {
+										"drink": 0.0,
+										"food": 0.0,
+										"frames": 0.0,
+										"goods": 0.0,
+										"grain": 0.0,
+										"tools": 0.0,
+										"water": 0.0
+									},
+									"flags": [],
+									"mill_running": false,
+									"model": "village_teaching_v1",
+									"passage": 100.0,
+									"people": [
+										{
+											"at": "home",
+											"cargo": {},
+											"fraction": 0.0,
+											"hunger": 0.0,
+											"id": 0,
+											"load": {},
+											"project": "",
+											"route": [],
+											"stage": "idle",
+											"target": "home",
+											"task": "",
+											"thirst": 0.0,
+											"work": 0.0
+										},
+										{
+											"at": "home",
+											"cargo": {},
+											"fraction": 0.0,
+											"hunger": 2.0,
+											"id": 1,
+											"load": {},
+											"project": "",
+											"route": [],
+											"stage": "idle",
+											"target": "home",
+											"task": "",
+											"thirst": 3.0,
+											"work": 0.0
+										},
+										{
+											"at": "home",
+											"cargo": {},
+											"fraction": 0.0,
+											"hunger": 4.0,
+											"id": 2,
+											"load": {},
+											"project": "",
+											"route": [],
+											"stage": "idle",
+											"target": "home",
+											"task": "",
+											"thirst": 6.0,
+											"work": 0.0
+										},
+										{
+											"at": "home",
+											"cargo": {},
+											"fraction": 0.0,
+											"hunger": 6.0,
+											"id": 3,
+											"load": {},
+											"project": "",
+											"route": [],
+											"stage": "idle",
+											"target": "home",
+											"task": "",
+											"thirst": 9.0,
+											"work": 0.0
+										},
+										{
+											"at": "home",
+											"cargo": {},
+											"fraction": 0.0,
+											"hunger": 8.0,
+											"id": 4,
+											"load": {},
+											"project": "",
+											"route": [],
+											"stage": "idle",
+											"target": "home",
+											"task": "",
+											"thirst": 12.0,
+											"work": 0.0
+										},
+										{
+											"at": "home",
+											"cargo": {},
+											"fraction": 0.0,
+											"hunger": 10.0,
+											"id": 5,
+											"load": {},
+											"project": "",
+											"route": [],
+											"stage": "idle",
+											"target": "home",
+											"task": "",
+											"thirst": 15.0,
+											"work": 0.0
+										}
+									],
+									"policy": "care",
+									"produced": {
+										"drink": 0.0,
+										"food": 0.0,
+										"frames": 0.0,
+										"goods": 0.0,
+										"grain": 0.0,
+										"tools": 0.0,
+										"water": 0.0
+									},
+									"projects": {
+										"cistern": {
+											"approved": true,
+											"committed": false,
+											"complete": false,
+											"paused": false,
+											"progress": 0.0
+										},
+										"market": {
+											"approved": false,
+											"committed": false,
+											"complete": false,
+											"paused": false,
+											"progress": 0.0
+										},
+										"mill": {
+											"approved": false,
+											"committed": false,
+											"complete": false,
+											"paused": false,
+											"progress": 0.0
+										},
+										"road": {
+											"approved": true,
+											"committed": false,
+											"complete": false,
+											"paused": false,
+											"progress": 0.0
+										}
+									},
+									"spring": 24.0,
+									"spring_overflow": 0.0,
+									"spring_taken": 0.0,
+									"started": {
+										"craft": 0,
+										"drink": 0,
+										"eat": 0,
+										"farm": 0,
+										"mill": 0
+									},
+									"stock": {
+										"drink": 14.0,
+										"food": 8.0,
+										"frames": 0.0,
+										"goods": 0.0,
+										"grain": 10.0,
+										"tools": 6.0,
+										"water": 16.0
+									},
+									"trade_clock": 0,
+									"trades": 0,
+									"used": {
+										"drink": 0.0,
+										"food": 0.0,
+										"frames": 0.0,
+										"goods": 0.0,
+										"grain": 0.0,
+										"tools": 0.0,
+										"water": 0.0
+									}
+								}
+							}
+						],
+						"mill_running": false,
+						"model": "village_teaching_v1",
+						"passage": 100.0,
+						"people": [
+							{
+								"at": "home",
+								"cargo": {},
+								"fraction": 0.0,
+								"hunger": 0.0,
+								"id": 0,
+								"load": {},
+								"project": "",
+								"route": [],
+								"stage": "idle",
+								"target": "home",
+								"task": "",
+								"thirst": 0.0,
+								"work": 0.0
+							},
+							{
+								"at": "home",
+								"cargo": {},
+								"fraction": 0.0,
+								"hunger": 2.0,
+								"id": 1,
+								"load": {},
+								"project": "",
+								"route": [],
+								"stage": "idle",
+								"target": "home",
+								"task": "",
+								"thirst": 3.0,
+								"work": 0.0
+							},
+							{
+								"at": "home",
+								"cargo": {},
+								"fraction": 0.0,
+								"hunger": 4.0,
+								"id": 2,
+								"load": {},
+								"project": "",
+								"route": [],
+								"stage": "idle",
+								"target": "home",
+								"task": "",
+								"thirst": 6.0,
+								"work": 0.0
+							},
+							{
+								"at": "home",
+								"cargo": {},
+								"fraction": 0.0,
+								"hunger": 6.0,
+								"id": 3,
+								"load": {},
+								"project": "",
+								"route": [],
+								"stage": "idle",
+								"target": "home",
+								"task": "",
+								"thirst": 9.0,
+								"work": 0.0
+							},
+							{
+								"at": "home",
+								"cargo": {},
+								"fraction": 0.0,
+								"hunger": 8.0,
+								"id": 4,
+								"load": {},
+								"project": "",
+								"route": [],
+								"stage": "idle",
+								"target": "home",
+								"task": "",
+								"thirst": 12.0,
+								"work": 0.0
+							},
+							{
+								"at": "home",
+								"cargo": {},
+								"fraction": 0.0,
+								"hunger": 10.0,
+								"id": 5,
+								"load": {},
+								"project": "",
+								"route": [],
+								"stage": "idle",
+								"target": "home",
+								"task": "",
+								"thirst": 15.0,
+								"work": 0.0
+							}
+						],
+						"policy": "care",
+						"produced": {
+							"drink": 0.0,
+							"food": 0.0,
+							"frames": 0.0,
+							"goods": 0.0,
+							"grain": 0.0,
+							"tools": 0.0,
+							"water": 0.0
+						},
+						"projects": {
+							"cistern": {
+								"approved": true,
+								"committed": false,
+								"complete": false,
+								"paused": false,
+								"progress": 0.0
+							},
+							"market": {
+								"approved": false,
+								"committed": false,
+								"complete": false,
+								"paused": false,
+								"progress": 0.0
+							},
+							"mill": {
+								"approved": false,
+								"committed": false,
+								"complete": false,
+								"paused": false,
+								"progress": 0.0
+							},
+							"road": {
+								"approved": true,
+								"committed": false,
+								"complete": false,
+								"paused": false,
+								"progress": 0.0
+							}
+						},
+						"spring": 24.0,
+						"spring_overflow": 0.0,
+						"spring_taken": 0.0,
+						"started": {
+							"craft": 0,
+							"drink": 0,
+							"eat": 0,
+							"farm": 0,
+							"mill": 0
+						},
+						"stock": {
+							"drink": 14.0,
+							"food": 8.0,
+							"frames": 0.0,
+							"goods": 0.0,
+							"grain": 10.0,
+							"tools": 6.0,
+							"water": 16.0
+						},
+						"trade_clock": 0,
+						"trades": 0,
+						"used": {
+							"drink": 0.0,
+							"food": 0.0,
+							"frames": 0.0,
+							"goods": 0.0,
+							"grain": 0.0,
+							"tools": 0.0,
+							"water": 0.0
+						}
+					},
+					"watershed": {
+						"added": 0.0,
+						"bypass": false,
+						"dead": 0.0,
+						"elapsed": 0,
+						"enabled": false,
+						"era": "devonian",
+						"exported": 0.0,
+						"history": [
+							{
+								"at": 0,
+								"state": {
+									"added": 0.0,
+									"bypass": false,
+									"dead": 0.0,
+									"elapsed": 0,
+									"enabled": false,
+									"era": "devonian",
+									"exported": 0.0,
+									"migration_open": true,
+									"model": "watershed_teaching_v1",
+									"refuge": 24.0,
+									"regions": {
+										"estuary": {
+											"algae": 4.0,
+											"benthos": 10.0,
+											"buffer": false,
+											"component": {},
+											"cooling": false,
+											"detritus": 3.0,
+											"device": false,
+											"enabled": true,
+											"energy": 0.0,
+											"fish": 12.0,
+											"flags": [],
+											"flow": 1.0,
+											"flush": 0,
+											"gas": 0.0,
+											"harvest": {},
+											"harvest_target": "algae",
+											"heat": 0.0,
+											"loaded": 0.0,
+											"nutrient": 2.0,
+											"oxygen": 82.0,
+											"plants": 2.0,
+											"retained": 0.0,
+											"screen": false,
+											"screen_charges": 0,
+											"screen_discarded": 0.0,
+											"screen_enabled": true,
+											"screen_energy": 0.0,
+											"screen_loaded": false,
+											"screen_used": 0.0,
+											"stress": 0,
+											"trips": 0,
+											"used": 0.0
+										},
+										"headwater": {
+											"algae": 3.0,
+											"benthos": 10.0,
+											"buffer": false,
+											"component": {},
+											"cooling": false,
+											"detritus": 2.0,
+											"device": false,
+											"enabled": true,
+											"energy": 0.0,
+											"fish": 6.0,
+											"flags": [],
+											"flow": 1.0,
+											"flush": 0,
+											"gas": 0.0,
+											"harvest": {},
+											"harvest_target": "algae",
+											"heat": 0.0,
+											"loaded": 0.0,
+											"nutrient": 8.0,
+											"oxygen": 82.0,
+											"plants": 2.0,
+											"retained": 0.0,
+											"screen": false,
+											"screen_charges": 0,
+											"screen_discarded": 0.0,
+											"screen_enabled": true,
+											"screen_energy": 0.0,
+											"screen_loaded": false,
+											"screen_used": 0.0,
+											"stress": 0,
+											"trips": 0,
+											"used": 0.0
+										},
+										"marsh": {
+											"algae": 5.0,
+											"benthos": 10.0,
+											"buffer": false,
+											"component": {},
+											"cooling": false,
+											"detritus": 4.0,
+											"device": false,
+											"enabled": true,
+											"energy": 0.0,
+											"fish": 10.0,
+											"flags": [],
+											"flow": 1.0,
+											"flush": 0,
+											"gas": 0.0,
+											"harvest": {},
+											"harvest_target": "algae",
+											"heat": 0.0,
+											"loaded": 0.0,
+											"nutrient": 4.0,
+											"oxygen": 82.0,
+											"plants": 12.0,
+											"retained": 0.0,
+											"screen": false,
+											"screen_charges": 0,
+											"screen_discarded": 0.0,
+											"screen_enabled": true,
+											"screen_energy": 0.0,
+											"screen_loaded": false,
+											"screen_used": 0.0,
+											"stress": 0,
+											"trips": 0,
+											"used": 0.0
+										}
+									},
+									"source": 150.0,
+									"source_open": true,
+									"waste": 0.0
+								}
+							}
+						],
+						"migration_open": true,
+						"model": "watershed_teaching_v1",
+						"refuge": 24.0,
+						"regions": {
+							"estuary": {
+								"algae": 4.0,
+								"benthos": 10.0,
+								"buffer": false,
+								"component": {},
+								"cooling": false,
+								"detritus": 3.0,
+								"device": false,
+								"enabled": true,
+								"energy": 0.0,
+								"fish": 12.0,
+								"flags": [],
+								"flow": 1.0,
+								"flush": 0,
+								"gas": 0.0,
+								"harvest": {},
+								"harvest_target": "algae",
+								"heat": 0.0,
+								"loaded": 0.0,
+								"nutrient": 2.0,
+								"oxygen": 82.0,
+								"plants": 2.0,
+								"retained": 0.0,
+								"screen": false,
+								"screen_charges": 0,
+								"screen_discarded": 0.0,
+								"screen_enabled": true,
+								"screen_energy": 0.0,
+								"screen_loaded": false,
+								"screen_used": 0.0,
+								"stress": 0,
+								"trips": 0,
+								"used": 0.0
+							},
+							"headwater": {
+								"algae": 3.0,
+								"benthos": 10.0,
+								"buffer": false,
+								"component": {},
+								"cooling": false,
+								"detritus": 2.0,
+								"device": false,
+								"enabled": true,
+								"energy": 0.0,
+								"fish": 6.0,
+								"flags": [],
+								"flow": 1.0,
+								"flush": 0,
+								"gas": 0.0,
+								"harvest": {},
+								"harvest_target": "algae",
+								"heat": 0.0,
+								"loaded": 0.0,
+								"nutrient": 8.0,
+								"oxygen": 82.0,
+								"plants": 2.0,
+								"retained": 0.0,
+								"screen": false,
+								"screen_charges": 0,
+								"screen_discarded": 0.0,
+								"screen_enabled": true,
+								"screen_energy": 0.0,
+								"screen_loaded": false,
+								"screen_used": 0.0,
+								"stress": 0,
+								"trips": 0,
+								"used": 0.0
+							},
+							"marsh": {
+								"algae": 5.0,
+								"benthos": 10.0,
+								"buffer": false,
+								"component": {},
+								"cooling": false,
+								"detritus": 4.0,
+								"device": false,
+								"enabled": true,
+								"energy": 0.0,
+								"fish": 10.0,
+								"flags": [],
+								"flow": 1.0,
+								"flush": 0,
+								"gas": 0.0,
+								"harvest": {},
+								"harvest_target": "algae",
+								"heat": 0.0,
+								"loaded": 0.0,
+								"nutrient": 4.0,
+								"oxygen": 82.0,
+								"plants": 12.0,
+								"retained": 0.0,
+								"screen": false,
+								"screen_charges": 0,
+								"screen_discarded": 0.0,
+								"screen_enabled": true,
+								"screen_energy": 0.0,
+								"screen_loaded": false,
+								"screen_used": 0.0,
+								"stress": 0,
+								"trips": 0,
+								"used": 0.0
+							}
+						},
+						"source": 150.0,
+						"source_open": true,
+						"waste": 0.0
+					},
+					"zones": [
+						{
+							"id": "deep",
+							"target": 0,
+							"water": 0.0
+						},
+						{
+							"id": "shelf",
+							"target": 0,
+							"water": 0.0
+						}
+					]
+				},
+				"base_key": "8f605927118610d824fe509a9242fa008594d3c2cd63c6b2079d070cf0464ef8",
+				"eco_allowance": {
+					"aluminum_compact": 2.0,
+					"aluminum_light": 2.0,
+					"aluminum_wire": 4.0,
+					"aluminum_wire_mass": 4.0,
+					"buffer_raft": 3.0,
+					"copper_compact": 2.0,
+					"copper_light": 2.0,
+					"copper_wire": 4.0,
+					"copper_wire_mass": 4.0,
+					"drinking_barrel": 4.0,
+					"frame_bundle": 3.0,
+					"fuel_can": 4.0,
+					"generator_set": 1.0,
+					"habitat_bridge": 2.0,
+					"harvest_box": 6.0,
+					"heat_recovery": 1.0,
+					"industry_stock": 2.0,
+					"oxygen_cartridge": 4.0,
+					"oxygen_station": 2.0,
+					"repair_crate": 2.0,
+					"runoff_feed": 2.0,
+					"screen_cartridge": 6.0,
+					"screen_station": 3.0,
+					"shade_canopy": 2.0,
+					"tool_chest": 3.0
+				},
+				"ecology": {
+					"history": [
+						{
+							"at": 0,
+							"regions": {
+								"fish": {
+									"bay": 6.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 18.0,
+									"oxygen": 8.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 4.0,
+									"refuge": 18.0,
+									"sealed": true,
+									"sensitive": 80.0,
+									"tolerant": 20.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 5,
+							"regions": {
+								"fish": {
+									"bay": 3.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 21.0,
+									"oxygen": 3.0,
+									"stress": 5,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.5,
+									"refuge": 18.1,
+									"sealed": true,
+									"sensitive": 80.5,
+									"tolerant": 19.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 10,
+							"regions": {
+								"fish": {
+									"bay": 0.000000000000000666133814775094,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 24.0,
+									"oxygen": 0.0,
+									"stress": 10,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.2,
+									"sealed": true,
+									"sensitive": 81.0,
+									"tolerant": 19.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 15,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 24.0,
+									"oxygen": 0.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.3,
+									"sealed": true,
+									"sensitive": 81.5,
+									"tolerant": 18.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 20,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 24.0,
+									"oxygen": 0.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.4,
+									"sealed": true,
+									"sensitive": 82.0,
+									"tolerant": 18.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 25,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 24.0,
+									"oxygen": 0.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.5,
+									"sealed": true,
+									"sensitive": 82.5,
+									"tolerant": 17.5,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 30,
+							"regions": {
+								"fish": {
+									"bay": 0.0,
+									"component": {},
+									"cooling": false,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"outer": 24.0,
+									"oxygen": 0.0,
+									"stress": 0,
+									"trips": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"component": {},
+									"cooling": false,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"heat": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.6,
+									"sealed": true,
+									"sensitive": 83.0,
+									"tolerant": 17.0,
+									"trips": 0,
+									"used": 0.0
+								}
+							}
+						}
+					],
+					"model": "oxygen_teaching_v1",
+					"regions": {
+						"fish": {
+							"bay": 0.0,
+							"component": {},
+							"cooling": false,
+							"dead": 0.0,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"flags": [
+								"leave"
+							],
+							"flow": 1.0,
+							"gas": 0.0,
+							"gate_open": true,
+							"heat": 0.0,
+							"loaded": 0.0,
+							"outer": 24.0,
+							"oxygen": 0.0,
+							"stress": 0,
+							"trips": 0,
+							"used": 0.0
+						},
+						"microbe": {
+							"component": {},
+							"cooling": false,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"flags": [],
+							"flow": 1.0,
+							"gas": 0.0,
+							"heat": 0.0,
+							"loaded": 0.0,
+							"oxygen": 0.0,
+							"refuge": 18.6,
+							"sealed": true,
+							"sensitive": 83.0,
+							"tolerant": 17.0,
+							"trips": 0,
+							"used": 0.0
+						}
+					},
+					"thermal_model": "device_heat_v1"
+				},
+				"event_serial": 1,
+				"events": [
+					{
+						"at": 30,
+						"id": 1,
+						"kind": "fork",
+						"message": "同起点试验已就绪 · 先选择干预，再开始观察",
+						"shipment": 0
+					}
+				],
+				"fraction": 0.0,
+				"habitat": {
+					"animals": [
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "fern",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 16.0,
+							"id": 0,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "triceratops",
+							"thirst": 12.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "fern",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 17.0,
+							"id": 1,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "triceratops",
+							"thirst": 13.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "fern",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 18.0,
+							"id": 2,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "triceratops",
+							"thirst": 14.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "lagoon",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 19.0,
+							"id": 3,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "triceratops",
+							"thirst": 15.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "wood",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 20.0,
+							"id": 4,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "edmontosaurus",
+							"thirst": 16.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "wood",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 21.0,
+							"id": 5,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "edmontosaurus",
+							"thirst": 17.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "lagoon",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 22.0,
+							"id": 6,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "edmontosaurus",
+							"thirst": 18.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "fern",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 23.0,
+							"id": 7,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "edmontosaurus",
+							"thirst": 19.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "wood",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 24.0,
+							"id": 8,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "tyrannosaurus",
+							"thirst": 20.0,
+							"to": ""
+						},
+						{
+							"action": "rest",
+							"alive": true,
+							"at": "lagoon",
+							"cause": "",
+							"cooldown": 0,
+							"edge": "",
+							"health": 100.0,
+							"hunger": 25.0,
+							"id": 9,
+							"journeys": 0,
+							"progress": 0.0,
+							"species": "tyrannosaurus",
+							"thirst": 21.0,
+							"to": ""
+						}
+					],
+					"edges": {
+						"fern_lagoon": {
+							"built": true,
+							"open": true
+						},
+						"fern_ridge": {
+							"built": false,
+							"open": false
+						},
+						"lagoon_wood": {
+							"built": true,
+							"open": true
+						},
+						"wood_ridge": {
+							"built": false,
+							"open": false
+						}
+					},
+					"elapsed": 0,
+					"enabled": false,
+					"era": "creta_hell_creek",
+					"flags": [],
+					"history": [
+						{
+							"at": 0,
+							"state": {
+								"animals": [
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "fern",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 16.0,
+										"id": 0,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "triceratops",
+										"thirst": 12.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "fern",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 17.0,
+										"id": 1,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "triceratops",
+										"thirst": 13.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "fern",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 18.0,
+										"id": 2,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "triceratops",
+										"thirst": 14.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "lagoon",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 19.0,
+										"id": 3,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "triceratops",
+										"thirst": 15.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "wood",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 20.0,
+										"id": 4,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "edmontosaurus",
+										"thirst": 16.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "wood",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 21.0,
+										"id": 5,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "edmontosaurus",
+										"thirst": 17.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "lagoon",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 22.0,
+										"id": 6,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "edmontosaurus",
+										"thirst": 18.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "fern",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 23.0,
+										"id": 7,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "edmontosaurus",
+										"thirst": 19.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "wood",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 24.0,
+										"id": 8,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "tyrannosaurus",
+										"thirst": 20.0,
+										"to": ""
+									},
+									{
+										"action": "rest",
+										"alive": true,
+										"at": "lagoon",
+										"cause": "",
+										"cooldown": 0,
+										"edge": "",
+										"health": 100.0,
+										"hunger": 25.0,
+										"id": 9,
+										"journeys": 0,
+										"progress": 0.0,
+										"species": "tyrannosaurus",
+										"thirst": 21.0,
+										"to": ""
+									}
+								],
+								"edges": {
+									"fern_lagoon": {
+										"built": true,
+										"open": true
+									},
+									"fern_ridge": {
+										"built": false,
+										"open": false
+									},
+									"lagoon_wood": {
+										"built": true,
+										"open": true
+									},
+									"wood_ridge": {
+										"built": false,
+										"open": false
+									}
+								},
+								"elapsed": 0,
+								"enabled": false,
+								"era": "creta_hell_creek",
+								"flags": [],
+								"kills": 0,
+								"migrations": 0,
+								"model": "hell_creek_habitat_v1",
+								"regions": {
+									"fern": {
+										"added": 0.0,
+										"carrion": 0.0,
+										"decayed": 0.0,
+										"drunk": 0.0,
+										"evaporated": 0.0,
+										"grazed": 0.0,
+										"grown": 0.0,
+										"growth_water": 0.0,
+										"overflow": 0.0,
+										"plants": 72.0,
+										"rain": 0.0,
+										"remains": 0.0,
+										"scavenged": 0.0,
+										"shade": false,
+										"water": 22.0,
+										"wilted": 0.0
+									},
+									"lagoon": {
+										"added": 0.0,
+										"carrion": 0.0,
+										"decayed": 0.0,
+										"drunk": 0.0,
+										"evaporated": 0.0,
+										"grazed": 0.0,
+										"grown": 0.0,
+										"growth_water": 0.0,
+										"overflow": 0.0,
+										"plants": 38.0,
+										"rain": 0.0,
+										"remains": 0.0,
+										"scavenged": 0.0,
+										"shade": false,
+										"water": 95.0,
+										"wilted": 0.0
+									},
+									"ridge": {
+										"added": 0.0,
+										"carrion": 0.0,
+										"decayed": 0.0,
+										"drunk": 0.0,
+										"evaporated": 0.0,
+										"grazed": 0.0,
+										"grown": 0.0,
+										"growth_water": 0.0,
+										"overflow": 0.0,
+										"plants": 100.0,
+										"rain": 0.0,
+										"remains": 0.0,
+										"scavenged": 0.0,
+										"shade": false,
+										"water": 70.0,
+										"wilted": 0.0
+									},
+									"wood": {
+										"added": 0.0,
+										"carrion": 0.0,
+										"decayed": 0.0,
+										"drunk": 0.0,
+										"evaporated": 0.0,
+										"grazed": 0.0,
+										"grown": 0.0,
+										"growth_water": 0.0,
+										"overflow": 0.0,
+										"plants": 90.0,
+										"rain": 0.0,
+										"remains": 0.0,
+										"scavenged": 0.0,
+										"shade": false,
+										"water": 30.0,
+										"wilted": 0.0
+									}
+								}
+							}
+						}
+					],
+					"kills": 0,
+					"migrations": 0,
+					"model": "hell_creek_habitat_v1",
+					"regions": {
+						"fern": {
+							"added": 0.0,
+							"carrion": 0.0,
+							"decayed": 0.0,
+							"drunk": 0.0,
+							"evaporated": 0.0,
+							"grazed": 0.0,
+							"grown": 0.0,
+							"growth_water": 0.0,
+							"overflow": 0.0,
+							"plants": 72.0,
+							"rain": 0.0,
+							"remains": 0.0,
+							"scavenged": 0.0,
+							"shade": false,
+							"water": 22.0,
+							"wilted": 0.0
+						},
+						"lagoon": {
+							"added": 0.0,
+							"carrion": 0.0,
+							"decayed": 0.0,
+							"drunk": 0.0,
+							"evaporated": 0.0,
+							"grazed": 0.0,
+							"grown": 0.0,
+							"growth_water": 0.0,
+							"overflow": 0.0,
+							"plants": 38.0,
+							"rain": 0.0,
+							"remains": 0.0,
+							"scavenged": 0.0,
+							"shade": false,
+							"water": 95.0,
+							"wilted": 0.0
+						},
+						"ridge": {
+							"added": 0.0,
+							"carrion": 0.0,
+							"decayed": 0.0,
+							"drunk": 0.0,
+							"evaporated": 0.0,
+							"grazed": 0.0,
+							"grown": 0.0,
+							"growth_water": 0.0,
+							"overflow": 0.0,
+							"plants": 100.0,
+							"rain": 0.0,
+							"remains": 0.0,
+							"scavenged": 0.0,
+							"shade": false,
+							"water": 70.0,
+							"wilted": 0.0
+						},
+						"wood": {
+							"added": 0.0,
+							"carrion": 0.0,
+							"decayed": 0.0,
+							"drunk": 0.0,
+							"evaporated": 0.0,
+							"grazed": 0.0,
+							"grown": 0.0,
+							"growth_water": 0.0,
+							"overflow": 0.0,
+							"plants": 90.0,
+							"rain": 0.0,
+							"remains": 0.0,
+							"scavenged": 0.0,
+							"shade": false,
+							"water": 30.0,
+							"wilted": 0.0
+						}
+					}
+				},
+				"id": "trial_a",
+				"industry": {
+					"added": {
+						"civil": 0.0,
+						"fuel_kg": 0.05,
+						"military": 0.0,
+						"spares": 0.0,
+						"stock": 0.0
+					},
+					"alert": false,
+					"blackout": false,
+					"cables": {
+						"clinic": "",
+						"factory": "",
+						"homes": "",
+						"signal": ""
+					},
+					"cables_received": {
+						"aluminum_wire": 0,
+						"aluminum_wire_mass": 0,
+						"copper_wire": 0,
+						"copper_wire_mass": 0
+					},
+					"cables_scrapped": {
+						"aluminum_wire": 0,
+						"aluminum_wire_mass": 0,
+						"copper_wire": 0,
+						"copper_wire_mass": 0
+					},
+					"care": 65.4999999999998,
+					"chemical_J": 132000.0,
+					"completed": 0,
+					"elapsed": 30,
+					"electric_J": 33000.0,
+					"enabled": true,
+					"engine": true,
+					"engine_fuel_kg": 0.003,
+					"engine_loss_J": 19800.0,
+					"era": "ww2",
+					"event_done": false,
+					"factory": {
+						"active": false,
+						"kind": "civil",
+						"progress": 0.0
+					},
+					"factory_kind": "civil",
+					"flags": [],
+					"flow": {
+						"clinic": 0.0,
+						"factory": 0.0,
+						"homes": 0.0,
+						"signal": 0.0
+					},
+					"generated_W": 1100.0,
+					"heat_J": 79200.0,
+					"heat_service": 0.0,
+					"history": [
+						{
+							"at": 0,
+							"state": {
+								"added": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"alert": false,
+								"blackout": false,
+								"cables": {
+									"clinic": "",
+									"factory": "",
+									"homes": "",
+									"signal": ""
+								},
+								"cables_received": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"cables_scrapped": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"care": 70.0,
+								"chemical_J": 0.0,
+								"completed": 0,
+								"elapsed": 0,
+								"electric_J": 0.0,
+								"enabled": true,
+								"engine": false,
+								"engine_fuel_kg": 0.0,
+								"engine_loss_J": 0.0,
+								"era": "ww2",
+								"event_done": false,
+								"factory": {
+									"active": false,
+									"kind": "civil",
+									"progress": 0.0
+								},
+								"factory_kind": "civil",
+								"flags": [],
+								"flow": {
+									"clinic": 0.0,
+									"factory": 0.0,
+									"homes": 0.0,
+									"signal": 0.0
+								},
+								"generated_W": 0.0,
+								"heat_J": 0.0,
+								"heat_service": 0.0,
+								"integrity": {
+									"clinic": 1.0,
+									"depot": 1.0,
+									"factory": 1.0,
+									"homes": 1.0,
+									"junction": 1.0,
+									"power": 1.0,
+									"signal": 1.0
+								},
+								"load_J": 0.0,
+								"model": "industrial_harbor_v1",
+								"people": [
+									{
+										"at": "depot",
+										"id": 0,
+										"progress": 0.0,
+										"role": "repair",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 1,
+										"progress": 0.0,
+										"role": "factory",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 2,
+										"progress": 0.0,
+										"role": "factory",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 3,
+										"progress": 0.0,
+										"role": "clinic",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 4,
+										"progress": 0.0,
+										"role": "signal",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 5,
+										"progress": 0.0,
+										"role": "homes",
+										"route": [],
+										"task": "waiting"
+									}
+								],
+								"policy": "care",
+								"produced": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"recovered_J": 0.0,
+								"recovery": false,
+								"rejected_heat_J": 0.0,
+								"repair": {
+									"progress": 0.0,
+									"target": ""
+								},
+								"repairs": true,
+								"repairs_completed": 0,
+								"repairs_started": 0,
+								"running": true,
+								"shipped": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"signal_service": 0.0,
+								"started": 0,
+								"stock": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 1.0,
+									"stock": 2.0
+								},
+								"transport_J": 0.0,
+								"transport_fuel_kg": 0.0,
+								"transport_loss_J": 0.0,
+								"truck": {
+									"amount": 0.0,
+									"kind": "civil",
+									"progress": 0.0,
+									"stage": "idle"
+								},
+								"unused_J": 0.0,
+								"used": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"useful_heat_J": 0.0,
+								"warmth": 70.0,
+								"wire_loss_J": 0.0,
+								"wire_loss_W": 0.0
+							}
+						},
+						{
+							"at": 10,
+							"state": {
+								"added": {
+									"civil": 0.0,
+									"fuel_kg": 0.05,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"alert": false,
+								"blackout": false,
+								"cables": {
+									"clinic": "",
+									"factory": "",
+									"homes": "",
+									"signal": ""
+								},
+								"cables_received": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"cables_scrapped": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"care": 68.4999999999999,
+								"chemical_J": 44000.0,
+								"completed": 0,
+								"elapsed": 10,
+								"electric_J": 11000.0,
+								"enabled": true,
+								"engine": true,
+								"engine_fuel_kg": 0.001,
+								"engine_loss_J": 6600.0,
+								"era": "ww2",
+								"event_done": false,
+								"factory": {
+									"active": false,
+									"kind": "civil",
+									"progress": 0.0
+								},
+								"factory_kind": "civil",
+								"flags": [],
+								"flow": {
+									"clinic": 0.0,
+									"factory": 0.0,
+									"homes": 0.0,
+									"signal": 0.0
+								},
+								"generated_W": 1100.0,
+								"heat_J": 26400.0,
+								"heat_service": 0.0,
+								"integrity": {
+									"clinic": 1.0,
+									"depot": 1.0,
+									"factory": 1.0,
+									"homes": 1.0,
+									"junction": 1.0,
+									"power": 1.0,
+									"signal": 1.0
+								},
+								"load_J": 0.0,
+								"model": "industrial_harbor_v1",
+								"people": [
+									{
+										"at": "depot",
+										"id": 0,
+										"progress": 0.0,
+										"role": "repair",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "depot",
+										"id": 1,
+										"progress": 0.9,
+										"role": "factory",
+										"route": [
+											"junction",
+											"factory"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "depot",
+										"id": 2,
+										"progress": 0.9,
+										"role": "factory",
+										"route": [
+											"junction",
+											"factory"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "depot",
+										"id": 3,
+										"progress": 0.9,
+										"role": "clinic",
+										"route": [
+											"junction",
+											"clinic"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "depot",
+										"id": 4,
+										"progress": 0.9,
+										"role": "signal",
+										"route": [
+											"junction",
+											"signal"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "depot",
+										"id": 5,
+										"progress": 0.9,
+										"role": "homes",
+										"route": [
+											"junction",
+											"homes"
+										],
+										"task": "travel"
+									}
+								],
+								"policy": "care",
+								"produced": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"recovered_J": 0.0,
+								"recovery": false,
+								"rejected_heat_J": 26400.0,
+								"repair": {
+									"progress": 0.0,
+									"target": ""
+								},
+								"repairs": true,
+								"repairs_completed": 0,
+								"repairs_started": 0,
+								"running": true,
+								"shipped": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"signal_service": 0.0,
+								"started": 0,
+								"stock": {
+									"civil": 0.0,
+									"fuel_kg": 0.049,
+									"military": 0.0,
+									"spares": 1.0,
+									"stock": 2.0
+								},
+								"transport_J": 0.0,
+								"transport_fuel_kg": 0.0,
+								"transport_loss_J": 0.0,
+								"truck": {
+									"amount": 0.0,
+									"kind": "civil",
+									"progress": 0.0,
+									"stage": "idle"
+								},
+								"unused_J": 11000.0,
+								"used": {
+									"civil": 0.0,
+									"fuel_kg": 0.001,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"useful_heat_J": 0.0,
+								"warmth": 68.0,
+								"wire_loss_J": 0.0,
+								"wire_loss_W": 0.0
+							}
+						},
+						{
+							"at": 20,
+							"state": {
+								"added": {
+									"civil": 0.0,
+									"fuel_kg": 0.05,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"alert": false,
+								"blackout": false,
+								"cables": {
+									"clinic": "",
+									"factory": "",
+									"homes": "",
+									"signal": ""
+								},
+								"cables_received": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"cables_scrapped": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"care": 66.9999999999999,
+								"chemical_J": 88000.0,
+								"completed": 0,
+								"elapsed": 20,
+								"electric_J": 22000.0,
+								"enabled": true,
+								"engine": true,
+								"engine_fuel_kg": 0.002,
+								"engine_loss_J": 13200.0,
+								"era": "ww2",
+								"event_done": false,
+								"factory": {
+									"active": false,
+									"kind": "civil",
+									"progress": 0.0
+								},
+								"factory_kind": "civil",
+								"flags": [],
+								"flow": {
+									"clinic": 0.0,
+									"factory": 0.0,
+									"homes": 0.0,
+									"signal": 0.0
+								},
+								"generated_W": 1100.0,
+								"heat_J": 52800.0,
+								"heat_service": 0.0,
+								"integrity": {
+									"clinic": 1.0,
+									"depot": 1.0,
+									"factory": 1.0,
+									"homes": 1.0,
+									"junction": 1.0,
+									"power": 1.0,
+									"signal": 1.0
+								},
+								"load_J": 0.0,
+								"model": "industrial_harbor_v1",
+								"people": [
+									{
+										"at": "depot",
+										"id": 0,
+										"progress": 0.0,
+										"role": "repair",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "junction",
+										"id": 1,
+										"progress": 0.9,
+										"role": "factory",
+										"route": [
+											"factory"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "junction",
+										"id": 2,
+										"progress": 0.9,
+										"role": "factory",
+										"route": [
+											"factory"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "junction",
+										"id": 3,
+										"progress": 0.9,
+										"role": "clinic",
+										"route": [
+											"clinic"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "junction",
+										"id": 4,
+										"progress": 0.9,
+										"role": "signal",
+										"route": [
+											"signal"
+										],
+										"task": "travel"
+									},
+									{
+										"at": "junction",
+										"id": 5,
+										"progress": 0.9,
+										"role": "homes",
+										"route": [
+											"homes"
+										],
+										"task": "travel"
+									}
+								],
+								"policy": "care",
+								"produced": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"recovered_J": 0.0,
+								"recovery": false,
+								"rejected_heat_J": 52800.0,
+								"repair": {
+									"progress": 0.0,
+									"target": ""
+								},
+								"repairs": true,
+								"repairs_completed": 0,
+								"repairs_started": 0,
+								"running": true,
+								"shipped": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"signal_service": 0.0,
+								"started": 0,
+								"stock": {
+									"civil": 0.0,
+									"fuel_kg": 0.0479999999999999,
+									"military": 0.0,
+									"spares": 1.0,
+									"stock": 2.0
+								},
+								"transport_J": 0.0,
+								"transport_fuel_kg": 0.0,
+								"transport_loss_J": 0.0,
+								"truck": {
+									"amount": 0.0,
+									"kind": "civil",
+									"progress": 0.0,
+									"stage": "idle"
+								},
+								"unused_J": 22000.0,
+								"used": {
+									"civil": 0.0,
+									"fuel_kg": 0.002,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"useful_heat_J": 0.0,
+								"warmth": 65.9999999999999,
+								"wire_loss_J": 0.0,
+								"wire_loss_W": 0.0
+							}
+						},
+						{
+							"at": 30,
+							"state": {
+								"added": {
+									"civil": 0.0,
+									"fuel_kg": 0.05,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"alert": false,
+								"blackout": false,
+								"cables": {
+									"clinic": "",
+									"factory": "",
+									"homes": "",
+									"signal": ""
+								},
+								"cables_received": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"cables_scrapped": {
+									"aluminum_wire": 0,
+									"aluminum_wire_mass": 0,
+									"copper_wire": 0,
+									"copper_wire_mass": 0
+								},
+								"care": 65.4999999999998,
+								"chemical_J": 132000.0,
+								"completed": 0,
+								"elapsed": 30,
+								"electric_J": 33000.0,
+								"enabled": true,
+								"engine": true,
+								"engine_fuel_kg": 0.003,
+								"engine_loss_J": 19800.0,
+								"era": "ww2",
+								"event_done": false,
+								"factory": {
+									"active": false,
+									"kind": "civil",
+									"progress": 0.0
+								},
+								"factory_kind": "civil",
+								"flags": [],
+								"flow": {
+									"clinic": 0.0,
+									"factory": 0.0,
+									"homes": 0.0,
+									"signal": 0.0
+								},
+								"generated_W": 1100.0,
+								"heat_J": 79200.0,
+								"heat_service": 0.0,
+								"integrity": {
+									"clinic": 1.0,
+									"depot": 1.0,
+									"factory": 1.0,
+									"homes": 1.0,
+									"junction": 1.0,
+									"power": 1.0,
+									"signal": 1.0
+								},
+								"load_J": 0.0,
+								"model": "industrial_harbor_v1",
+								"people": [
+									{
+										"at": "depot",
+										"id": 0,
+										"progress": 0.0,
+										"role": "repair",
+										"route": [],
+										"task": "waiting"
+									},
+									{
+										"at": "factory",
+										"id": 1,
+										"progress": 0.0,
+										"role": "factory",
+										"route": [],
+										"task": "work"
+									},
+									{
+										"at": "factory",
+										"id": 2,
+										"progress": 0.0,
+										"role": "factory",
+										"route": [],
+										"task": "work"
+									},
+									{
+										"at": "clinic",
+										"id": 3,
+										"progress": 0.0,
+										"role": "clinic",
+										"route": [],
+										"task": "work"
+									},
+									{
+										"at": "signal",
+										"id": 4,
+										"progress": 0.0,
+										"role": "signal",
+										"route": [],
+										"task": "work"
+									},
+									{
+										"at": "homes",
+										"id": 5,
+										"progress": 0.0,
+										"role": "homes",
+										"route": [],
+										"task": "work"
+									}
+								],
+								"policy": "care",
+								"produced": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"recovered_J": 0.0,
+								"recovery": false,
+								"rejected_heat_J": 79200.0,
+								"repair": {
+									"progress": 0.0,
+									"target": ""
+								},
+								"repairs": true,
+								"repairs_completed": 0,
+								"repairs_started": 0,
+								"running": true,
+								"shipped": {
+									"civil": 0.0,
+									"fuel_kg": 0.0,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"signal_service": 0.0,
+								"started": 0,
+								"stock": {
+									"civil": 0.0,
+									"fuel_kg": 0.0469999999999999,
+									"military": 0.0,
+									"spares": 1.0,
+									"stock": 2.0
+								},
+								"transport_J": 0.0,
+								"transport_fuel_kg": 0.0,
+								"transport_loss_J": 0.0,
+								"truck": {
+									"amount": 0.0,
+									"kind": "civil",
+									"progress": 0.0,
+									"stage": "idle"
+								},
+								"unused_J": 33000.0,
+								"used": {
+									"civil": 0.0,
+									"fuel_kg": 0.003,
+									"military": 0.0,
+									"spares": 0.0,
+									"stock": 0.0
+								},
+								"useful_heat_J": 0.0,
+								"warmth": 63.9999999999999,
+								"wire_loss_J": 0.0,
+								"wire_loss_W": 0.0
+							}
+						}
+					],
+					"integrity": {
+						"clinic": 1.0,
+						"depot": 1.0,
+						"factory": 1.0,
+						"homes": 1.0,
+						"junction": 1.0,
+						"power": 1.0,
+						"signal": 1.0
+					},
+					"load_J": 0.0,
+					"model": "industrial_harbor_v1",
+					"people": [
+						{
+							"at": "depot",
+							"id": 0,
+							"progress": 0.0,
+							"role": "repair",
+							"route": [],
+							"task": "waiting"
+						},
+						{
+							"at": "factory",
+							"id": 1,
+							"progress": 0.0,
+							"role": "factory",
+							"route": [],
+							"task": "work"
+						},
+						{
+							"at": "factory",
+							"id": 2,
+							"progress": 0.0,
+							"role": "factory",
+							"route": [],
+							"task": "work"
+						},
+						{
+							"at": "clinic",
+							"id": 3,
+							"progress": 0.0,
+							"role": "clinic",
+							"route": [],
+							"task": "work"
+						},
+						{
+							"at": "signal",
+							"id": 4,
+							"progress": 0.0,
+							"role": "signal",
+							"route": [],
+							"task": "work"
+						},
+						{
+							"at": "homes",
+							"id": 5,
+							"progress": 0.0,
+							"role": "homes",
+							"route": [],
+							"task": "work"
+						}
+					],
+					"policy": "care",
+					"produced": {
+						"civil": 0.0,
+						"fuel_kg": 0.0,
+						"military": 0.0,
+						"spares": 0.0,
+						"stock": 0.0
+					},
+					"recovered_J": 0.0,
+					"recovery": false,
+					"rejected_heat_J": 79200.0,
+					"repair": {
+						"progress": 0.0,
+						"target": ""
+					},
+					"repairs": true,
+					"repairs_completed": 0,
+					"repairs_started": 0,
+					"running": true,
+					"shipped": {
+						"civil": 0.0,
+						"fuel_kg": 0.0,
+						"military": 0.0,
+						"spares": 0.0,
+						"stock": 0.0
+					},
+					"signal_service": 0.0,
+					"started": 0,
+					"stock": {
+						"civil": 0.0,
+						"fuel_kg": 0.0469999999999999,
+						"military": 0.0,
+						"spares": 1.0,
+						"stock": 2.0
+					},
+					"transport_J": 0.0,
+					"transport_fuel_kg": 0.0,
+					"transport_loss_J": 0.0,
+					"truck": {
+						"amount": 0.0,
+						"kind": "civil",
+						"progress": 0.0,
+						"stage": "idle"
+					},
+					"unused_J": 33000.0,
+					"used": {
+						"civil": 0.0,
+						"fuel_kg": 0.003,
+						"military": 0.0,
+						"spares": 0.0,
+						"stock": 0.0
+					},
+					"useful_heat_J": 0.0,
+					"warmth": 63.9999999999999,
+					"wire_loss_J": 0.0,
+					"wire_loss_W": 0.0
+				},
+				"mode": "experiment",
+				"name": "实验 A",
+				"observation": false,
+				"paused": true,
+				"seconds": 30,
+				"seed": 9192026,
+				"village": {
+					"active_project": "",
+					"added": {
+						"drink": 0.0,
+						"food": 0.0,
+						"frames": 0.0,
+						"goods": 0.0,
+						"grain": 0.0,
+						"tools": 0.0,
+						"water": 0.0
+					},
+					"completed": {
+						"craft": 0,
+						"drink": 0,
+						"eat": 0,
+						"farm": 0,
+						"mill": 0
+					},
+					"diversion": 0.5,
+					"elapsed": 0,
+					"enabled": false,
+					"era": "weald_1400",
+					"exported": {
+						"drink": 0.0,
+						"food": 0.0,
+						"frames": 0.0,
+						"goods": 0.0,
+						"grain": 0.0,
+						"tools": 0.0,
+						"water": 0.0
+					},
+					"flags": [],
+					"history": [
+						{
+							"at": 0,
+							"state": {
+								"active_project": "",
+								"added": {
+									"drink": 0.0,
+									"food": 0.0,
+									"frames": 0.0,
+									"goods": 0.0,
+									"grain": 0.0,
+									"tools": 0.0,
+									"water": 0.0
+								},
+								"completed": {
+									"craft": 0,
+									"drink": 0,
+									"eat": 0,
+									"farm": 0,
+									"mill": 0
+								},
+								"diversion": 0.5,
+								"elapsed": 0,
+								"enabled": false,
+								"era": "weald_1400",
+								"exported": {
+									"drink": 0.0,
+									"food": 0.0,
+									"frames": 0.0,
+									"goods": 0.0,
+									"grain": 0.0,
+									"tools": 0.0,
+									"water": 0.0
+								},
+								"flags": [],
+								"mill_running": false,
+								"model": "village_teaching_v1",
+								"passage": 100.0,
+								"people": [
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 0.0,
+										"id": 0,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 0.0,
+										"work": 0.0
+									},
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 2.0,
+										"id": 1,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 3.0,
+										"work": 0.0
+									},
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 4.0,
+										"id": 2,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 6.0,
+										"work": 0.0
+									},
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 6.0,
+										"id": 3,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 9.0,
+										"work": 0.0
+									},
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 8.0,
+										"id": 4,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 12.0,
+										"work": 0.0
+									},
+									{
+										"at": "home",
+										"cargo": {},
+										"fraction": 0.0,
+										"hunger": 10.0,
+										"id": 5,
+										"load": {},
+										"project": "",
+										"route": [],
+										"stage": "idle",
+										"target": "home",
+										"task": "",
+										"thirst": 15.0,
+										"work": 0.0
+									}
+								],
+								"policy": "care",
+								"produced": {
+									"drink": 0.0,
+									"food": 0.0,
+									"frames": 0.0,
+									"goods": 0.0,
+									"grain": 0.0,
+									"tools": 0.0,
+									"water": 0.0
+								},
+								"projects": {
+									"cistern": {
+										"approved": true,
+										"committed": false,
+										"complete": false,
+										"paused": false,
+										"progress": 0.0
+									},
+									"market": {
+										"approved": false,
+										"committed": false,
+										"complete": false,
+										"paused": false,
+										"progress": 0.0
+									},
+									"mill": {
+										"approved": false,
+										"committed": false,
+										"complete": false,
+										"paused": false,
+										"progress": 0.0
+									},
+									"road": {
+										"approved": true,
+										"committed": false,
+										"complete": false,
+										"paused": false,
+										"progress": 0.0
+									}
+								},
+								"spring": 24.0,
+								"spring_overflow": 0.0,
+								"spring_taken": 0.0,
+								"started": {
+									"craft": 0,
+									"drink": 0,
+									"eat": 0,
+									"farm": 0,
+									"mill": 0
+								},
+								"stock": {
+									"drink": 14.0,
+									"food": 8.0,
+									"frames": 0.0,
+									"goods": 0.0,
+									"grain": 10.0,
+									"tools": 6.0,
+									"water": 16.0
+								},
+								"trade_clock": 0,
+								"trades": 0,
+								"used": {
+									"drink": 0.0,
+									"food": 0.0,
+									"frames": 0.0,
+									"goods": 0.0,
+									"grain": 0.0,
+									"tools": 0.0,
+									"water": 0.0
+								}
+							}
+						}
+					],
+					"mill_running": false,
+					"model": "village_teaching_v1",
+					"passage": 100.0,
+					"people": [
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 0.0,
+							"id": 0,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 0.0,
+							"work": 0.0
+						},
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 2.0,
+							"id": 1,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 3.0,
+							"work": 0.0
+						},
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 4.0,
+							"id": 2,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 6.0,
+							"work": 0.0
+						},
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 6.0,
+							"id": 3,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 9.0,
+							"work": 0.0
+						},
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 8.0,
+							"id": 4,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 12.0,
+							"work": 0.0
+						},
+						{
+							"at": "home",
+							"cargo": {},
+							"fraction": 0.0,
+							"hunger": 10.0,
+							"id": 5,
+							"load": {},
+							"project": "",
+							"route": [],
+							"stage": "idle",
+							"target": "home",
+							"task": "",
+							"thirst": 15.0,
+							"work": 0.0
+						}
+					],
+					"policy": "care",
+					"produced": {
+						"drink": 0.0,
+						"food": 0.0,
+						"frames": 0.0,
+						"goods": 0.0,
+						"grain": 0.0,
+						"tools": 0.0,
+						"water": 0.0
+					},
+					"projects": {
+						"cistern": {
+							"approved": true,
+							"committed": false,
+							"complete": false,
+							"paused": false,
+							"progress": 0.0
+						},
+						"market": {
+							"approved": false,
+							"committed": false,
+							"complete": false,
+							"paused": false,
+							"progress": 0.0
+						},
+						"mill": {
+							"approved": false,
+							"committed": false,
+							"complete": false,
+							"paused": false,
+							"progress": 0.0
+						},
+						"road": {
+							"approved": true,
+							"committed": false,
+							"complete": false,
+							"paused": false,
+							"progress": 0.0
+						}
+					},
+					"spring": 24.0,
+					"spring_overflow": 0.0,
+					"spring_taken": 0.0,
+					"started": {
+						"craft": 0,
+						"drink": 0,
+						"eat": 0,
+						"farm": 0,
+						"mill": 0
+					},
+					"stock": {
+						"drink": 14.0,
+						"food": 8.0,
+						"frames": 0.0,
+						"goods": 0.0,
+						"grain": 10.0,
+						"tools": 6.0,
+						"water": 16.0
+					},
+					"trade_clock": 0,
+					"trades": 0,
+					"used": {
+						"drink": 0.0,
+						"food": 0.0,
+						"frames": 0.0,
+						"goods": 0.0,
+						"grain": 0.0,
+						"tools": 0.0,
+						"water": 0.0
+					}
+				},
+				"watershed": {
+					"added": 0.0,
+					"bypass": false,
+					"dead": 0.0,
+					"elapsed": 0,
+					"enabled": false,
+					"era": "devonian",
+					"exported": 0.0,
+					"history": [
+						{
+							"at": 0,
+							"state": {
+								"added": 0.0,
+								"bypass": false,
+								"dead": 0.0,
+								"elapsed": 0,
+								"enabled": false,
+								"era": "devonian",
+								"exported": 0.0,
+								"migration_open": true,
+								"model": "watershed_teaching_v1",
+								"refuge": 24.0,
+								"regions": {
+									"estuary": {
+										"algae": 4.0,
+										"benthos": 10.0,
+										"buffer": false,
+										"component": {},
+										"cooling": false,
+										"detritus": 3.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"fish": 12.0,
+										"flags": [],
+										"flow": 1.0,
+										"flush": 0,
+										"gas": 0.0,
+										"harvest": {},
+										"harvest_target": "algae",
+										"heat": 0.0,
+										"loaded": 0.0,
+										"nutrient": 2.0,
+										"oxygen": 82.0,
+										"plants": 2.0,
+										"retained": 0.0,
+										"screen": false,
+										"screen_charges": 0,
+										"screen_discarded": 0.0,
+										"screen_enabled": true,
+										"screen_energy": 0.0,
+										"screen_loaded": false,
+										"screen_used": 0.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"headwater": {
+										"algae": 3.0,
+										"benthos": 10.0,
+										"buffer": false,
+										"component": {},
+										"cooling": false,
+										"detritus": 2.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"fish": 6.0,
+										"flags": [],
+										"flow": 1.0,
+										"flush": 0,
+										"gas": 0.0,
+										"harvest": {},
+										"harvest_target": "algae",
+										"heat": 0.0,
+										"loaded": 0.0,
+										"nutrient": 8.0,
+										"oxygen": 82.0,
+										"plants": 2.0,
+										"retained": 0.0,
+										"screen": false,
+										"screen_charges": 0,
+										"screen_discarded": 0.0,
+										"screen_enabled": true,
+										"screen_energy": 0.0,
+										"screen_loaded": false,
+										"screen_used": 0.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									},
+									"marsh": {
+										"algae": 5.0,
+										"benthos": 10.0,
+										"buffer": false,
+										"component": {},
+										"cooling": false,
+										"detritus": 4.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"fish": 10.0,
+										"flags": [],
+										"flow": 1.0,
+										"flush": 0,
+										"gas": 0.0,
+										"harvest": {},
+										"harvest_target": "algae",
+										"heat": 0.0,
+										"loaded": 0.0,
+										"nutrient": 4.0,
+										"oxygen": 82.0,
+										"plants": 12.0,
+										"retained": 0.0,
+										"screen": false,
+										"screen_charges": 0,
+										"screen_discarded": 0.0,
+										"screen_enabled": true,
+										"screen_energy": 0.0,
+										"screen_loaded": false,
+										"screen_used": 0.0,
+										"stress": 0,
+										"trips": 0,
+										"used": 0.0
+									}
+								},
+								"source": 150.0,
+								"source_open": true,
+								"waste": 0.0
+							}
+						}
+					],
+					"migration_open": true,
+					"model": "watershed_teaching_v1",
+					"refuge": 24.0,
+					"regions": {
+						"estuary": {
+							"algae": 4.0,
+							"benthos": 10.0,
+							"buffer": false,
+							"component": {},
+							"cooling": false,
+							"detritus": 3.0,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"fish": 12.0,
+							"flags": [],
+							"flow": 1.0,
+							"flush": 0,
+							"gas": 0.0,
+							"harvest": {},
+							"harvest_target": "algae",
+							"heat": 0.0,
+							"loaded": 0.0,
+							"nutrient": 2.0,
+							"oxygen": 82.0,
+							"plants": 2.0,
+							"retained": 0.0,
+							"screen": false,
+							"screen_charges": 0,
+							"screen_discarded": 0.0,
+							"screen_enabled": true,
+							"screen_energy": 0.0,
+							"screen_loaded": false,
+							"screen_used": 0.0,
+							"stress": 0,
+							"trips": 0,
+							"used": 0.0
+						},
+						"headwater": {
+							"algae": 3.0,
+							"benthos": 10.0,
+							"buffer": false,
+							"component": {},
+							"cooling": false,
+							"detritus": 2.0,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"fish": 6.0,
+							"flags": [],
+							"flow": 1.0,
+							"flush": 0,
+							"gas": 0.0,
+							"harvest": {},
+							"harvest_target": "algae",
+							"heat": 0.0,
+							"loaded": 0.0,
+							"nutrient": 8.0,
+							"oxygen": 82.0,
+							"plants": 2.0,
+							"retained": 0.0,
+							"screen": false,
+							"screen_charges": 0,
+							"screen_discarded": 0.0,
+							"screen_enabled": true,
+							"screen_energy": 0.0,
+							"screen_loaded": false,
+							"screen_used": 0.0,
+							"stress": 0,
+							"trips": 0,
+							"used": 0.0
+						},
+						"marsh": {
+							"algae": 5.0,
+							"benthos": 10.0,
+							"buffer": false,
+							"component": {},
+							"cooling": false,
+							"detritus": 4.0,
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"fish": 10.0,
+							"flags": [],
+							"flow": 1.0,
+							"flush": 0,
+							"gas": 0.0,
+							"harvest": {},
+							"harvest_target": "algae",
+							"heat": 0.0,
+							"loaded": 0.0,
+							"nutrient": 4.0,
+							"oxygen": 82.0,
+							"plants": 12.0,
+							"retained": 0.0,
+							"screen": false,
+							"screen_charges": 0,
+							"screen_discarded": 0.0,
+							"screen_enabled": true,
+							"screen_energy": 0.0,
+							"screen_loaded": false,
+							"screen_used": 0.0,
+							"stress": 0,
+							"trips": 0,
+							"used": 0.0
+						}
+					},
+					"source": 150.0,
+					"source_open": true,
+					"waste": 0.0
+				},
+				"zones": [
+					{
+						"id": "deep",
+						"target": 0,
+						"water": 0.0
+					},
+					{
+						"id": "shelf",
+						"target": 0,
+						"water": 0.0
+					}
+				]
+			}
+		]
+	}
+}

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "note": "观察卡只记录模型或游戏账本的可见结果；不把它们升级为现实材料物性。",
+  "cards": [
+    {"id":"water_total","domain":"water","label":"已部署水箱","path":"zones_target","unit":"箱","kind":"game_rule","source":"planet_balance.json","method":"有限投放账本"},
+    {"id":"water_surface","domain":"water","label":"已形成水面","path":"zones_water","unit":"箱","kind":"game_rule","source":"planet_balance.json","method":"按交付时间推进"},
+    {"id":"anaerobe_oxygen","domain":"ecology","label":"厌氧池氧指标","path":"ecology_microbe_oxygen","unit":"教学指标","kind":"model_estimate","source":"planet_ecology.json","method":"固定步长教学模型"},
+    {"id":"anaerobe_sensitive","domain":"ecology","label":"敏感菌毯","path":"ecology_microbe_sensitive","unit":"相对覆盖","kind":"model_estimate","source":"planet_ecology.json","method":"氧暴露规则"},
+    {"id":"fish_dead","domain":"ecology","label":"鱼群损失账本","path":"ecology_fish_dead","unit":"相对个体","kind":"model_estimate","source":"planet_ecology.json","method":"持续低氧规则"},
+    {"id":"river_nutrient","domain":"watershed","label":"河流营养账本","path":"watershed_nutrient","unit":"模型单位","kind":"model_estimate","source":"planet_watershed.json","method":"连通水域守恒账本"},
+    {"id":"river_waste","domain":"watershed","label":"过滤与浓缩出口","path":"watershed_waste","unit":"模型单位","kind":"model_estimate","source":"planet_watershed.json","method":"设备出口账本"},
+    {"id":"village_food","domain":"village","label":"聚落食物库存","path":"village_food","unit":"模型单位","kind":"game_rule","source":"planet_village.json","method":"居民资源账本"},
+    {"id":"habitat_alive","domain":"habitat","label":"仍存活动物","path":"habitat_alive","unit":"只","kind":"model_estimate","source":"planet_habitat.json","method":"水、食物与路线规则"},
+    {"id":"habitat_dead","domain":"habitat","label":"动物损失账本","path":"habitat_dead","unit":"只","kind":"model_estimate","source":"planet_habitat.json","method":"有限食物网规则"},
+    {"id":"industry_electric","domain":"industry","label":"有效电能","path":"industry_electric","unit":"J","kind":"model_estimate","source":"planet_industry.json","method":"设备效率与线损模型"},
+    {"id":"industry_heat","domain":"industry","label":"有效供热","path":"industry_useful_heat","unit":"J","kind":"model_estimate","source":"planet_industry.json","method":"余热与负载模型"},
+    {"id":"modern_load","domain":"modern","label":"城市负载","path":"modern_load","unit":"J","kind":"model_estimate","source":"planet_modern.json","method":"光伏、储能与算力模型"},
+    {"id":"modern_heat","domain":"modern","label":"积热","path":"modern_heat","unit":"J","kind":"model_estimate","source":"planet_modern.json","method":"热负载与冷却模型"}
+  ]
+}

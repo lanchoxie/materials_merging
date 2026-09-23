@@ -1,0 +1,13 @@
+{
+  "model": "player_fixture_v1",
+  "max_records": 32,
+  "max_designs": 96,
+  "trial_placements": 6,
+  "properties": {
+    "density_kg_m3": {"name":"密度", "unit":"kg/m³", "min":100, "max":30000},
+    "conductivity_W_mK": {"name":"导热率", "unit":"W/(m·K)", "min":0.01, "max":3000},
+    "resistivity_ohm_m": {"name":"电阻率", "unit":"Ω·m", "min":1e-9, "max":0.001}
+  },
+  "sink_mount": {"max_area_m2":0.0002, "max_mass_kg":0.1},
+  "scope":"输入范围仅为游戏数值边界，不是元素替换后的预测。未知值保持null；自定义物性是玩家假设，只用于隔离计算。固定温度、均匀各向同性、忽略相变和反应；毒性、寿命、强度、带隙及不确定度均未知。"
+}

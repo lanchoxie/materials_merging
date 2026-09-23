@@ -1,0 +1,139 @@
+{
+  "version": 4,
+  "note": "游戏平衡参数，不是材料价格、真实能量或实验反应速率。",
+  "base_coins_per_second": 0.8,
+  "complexity": {
+    "atom_weight": 0.55,
+    "element_weight": 0.3,
+    "constraint_weight": 0.12,
+    "maximum": 4.0,
+    "chapter_factors": {
+      "分子": 1.0,
+      "晶体": 1.25
+    }
+  },
+  "geometry_floor": 0.15,
+  "geometry_weight": 0.85,
+  "level_increment": 0.45,
+  "element_shop": {
+    "prices": {
+      "H": 2,
+      "C": 6,
+      "O": 5,
+      "S": 9,
+      "Cl": 8,
+      "Cs": 18,
+      "Pb": 20,
+      "Br": 12,
+      "N": 7,
+      "F": 10,
+      "Li": 7,
+      "Na": 8,
+      "Cu": 14,
+      "Al": 10
+    },
+    "starter": {
+      "H": 2,
+      "O": 1,
+      "S": 1,
+      "Cl": 2
+    },
+    "exploration_rate": 0.15,
+    "note": "库存单位为替换一个显示位点的一份原料，不代表晶胞实际化学计量。拆下的元素不返还；按最终修改一次性结算。"
+  },
+  "orders": {
+    "visitor_cooldown_seconds": 20,
+    "visitor_arrival_animation_seconds": 1.2,
+    "ranking_weights": {
+      "ready": 1000,
+      "premium": 250,
+      "matching": 80,
+      "quality": 120,
+      "payment": 0.5
+    },
+    "target_quality": 0.98,
+    "tolerance": 0.05,
+    "quantity": 3,
+    "reward_per_complexity": 50,
+    "same_type_discount": 0.75,
+    "other_type_discount": 0.4,
+    "minimum_payment": 15,
+    "buyers": [
+      {
+        "name": "云朵研究站",
+        "template": "water",
+        "story": "把弯曲的小水滴收集起来，做成下一堂分子课。"
+      },
+      {
+        "name": "四面体工坊",
+        "template": "methane",
+        "story": "寻找四面体形状的样品，搭建空间几何展台。"
+      },
+      {
+        "name": "星光实验室",
+        "template": "hydrogen",
+        "story": "两个原子之间的距离，也藏着值得观察的规律。"
+      },
+      {
+        "name": "晶格收藏家",
+        "template": "perovskite",
+        "story": "想收藏一枚规整的教学晶胞，向访客展示周期共享。"
+      },
+      {
+        "name": "硫之观察室",
+        "template": "hydrogen_sulfide",
+        "story": "同样有两个氢，中心元素改变后，分子的参考夹角也会改变。"
+      },
+      {
+        "name": "双原子驿站",
+        "template": "hydrogen_chloride",
+        "story": "想看看两种不同元素相遇时，合适的间距与双子氢有什么不同。"
+      },
+      {
+        "name": "卤素展览馆",
+        "template": "perovskite_chloride",
+        "story": "收集氯化物的理想教学单胞，对照卤素尺寸；不把颜色当成带隙预测。"
+      },
+      {
+        "name": "氧气双星收藏家",
+        "template": "oxygen",
+        "story": "寻找这份基线的几何样品；教学构造和实验参考会在图鉴分别说明。"
+      },
+      {
+        "name": "氮气三重奏收藏家",
+        "template": "nitrogen",
+        "story": "寻找这份基线的几何样品；教学构造和实验参考会在图鉴分别说明。"
+      },
+      {
+        "name": "线性二氧化碳收藏家",
+        "template": "carbon_dioxide",
+        "story": "寻找这份基线的几何样品；教学构造和实验参考会在图鉴分别说明。"
+      },
+      {
+        "name": "氨气小伞收藏家",
+        "template": "ammonia",
+        "story": "寻找这份基线的几何样品；教学构造和实验参考会在图鉴分别说明。"
+      },
+      {
+        "name": "氟光双星收藏家",
+        "template": "hydrogen_fluoride",
+        "story": "寻找这份基线的几何样品；教学构造和实验参考会在图鉴分别说明。"
+      },
+      {
+        "name": "锂氟离子对收藏家",
+        "template": "lithium_fluoride",
+        "story": "寻找这份基线的几何样品；教学构造和实验参考会在图鉴分别说明。"
+      },
+      {
+        "name": "氯化钠离子对收藏家",
+        "template": "sodium_chloride",
+        "story": "寻找这份基线的几何样品；教学构造和实验参考会在图鉴分别说明。"
+      }
+    ]
+  },
+  "decorations": {
+    "road": 18,
+    "fence": 24,
+    "sculpture": 85
+  }
+}

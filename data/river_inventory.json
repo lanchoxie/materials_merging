@@ -1,0 +1,9 @@
+{
+  "slots": 9,
+  "defaults": ["tool:collect", "tool:remove", "seed:grain", "", "", "", "", "", ""],
+  "tools": {
+    "collect": {"name": "采集手套", "icon": "hand", "description": "瞄准5米内的枯枝、散石、纤维草或果丛，按 E 采集。也可收获成熟种植箱；耗尽的采集点需要等待恢复。"},
+    "remove": {"name": "拆卸锤", "icon": "hammer", "description": "瞄准自己搭建的构件拆回，材料退回原包。地形与树木暂不能破坏。"}
+  },
+  "categories": {"all": "全部", "tools": "工具", "raw":"原料", "components": "构件", "products": "成品", "samples": "样品", "supplies": "补给"}
+}

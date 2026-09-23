@@ -1,0 +1,42 @@
+; Atom Atelier — a local, procedural Godot 4 prototype.
+config_version=5
+
+[application]
+config/name="原子工坊 · Atom Atelier"
+config/version="0.20.0"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.4", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[display]
+window/size/viewport_width=1440
+window/size/viewport_height=900
+window/size/window_width_override=1440
+window/size/window_height_override=900
+window/size/min_width=1152
+window/size/min_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+window/handheld/orientation=0
+
+[input_devices]
+pointing/emulate_mouse_from_touch=true
+pointing/emulate_touch_from_mouse=false
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.043, 0.071, 0.106, 1)
+anti_aliasing/quality/msaa_3d=1
+
+[debug]
+file_logging/enable_file_logging=true
+file_logging/log_path="res://artifacts/game.log"
+file_logging/log_path.android="user://logs/game.log"
+file_logging/enable_file_logging.web=false
+gdscript/warnings/treat_warnings_as_errors=false
+
+[audio]
+driver/enable_input=false

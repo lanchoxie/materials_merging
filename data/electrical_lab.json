@@ -1,0 +1,20 @@
+{
+  "model":"dc_reference_20c_v1",
+  "sources":{
+    "copper":{"url":"https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular31e2.pdf","locator":"Printed p.14 / PDF p.18; international annealed copper definitions","reviewed":"2026-09-19","note":"Historical reference, rounded resistivity; not arbitrary copper or a player sample."},
+    "aluminum":{"url":"https://nvlpubs.nist.gov/nistpubs/Legacy/hb/nbshandbook109.pdf","locator":"Table 1, printed p.5 / PDF p.13, EC-H19 column","reviewed":"2026-09-19","note":"Historical reference constants for electrical wire calculations; not all aluminum alloys."},
+    "fuel":{"url":"https://www.energy.gov/cmei/fuels/hydrogen-storage","locator":"Challenges: mass comparison based on lower heating values","reviewed":"2026-09-19","note":"Gasoline 44 MJ/kg, hydrogen 120 MJ/kg; rounded fuel LHV, not engine efficiency or whole storage-system density."}
+  },
+  "materials":{
+    "copper":{"name":"标准退火铜","resistivity_ohm_m":1.7241e-8,"density_kg_m3":8890,"temperature_K":293.15,"color":"dfb081","uncertainty":null,"source":"copper","original_resistivity":"0.017241 ohm mm²/m","original_density":"8.89 g/cm³"},
+    "aluminum":{"name":"EC-H19 铝","resistivity_ohm_m":2.8264e-8,"density_kg_m3":2703,"temperature_K":293.15,"color":"b7d5db","uncertainty":null,"source":"aluminum","original_resistivity":"0.028264 ohm mm²/m","original_density":"2.703 g/cm³"}
+  },
+  "fixture":{"loop_length_m":40.0,"area_m2":0.0000025,"mass_kg":0.889,"voltage_V":24.0,"load_W":400.0,"note":"Round-trip length 40 m, constant 20°C resistivity, DC resistor load rated at 24 V; ignores contacts, AC, heating, insulation and conductor ampacity."},
+  "fuel":{"gasoline_lhv_J_kg":44000000.0,"hydrogen_lhv_J_kg":120000000.0,"temperature_K":null,"pressure_Pa":null,"uncertainty":null,"source":"fuel"},
+  "designs":{
+    "copper_wire":{"material":"copper","mode":"same_size","name":"铜线·等粗"},
+    "aluminum_wire":{"material":"aluminum","mode":"same_size","name":"铝线·等粗"},
+    "copper_wire_mass":{"material":"copper","mode":"same_mass","name":"铜线·等重"},
+    "aluminum_wire_mass":{"material":"aluminum","mode":"same_mass","name":"铝线·等重"}
+  }
+}

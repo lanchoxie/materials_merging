@@ -1,0 +1,201 @@
+{
+  "model": "hell_creek_habitat_v1",
+  "era": "creta_hell_creek",
+  "name": "白垩纪 · 蕨林河谷",
+  "evidence": "海尔溪地区晚白垩世的恐龙与植物为美术参考；个体数、旱雨周期、饮食、捕食与阈值是游戏规则，不是古生态重建。",
+  "sources": [
+    "https://naturalhistory.si.edu/education/teaching-resources/paleontology/make-dinosaur-ecosystem-mural/dinosaurs-hell-creek",
+    "https://naturalhistory.si.edu/education/teaching-resources/paleontology/make-dinosaur-ecosystem-mural/plants",
+    "https://www.govinfo.gov/content/pkg/GOVPUB-A13-PURL-gpo245543/pdf/GOVPUB-A13-PURL-gpo245543.pdf"
+  ],
+  "regions": {
+    "fern": {
+      "name": "蕨地",
+      "position": [
+        -1.65,
+        1.05
+      ],
+      "water": 22.0,
+      "plants": 72.0,
+      "growth": 0.12,
+      "rain": 0.24
+    },
+    "lagoon": {
+      "name": "浅水湾",
+      "position": [
+        1.5,
+        1.05
+      ],
+      "water": 95.0,
+      "plants": 38.0,
+      "growth": 0.1,
+      "rain": 0.48
+    },
+    "wood": {
+      "name": "林缘",
+      "position": [
+        1.5,
+        -1.15
+      ],
+      "water": 30.0,
+      "plants": 90.0,
+      "growth": 0.18,
+      "rain": 0.3
+    },
+    "ridge": {
+      "name": "远岸台地",
+      "position": [
+        -1.65,
+        -1.15
+      ],
+      "water": 70.0,
+      "plants": 100.0,
+      "growth": 0.16,
+      "rain": 0.34
+    }
+  },
+  "edges": {
+    "fern_lagoon": {
+      "a": "fern",
+      "b": "lagoon",
+      "name": "浅滩通道",
+      "built": true,
+      "seconds": 16
+    },
+    "lagoon_wood": {
+      "a": "lagoon",
+      "b": "wood",
+      "name": "沿河林道",
+      "built": true,
+      "seconds": 22
+    },
+    "wood_ridge": {
+      "a": "wood",
+      "b": "ridge",
+      "name": "远岸连接桥",
+      "built": false,
+      "seconds": 20
+    },
+    "fern_ridge": {
+      "a": "fern",
+      "b": "ridge",
+      "name": "蕨地连接桥",
+      "built": false,
+      "seconds": 18
+    }
+  },
+  "species": {
+    "triceratops": {
+      "name": "三角龙",
+      "diet": "plants",
+      "color": "bb9a63",
+      "body": 20.0,
+      "speed": 0.9
+    },
+    "edmontosaurus": {
+      "name": "埃德蒙顿龙",
+      "diet": "plants",
+      "color": "719c8b",
+      "body": 16.0,
+      "speed": 1.15
+    },
+    "tyrannosaurus": {
+      "name": "霸王龙",
+      "diet": "carrion",
+      "color": "b57c65",
+      "body": 30.0,
+      "speed": 1.0
+    }
+  },
+  "animals": [
+    [
+      "triceratops",
+      "fern"
+    ],
+    [
+      "triceratops",
+      "fern"
+    ],
+    [
+      "triceratops",
+      "fern"
+    ],
+    [
+      "triceratops",
+      "lagoon"
+    ],
+    [
+      "edmontosaurus",
+      "wood"
+    ],
+    [
+      "edmontosaurus",
+      "wood"
+    ],
+    [
+      "edmontosaurus",
+      "lagoon"
+    ],
+    [
+      "edmontosaurus",
+      "fern"
+    ],
+    [
+      "tyrannosaurus",
+      "wood"
+    ],
+    [
+      "tyrannosaurus",
+      "lagoon"
+    ]
+  ],
+  "climate": {
+    "cycle": 240,
+    "dry_seconds": 150,
+    "evaporation": 0.15,
+    "wet_evaporation": 0.04
+  },
+  "limits": {
+    "water": 120.0,
+    "plants": 120.0,
+    "ledger": 10000000.0,
+    "history": 60
+  },
+  "plants": {
+    "water_per_growth": 0.35,
+    "dry_wilt": 0.08,
+    "carrion_decay": 0.035
+  },
+  "needs": {
+    "thirst": 0.28,
+    "hunger": 0.2,
+    "drink": 0.16,
+    "drink_relief": 4.0,
+    "eat": 0.24,
+    "eat_relief": 4.5,
+    "stress": 82.0,
+    "damage": 0.4,
+    "recovery": 0.07
+  },
+  "movement": {
+    "interval": 6,
+    "improvement": 7.0,
+    "distance_cost": 3.0,
+    "fear": 22.0,
+    "crowding": 4.0
+  },
+  "predation": {
+    "hunger": 48.0,
+    "cooldown": 20,
+    "damage": 28.0
+  },
+  "products": {
+    "water_crate": 38.0,
+    "shade_evaporation": 0.32,
+    "shade_growth": 0.6
+  },
+  "trial_products": {
+    "habitat_bridge": 2,
+    "shade_canopy": 2
+  }
+}

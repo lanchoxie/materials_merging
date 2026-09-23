@@ -1,0 +1,5237 @@
+{
+  "extra_qualifications": {},
+  "feed": 2,
+  "job": {},
+  "joined": true,
+  "production_mode": "partner",
+  "products": [],
+  "qualification": {},
+  "qualified": false,
+  "reports": {},
+  "serial": 1,
+  "shipment_serial": 1,
+  "supplies": {
+    "aluminum_kit": 0,
+    "buffer_kit": 0,
+    "copper_kit": 0,
+    "drinking_kit": 0,
+    "frame_kit": 0,
+    "harvest_kit": 0,
+    "nutrient_kit": 0,
+    "oxygen_feed": 0,
+    "screen_feed": 0,
+    "screen_kit": 0,
+    "station_parts": 0,
+    "tool_chest_kit": 0
+  },
+  "version": 5,
+  "worlds": {
+    "active_id": "trial_a",
+    "version": 5,
+    "worlds": [
+      {
+        "allowance": 0,
+        "base": {},
+        "base_key": "",
+        "eco_allowance": {
+          "aluminum_compact": 2.0,
+          "aluminum_light": 2.0,
+          "buffer_raft": 3.0,
+          "copper_compact": 2.0,
+          "copper_light": 2.0,
+          "drinking_barrel": 4.0,
+          "frame_bundle": 3.0,
+          "harvest_box": 6.0,
+          "oxygen_cartridge": 4.0,
+          "oxygen_station": 2.0,
+          "runoff_feed": 2.0,
+          "screen_cartridge": 6.0,
+          "screen_station": 3.0,
+          "tool_chest": 3.0
+        },
+        "ecology": {
+          "history": [
+            {
+              "at": 0,
+              "regions": {
+                "fish": {
+                  "bay": 6.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 18.0,
+                  "oxygen": 8.0,
+                  "stress": 0,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 4.0,
+                  "refuge": 18.0,
+                  "sealed": true,
+                  "sensitive": 80.0,
+                  "tolerant": 20.0,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 5,
+              "regions": {
+                "fish": {
+                  "bay": 3.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 21.0,
+                  "oxygen": 3.0,
+                  "stress": 5,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.5,
+                  "refuge": 18.1,
+                  "sealed": true,
+                  "sensitive": 80.5,
+                  "tolerant": 19.5,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 10,
+              "regions": {
+                "fish": {
+                  "bay": 0.000000000000000666133814775094,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 24.0,
+                  "oxygen": 0.0,
+                  "stress": 10,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.0,
+                  "refuge": 18.2,
+                  "sealed": true,
+                  "sensitive": 81.0,
+                  "tolerant": 19.0,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 15,
+              "regions": {
+                "fish": {
+                  "bay": 0.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 24.0,
+                  "oxygen": 0.0,
+                  "stress": 0,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.0,
+                  "refuge": 18.3,
+                  "sealed": true,
+                  "sensitive": 81.5,
+                  "tolerant": 18.5,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 20,
+              "regions": {
+                "fish": {
+                  "bay": 0.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 24.0,
+                  "oxygen": 0.0,
+                  "stress": 0,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.0,
+                  "refuge": 18.4,
+                  "sealed": true,
+                  "sensitive": 82.0,
+                  "tolerant": 18.0,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 25,
+              "regions": {
+                "fish": {
+                  "bay": 0.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 24.0,
+                  "oxygen": 0.0,
+                  "stress": 0,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.0,
+                  "refuge": 18.5,
+                  "sealed": true,
+                  "sensitive": 82.5,
+                  "tolerant": 17.5,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 30,
+              "regions": {
+                "fish": {
+                  "bay": 0.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 24.0,
+                  "oxygen": 0.0,
+                  "stress": 0,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.0,
+                  "refuge": 18.6,
+                  "sealed": true,
+                  "sensitive": 83.0,
+                  "tolerant": 17.0,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            }
+          ],
+          "model": "oxygen_teaching_v1",
+          "regions": {
+            "fish": {
+              "bay": 0.0,
+              "component": {},
+              "cooling": false,
+              "dead": 0.0,
+              "device": false,
+              "enabled": true,
+              "energy": 0.0,
+              "flags": [
+                "leave"
+              ],
+              "flow": 1.0,
+              "gas": 0.0,
+              "gate_open": true,
+              "heat": 0.0,
+              "loaded": 0.0,
+              "outer": 24.0,
+              "oxygen": 0.0,
+              "stress": 0,
+              "trips": 0,
+              "used": 0.0
+            },
+            "microbe": {
+              "component": {},
+              "cooling": false,
+              "device": false,
+              "enabled": true,
+              "energy": 0.0,
+              "flags": [],
+              "flow": 1.0,
+              "gas": 0.0,
+              "heat": 0.0,
+              "loaded": 0.0,
+              "oxygen": 0.0,
+              "refuge": 18.6,
+              "sealed": true,
+              "sensitive": 83.0,
+              "tolerant": 17.0,
+              "trips": 0,
+              "used": 0.0
+            }
+          },
+          "thermal_model": "device_heat_v1"
+        },
+        "event_serial": 3,
+        "events": [
+          {
+            "at": 0,
+            "id": 1,
+            "kind": "village",
+            "message": "河湾聚落已开启并暂停；先交付饮水、构件或工具，再安排项目。",
+            "shipment": 0
+          },
+          {
+            "at": 1,
+            "id": 2,
+            "kind": "ecology",
+            "message": "鱼湾：低氧驱使鱼群沿开放通道游向外湾；迁移不等于死亡。",
+            "shipment": 0
+          },
+          {
+            "at": 26,
+            "id": 3,
+            "kind": "village",
+            "message": "农作用水不足，农户正在等供给；生活饮水不能替代这份生产预算。",
+            "shipment": 0
+          }
+        ],
+        "fraction": 0.0,
+        "id": "home",
+        "mode": "career",
+        "name": "试验湾 · 主世界",
+        "observation": false,
+        "paused": true,
+        "seconds": 30,
+        "seed": 9192026,
+        "village": {
+          "active_project": "",
+          "added": {
+            "drink": 0.0,
+            "food": 0.0,
+            "frames": 0.0,
+            "goods": 0.0,
+            "grain": 0.0,
+            "tools": 0.0,
+            "water": 0.0
+          },
+          "completed": {
+            "craft": 0,
+            "drink": 0,
+            "eat": 0,
+            "farm": 4,
+            "mill": 1
+          },
+          "diversion": 0.5,
+          "elapsed": 30,
+          "enabled": true,
+          "era": "weald_1400",
+          "exported": {
+            "drink": 0.0,
+            "food": 0.0,
+            "frames": 0.0,
+            "goods": 0.0,
+            "grain": 0.0,
+            "tools": 0.0,
+            "water": 0.0
+          },
+          "flags": [
+            "water"
+          ],
+          "history": [
+            {
+              "at": 0,
+              "state": {
+                "active_project": "",
+                "added": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "completed": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 0,
+                  "mill": 0
+                },
+                "diversion": 0.5,
+                "elapsed": 0,
+                "enabled": true,
+                "era": "weald_1400",
+                "exported": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "flags": [],
+                "mill_running": false,
+                "model": "village_teaching_v1",
+                "passage": 100.0,
+                "people": [
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 0.0,
+                    "id": 0,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 0.0,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 2.0,
+                    "id": 1,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 3.0,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 4.0,
+                    "id": 2,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 6.0,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 6.0,
+                    "id": 3,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 9.0,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 8.0,
+                    "id": 4,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 12.0,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 10.0,
+                    "id": 5,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 15.0,
+                    "work": 0.0
+                  }
+                ],
+                "policy": "care",
+                "produced": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "projects": {
+                  "cistern": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "market": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "mill": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "road": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  }
+                },
+                "spring": 24.0,
+                "spring_overflow": 0.0,
+                "spring_taken": 0.0,
+                "started": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 0,
+                  "mill": 0
+                },
+                "stock": {
+                  "drink": 14.0,
+                  "food": 8.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 10.0,
+                  "tools": 6.0,
+                  "water": 16.0
+                },
+                "trade_clock": 0,
+                "trades": 0,
+                "used": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                }
+              }
+            },
+            {
+              "at": 10,
+              "state": {
+                "active_project": "",
+                "added": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "completed": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 0,
+                  "mill": 0
+                },
+                "diversion": 0.5,
+                "elapsed": 10,
+                "enabled": true,
+                "era": "weald_1400",
+                "exported": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "flags": [],
+                "mill_running": false,
+                "model": "village_teaching_v1",
+                "passage": 100.0,
+                "people": [
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 1.6,
+                    "id": 0,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 2.2,
+                    "work": 2.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 3.6,
+                    "id": 1,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 5.2,
+                    "work": 2.0
+                  },
+                  {
+                    "at": "mill",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 5.6,
+                    "id": 2,
+                    "load": {
+                      "grain": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "mill",
+                    "task": "mill",
+                    "thirst": 8.2,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 7.6,
+                    "id": 3,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 11.2,
+                    "work": 2.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 9.6,
+                    "id": 4,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "home",
+                    "task": "rest",
+                    "thirst": 14.2,
+                    "work": 2.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 11.6,
+                    "id": 5,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 17.2,
+                    "work": 2.0
+                  }
+                ],
+                "policy": "care",
+                "produced": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "projects": {
+                  "cistern": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "market": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "mill": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "road": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  }
+                },
+                "spring": 25.2,
+                "spring_overflow": 0.0,
+                "spring_taken": 0.0,
+                "started": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 4,
+                  "mill": 1
+                },
+                "stock": {
+                  "drink": 14.0,
+                  "food": 8.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 8.0,
+                  "tools": 5.2,
+                  "water": 8.0
+                },
+                "trade_clock": 0,
+                "trades": 0,
+                "used": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 2.0,
+                  "tools": 0.8,
+                  "water": 8.0
+                }
+              }
+            },
+            {
+              "at": 20,
+              "state": {
+                "active_project": "",
+                "added": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "completed": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 4,
+                  "mill": 0
+                },
+                "diversion": 0.5,
+                "elapsed": 20,
+                "enabled": true,
+                "era": "weald_1400",
+                "exported": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "flags": [],
+                "mill_running": false,
+                "model": "village_teaching_v1",
+                "passage": 100.0,
+                "people": [
+                  {
+                    "at": "field",
+                    "cargo": {
+                      "grain": 4.0
+                    },
+                    "fraction": 0.0,
+                    "hunger": 3.2,
+                    "id": 0,
+                    "load": {},
+                    "project": "",
+                    "route": [
+                      "field",
+                      "depot"
+                    ],
+                    "stage": "return",
+                    "target": "depot",
+                    "task": "farm",
+                    "thirst": 4.4,
+                    "work": 12.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {
+                      "grain": 4.0
+                    },
+                    "fraction": 0.0,
+                    "hunger": 5.2,
+                    "id": 1,
+                    "load": {},
+                    "project": "",
+                    "route": [
+                      "field",
+                      "depot"
+                    ],
+                    "stage": "return",
+                    "target": "depot",
+                    "task": "farm",
+                    "thirst": 7.4,
+                    "work": 12.0
+                  },
+                  {
+                    "at": "mill",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 7.2,
+                    "id": 2,
+                    "load": {
+                      "grain": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "mill",
+                    "task": "mill",
+                    "thirst": 10.4,
+                    "work": 10.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {
+                      "grain": 4.0
+                    },
+                    "fraction": 0.0,
+                    "hunger": 9.2,
+                    "id": 3,
+                    "load": {},
+                    "project": "",
+                    "route": [
+                      "field",
+                      "depot"
+                    ],
+                    "stage": "return",
+                    "target": "depot",
+                    "task": "farm",
+                    "thirst": 13.4,
+                    "work": 12.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 11.2,
+                    "id": 4,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "home",
+                    "task": "rest",
+                    "thirst": 16.4,
+                    "work": 5.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {
+                      "grain": 4.0
+                    },
+                    "fraction": 0.0,
+                    "hunger": 13.2,
+                    "id": 5,
+                    "load": {},
+                    "project": "",
+                    "route": [
+                      "field",
+                      "depot"
+                    ],
+                    "stage": "return",
+                    "target": "depot",
+                    "task": "farm",
+                    "thirst": 19.4,
+                    "work": 12.0
+                  }
+                ],
+                "policy": "care",
+                "produced": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 16.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "projects": {
+                  "cistern": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "market": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "mill": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "road": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  }
+                },
+                "spring": 26.4,
+                "spring_overflow": 0.0,
+                "spring_taken": 0.0,
+                "started": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 4,
+                  "mill": 1
+                },
+                "stock": {
+                  "drink": 14.0,
+                  "food": 8.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 8.0,
+                  "tools": 5.2,
+                  "water": 8.0
+                },
+                "trade_clock": 0,
+                "trades": 0,
+                "used": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 2.0,
+                  "tools": 0.8,
+                  "water": 8.0
+                }
+              }
+            },
+            {
+              "at": 30,
+              "state": {
+                "active_project": "",
+                "added": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "completed": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 4,
+                  "mill": 1
+                },
+                "diversion": 0.5,
+                "elapsed": 30,
+                "enabled": true,
+                "era": "weald_1400",
+                "exported": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "flags": [
+                  "water"
+                ],
+                "mill_running": false,
+                "model": "village_teaching_v1",
+                "passage": 100.0,
+                "people": [
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 4.8,
+                    "id": 0,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 6.6,
+                    "work": 1.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 6.8,
+                    "id": 1,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 9.6,
+                    "work": 1.0
+                  },
+                  {
+                    "at": "bridge",
+                    "cargo": {
+                      "food": 2.0
+                    },
+                    "fraction": 0.666666666666667,
+                    "hunger": 8.8,
+                    "id": 2,
+                    "load": {},
+                    "project": "",
+                    "route": [
+                      "bridge",
+                      "depot"
+                    ],
+                    "stage": "return",
+                    "target": "depot",
+                    "task": "mill",
+                    "thirst": 12.6,
+                    "work": 16.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 10.8,
+                    "id": 3,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 15.6,
+                    "work": 1.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 12.8,
+                    "id": 4,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "home",
+                    "task": "rest",
+                    "thirst": 18.6,
+                    "work": 1.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 14.8,
+                    "id": 5,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 21.6,
+                    "work": 1.0
+                  }
+                ],
+                "policy": "care",
+                "produced": {
+                  "drink": 0.0,
+                  "food": 2.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 16.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "projects": {
+                  "cistern": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "market": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "mill": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "road": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  }
+                },
+                "spring": 27.6,
+                "spring_overflow": 0.0,
+                "spring_taken": 0.0,
+                "started": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 8,
+                  "mill": 1
+                },
+                "stock": {
+                  "drink": 14.0,
+                  "food": 8.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 24.0,
+                  "tools": 4.4,
+                  "water": 0.0
+                },
+                "trade_clock": 0,
+                "trades": 0,
+                "used": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 2.0,
+                  "tools": 1.6,
+                  "water": 16.0
+                }
+              }
+            }
+          ],
+          "mill_running": false,
+          "model": "village_teaching_v1",
+          "passage": 100.0,
+          "people": [
+            {
+              "at": "field",
+              "cargo": {},
+              "fraction": 0.0,
+              "hunger": 4.8,
+              "id": 0,
+              "load": {
+                "tools": 0.2,
+                "water": 2.0
+              },
+              "project": "",
+              "route": [],
+              "stage": "work",
+              "target": "field",
+              "task": "farm",
+              "thirst": 6.6,
+              "work": 1.0
+            },
+            {
+              "at": "field",
+              "cargo": {},
+              "fraction": 0.0,
+              "hunger": 6.8,
+              "id": 1,
+              "load": {
+                "tools": 0.2,
+                "water": 2.0
+              },
+              "project": "",
+              "route": [],
+              "stage": "work",
+              "target": "field",
+              "task": "farm",
+              "thirst": 9.6,
+              "work": 1.0
+            },
+            {
+              "at": "bridge",
+              "cargo": {
+                "food": 2.0
+              },
+              "fraction": 0.666666666666667,
+              "hunger": 8.8,
+              "id": 2,
+              "load": {},
+              "project": "",
+              "route": [
+                "bridge",
+                "depot"
+              ],
+              "stage": "return",
+              "target": "depot",
+              "task": "mill",
+              "thirst": 12.6,
+              "work": 16.0
+            },
+            {
+              "at": "field",
+              "cargo": {},
+              "fraction": 0.0,
+              "hunger": 10.8,
+              "id": 3,
+              "load": {
+                "tools": 0.2,
+                "water": 2.0
+              },
+              "project": "",
+              "route": [],
+              "stage": "work",
+              "target": "field",
+              "task": "farm",
+              "thirst": 15.6,
+              "work": 1.0
+            },
+            {
+              "at": "home",
+              "cargo": {},
+              "fraction": 0.0,
+              "hunger": 12.8,
+              "id": 4,
+              "load": {},
+              "project": "",
+              "route": [],
+              "stage": "work",
+              "target": "home",
+              "task": "rest",
+              "thirst": 18.6,
+              "work": 1.0
+            },
+            {
+              "at": "field",
+              "cargo": {},
+              "fraction": 0.0,
+              "hunger": 14.8,
+              "id": 5,
+              "load": {
+                "tools": 0.2,
+                "water": 2.0
+              },
+              "project": "",
+              "route": [],
+              "stage": "work",
+              "target": "field",
+              "task": "farm",
+              "thirst": 21.6,
+              "work": 1.0
+            }
+          ],
+          "policy": "care",
+          "produced": {
+            "drink": 0.0,
+            "food": 2.0,
+            "frames": 0.0,
+            "goods": 0.0,
+            "grain": 16.0,
+            "tools": 0.0,
+            "water": 0.0
+          },
+          "projects": {
+            "cistern": {
+              "approved": true,
+              "committed": false,
+              "complete": false,
+              "paused": false,
+              "progress": 0.0
+            },
+            "market": {
+              "approved": false,
+              "committed": false,
+              "complete": false,
+              "paused": false,
+              "progress": 0.0
+            },
+            "mill": {
+              "approved": false,
+              "committed": false,
+              "complete": false,
+              "paused": false,
+              "progress": 0.0
+            },
+            "road": {
+              "approved": true,
+              "committed": false,
+              "complete": false,
+              "paused": false,
+              "progress": 0.0
+            }
+          },
+          "spring": 27.6,
+          "spring_overflow": 0.0,
+          "spring_taken": 0.0,
+          "started": {
+            "craft": 0,
+            "drink": 0,
+            "eat": 0,
+            "farm": 8,
+            "mill": 1
+          },
+          "stock": {
+            "drink": 14.0,
+            "food": 8.0,
+            "frames": 0.0,
+            "goods": 0.0,
+            "grain": 24.0,
+            "tools": 4.4,
+            "water": 0.0
+          },
+          "trade_clock": 0,
+          "trades": 0,
+          "used": {
+            "drink": 0.0,
+            "food": 0.0,
+            "frames": 0.0,
+            "goods": 0.0,
+            "grain": 2.0,
+            "tools": 1.6,
+            "water": 16.0
+          }
+        },
+        "watershed": {
+          "added": 0.0,
+          "bypass": false,
+          "dead": 0.0,
+          "elapsed": 0,
+          "enabled": false,
+          "era": "devonian",
+          "exported": 0.0,
+          "history": [
+            {
+              "at": 0,
+              "state": {
+                "added": 0.0,
+                "bypass": false,
+                "dead": 0.0,
+                "elapsed": 0,
+                "enabled": false,
+                "era": "devonian",
+                "exported": 0.0,
+                "migration_open": true,
+                "model": "watershed_teaching_v1",
+                "refuge": 24.0,
+                "regions": {
+                  "estuary": {
+                    "algae": 4.0,
+                    "benthos": 10.0,
+                    "buffer": false,
+                    "component": {},
+                    "cooling": false,
+                    "detritus": 3.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "fish": 12.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "flush": 0,
+                    "gas": 0.0,
+                    "harvest": {},
+                    "harvest_target": "algae",
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "nutrient": 2.0,
+                    "oxygen": 82.0,
+                    "plants": 2.0,
+                    "retained": 0.0,
+                    "screen": false,
+                    "screen_charges": 0,
+                    "screen_discarded": 0.0,
+                    "screen_enabled": true,
+                    "screen_energy": 0.0,
+                    "screen_loaded": false,
+                    "screen_used": 0.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "headwater": {
+                    "algae": 3.0,
+                    "benthos": 10.0,
+                    "buffer": false,
+                    "component": {},
+                    "cooling": false,
+                    "detritus": 2.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "fish": 6.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "flush": 0,
+                    "gas": 0.0,
+                    "harvest": {},
+                    "harvest_target": "algae",
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "nutrient": 8.0,
+                    "oxygen": 82.0,
+                    "plants": 2.0,
+                    "retained": 0.0,
+                    "screen": false,
+                    "screen_charges": 0,
+                    "screen_discarded": 0.0,
+                    "screen_enabled": true,
+                    "screen_energy": 0.0,
+                    "screen_loaded": false,
+                    "screen_used": 0.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "marsh": {
+                    "algae": 5.0,
+                    "benthos": 10.0,
+                    "buffer": false,
+                    "component": {},
+                    "cooling": false,
+                    "detritus": 4.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "fish": 10.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "flush": 0,
+                    "gas": 0.0,
+                    "harvest": {},
+                    "harvest_target": "algae",
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "nutrient": 4.0,
+                    "oxygen": 82.0,
+                    "plants": 12.0,
+                    "retained": 0.0,
+                    "screen": false,
+                    "screen_charges": 0,
+                    "screen_discarded": 0.0,
+                    "screen_enabled": true,
+                    "screen_energy": 0.0,
+                    "screen_loaded": false,
+                    "screen_used": 0.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  }
+                },
+                "source": 150.0,
+                "source_open": true,
+                "waste": 0.0
+              }
+            }
+          ],
+          "migration_open": true,
+          "model": "watershed_teaching_v1",
+          "refuge": 24.0,
+          "regions": {
+            "estuary": {
+              "algae": 4.0,
+              "benthos": 10.0,
+              "buffer": false,
+              "component": {},
+              "cooling": false,
+              "detritus": 3.0,
+              "device": false,
+              "enabled": true,
+              "energy": 0.0,
+              "fish": 12.0,
+              "flags": [],
+              "flow": 1.0,
+              "flush": 0,
+              "gas": 0.0,
+              "harvest": {},
+              "harvest_target": "algae",
+              "heat": 0.0,
+              "loaded": 0.0,
+              "nutrient": 2.0,
+              "oxygen": 82.0,
+              "plants": 2.0,
+              "retained": 0.0,
+              "screen": false,
+              "screen_charges": 0,
+              "screen_discarded": 0.0,
+              "screen_enabled": true,
+              "screen_energy": 0.0,
+              "screen_loaded": false,
+              "screen_used": 0.0,
+              "stress": 0,
+              "trips": 0,
+              "used": 0.0
+            },
+            "headwater": {
+              "algae": 3.0,
+              "benthos": 10.0,
+              "buffer": false,
+              "component": {},
+              "cooling": false,
+              "detritus": 2.0,
+              "device": false,
+              "enabled": true,
+              "energy": 0.0,
+              "fish": 6.0,
+              "flags": [],
+              "flow": 1.0,
+              "flush": 0,
+              "gas": 0.0,
+              "harvest": {},
+              "harvest_target": "algae",
+              "heat": 0.0,
+              "loaded": 0.0,
+              "nutrient": 8.0,
+              "oxygen": 82.0,
+              "plants": 2.0,
+              "retained": 0.0,
+              "screen": false,
+              "screen_charges": 0,
+              "screen_discarded": 0.0,
+              "screen_enabled": true,
+              "screen_energy": 0.0,
+              "screen_loaded": false,
+              "screen_used": 0.0,
+              "stress": 0,
+              "trips": 0,
+              "used": 0.0
+            },
+            "marsh": {
+              "algae": 5.0,
+              "benthos": 10.0,
+              "buffer": false,
+              "component": {},
+              "cooling": false,
+              "detritus": 4.0,
+              "device": false,
+              "enabled": true,
+              "energy": 0.0,
+              "fish": 10.0,
+              "flags": [],
+              "flow": 1.0,
+              "flush": 0,
+              "gas": 0.0,
+              "harvest": {},
+              "harvest_target": "algae",
+              "heat": 0.0,
+              "loaded": 0.0,
+              "nutrient": 4.0,
+              "oxygen": 82.0,
+              "plants": 12.0,
+              "retained": 0.0,
+              "screen": false,
+              "screen_charges": 0,
+              "screen_discarded": 0.0,
+              "screen_enabled": true,
+              "screen_energy": 0.0,
+              "screen_loaded": false,
+              "screen_used": 0.0,
+              "stress": 0,
+              "trips": 0,
+              "used": 0.0
+            }
+          },
+          "source": 150.0,
+          "source_open": true,
+          "waste": 0.0
+        },
+        "zones": [
+          {
+            "id": "deep",
+            "target": 0,
+            "water": 0.0
+          },
+          {
+            "id": "shelf",
+            "target": 0,
+            "water": 0.0
+          }
+        ]
+      },
+      {
+        "allowance": 3,
+        "base": {
+          "ecology": {
+            "history": [
+              {
+                "at": 0,
+                "regions": {
+                  "fish": {
+                    "bay": 6.0,
+                    "component": {},
+                    "cooling": false,
+                    "dead": 0.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "gate_open": true,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "outer": 18.0,
+                    "oxygen": 8.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "microbe": {
+                    "component": {},
+                    "cooling": false,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "oxygen": 4.0,
+                    "refuge": 18.0,
+                    "sealed": true,
+                    "sensitive": 80.0,
+                    "tolerant": 20.0,
+                    "trips": 0,
+                    "used": 0.0
+                  }
+                }
+              },
+              {
+                "at": 5,
+                "regions": {
+                  "fish": {
+                    "bay": 3.0,
+                    "component": {},
+                    "cooling": false,
+                    "dead": 0.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [
+                      "leave"
+                    ],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "gate_open": true,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "outer": 21.0,
+                    "oxygen": 3.0,
+                    "stress": 5,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "microbe": {
+                    "component": {},
+                    "cooling": false,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "oxygen": 0.5,
+                    "refuge": 18.1,
+                    "sealed": true,
+                    "sensitive": 80.5,
+                    "tolerant": 19.5,
+                    "trips": 0,
+                    "used": 0.0
+                  }
+                }
+              },
+              {
+                "at": 10,
+                "regions": {
+                  "fish": {
+                    "bay": 0.000000000000000666133814775094,
+                    "component": {},
+                    "cooling": false,
+                    "dead": 0.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [
+                      "leave"
+                    ],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "gate_open": true,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "outer": 24.0,
+                    "oxygen": 0.0,
+                    "stress": 10,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "microbe": {
+                    "component": {},
+                    "cooling": false,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "oxygen": 0.0,
+                    "refuge": 18.2,
+                    "sealed": true,
+                    "sensitive": 81.0,
+                    "tolerant": 19.0,
+                    "trips": 0,
+                    "used": 0.0
+                  }
+                }
+              },
+              {
+                "at": 15,
+                "regions": {
+                  "fish": {
+                    "bay": 0.0,
+                    "component": {},
+                    "cooling": false,
+                    "dead": 0.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [
+                      "leave"
+                    ],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "gate_open": true,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "outer": 24.0,
+                    "oxygen": 0.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "microbe": {
+                    "component": {},
+                    "cooling": false,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "oxygen": 0.0,
+                    "refuge": 18.3,
+                    "sealed": true,
+                    "sensitive": 81.5,
+                    "tolerant": 18.5,
+                    "trips": 0,
+                    "used": 0.0
+                  }
+                }
+              },
+              {
+                "at": 20,
+                "regions": {
+                  "fish": {
+                    "bay": 0.0,
+                    "component": {},
+                    "cooling": false,
+                    "dead": 0.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [
+                      "leave"
+                    ],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "gate_open": true,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "outer": 24.0,
+                    "oxygen": 0.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "microbe": {
+                    "component": {},
+                    "cooling": false,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "oxygen": 0.0,
+                    "refuge": 18.4,
+                    "sealed": true,
+                    "sensitive": 82.0,
+                    "tolerant": 18.0,
+                    "trips": 0,
+                    "used": 0.0
+                  }
+                }
+              },
+              {
+                "at": 25,
+                "regions": {
+                  "fish": {
+                    "bay": 0.0,
+                    "component": {},
+                    "cooling": false,
+                    "dead": 0.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [
+                      "leave"
+                    ],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "gate_open": true,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "outer": 24.0,
+                    "oxygen": 0.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "microbe": {
+                    "component": {},
+                    "cooling": false,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "oxygen": 0.0,
+                    "refuge": 18.5,
+                    "sealed": true,
+                    "sensitive": 82.5,
+                    "tolerant": 17.5,
+                    "trips": 0,
+                    "used": 0.0
+                  }
+                }
+              },
+              {
+                "at": 30,
+                "regions": {
+                  "fish": {
+                    "bay": 0.0,
+                    "component": {},
+                    "cooling": false,
+                    "dead": 0.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [
+                      "leave"
+                    ],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "gate_open": true,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "outer": 24.0,
+                    "oxygen": 0.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "microbe": {
+                    "component": {},
+                    "cooling": false,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "gas": 0.0,
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "oxygen": 0.0,
+                    "refuge": 18.6,
+                    "sealed": true,
+                    "sensitive": 83.0,
+                    "tolerant": 17.0,
+                    "trips": 0,
+                    "used": 0.0
+                  }
+                }
+              }
+            ],
+            "model": "oxygen_teaching_v1",
+            "regions": {
+              "fish": {
+                "bay": 0.0,
+                "component": {},
+                "cooling": false,
+                "dead": 0.0,
+                "device": false,
+                "enabled": true,
+                "energy": 0.0,
+                "flags": [
+                  "leave"
+                ],
+                "flow": 1.0,
+                "gas": 0.0,
+                "gate_open": true,
+                "heat": 0.0,
+                "loaded": 0.0,
+                "outer": 24.0,
+                "oxygen": 0.0,
+                "stress": 0,
+                "trips": 0,
+                "used": 0.0
+              },
+              "microbe": {
+                "component": {},
+                "cooling": false,
+                "device": false,
+                "enabled": true,
+                "energy": 0.0,
+                "flags": [],
+                "flow": 1.0,
+                "gas": 0.0,
+                "heat": 0.0,
+                "loaded": 0.0,
+                "oxygen": 0.0,
+                "refuge": 18.6,
+                "sealed": true,
+                "sensitive": 83.0,
+                "tolerant": 17.0,
+                "trips": 0,
+                "used": 0.0
+              }
+            },
+            "thermal_model": "device_heat_v1"
+          },
+          "fraction": 0.0,
+          "observation": false,
+          "seconds": 30,
+          "seed": 9192026,
+          "village": {
+            "active_project": "",
+            "added": {
+              "drink": 0.0,
+              "food": 0.0,
+              "frames": 0.0,
+              "goods": 0.0,
+              "grain": 0.0,
+              "tools": 0.0,
+              "water": 0.0
+            },
+            "completed": {
+              "craft": 0,
+              "drink": 0,
+              "eat": 0,
+              "farm": 4,
+              "mill": 1
+            },
+            "diversion": 0.5,
+            "elapsed": 30,
+            "enabled": true,
+            "era": "weald_1400",
+            "exported": {
+              "drink": 0.0,
+              "food": 0.0,
+              "frames": 0.0,
+              "goods": 0.0,
+              "grain": 0.0,
+              "tools": 0.0,
+              "water": 0.0
+            },
+            "flags": [
+              "water"
+            ],
+            "history": [
+              {
+                "at": 0,
+                "state": {
+                  "active_project": "",
+                  "added": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "completed": {
+                    "craft": 0,
+                    "drink": 0,
+                    "eat": 0,
+                    "farm": 0,
+                    "mill": 0
+                  },
+                  "diversion": 0.5,
+                  "elapsed": 0,
+                  "enabled": true,
+                  "era": "weald_1400",
+                  "exported": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "flags": [],
+                  "mill_running": false,
+                  "model": "village_teaching_v1",
+                  "passage": 100.0,
+                  "people": [
+                    {
+                      "at": "home",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 0.0,
+                      "id": 0,
+                      "load": {},
+                      "project": "",
+                      "route": [],
+                      "stage": "idle",
+                      "target": "home",
+                      "task": "",
+                      "thirst": 0.0,
+                      "work": 0.0
+                    },
+                    {
+                      "at": "home",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 2.0,
+                      "id": 1,
+                      "load": {},
+                      "project": "",
+                      "route": [],
+                      "stage": "idle",
+                      "target": "home",
+                      "task": "",
+                      "thirst": 3.0,
+                      "work": 0.0
+                    },
+                    {
+                      "at": "home",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 4.0,
+                      "id": 2,
+                      "load": {},
+                      "project": "",
+                      "route": [],
+                      "stage": "idle",
+                      "target": "home",
+                      "task": "",
+                      "thirst": 6.0,
+                      "work": 0.0
+                    },
+                    {
+                      "at": "home",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 6.0,
+                      "id": 3,
+                      "load": {},
+                      "project": "",
+                      "route": [],
+                      "stage": "idle",
+                      "target": "home",
+                      "task": "",
+                      "thirst": 9.0,
+                      "work": 0.0
+                    },
+                    {
+                      "at": "home",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 8.0,
+                      "id": 4,
+                      "load": {},
+                      "project": "",
+                      "route": [],
+                      "stage": "idle",
+                      "target": "home",
+                      "task": "",
+                      "thirst": 12.0,
+                      "work": 0.0
+                    },
+                    {
+                      "at": "home",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 10.0,
+                      "id": 5,
+                      "load": {},
+                      "project": "",
+                      "route": [],
+                      "stage": "idle",
+                      "target": "home",
+                      "task": "",
+                      "thirst": 15.0,
+                      "work": 0.0
+                    }
+                  ],
+                  "policy": "care",
+                  "produced": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "projects": {
+                    "cistern": {
+                      "approved": true,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "market": {
+                      "approved": false,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "mill": {
+                      "approved": false,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "road": {
+                      "approved": true,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    }
+                  },
+                  "spring": 24.0,
+                  "spring_overflow": 0.0,
+                  "spring_taken": 0.0,
+                  "started": {
+                    "craft": 0,
+                    "drink": 0,
+                    "eat": 0,
+                    "farm": 0,
+                    "mill": 0
+                  },
+                  "stock": {
+                    "drink": 14.0,
+                    "food": 8.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 10.0,
+                    "tools": 6.0,
+                    "water": 16.0
+                  },
+                  "trade_clock": 0,
+                  "trades": 0,
+                  "used": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  }
+                }
+              },
+              {
+                "at": 10,
+                "state": {
+                  "active_project": "",
+                  "added": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "completed": {
+                    "craft": 0,
+                    "drink": 0,
+                    "eat": 0,
+                    "farm": 0,
+                    "mill": 0
+                  },
+                  "diversion": 0.5,
+                  "elapsed": 10,
+                  "enabled": true,
+                  "era": "weald_1400",
+                  "exported": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "flags": [],
+                  "mill_running": false,
+                  "model": "village_teaching_v1",
+                  "passage": 100.0,
+                  "people": [
+                    {
+                      "at": "field",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 1.6,
+                      "id": 0,
+                      "load": {
+                        "tools": 0.2,
+                        "water": 2.0
+                      },
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "field",
+                      "task": "farm",
+                      "thirst": 2.2,
+                      "work": 2.0
+                    },
+                    {
+                      "at": "field",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 3.6,
+                      "id": 1,
+                      "load": {
+                        "tools": 0.2,
+                        "water": 2.0
+                      },
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "field",
+                      "task": "farm",
+                      "thirst": 5.2,
+                      "work": 2.0
+                    },
+                    {
+                      "at": "mill",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 5.6,
+                      "id": 2,
+                      "load": {
+                        "grain": 2.0
+                      },
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "mill",
+                      "task": "mill",
+                      "thirst": 8.2,
+                      "work": 0.0
+                    },
+                    {
+                      "at": "field",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 7.6,
+                      "id": 3,
+                      "load": {
+                        "tools": 0.2,
+                        "water": 2.0
+                      },
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "field",
+                      "task": "farm",
+                      "thirst": 11.2,
+                      "work": 2.0
+                    },
+                    {
+                      "at": "home",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 9.6,
+                      "id": 4,
+                      "load": {},
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "home",
+                      "task": "rest",
+                      "thirst": 14.2,
+                      "work": 2.0
+                    },
+                    {
+                      "at": "field",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 11.6,
+                      "id": 5,
+                      "load": {
+                        "tools": 0.2,
+                        "water": 2.0
+                      },
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "field",
+                      "task": "farm",
+                      "thirst": 17.2,
+                      "work": 2.0
+                    }
+                  ],
+                  "policy": "care",
+                  "produced": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "projects": {
+                    "cistern": {
+                      "approved": true,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "market": {
+                      "approved": false,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "mill": {
+                      "approved": false,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "road": {
+                      "approved": true,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    }
+                  },
+                  "spring": 25.2,
+                  "spring_overflow": 0.0,
+                  "spring_taken": 0.0,
+                  "started": {
+                    "craft": 0,
+                    "drink": 0,
+                    "eat": 0,
+                    "farm": 4,
+                    "mill": 1
+                  },
+                  "stock": {
+                    "drink": 14.0,
+                    "food": 8.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 8.0,
+                    "tools": 5.2,
+                    "water": 8.0
+                  },
+                  "trade_clock": 0,
+                  "trades": 0,
+                  "used": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 2.0,
+                    "tools": 0.8,
+                    "water": 8.0
+                  }
+                }
+              },
+              {
+                "at": 20,
+                "state": {
+                  "active_project": "",
+                  "added": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "completed": {
+                    "craft": 0,
+                    "drink": 0,
+                    "eat": 0,
+                    "farm": 4,
+                    "mill": 0
+                  },
+                  "diversion": 0.5,
+                  "elapsed": 20,
+                  "enabled": true,
+                  "era": "weald_1400",
+                  "exported": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "flags": [],
+                  "mill_running": false,
+                  "model": "village_teaching_v1",
+                  "passage": 100.0,
+                  "people": [
+                    {
+                      "at": "field",
+                      "cargo": {
+                        "grain": 4.0
+                      },
+                      "fraction": 0.0,
+                      "hunger": 3.2,
+                      "id": 0,
+                      "load": {},
+                      "project": "",
+                      "route": [
+                        "field",
+                        "depot"
+                      ],
+                      "stage": "return",
+                      "target": "depot",
+                      "task": "farm",
+                      "thirst": 4.4,
+                      "work": 12.0
+                    },
+                    {
+                      "at": "field",
+                      "cargo": {
+                        "grain": 4.0
+                      },
+                      "fraction": 0.0,
+                      "hunger": 5.2,
+                      "id": 1,
+                      "load": {},
+                      "project": "",
+                      "route": [
+                        "field",
+                        "depot"
+                      ],
+                      "stage": "return",
+                      "target": "depot",
+                      "task": "farm",
+                      "thirst": 7.4,
+                      "work": 12.0
+                    },
+                    {
+                      "at": "mill",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 7.2,
+                      "id": 2,
+                      "load": {
+                        "grain": 2.0
+                      },
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "mill",
+                      "task": "mill",
+                      "thirst": 10.4,
+                      "work": 10.0
+                    },
+                    {
+                      "at": "field",
+                      "cargo": {
+                        "grain": 4.0
+                      },
+                      "fraction": 0.0,
+                      "hunger": 9.2,
+                      "id": 3,
+                      "load": {},
+                      "project": "",
+                      "route": [
+                        "field",
+                        "depot"
+                      ],
+                      "stage": "return",
+                      "target": "depot",
+                      "task": "farm",
+                      "thirst": 13.4,
+                      "work": 12.0
+                    },
+                    {
+                      "at": "home",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 11.2,
+                      "id": 4,
+                      "load": {},
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "home",
+                      "task": "rest",
+                      "thirst": 16.4,
+                      "work": 5.0
+                    },
+                    {
+                      "at": "field",
+                      "cargo": {
+                        "grain": 4.0
+                      },
+                      "fraction": 0.0,
+                      "hunger": 13.2,
+                      "id": 5,
+                      "load": {},
+                      "project": "",
+                      "route": [
+                        "field",
+                        "depot"
+                      ],
+                      "stage": "return",
+                      "target": "depot",
+                      "task": "farm",
+                      "thirst": 19.4,
+                      "work": 12.0
+                    }
+                  ],
+                  "policy": "care",
+                  "produced": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 16.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "projects": {
+                    "cistern": {
+                      "approved": true,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "market": {
+                      "approved": false,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "mill": {
+                      "approved": false,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "road": {
+                      "approved": true,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    }
+                  },
+                  "spring": 26.4,
+                  "spring_overflow": 0.0,
+                  "spring_taken": 0.0,
+                  "started": {
+                    "craft": 0,
+                    "drink": 0,
+                    "eat": 0,
+                    "farm": 4,
+                    "mill": 1
+                  },
+                  "stock": {
+                    "drink": 14.0,
+                    "food": 8.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 8.0,
+                    "tools": 5.2,
+                    "water": 8.0
+                  },
+                  "trade_clock": 0,
+                  "trades": 0,
+                  "used": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 2.0,
+                    "tools": 0.8,
+                    "water": 8.0
+                  }
+                }
+              },
+              {
+                "at": 30,
+                "state": {
+                  "active_project": "",
+                  "added": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "completed": {
+                    "craft": 0,
+                    "drink": 0,
+                    "eat": 0,
+                    "farm": 4,
+                    "mill": 1
+                  },
+                  "diversion": 0.5,
+                  "elapsed": 30,
+                  "enabled": true,
+                  "era": "weald_1400",
+                  "exported": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 0.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "flags": [
+                    "water"
+                  ],
+                  "mill_running": false,
+                  "model": "village_teaching_v1",
+                  "passage": 100.0,
+                  "people": [
+                    {
+                      "at": "field",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 4.8,
+                      "id": 0,
+                      "load": {
+                        "tools": 0.2,
+                        "water": 2.0
+                      },
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "field",
+                      "task": "farm",
+                      "thirst": 6.6,
+                      "work": 1.0
+                    },
+                    {
+                      "at": "field",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 6.8,
+                      "id": 1,
+                      "load": {
+                        "tools": 0.2,
+                        "water": 2.0
+                      },
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "field",
+                      "task": "farm",
+                      "thirst": 9.6,
+                      "work": 1.0
+                    },
+                    {
+                      "at": "bridge",
+                      "cargo": {
+                        "food": 2.0
+                      },
+                      "fraction": 0.666666666666667,
+                      "hunger": 8.8,
+                      "id": 2,
+                      "load": {},
+                      "project": "",
+                      "route": [
+                        "bridge",
+                        "depot"
+                      ],
+                      "stage": "return",
+                      "target": "depot",
+                      "task": "mill",
+                      "thirst": 12.6,
+                      "work": 16.0
+                    },
+                    {
+                      "at": "field",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 10.8,
+                      "id": 3,
+                      "load": {
+                        "tools": 0.2,
+                        "water": 2.0
+                      },
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "field",
+                      "task": "farm",
+                      "thirst": 15.6,
+                      "work": 1.0
+                    },
+                    {
+                      "at": "home",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 12.8,
+                      "id": 4,
+                      "load": {},
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "home",
+                      "task": "rest",
+                      "thirst": 18.6,
+                      "work": 1.0
+                    },
+                    {
+                      "at": "field",
+                      "cargo": {},
+                      "fraction": 0.0,
+                      "hunger": 14.8,
+                      "id": 5,
+                      "load": {
+                        "tools": 0.2,
+                        "water": 2.0
+                      },
+                      "project": "",
+                      "route": [],
+                      "stage": "work",
+                      "target": "field",
+                      "task": "farm",
+                      "thirst": 21.6,
+                      "work": 1.0
+                    }
+                  ],
+                  "policy": "care",
+                  "produced": {
+                    "drink": 0.0,
+                    "food": 2.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 16.0,
+                    "tools": 0.0,
+                    "water": 0.0
+                  },
+                  "projects": {
+                    "cistern": {
+                      "approved": true,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "market": {
+                      "approved": false,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "mill": {
+                      "approved": false,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    },
+                    "road": {
+                      "approved": true,
+                      "committed": false,
+                      "complete": false,
+                      "paused": false,
+                      "progress": 0.0
+                    }
+                  },
+                  "spring": 27.6,
+                  "spring_overflow": 0.0,
+                  "spring_taken": 0.0,
+                  "started": {
+                    "craft": 0,
+                    "drink": 0,
+                    "eat": 0,
+                    "farm": 8,
+                    "mill": 1
+                  },
+                  "stock": {
+                    "drink": 14.0,
+                    "food": 8.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 24.0,
+                    "tools": 4.4,
+                    "water": 0.0
+                  },
+                  "trade_clock": 0,
+                  "trades": 0,
+                  "used": {
+                    "drink": 0.0,
+                    "food": 0.0,
+                    "frames": 0.0,
+                    "goods": 0.0,
+                    "grain": 2.0,
+                    "tools": 1.6,
+                    "water": 16.0
+                  }
+                }
+              }
+            ],
+            "mill_running": false,
+            "model": "village_teaching_v1",
+            "passage": 100.0,
+            "people": [
+              {
+                "at": "field",
+                "cargo": {},
+                "fraction": 0.0,
+                "hunger": 4.8,
+                "id": 0,
+                "load": {
+                  "tools": 0.2,
+                  "water": 2.0
+                },
+                "project": "",
+                "route": [],
+                "stage": "work",
+                "target": "field",
+                "task": "farm",
+                "thirst": 6.6,
+                "work": 1.0
+              },
+              {
+                "at": "field",
+                "cargo": {},
+                "fraction": 0.0,
+                "hunger": 6.8,
+                "id": 1,
+                "load": {
+                  "tools": 0.2,
+                  "water": 2.0
+                },
+                "project": "",
+                "route": [],
+                "stage": "work",
+                "target": "field",
+                "task": "farm",
+                "thirst": 9.6,
+                "work": 1.0
+              },
+              {
+                "at": "bridge",
+                "cargo": {
+                  "food": 2.0
+                },
+                "fraction": 0.666666666666667,
+                "hunger": 8.8,
+                "id": 2,
+                "load": {},
+                "project": "",
+                "route": [
+                  "bridge",
+                  "depot"
+                ],
+                "stage": "return",
+                "target": "depot",
+                "task": "mill",
+                "thirst": 12.6,
+                "work": 16.0
+              },
+              {
+                "at": "field",
+                "cargo": {},
+                "fraction": 0.0,
+                "hunger": 10.8,
+                "id": 3,
+                "load": {
+                  "tools": 0.2,
+                  "water": 2.0
+                },
+                "project": "",
+                "route": [],
+                "stage": "work",
+                "target": "field",
+                "task": "farm",
+                "thirst": 15.6,
+                "work": 1.0
+              },
+              {
+                "at": "home",
+                "cargo": {},
+                "fraction": 0.0,
+                "hunger": 12.8,
+                "id": 4,
+                "load": {},
+                "project": "",
+                "route": [],
+                "stage": "work",
+                "target": "home",
+                "task": "rest",
+                "thirst": 18.6,
+                "work": 1.0
+              },
+              {
+                "at": "field",
+                "cargo": {},
+                "fraction": 0.0,
+                "hunger": 14.8,
+                "id": 5,
+                "load": {
+                  "tools": 0.2,
+                  "water": 2.0
+                },
+                "project": "",
+                "route": [],
+                "stage": "work",
+                "target": "field",
+                "task": "farm",
+                "thirst": 21.6,
+                "work": 1.0
+              }
+            ],
+            "policy": "care",
+            "produced": {
+              "drink": 0.0,
+              "food": 2.0,
+              "frames": 0.0,
+              "goods": 0.0,
+              "grain": 16.0,
+              "tools": 0.0,
+              "water": 0.0
+            },
+            "projects": {
+              "cistern": {
+                "approved": true,
+                "committed": false,
+                "complete": false,
+                "paused": false,
+                "progress": 0.0
+              },
+              "market": {
+                "approved": false,
+                "committed": false,
+                "complete": false,
+                "paused": false,
+                "progress": 0.0
+              },
+              "mill": {
+                "approved": false,
+                "committed": false,
+                "complete": false,
+                "paused": false,
+                "progress": 0.0
+              },
+              "road": {
+                "approved": true,
+                "committed": false,
+                "complete": false,
+                "paused": false,
+                "progress": 0.0
+              }
+            },
+            "spring": 27.6,
+            "spring_overflow": 0.0,
+            "spring_taken": 0.0,
+            "started": {
+              "craft": 0,
+              "drink": 0,
+              "eat": 0,
+              "farm": 8,
+              "mill": 1
+            },
+            "stock": {
+              "drink": 14.0,
+              "food": 8.0,
+              "frames": 0.0,
+              "goods": 0.0,
+              "grain": 24.0,
+              "tools": 4.4,
+              "water": 0.0
+            },
+            "trade_clock": 0,
+            "trades": 0,
+            "used": {
+              "drink": 0.0,
+              "food": 0.0,
+              "frames": 0.0,
+              "goods": 0.0,
+              "grain": 2.0,
+              "tools": 1.6,
+              "water": 16.0
+            }
+          },
+          "watershed": {
+            "added": 0.0,
+            "bypass": false,
+            "dead": 0.0,
+            "elapsed": 0,
+            "enabled": false,
+            "era": "devonian",
+            "exported": 0.0,
+            "history": [
+              {
+                "at": 0,
+                "state": {
+                  "added": 0.0,
+                  "bypass": false,
+                  "dead": 0.0,
+                  "elapsed": 0,
+                  "enabled": false,
+                  "era": "devonian",
+                  "exported": 0.0,
+                  "migration_open": true,
+                  "model": "watershed_teaching_v1",
+                  "refuge": 24.0,
+                  "regions": {
+                    "estuary": {
+                      "algae": 4.0,
+                      "benthos": 10.0,
+                      "buffer": false,
+                      "component": {},
+                      "cooling": false,
+                      "detritus": 3.0,
+                      "device": false,
+                      "enabled": true,
+                      "energy": 0.0,
+                      "fish": 12.0,
+                      "flags": [],
+                      "flow": 1.0,
+                      "flush": 0,
+                      "gas": 0.0,
+                      "harvest": {},
+                      "harvest_target": "algae",
+                      "heat": 0.0,
+                      "loaded": 0.0,
+                      "nutrient": 2.0,
+                      "oxygen": 82.0,
+                      "plants": 2.0,
+                      "retained": 0.0,
+                      "screen": false,
+                      "screen_charges": 0,
+                      "screen_discarded": 0.0,
+                      "screen_enabled": true,
+                      "screen_energy": 0.0,
+                      "screen_loaded": false,
+                      "screen_used": 0.0,
+                      "stress": 0,
+                      "trips": 0,
+                      "used": 0.0
+                    },
+                    "headwater": {
+                      "algae": 3.0,
+                      "benthos": 10.0,
+                      "buffer": false,
+                      "component": {},
+                      "cooling": false,
+                      "detritus": 2.0,
+                      "device": false,
+                      "enabled": true,
+                      "energy": 0.0,
+                      "fish": 6.0,
+                      "flags": [],
+                      "flow": 1.0,
+                      "flush": 0,
+                      "gas": 0.0,
+                      "harvest": {},
+                      "harvest_target": "algae",
+                      "heat": 0.0,
+                      "loaded": 0.0,
+                      "nutrient": 8.0,
+                      "oxygen": 82.0,
+                      "plants": 2.0,
+                      "retained": 0.0,
+                      "screen": false,
+                      "screen_charges": 0,
+                      "screen_discarded": 0.0,
+                      "screen_enabled": true,
+                      "screen_energy": 0.0,
+                      "screen_loaded": false,
+                      "screen_used": 0.0,
+                      "stress": 0,
+                      "trips": 0,
+                      "used": 0.0
+                    },
+                    "marsh": {
+                      "algae": 5.0,
+                      "benthos": 10.0,
+                      "buffer": false,
+                      "component": {},
+                      "cooling": false,
+                      "detritus": 4.0,
+                      "device": false,
+                      "enabled": true,
+                      "energy": 0.0,
+                      "fish": 10.0,
+                      "flags": [],
+                      "flow": 1.0,
+                      "flush": 0,
+                      "gas": 0.0,
+                      "harvest": {},
+                      "harvest_target": "algae",
+                      "heat": 0.0,
+                      "loaded": 0.0,
+                      "nutrient": 4.0,
+                      "oxygen": 82.0,
+                      "plants": 12.0,
+                      "retained": 0.0,
+                      "screen": false,
+                      "screen_charges": 0,
+                      "screen_discarded": 0.0,
+                      "screen_enabled": true,
+                      "screen_energy": 0.0,
+                      "screen_loaded": false,
+                      "screen_used": 0.0,
+                      "stress": 0,
+                      "trips": 0,
+                      "used": 0.0
+                    }
+                  },
+                  "source": 150.0,
+                  "source_open": true,
+                  "waste": 0.0
+                }
+              }
+            ],
+            "migration_open": true,
+            "model": "watershed_teaching_v1",
+            "refuge": 24.0,
+            "regions": {
+              "estuary": {
+                "algae": 4.0,
+                "benthos": 10.0,
+                "buffer": false,
+                "component": {},
+                "cooling": false,
+                "detritus": 3.0,
+                "device": false,
+                "enabled": true,
+                "energy": 0.0,
+                "fish": 12.0,
+                "flags": [],
+                "flow": 1.0,
+                "flush": 0,
+                "gas": 0.0,
+                "harvest": {},
+                "harvest_target": "algae",
+                "heat": 0.0,
+                "loaded": 0.0,
+                "nutrient": 2.0,
+                "oxygen": 82.0,
+                "plants": 2.0,
+                "retained": 0.0,
+                "screen": false,
+                "screen_charges": 0,
+                "screen_discarded": 0.0,
+                "screen_enabled": true,
+                "screen_energy": 0.0,
+                "screen_loaded": false,
+                "screen_used": 0.0,
+                "stress": 0,
+                "trips": 0,
+                "used": 0.0
+              },
+              "headwater": {
+                "algae": 3.0,
+                "benthos": 10.0,
+                "buffer": false,
+                "component": {},
+                "cooling": false,
+                "detritus": 2.0,
+                "device": false,
+                "enabled": true,
+                "energy": 0.0,
+                "fish": 6.0,
+                "flags": [],
+                "flow": 1.0,
+                "flush": 0,
+                "gas": 0.0,
+                "harvest": {},
+                "harvest_target": "algae",
+                "heat": 0.0,
+                "loaded": 0.0,
+                "nutrient": 8.0,
+                "oxygen": 82.0,
+                "plants": 2.0,
+                "retained": 0.0,
+                "screen": false,
+                "screen_charges": 0,
+                "screen_discarded": 0.0,
+                "screen_enabled": true,
+                "screen_energy": 0.0,
+                "screen_loaded": false,
+                "screen_used": 0.0,
+                "stress": 0,
+                "trips": 0,
+                "used": 0.0
+              },
+              "marsh": {
+                "algae": 5.0,
+                "benthos": 10.0,
+                "buffer": false,
+                "component": {},
+                "cooling": false,
+                "detritus": 4.0,
+                "device": false,
+                "enabled": true,
+                "energy": 0.0,
+                "fish": 10.0,
+                "flags": [],
+                "flow": 1.0,
+                "flush": 0,
+                "gas": 0.0,
+                "harvest": {},
+                "harvest_target": "algae",
+                "heat": 0.0,
+                "loaded": 0.0,
+                "nutrient": 4.0,
+                "oxygen": 82.0,
+                "plants": 12.0,
+                "retained": 0.0,
+                "screen": false,
+                "screen_charges": 0,
+                "screen_discarded": 0.0,
+                "screen_enabled": true,
+                "screen_energy": 0.0,
+                "screen_loaded": false,
+                "screen_used": 0.0,
+                "stress": 0,
+                "trips": 0,
+                "used": 0.0
+              }
+            },
+            "source": 150.0,
+            "source_open": true,
+            "waste": 0.0
+          },
+          "zones": [
+            {
+              "id": "deep",
+              "target": 0,
+              "water": 0.0
+            },
+            {
+              "id": "shelf",
+              "target": 0,
+              "water": 0.0
+            }
+          ]
+        },
+        "base_key": "5a3ddc8537577c5f353d416886b4cd6956095833b8b22d99280feb2e00dc63a5",
+        "eco_allowance": {
+          "aluminum_compact": 2.0,
+          "aluminum_light": 2.0,
+          "buffer_raft": 3.0,
+          "copper_compact": 2.0,
+          "copper_light": 2.0,
+          "drinking_barrel": 4.0,
+          "frame_bundle": 3.0,
+          "harvest_box": 6.0,
+          "oxygen_cartridge": 4.0,
+          "oxygen_station": 2.0,
+          "runoff_feed": 2.0,
+          "screen_cartridge": 6.0,
+          "screen_station": 3.0,
+          "tool_chest": 3.0
+        },
+        "ecology": {
+          "history": [
+            {
+              "at": 0,
+              "regions": {
+                "fish": {
+                  "bay": 6.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 18.0,
+                  "oxygen": 8.0,
+                  "stress": 0,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 4.0,
+                  "refuge": 18.0,
+                  "sealed": true,
+                  "sensitive": 80.0,
+                  "tolerant": 20.0,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 5,
+              "regions": {
+                "fish": {
+                  "bay": 3.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 21.0,
+                  "oxygen": 3.0,
+                  "stress": 5,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.5,
+                  "refuge": 18.1,
+                  "sealed": true,
+                  "sensitive": 80.5,
+                  "tolerant": 19.5,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 10,
+              "regions": {
+                "fish": {
+                  "bay": 0.000000000000000666133814775094,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 24.0,
+                  "oxygen": 0.0,
+                  "stress": 10,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.0,
+                  "refuge": 18.2,
+                  "sealed": true,
+                  "sensitive": 81.0,
+                  "tolerant": 19.0,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 15,
+              "regions": {
+                "fish": {
+                  "bay": 0.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 24.0,
+                  "oxygen": 0.0,
+                  "stress": 0,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.0,
+                  "refuge": 18.3,
+                  "sealed": true,
+                  "sensitive": 81.5,
+                  "tolerant": 18.5,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 20,
+              "regions": {
+                "fish": {
+                  "bay": 0.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 24.0,
+                  "oxygen": 0.0,
+                  "stress": 0,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.0,
+                  "refuge": 18.4,
+                  "sealed": true,
+                  "sensitive": 82.0,
+                  "tolerant": 18.0,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 25,
+              "regions": {
+                "fish": {
+                  "bay": 0.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 24.0,
+                  "oxygen": 0.0,
+                  "stress": 0,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.0,
+                  "refuge": 18.5,
+                  "sealed": true,
+                  "sensitive": 82.5,
+                  "tolerant": 17.5,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            },
+            {
+              "at": 30,
+              "regions": {
+                "fish": {
+                  "bay": 0.0,
+                  "component": {},
+                  "cooling": false,
+                  "dead": 0.0,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [
+                    "leave"
+                  ],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "gate_open": true,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "outer": 24.0,
+                  "oxygen": 0.0,
+                  "stress": 0,
+                  "trips": 0,
+                  "used": 0.0
+                },
+                "microbe": {
+                  "component": {},
+                  "cooling": false,
+                  "device": false,
+                  "enabled": true,
+                  "energy": 0.0,
+                  "flags": [],
+                  "flow": 1.0,
+                  "gas": 0.0,
+                  "heat": 0.0,
+                  "loaded": 0.0,
+                  "oxygen": 0.0,
+                  "refuge": 18.6,
+                  "sealed": true,
+                  "sensitive": 83.0,
+                  "tolerant": 17.0,
+                  "trips": 0,
+                  "used": 0.0
+                }
+              }
+            }
+          ],
+          "model": "oxygen_teaching_v1",
+          "regions": {
+            "fish": {
+              "bay": 0.0,
+              "component": {},
+              "cooling": false,
+              "dead": 0.0,
+              "device": false,
+              "enabled": true,
+              "energy": 0.0,
+              "flags": [
+                "leave"
+              ],
+              "flow": 1.0,
+              "gas": 0.0,
+              "gate_open": true,
+              "heat": 0.0,
+              "loaded": 0.0,
+              "outer": 24.0,
+              "oxygen": 0.0,
+              "stress": 0,
+              "trips": 0,
+              "used": 0.0
+            },
+            "microbe": {
+              "component": {},
+              "cooling": false,
+              "device": false,
+              "enabled": true,
+              "energy": 0.0,
+              "flags": [],
+              "flow": 1.0,
+              "gas": 0.0,
+              "heat": 0.0,
+              "loaded": 0.0,
+              "oxygen": 0.0,
+              "refuge": 18.6,
+              "sealed": true,
+              "sensitive": 83.0,
+              "tolerant": 17.0,
+              "trips": 0,
+              "used": 0.0
+            }
+          },
+          "thermal_model": "device_heat_v1"
+        },
+        "event_serial": 1,
+        "events": [
+          {
+            "at": 30,
+            "id": 1,
+            "kind": "fork",
+            "message": "同起点试验已就绪 · 先放置水箱，再开始观察",
+            "shipment": 0
+          }
+        ],
+        "fraction": 0.0,
+        "id": "trial_a",
+        "mode": "experiment",
+        "name": "实验 A",
+        "observation": false,
+        "paused": true,
+        "seconds": 30,
+        "seed": 9192026,
+        "village": {
+          "active_project": "",
+          "added": {
+            "drink": 0.0,
+            "food": 0.0,
+            "frames": 0.0,
+            "goods": 0.0,
+            "grain": 0.0,
+            "tools": 0.0,
+            "water": 0.0
+          },
+          "completed": {
+            "craft": 0,
+            "drink": 0,
+            "eat": 0,
+            "farm": 4,
+            "mill": 1
+          },
+          "diversion": 0.5,
+          "elapsed": 30,
+          "enabled": true,
+          "era": "weald_1400",
+          "exported": {
+            "drink": 0.0,
+            "food": 0.0,
+            "frames": 0.0,
+            "goods": 0.0,
+            "grain": 0.0,
+            "tools": 0.0,
+            "water": 0.0
+          },
+          "flags": [
+            "water"
+          ],
+          "history": [
+            {
+              "at": 0,
+              "state": {
+                "active_project": "",
+                "added": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "completed": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 0,
+                  "mill": 0
+                },
+                "diversion": 0.5,
+                "elapsed": 0,
+                "enabled": true,
+                "era": "weald_1400",
+                "exported": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "flags": [],
+                "mill_running": false,
+                "model": "village_teaching_v1",
+                "passage": 100.0,
+                "people": [
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 0.0,
+                    "id": 0,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 0.0,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 2.0,
+                    "id": 1,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 3.0,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 4.0,
+                    "id": 2,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 6.0,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 6.0,
+                    "id": 3,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 9.0,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 8.0,
+                    "id": 4,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 12.0,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 10.0,
+                    "id": 5,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "idle",
+                    "target": "home",
+                    "task": "",
+                    "thirst": 15.0,
+                    "work": 0.0
+                  }
+                ],
+                "policy": "care",
+                "produced": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "projects": {
+                  "cistern": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "market": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "mill": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "road": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  }
+                },
+                "spring": 24.0,
+                "spring_overflow": 0.0,
+                "spring_taken": 0.0,
+                "started": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 0,
+                  "mill": 0
+                },
+                "stock": {
+                  "drink": 14.0,
+                  "food": 8.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 10.0,
+                  "tools": 6.0,
+                  "water": 16.0
+                },
+                "trade_clock": 0,
+                "trades": 0,
+                "used": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                }
+              }
+            },
+            {
+              "at": 10,
+              "state": {
+                "active_project": "",
+                "added": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "completed": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 0,
+                  "mill": 0
+                },
+                "diversion": 0.5,
+                "elapsed": 10,
+                "enabled": true,
+                "era": "weald_1400",
+                "exported": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "flags": [],
+                "mill_running": false,
+                "model": "village_teaching_v1",
+                "passage": 100.0,
+                "people": [
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 1.6,
+                    "id": 0,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 2.2,
+                    "work": 2.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 3.6,
+                    "id": 1,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 5.2,
+                    "work": 2.0
+                  },
+                  {
+                    "at": "mill",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 5.6,
+                    "id": 2,
+                    "load": {
+                      "grain": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "mill",
+                    "task": "mill",
+                    "thirst": 8.2,
+                    "work": 0.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 7.6,
+                    "id": 3,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 11.2,
+                    "work": 2.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 9.6,
+                    "id": 4,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "home",
+                    "task": "rest",
+                    "thirst": 14.2,
+                    "work": 2.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 11.6,
+                    "id": 5,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 17.2,
+                    "work": 2.0
+                  }
+                ],
+                "policy": "care",
+                "produced": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "projects": {
+                  "cistern": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "market": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "mill": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "road": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  }
+                },
+                "spring": 25.2,
+                "spring_overflow": 0.0,
+                "spring_taken": 0.0,
+                "started": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 4,
+                  "mill": 1
+                },
+                "stock": {
+                  "drink": 14.0,
+                  "food": 8.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 8.0,
+                  "tools": 5.2,
+                  "water": 8.0
+                },
+                "trade_clock": 0,
+                "trades": 0,
+                "used": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 2.0,
+                  "tools": 0.8,
+                  "water": 8.0
+                }
+              }
+            },
+            {
+              "at": 20,
+              "state": {
+                "active_project": "",
+                "added": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "completed": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 4,
+                  "mill": 0
+                },
+                "diversion": 0.5,
+                "elapsed": 20,
+                "enabled": true,
+                "era": "weald_1400",
+                "exported": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "flags": [],
+                "mill_running": false,
+                "model": "village_teaching_v1",
+                "passage": 100.0,
+                "people": [
+                  {
+                    "at": "field",
+                    "cargo": {
+                      "grain": 4.0
+                    },
+                    "fraction": 0.0,
+                    "hunger": 3.2,
+                    "id": 0,
+                    "load": {},
+                    "project": "",
+                    "route": [
+                      "field",
+                      "depot"
+                    ],
+                    "stage": "return",
+                    "target": "depot",
+                    "task": "farm",
+                    "thirst": 4.4,
+                    "work": 12.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {
+                      "grain": 4.0
+                    },
+                    "fraction": 0.0,
+                    "hunger": 5.2,
+                    "id": 1,
+                    "load": {},
+                    "project": "",
+                    "route": [
+                      "field",
+                      "depot"
+                    ],
+                    "stage": "return",
+                    "target": "depot",
+                    "task": "farm",
+                    "thirst": 7.4,
+                    "work": 12.0
+                  },
+                  {
+                    "at": "mill",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 7.2,
+                    "id": 2,
+                    "load": {
+                      "grain": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "mill",
+                    "task": "mill",
+                    "thirst": 10.4,
+                    "work": 10.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {
+                      "grain": 4.0
+                    },
+                    "fraction": 0.0,
+                    "hunger": 9.2,
+                    "id": 3,
+                    "load": {},
+                    "project": "",
+                    "route": [
+                      "field",
+                      "depot"
+                    ],
+                    "stage": "return",
+                    "target": "depot",
+                    "task": "farm",
+                    "thirst": 13.4,
+                    "work": 12.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 11.2,
+                    "id": 4,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "home",
+                    "task": "rest",
+                    "thirst": 16.4,
+                    "work": 5.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {
+                      "grain": 4.0
+                    },
+                    "fraction": 0.0,
+                    "hunger": 13.2,
+                    "id": 5,
+                    "load": {},
+                    "project": "",
+                    "route": [
+                      "field",
+                      "depot"
+                    ],
+                    "stage": "return",
+                    "target": "depot",
+                    "task": "farm",
+                    "thirst": 19.4,
+                    "work": 12.0
+                  }
+                ],
+                "policy": "care",
+                "produced": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 16.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "projects": {
+                  "cistern": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "market": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "mill": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "road": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  }
+                },
+                "spring": 26.4,
+                "spring_overflow": 0.0,
+                "spring_taken": 0.0,
+                "started": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 4,
+                  "mill": 1
+                },
+                "stock": {
+                  "drink": 14.0,
+                  "food": 8.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 8.0,
+                  "tools": 5.2,
+                  "water": 8.0
+                },
+                "trade_clock": 0,
+                "trades": 0,
+                "used": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 2.0,
+                  "tools": 0.8,
+                  "water": 8.0
+                }
+              }
+            },
+            {
+              "at": 30,
+              "state": {
+                "active_project": "",
+                "added": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "completed": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 4,
+                  "mill": 1
+                },
+                "diversion": 0.5,
+                "elapsed": 30,
+                "enabled": true,
+                "era": "weald_1400",
+                "exported": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 0.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "flags": [
+                  "water"
+                ],
+                "mill_running": false,
+                "model": "village_teaching_v1",
+                "passage": 100.0,
+                "people": [
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 4.8,
+                    "id": 0,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 6.6,
+                    "work": 1.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 6.8,
+                    "id": 1,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 9.6,
+                    "work": 1.0
+                  },
+                  {
+                    "at": "bridge",
+                    "cargo": {
+                      "food": 2.0
+                    },
+                    "fraction": 0.666666666666667,
+                    "hunger": 8.8,
+                    "id": 2,
+                    "load": {},
+                    "project": "",
+                    "route": [
+                      "bridge",
+                      "depot"
+                    ],
+                    "stage": "return",
+                    "target": "depot",
+                    "task": "mill",
+                    "thirst": 12.6,
+                    "work": 16.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 10.8,
+                    "id": 3,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 15.6,
+                    "work": 1.0
+                  },
+                  {
+                    "at": "home",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 12.8,
+                    "id": 4,
+                    "load": {},
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "home",
+                    "task": "rest",
+                    "thirst": 18.6,
+                    "work": 1.0
+                  },
+                  {
+                    "at": "field",
+                    "cargo": {},
+                    "fraction": 0.0,
+                    "hunger": 14.8,
+                    "id": 5,
+                    "load": {
+                      "tools": 0.2,
+                      "water": 2.0
+                    },
+                    "project": "",
+                    "route": [],
+                    "stage": "work",
+                    "target": "field",
+                    "task": "farm",
+                    "thirst": 21.6,
+                    "work": 1.0
+                  }
+                ],
+                "policy": "care",
+                "produced": {
+                  "drink": 0.0,
+                  "food": 2.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 16.0,
+                  "tools": 0.0,
+                  "water": 0.0
+                },
+                "projects": {
+                  "cistern": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "market": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "mill": {
+                    "approved": false,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  },
+                  "road": {
+                    "approved": true,
+                    "committed": false,
+                    "complete": false,
+                    "paused": false,
+                    "progress": 0.0
+                  }
+                },
+                "spring": 27.6,
+                "spring_overflow": 0.0,
+                "spring_taken": 0.0,
+                "started": {
+                  "craft": 0,
+                  "drink": 0,
+                  "eat": 0,
+                  "farm": 8,
+                  "mill": 1
+                },
+                "stock": {
+                  "drink": 14.0,
+                  "food": 8.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 24.0,
+                  "tools": 4.4,
+                  "water": 0.0
+                },
+                "trade_clock": 0,
+                "trades": 0,
+                "used": {
+                  "drink": 0.0,
+                  "food": 0.0,
+                  "frames": 0.0,
+                  "goods": 0.0,
+                  "grain": 2.0,
+                  "tools": 1.6,
+                  "water": 16.0
+                }
+              }
+            }
+          ],
+          "mill_running": false,
+          "model": "village_teaching_v1",
+          "passage": 100.0,
+          "people": [
+            {
+              "at": "field",
+              "cargo": {},
+              "fraction": 0.0,
+              "hunger": 4.8,
+              "id": 0,
+              "load": {
+                "tools": 0.2,
+                "water": 2.0
+              },
+              "project": "",
+              "route": [],
+              "stage": "work",
+              "target": "field",
+              "task": "farm",
+              "thirst": 6.6,
+              "work": 1.0
+            },
+            {
+              "at": "field",
+              "cargo": {},
+              "fraction": 0.0,
+              "hunger": 6.8,
+              "id": 1,
+              "load": {
+                "tools": 0.2,
+                "water": 2.0
+              },
+              "project": "",
+              "route": [],
+              "stage": "work",
+              "target": "field",
+              "task": "farm",
+              "thirst": 9.6,
+              "work": 1.0
+            },
+            {
+              "at": "bridge",
+              "cargo": {
+                "food": 2.0
+              },
+              "fraction": 0.666666666666667,
+              "hunger": 8.8,
+              "id": 2,
+              "load": {},
+              "project": "",
+              "route": [
+                "bridge",
+                "depot"
+              ],
+              "stage": "return",
+              "target": "depot",
+              "task": "mill",
+              "thirst": 12.6,
+              "work": 16.0
+            },
+            {
+              "at": "field",
+              "cargo": {},
+              "fraction": 0.0,
+              "hunger": 10.8,
+              "id": 3,
+              "load": {
+                "tools": 0.2,
+                "water": 2.0
+              },
+              "project": "",
+              "route": [],
+              "stage": "work",
+              "target": "field",
+              "task": "farm",
+              "thirst": 15.6,
+              "work": 1.0
+            },
+            {
+              "at": "home",
+              "cargo": {},
+              "fraction": 0.0,
+              "hunger": 12.8,
+              "id": 4,
+              "load": {},
+              "project": "",
+              "route": [],
+              "stage": "work",
+              "target": "home",
+              "task": "rest",
+              "thirst": 18.6,
+              "work": 1.0
+            },
+            {
+              "at": "field",
+              "cargo": {},
+              "fraction": 0.0,
+              "hunger": 14.8,
+              "id": 5,
+              "load": {
+                "tools": 0.2,
+                "water": 2.0
+              },
+              "project": "",
+              "route": [],
+              "stage": "work",
+              "target": "field",
+              "task": "farm",
+              "thirst": 21.6,
+              "work": 1.0
+            }
+          ],
+          "policy": "care",
+          "produced": {
+            "drink": 0.0,
+            "food": 2.0,
+            "frames": 0.0,
+            "goods": 0.0,
+            "grain": 16.0,
+            "tools": 0.0,
+            "water": 0.0
+          },
+          "projects": {
+            "cistern": {
+              "approved": true,
+              "committed": false,
+              "complete": false,
+              "paused": false,
+              "progress": 0.0
+            },
+            "market": {
+              "approved": false,
+              "committed": false,
+              "complete": false,
+              "paused": false,
+              "progress": 0.0
+            },
+            "mill": {
+              "approved": false,
+              "committed": false,
+              "complete": false,
+              "paused": false,
+              "progress": 0.0
+            },
+            "road": {
+              "approved": true,
+              "committed": false,
+              "complete": false,
+              "paused": false,
+              "progress": 0.0
+            }
+          },
+          "spring": 27.6,
+          "spring_overflow": 0.0,
+          "spring_taken": 0.0,
+          "started": {
+            "craft": 0,
+            "drink": 0,
+            "eat": 0,
+            "farm": 8,
+            "mill": 1
+          },
+          "stock": {
+            "drink": 14.0,
+            "food": 8.0,
+            "frames": 0.0,
+            "goods": 0.0,
+            "grain": 24.0,
+            "tools": 4.4,
+            "water": 0.0
+          },
+          "trade_clock": 0,
+          "trades": 0,
+          "used": {
+            "drink": 0.0,
+            "food": 0.0,
+            "frames": 0.0,
+            "goods": 0.0,
+            "grain": 2.0,
+            "tools": 1.6,
+            "water": 16.0
+          }
+        },
+        "watershed": {
+          "added": 0.0,
+          "bypass": false,
+          "dead": 0.0,
+          "elapsed": 0,
+          "enabled": false,
+          "era": "devonian",
+          "exported": 0.0,
+          "history": [
+            {
+              "at": 0,
+              "state": {
+                "added": 0.0,
+                "bypass": false,
+                "dead": 0.0,
+                "elapsed": 0,
+                "enabled": false,
+                "era": "devonian",
+                "exported": 0.0,
+                "migration_open": true,
+                "model": "watershed_teaching_v1",
+                "refuge": 24.0,
+                "regions": {
+                  "estuary": {
+                    "algae": 4.0,
+                    "benthos": 10.0,
+                    "buffer": false,
+                    "component": {},
+                    "cooling": false,
+                    "detritus": 3.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "fish": 12.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "flush": 0,
+                    "gas": 0.0,
+                    "harvest": {},
+                    "harvest_target": "algae",
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "nutrient": 2.0,
+                    "oxygen": 82.0,
+                    "plants": 2.0,
+                    "retained": 0.0,
+                    "screen": false,
+                    "screen_charges": 0,
+                    "screen_discarded": 0.0,
+                    "screen_enabled": true,
+                    "screen_energy": 0.0,
+                    "screen_loaded": false,
+                    "screen_used": 0.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "headwater": {
+                    "algae": 3.0,
+                    "benthos": 10.0,
+                    "buffer": false,
+                    "component": {},
+                    "cooling": false,
+                    "detritus": 2.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "fish": 6.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "flush": 0,
+                    "gas": 0.0,
+                    "harvest": {},
+                    "harvest_target": "algae",
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "nutrient": 8.0,
+                    "oxygen": 82.0,
+                    "plants": 2.0,
+                    "retained": 0.0,
+                    "screen": false,
+                    "screen_charges": 0,
+                    "screen_discarded": 0.0,
+                    "screen_enabled": true,
+                    "screen_energy": 0.0,
+                    "screen_loaded": false,
+                    "screen_used": 0.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  },
+                  "marsh": {
+                    "algae": 5.0,
+                    "benthos": 10.0,
+                    "buffer": false,
+                    "component": {},
+                    "cooling": false,
+                    "detritus": 4.0,
+                    "device": false,
+                    "enabled": true,
+                    "energy": 0.0,
+                    "fish": 10.0,
+                    "flags": [],
+                    "flow": 1.0,
+                    "flush": 0,
+                    "gas": 0.0,
+                    "harvest": {},
+                    "harvest_target": "algae",
+                    "heat": 0.0,
+                    "loaded": 0.0,
+                    "nutrient": 4.0,
+                    "oxygen": 82.0,
+                    "plants": 12.0,
+                    "retained": 0.0,
+                    "screen": false,
+                    "screen_charges": 0,
+                    "screen_discarded": 0.0,
+                    "screen_enabled": true,
+                    "screen_energy": 0.0,
+                    "screen_loaded": false,
+                    "screen_used": 0.0,
+                    "stress": 0,
+                    "trips": 0,
+                    "used": 0.0
+                  }
+                },
+                "source": 150.0,
+                "source_open": true,
+                "waste": 0.0
+              }
+            }
+          ],
+          "migration_open": true,
+          "model": "watershed_teaching_v1",
+          "refuge": 24.0,
+          "regions": {
+            "estuary": {
+              "algae": 4.0,
+              "benthos": 10.0,
+              "buffer": false,
+              "component": {},
+              "cooling": false,
+              "detritus": 3.0,
+              "device": false,
+              "enabled": true,
+              "energy": 0.0,
+              "fish": 12.0,
+              "flags": [],
+              "flow": 1.0,
+              "flush": 0,
+              "gas": 0.0,
+              "harvest": {},
+              "harvest_target": "algae",
+              "heat": 0.0,
+              "loaded": 0.0,
+              "nutrient": 2.0,
+              "oxygen": 82.0,
+              "plants": 2.0,
+              "retained": 0.0,
+              "screen": false,
+              "screen_charges": 0,
+              "screen_discarded": 0.0,
+              "screen_enabled": true,
+              "screen_energy": 0.0,
+              "screen_loaded": false,
+              "screen_used": 0.0,
+              "stress": 0,
+              "trips": 0,
+              "used": 0.0
+            },
+            "headwater": {
+              "algae": 3.0,
+              "benthos": 10.0,
+              "buffer": false,
+              "component": {},
+              "cooling": false,
+              "detritus": 2.0,
+              "device": false,
+              "enabled": true,
+              "energy": 0.0,
+              "fish": 6.0,
+              "flags": [],
+              "flow": 1.0,
+              "flush": 0,
+              "gas": 0.0,
+              "harvest": {},
+              "harvest_target": "algae",
+              "heat": 0.0,
+              "loaded": 0.0,
+              "nutrient": 8.0,
+              "oxygen": 82.0,
+              "plants": 2.0,
+              "retained": 0.0,
+              "screen": false,
+              "screen_charges": 0,
+              "screen_discarded": 0.0,
+              "screen_enabled": true,
+              "screen_energy": 0.0,
+              "screen_loaded": false,
+              "screen_used": 0.0,
+              "stress": 0,
+              "trips": 0,
+              "used": 0.0
+            },
+            "marsh": {
+              "algae": 5.0,
+              "benthos": 10.0,
+              "buffer": false,
+              "component": {},
+              "cooling": false,
+              "detritus": 4.0,
+              "device": false,
+              "enabled": true,
+              "energy": 0.0,
+              "fish": 10.0,
+              "flags": [],
+              "flow": 1.0,
+              "flush": 0,
+              "gas": 0.0,
+              "harvest": {},
+              "harvest_target": "algae",
+              "heat": 0.0,
+              "loaded": 0.0,
+              "nutrient": 4.0,
+              "oxygen": 82.0,
+              "plants": 12.0,
+              "retained": 0.0,
+              "screen": false,
+              "screen_charges": 0,
+              "screen_discarded": 0.0,
+              "screen_enabled": true,
+              "screen_energy": 0.0,
+              "screen_loaded": false,
+              "screen_used": 0.0,
+              "stress": 0,
+              "trips": 0,
+              "used": 0.0
+            }
+          },
+          "source": 150.0,
+          "source_open": true,
+          "waste": 0.0
+        },
+        "zones": [
+          {
+            "id": "deep",
+            "target": 0,
+            "water": 0.0
+          },
+          {
+            "id": "shelf",
+            "target": 0,
+            "water": 0.0
+          }
+        ]
+      }
+    ]
+  }
+}

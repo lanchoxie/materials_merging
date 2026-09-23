@@ -1,0 +1,185 @@
+extends SceneTree
+## Run this external harness against the actual exported APK assets or Web PCK.
+const Main=preload("res://scripts/main.gd")
+var failures=[]
+var checks=0
+func check(ok: bool,message: String) -> void:
+	checks+=1
+	if not ok: failures.append(message); push_error(message)
+func _initialize() -> void:
+	if "--release-ui-test" not in OS.get_cmdline_user_args(): push_error("Use -- --release-ui-test to protect player saves"); quit(2); return
+	run.call_deferred()
+func run() -> void:
+	var game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var s=game.state
+	check(str(ProjectSettings.get_setting("application/config/version"))=="0.20.0","packaged application version")
+	check(game.save_label.text.begins_with("v0.20 "),"packaged compiled UI carries the current release label")
+	game._show_planet(); await process_frame
+	check(game.modal.view.sites.size()==2,"packaged planet scene builds both sites")
+	var batch=s.product_snapshot(s.reactors[0]); s.storage.add_product(batch,2)
+	s.planet.command(s,"join"); s.planet.command(s,"qualify",{"batch_id":batch.id}); s.planet.command(s,"pack"); s.planet.tick(25)
+	check(s.planet.available_products()==1,"packaged data and compiled production code complete a crate")
+	s.planet.command(s,"deploy",{"world_id":"home","site_id":"deep","token":s.planet.shipment_serial}); s.planet.tick(8)
+	check(s.planet.worlds.get_world().zones[0].water==1,"packaged scene and simulation share the deployment contract")
+	s.coins=2000
+	batch=s.product_snapshot(s._new_reactor(3,"oxygen",0)); s.storage.add_product(batch,2)
+	s.planet.command(s,"qualify",{"reference":"oxygen","batch_id":batch.id})
+	for recipe in ["oxygen_station","oxygen_cartridge"]:
+		var info=s.planet.recipe(recipe)
+		s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":recipe}); s.planet.tick(info.seconds)
+	check(s.planet.available_products("oxygen_station")==1 and s.planet.available_products("oxygen_cartridge")==1,"packaged industrial recipes create distinct equipment and supply")
+	for recipe in ["oxygen_station","oxygen_cartridge"]:
+		s.planet.command(s,"deploy",{"world_id":"home","site_id":"fish","recipe":recipe,"token":s.planet.shipment_serial})
+	s.planet.tick(13)
+	check(s.planet.worlds.get_world().ecology.regions.fish.gas==47,"packaged ecology consumes finite oxygen and energy")
+	game.modal._choose_recipe("oxygen_cartridge"); game.modal.section="observe"; game.modal._redraw(); game.modal._live(); await process_frame
+	check(game.modal.view.ecology_view.sites.size()==2 and game.modal.eco_widgets.has("chart"),"packaged 3D ecology and observation chart construct")
+	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
+	check(game.modal.view.snapshot.seconds==0 and s.planet.worlds.get_world().seconds>0,"packaged replay leaves live model at present")
+	game.modal._replay()
+	s.planet.command(s,"compare_materials",{"mode":"same_mass"})
+	var info=s.planet.recipe("aluminum_light")
+	s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":info.id}); s.planet.tick(info.seconds)
+	s.planet.command(s,"deploy",{"world_id":"home","site_id":"fish","recipe":info.id,"token":s.planet.shipment_serial})
+	check(s.planet.worlds.get_world().ecology.regions.fish.component.recipe=="aluminum_light","packaged material evidence, recipe and installed slot work")
+	game.modal._open_materials(); await process_frame
+	check(game.modal.view.material_view.parts.size()==2 and s.planet.lab.design("aluminum_light").conductance_W_K>s.planet.lab.design("copper_light").conductance_W_K,"packaged reference data and procedural comparison work")
+	s.planet.command(s,"activate_watershed",{"era":"carboniferous"})
+	for recipe in ["screen_station","screen_cartridge"]:
+		info=s.planet.recipe(recipe)
+		s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":recipe}); s.planet.tick(info.seconds)
+		s.planet.command(s,"deploy",{"world_id":"home","site_id":"headwater","recipe":recipe,"token":s.planet.shipment_serial})
+	s.planet.command(s,"step_world")
+	var river=s.planet.worlds.get_world().watershed
+	check(river.regions.headwater.retained>0 and river.regions.headwater.screen_energy==50 and s.planet.worlds.watershed.valid(river,s.planet.worlds.get_world().seconds),"packaged watershed recipes, finite filter and nutrient conservation work")
+	game.modal._scene("watershed","screen_cartridge"); game.modal._live(); await process_frame
+	check(game.modal.view.watershed_view.sites.size()==3 and game.modal.watershed_widgets.has("chart"),"packaged era vegetation, connected water and observation chart construct")
+	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
+	check(game.modal.view.watershed_view.snapshot.watershed.elapsed==0 and river.elapsed==30,"packaged watershed history changes only the view")
+	game.modal._replay(); s.planet.command(s,"fork",{"era":"devonian"})
+	check(s.planet.worlds.get_world().watershed.era=="devonian" and river.era=="carboniferous","packaged worlds preserve separate era starting points")
+	s.planet.command(s,"select",{"world_id":"home"}); s.planet.command(s,"activate_village")
+	for recipe in ["drinking_barrel","frame_bundle","tool_chest"]:
+		info=s.planet.recipe(recipe)
+		s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":recipe}); s.planet.tick(info.seconds)
+		s.planet.command(s,"deploy",{"world_id":"home","site_id":"village_depot","recipe":recipe,"token":s.planet.shipment_serial})
+	var village=s.planet.worlds.get_world().village
+	check(village.added.drink==24 and village.added.frames==6 and village.added.tools==24,"packaged village supply recipes manufacture and deliver distinct resources")
+	s.planet.command(s,"step_world")
+	check(village.projects.cistern.committed and s.planet.worlds.village.valid(village,s.planet.worlds.get_world().seconds),"packaged residents walk, reserve and construct with valid ledgers")
+	game.modal._scene("village","frame_bundle"); game.modal._live(); await process_frame
+	check(game.modal.view.village_view.people.size()==6 and game.modal.view.village_view.scaffolds.cistern.visible,"packaged village view exposes six residents and construction scaffold")
+	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
+	check(game.modal.view.village_view.snapshot.village.elapsed==0 and village.elapsed==30,"packaged village replay leaves the present intact")
+	game.modal._replay()
+	s.planet.command(s,"buy_feed",{"input":"frame_kit"}); s.planet.command(s,"pack",{"recipe":"frame_bundle"}); s.planet.command(s,"production_mode",{"mode":"island"})
+	var left=s.planet.job.left; s.planet.tick(20,0)
+	check(s.planet.job.left==left,"packaged island workshop waits for real staffing")
+	s.campus_assign_post(s.campus.people[0].id,"workshop")
+	check(s.campus.people[0].post=="workshop" and s.layout.config.buildings.has("workshop"),"packaged campus supports workshop building and resident posts")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged new world histories and production mode restore")
+	s.planet.command(s,"cancel_pack"); s.planet.command(s,"production_mode",{"mode":"partner"}); s.planet.command(s,"activate_habitat")
+	for recipe in ["habitat_bridge","shade_canopy"]:
+		info=s.planet.recipe(recipe)
+		s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":recipe}); s.planet.tick(info.seconds)
+		s.planet.command(s,"deploy",{"world_id":"home","site_id":"crossing_fern_ridge" if recipe=="habitat_bridge" else "habitat_fern","recipe":recipe,"token":s.planet.shipment_serial})
+	var habitat=s.planet.worlds.get_world().habitat
+	check(habitat.edges.fern_ridge.built and habitat.regions.fern.shade,"packaged habitat products use paid workshop and real destinations")
+	s.planet.command(s,"step_world"); s.planet.command(s,"step_world")
+	check(habitat.migrations>0 and s.planet.worlds.habitat.valid(habitat,s.planet.worlds.get_world().seconds),"packaged dinosaurs migrate with valid finite resource accounts")
+	game.modal._scene("habitat","standard_water_crate"); game.modal._live(); await process_frame; await process_frame
+	check(game.modal.view.habitat_view.animals.size()==10 and game.modal.view.habitat_view.regions.fern.canopy.visible,"packaged habitat models and installed canopy render")
+	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
+	check(game.modal.view.habitat_view.snapshot.habitat.elapsed==0 and habitat.elapsed==60,"packaged habitat historical preview is read-only")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged habitat histories and earlier chapters restore together")
+	game.modal._replay(); s.coins=9000; s.planet.command(s,"activate_industry",{"era":"ww2"}); s.planet.command(s,"compare_circuits",{"mode":"same_mass"})
+	for recipe in ["generator_set","fuel_can","heat_recovery","aluminum_wire_mass"]:
+		info=s.planet.recipe(recipe)
+		s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":recipe}); s.planet.tick(info.seconds)
+		var site="industry_factory" if recipe=="aluminum_wire_mass" else ("industry_depot" if recipe=="fuel_can" else "industry_power")
+		s.planet.command(s,"deploy",{"world_id":"home","site_id":site,"recipe":recipe,"token":s.planet.shipment_serial})
+	var industry=s.planet.worlds.get_world().industry
+	check(industry.engine and industry.recovery and industry.cables.factory=="aluminum_wire_mass" and industry.stock.fuel_kg==0.05,"packaged electrical qualification and paid industrial deliveries work")
+	s.planet.command(s,"industry",{"control":"policy","id":"production"}); s.planet.command(s,"step_world"); s.planet.command(s,"step_world"); s.planet.command(s,"step_world")
+	check(industry.shipped.civil>0 and industry.transport_fuel_kg>0 and s.planet.worlds.industry.valid(industry,s.planet.worlds.get_world().seconds),"packaged industrial power, staffing and finite fuel logistics produce valid shipments")
+	game.modal._scene("industry","fuel_can"); await process_frame; await process_frame
+	check(game.modal.view.industry_view.people.size()==6 and game.modal.view.industry_view.truck.visible and game.modal.view.industry_view.heat_pipe.visible,"packaged industrial models and heat pipe reflect installed state")
+	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
+	check(game.modal.view.industry_view.snapshot.industry.elapsed==0 and industry.elapsed==90,"packaged industrial replay is read-only")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged electrical reports and every earlier chapter restore")
+	game.modal._replay(); s.coins=9000; s.planet.command(s,"activate_modern")
+	for item in [["modern_silicon","field"],["modern_perovskite","roof"],["modern_battery","battery"],["modern_server","compute"],["modern_fan","cooling"],["modern_aluminum_sink","cooling"],["modern_recycler","recycle"],["modern_scrap","recycle"]]:
+		info=s.planet.recipe(item[0]); s.planet.command(s,"buy_feed",{"input":info.input}); s.planet.command(s,"pack",{"recipe":item[0]}); s.planet.tick(info.seconds)
+		s.planet.command(s,"deploy",{"world_id":"home","site_id":"modern_"+item[1],"recipe":item[0],"token":s.planet.shipment_serial})
+	var modern=s.planet.worlds.get_world().modern
+	check(modern.installed.battery and modern.sink=="modern_aluminum_sink" and modern.battery_J==0,"packaged modern devices manufacture and empty battery installs")
+	s.planet.command(s,"modern",{"control":"policy","id":"circular"}); s.planet.command(s,"modern",{"control":"park"})
+	for i in range(6): s.planet.command(s,"step_world")
+	check(modern.pv_J>0 and modern.discharged_J>0 and modern.completed.lighting>0 and modern.residue>0 and s.planet.worlds.modern.valid(modern,s.planet.worlds.get_world().seconds),"packaged solar, battery, compute and recycling close their ledgers")
+	game.modal._scene("modern","modern_scrap"); await process_frame; await process_frame
+	check(game.modal.view.modern_view.people.size()==6 and game.modal.view.modern_view.moon.visible and game.modal.view.modern_view.park.visible,"packaged night scene and constructed park follow actual state")
+	game.modal._replay(); game.modal.replay_index=0; game.modal._live()
+	check(game.modal.view.modern_view.snapshot.modern.elapsed==0 and modern.elapsed==180,"packaged modern history is read-only")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize())),s),"packaged complete multi-era program including modern balances restores")
+	game.modal._replay()
+	var sample18=s.product_snapshot(s._new_reactor(9,"water",0)); s.storage.add_product(sample18,1)
+	s.planet.command(s,"archive_material",{"batch_id":sample18.id})
+	var archive18=s.planet.materials; var record18=str(archive18.records.keys()[0])
+	s.planet.command(s,"propose_material",{"record_id":record18,"kind":"sink","mode":"same_mass","properties":{"density_kg_m3":2700.0,"conductivity_W_mK":235.0,"resistivity_ohm_m":null}})
+	check(archive18.records.size()==1 and archive18.designs.size()==1,"packaged player specimen archive and conditional design work")
+	game.modal._open_dossiers(); await process_frame; await process_frame
+	check(game.modal.view.player_view.atom_count==3 and game.modal.view.player_view.visible,"packaged archived structure renders actual atoms")
+	s.planet.command(s,"select",{"world_id":"trial_a"}); s.planet.command(s,"activate_modern")
+	var design18=str(archive18.designs.keys()[0])
+	s.planet.command(s,"deploy",{"world_id":"trial_a","site_id":"modern_cooling","recipe":design18,"token":s.planet.shipment_serial})
+	check(s.planet.worlds.get_world().modern.custom_sink.get("id","")==design18,"packaged player design installs only into experimental world")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize(),"",true,true)),s),"packaged full provenance and installed custom devices round-trip")
+
+	s.coins=20000; s.materials=[10000,10000,10000]; s.campus.rng.seed=194
+	for entry in [[3,"workshop"],[5,"institute"],[7,"doctor_dorm"],[0,"professor_apartment"]]:
+		if not s.plots[entry[0]].unlocked: s.buy_plot(entry[0])
+		s.campus_build(entry[0],entry[1]); s.campus_road(entry[0])
+	s.campus_hire("doctor"); s.campus_hire("doctor"); s.campus_hire("professor"); s.campus.elapsed=100
+	s.campus_assign_post(s.campus.people[0].id,"workshop"); s.planet.command(s,"laminate_research")
+	for i in range(1800):
+		if s.planet.laminates.unlocked(s): break
+		s.tick(1)
+	check(s.planet.laminates.unlocked(s),"packaged paid campus project completes through actual staff scheduling")
+	var proposal=s.new_sandbox_structure("包内铜铝层芯")
+	for i in range(3): s.sandbox_add_atom(proposal,"Cu" if i<2 else "Al",[float(i)*1.6,0.0,0.0])
+	s.storage.add_product({"id":"packaged-laminate","name":proposal.name,"formula":s.sandbox_formula(proposal),"reference":"","quality":0.0,"work":proposal},1)
+	s.planet.command(s,"archive_material",{"batch_id":"packaged-laminate"}); var rid19=s.planet.materials.identity(proposal)
+	s.planet.command(s,"propose_laminate",{"record_id":rid19,"orientation":"parallel","mode":"same_size"})
+	var id19=str(s.planet.materials.designs.keys()[-1])
+	check(s.planet.materials.designs[id19].basis=="family_model","packaged element data and layer method admit a sourced model")
+	for element in ["Cu","Al"]: s.planet.command(s,"laminate_buy",{"element":element})
+	s.planet.command(s,"laminate_pack",{"design_id":id19})
+	for i in range(960):
+		if s.planet.laminates.count(id19)>0: break
+		s.tick(1)
+	check(s.planet.laminates.count(id19)==1 and s.planet.laminates.quote(s.planet.materials.designs[id19],"compact").premium,"packaged real engineer produces a finite premium-contract component")
+	s.planet.command(s,"select",{"world_id":"home"}); s.planet.command(s,"deploy",{"world_id":"home","site_id":"modern_cooling","recipe":id19,"token":s.planet.shipment_serial})
+	check(s.planet.worlds.get_world().modern.custom_sink.get("id")==id19 and s.planet.laminates.count(id19)==0,"packaged career consumes manufactured family component exactly once")
+	game.modal._open_dossiers(); game.modal.dossier_family=true; game.modal.dossier_id=rid19; game.modal._redraw(); await process_frame; await process_frame
+	check(game.modal.view.player_view.laminate.visible and game.modal.view.player_view.heat_particles.size()==5,"packaged layer preview and heat-flow animation build")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(s.planet.serialize(),"",true,true)),s),"packaged factory ledger and career family receipts restore")
+
+	for element in ["Cu","Al"]: s.planet.command(s,"laminate_buy",{"element":element})
+	s.planet.command(s,"laminate_pack",{"design_id":id19})
+	for i in range(960):
+		if s.planet.laminates.count(id19)>0: break
+		s.tick(1)
+	s.market.visitors.clear(); var visitor_rules=s.island_rules.visitors.duplicate(true); visitor_rules.material_every=1; visitor_rules.material_slot=0
+	s.market.spawn(s.economy,s.templates,visitor_rules,[s.contracts.request("compact")]); var material_guest=s.market.visitors[-1]
+	s.market.tick(6,s.economy,s.templates,visitor_rules)
+	check(s.visitor_candidates(int(material_guest.id))[0].ready,"packaged material visitor admits a manufactured model through shared candidate ranking")
+	game._close_modal(); game._sync_world(); await process_frame; await process_frame
+	check(game.campus_view.guests[int(material_guest.id)].transport.get_meta("vehicle_style")=="car","packaged property buyer creates its configured vehicle")
+	var sales20=s.deliveries; s.fulfill_order(int(material_guest.id),id19); await process_frame; await process_frame
+	check(s.deliveries==sales20+1 and material_guest.fulfilled and material_guest.phase=="leaving" and game.campus_view.guests[int(material_guest.id)].material_cargo.visible,"packaged delivery spends stock once and loads departing vehicle")
+	var visitor_save="res://saves/package-visitors-v020.json"; s.save_game(visitor_save); var restored20=preload("res://scripts/lab_state.gd").new()
+	check(restored20.load_game(visitor_save) and restored20.market.visitor(int(material_guest.id)).fulfilled,"packaged full outer save restores completed visitor without duplicate reward")
+	restored20.close_science()
+	game._close_modal(); s.close_science()
+	print("PACKAGE PLANET SMOKE: ",checks," checks, ",failures.size()," failures")
+	quit(0 if failures.is_empty() else 1)

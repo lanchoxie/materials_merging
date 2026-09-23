@@ -1,0 +1,225 @@
+{
+  "feed": 0,
+  "job": {
+    "duration": 25.0,
+    "fee": 12,
+    "id": 2,
+    "left": 18.0,
+    "recipe": "standard_water_crate",
+    "recipe_version": 1,
+    "source_batch": "5dce5ed72309"
+  },
+  "joined": true,
+  "products": [
+    {
+      "id": 1,
+      "recipe": "standard_water_crate",
+      "recipe_version": 1,
+      "source_batch": "5dce5ed72309"
+    }
+  ],
+  "qualification": {
+    "batch_id": "5dce5ed72309",
+    "method": "reference_identity_v1",
+    "reference": "water",
+    "work": {
+      "atoms": [
+        "O",
+        "H",
+        "H"
+      ],
+      "baseline_id": "water",
+      "bonds": [
+        [
+          0,
+          1,
+          1.0
+        ],
+        [
+          0,
+          2,
+          1.0
+        ]
+      ],
+      "cell": [
+        6.0,
+        6.0,
+        6.0
+      ],
+      "mode": "science",
+      "name": "一滴星水",
+      "periodic": false,
+      "positions": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.158,
+          0.0,
+          0.0
+        ],
+        [
+          -0.239862,
+          1.047485,
+          0.0
+        ]
+      ]
+    }
+  },
+  "qualified": true,
+  "serial": 3,
+  "shipment_serial": 2,
+  "version": 1,
+  "worlds": {
+    "active_id": "trial_b",
+    "worlds": [
+      {
+        "allowance": 0,
+        "base": {},
+        "base_key": "",
+        "event_serial": 0,
+        "events": [],
+        "fraction": 0.0,
+        "id": "home",
+        "mode": "career",
+        "name": "试验湾 · 主世界",
+        "observation": false,
+        "paused": false,
+        "seconds": 0,
+        "seed": 9192026,
+        "zones": [
+          {
+            "id": "deep",
+            "target": 0,
+            "water": 0.0
+          },
+          {
+            "id": "shelf",
+            "target": 0,
+            "water": 0.0
+          }
+        ]
+      },
+      {
+        "allowance": 3,
+        "base": {
+          "fraction": 0.0,
+          "observation": false,
+          "seconds": 0,
+          "seed": 9192026,
+          "zones": [
+            {
+              "id": "deep",
+              "target": 0,
+              "water": 0.0
+            },
+            {
+              "id": "shelf",
+              "target": 0,
+              "water": 0.0
+            }
+          ]
+        },
+        "base_key": "7de8229fc4ef74fa7f3c6adeefce7a1685c44021b8519b26024e396b3ff0409a",
+        "event_serial": 1,
+        "events": [
+          {
+            "at": 0,
+            "id": 1,
+            "kind": "fork",
+            "message": "同起点试验已就绪 · 先放置水箱，再开始观察",
+            "shipment": 0
+          }
+        ],
+        "fraction": 0.0,
+        "id": "trial_a",
+        "mode": "experiment",
+        "name": "实验 A",
+        "observation": false,
+        "paused": true,
+        "seconds": 10,
+        "seed": 9192026,
+        "zones": [
+          {
+            "id": "deep",
+            "target": 0,
+            "water": 0.0
+          },
+          {
+            "id": "shelf",
+            "target": 0,
+            "water": 0.0
+          }
+        ]
+      },
+      {
+        "allowance": 2,
+        "base": {
+          "fraction": 0.0,
+          "observation": false,
+          "seconds": 0,
+          "seed": 9192026,
+          "zones": [
+            {
+              "id": "deep",
+              "target": 0,
+              "water": 0.0
+            },
+            {
+              "id": "shelf",
+              "target": 0,
+              "water": 0.0
+            }
+          ]
+        },
+        "base_key": "7de8229fc4ef74fa7f3c6adeefce7a1685c44021b8519b26024e396b3ff0409a",
+        "event_serial": 3,
+        "events": [
+          {
+            "at": 0,
+            "id": 1,
+            "kind": "fork",
+            "message": "同起点试验已就绪 · 先放置水箱，再开始观察",
+            "shipment": 0
+          },
+          {
+            "at": 0,
+            "id": 2,
+            "kind": "shipment",
+            "message": "水箱抵达浅台",
+            "shipment": 1
+          },
+          {
+            "at": 8,
+            "id": 3,
+            "kind": "observation",
+            "message": "第一片水面：水箱经管道进入已冷却的封闭盆地。",
+            "shipment": 0
+          }
+        ],
+        "fraction": 0.0,
+        "id": "trial_b",
+        "mode": "experiment",
+        "name": "实验 B",
+        "observation": true,
+        "paused": true,
+        "seconds": 10,
+        "seed": 9192026,
+        "zones": [
+          {
+            "id": "deep",
+            "target": 0,
+            "water": 0.0
+          },
+          {
+            "id": "shelf",
+            "target": 1,
+            "water": 1.0
+          }
+        ]
+      }
+    ]
+  }
+}

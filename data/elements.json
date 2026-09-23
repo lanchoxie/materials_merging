@@ -1,0 +1,185 @@
+{
+  "sources": [
+    {
+      "url": "https://doi.org/10.1039/B801115J",
+      "name": "Cordero et al. (2008), Covalent radii revisited, Table 2",
+      "scope": "H 0.31 Å、C(sp3) 0.76 Å、O 0.66 Å、S 1.05 Å、Cl 1.02 Å，共价半径用于球体示意"
+    },
+    {
+      "url": "https://doi.org/10.1107/S0567739476001551",
+      "name": "Shannon (1976), Revised effective ionic radii, Table 1",
+      "scope": "有效离子半径（IR列）：Cs+ CN12 1.88 Å、Pb2+ CN6 1.19 Å、Br- CN6 1.96 Å、Cl- CN6 1.81 Å；不可与晶体半径（CR列）混用"
+    },
+    {
+      "name": "RSC Periodic Table: copper",
+      "url": "https://periodic-table.rsc.org/element/29/copper",
+      "scope": "Cu covalent radius 1.22 Angstrom, display only; reviewed 2026-09-19"
+    },
+    {
+      "name": "RSC Periodic Table: aluminium",
+      "url": "https://periodic-table.rsc.org/element/13/aluminium",
+      "scope": "Al covalent radius 1.24 Angstrom, display only; reviewed 2026-09-19"
+    }
+  ],
+  "note": "元素是种类；半径属于具体成键环境。radius 为展示默认值，结构中的 atom_contexts 优先。分子共价半径的 oxidation_state=null 表示本展示未指派形式氧化态，并非零价。未知数据不能自动当作零能量或精品。",
+  "units": "Å",
+  "version": 5,
+  "elements": {
+    "H": {
+      "name": "氢",
+      "radius": 0.31,
+      "radius_type": "共价半径",
+      "color": "e7f6ff",
+      "atomic_number": 1,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+    },
+    "O": {
+      "name": "氧",
+      "radius": 0.66,
+      "radius_type": "共价半径",
+      "color": "f27784",
+      "atomic_number": 8,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+    },
+    "C": {
+      "name": "碳",
+      "radius": 0.76,
+      "radius_type": "共价半径（sp3参考）",
+      "color": "68789d",
+      "atomic_number": 6,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+    },
+    "Cs": {
+      "name": "铯",
+      "radius": 1.88,
+      "radius_type": "Cs+ 离子半径，配位数12",
+      "color": "ba9efa",
+      "atomic_number": 55,
+      "source": "Shannon 1976, Table 1, effective ionic radius (IR); https://doi.org/10.1107/S0567739476001551",
+      "oxidation_state": 1,
+      "coordination": 12
+    },
+    "Pb": {
+      "name": "铅",
+      "radius": 1.19,
+      "radius_type": "Pb2+ 离子半径，配位数6",
+      "color": "729bc2",
+      "atomic_number": 82,
+      "source": "Shannon 1976, Table 1, effective ionic radius (IR); https://doi.org/10.1107/S0567739476001551",
+      "oxidation_state": 2,
+      "coordination": 6
+    },
+    "Br": {
+      "name": "溴",
+      "radius": 1.96,
+      "radius_type": "Br- 离子半径，配位数6",
+      "color": "eeb15e",
+      "atomic_number": 35,
+      "source": "Shannon 1976, Table 1, effective ionic radius (IR); https://doi.org/10.1107/S0567739476001551",
+      "oxidation_state": -1,
+      "coordination": 6
+    },
+    "S": {
+      "name": "硫",
+      "atomic_number": 16,
+      "radius": 1.05,
+      "radius_type": "共价半径",
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J",
+      "color": "f3d264"
+    },
+    "Cl": {
+      "name": "氯",
+      "atomic_number": 17,
+      "radius": 1.02,
+      "radius_type": "共价半径（HCl展示默认）",
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J",
+      "color": "8ada9c",
+      "radius_contexts": [
+        {
+          "oxidation_state": null,
+          "radius_type": "共价半径",
+          "radius": 1.02,
+          "coordination": null,
+          "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+        },
+        {
+          "oxidation_state": -1,
+          "radius_type": "Cl- 有效离子半径，配位数6",
+          "radius": 1.81,
+          "coordination": 6,
+          "source": "Shannon 1976, Table 1, effective ionic radius (IR); https://doi.org/10.1107/S0567739476001551"
+        }
+      ]
+    },
+    "N": {
+      "name": "氮",
+      "radius": 0.71,
+      "radius_type": "共价半径",
+      "color": "89b6ff",
+      "atomic_number": 7,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+    },
+    "F": {
+      "name": "氟",
+      "radius": 0.57,
+      "radius_type": "共价半径",
+      "color": "c9f27b",
+      "atomic_number": 9,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J"
+    },
+    "Li": {
+      "name": "锂",
+      "radius": 0.76,
+      "radius_type": "Li+ 有效离子半径，配位数6",
+      "color": "f2a6c1",
+      "atomic_number": 3,
+      "oxidation_state": 1,
+      "coordination": 6,
+      "source": "Shannon 1976, Table 1, effective ionic radius (IR); https://doi.org/10.1107/S0567739476001551"
+    },
+    "Na": {
+      "name": "钠",
+      "radius": 1.02,
+      "radius_type": "Na+ 有效离子半径，配位数6",
+      "color": "ffca7a",
+      "atomic_number": 11,
+      "oxidation_state": 1,
+      "coordination": 6,
+      "source": "Shannon 1976, Table 1, effective ionic radius (IR); https://doi.org/10.1107/S0567739476001551"
+    },
+    "Cu": {
+      "name": "铜",
+      "radius": 1.22,
+      "radius_type": "共价半径（RSC展示参考）",
+      "color": "d99367",
+      "atomic_number": 29,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "https://periodic-table.rsc.org/element/29/copper ; display only, not metallic nearest-neighbor distance"
+    },
+    "Al": {
+      "name": "铝",
+      "radius": 1.24,
+      "radius_type": "共价半径（RSC展示参考）",
+      "color": "c5d9df",
+      "atomic_number": 13,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "https://periodic-table.rsc.org/element/13/aluminium ; display only, not metallic nearest-neighbor distance"
+    }
+  }
+}

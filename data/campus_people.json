@@ -1,0 +1,221 @@
+{
+  "schema": 1,
+  "day_seconds": 480,
+  "step_seconds": 1,
+  "max_people": 96,
+  "hunger_per_second": 0.11,
+  "meal_recovery_per_second": 5,
+  "activity_rethink_seconds": 12,
+  "travel_seconds_per_edge": 2.5,
+  "meal_pickup_seconds": 2,
+  "meal_handover_seconds": 2,
+  "payroll": {
+    "period_seconds": 480,
+    "arrears_work_factor": 0.75
+  },
+  "research": {
+    "professor_doctor_bonus": 0.5,
+    "professor_mentees": 4
+  },
+  "roles": {
+    "engineer": {
+      "name": "工程师",
+      "cost": 85,
+      "daily_pay": 8,
+      "description": "可调岗参与反应炉施工、巡检送餐，或到工艺车间加工。",
+      "housing": [
+        "engineer_house",
+        "house"
+      ],
+      "needs_institute": false,
+      "specialties": [
+        "施工",
+        "维护",
+        "物流"
+      ]
+    },
+    "doctor": {
+      "name": "博士生",
+      "cost": 45,
+      "daily_pay": 4,
+      "description": "装载样品、补给后沿路收集；参与工艺研发。未分配课题时优先处理装炉。",
+      "housing": [
+        "doctor_dorm"
+      ],
+      "needs_institute": true,
+      "specialties": [
+        "卤化物",
+        "氧化物",
+        "分子"
+      ]
+    },
+    "professor": {
+      "name": "教授",
+      "cost": 520,
+      "daily_pay": 24,
+      "description": "可选导师；到岗时提升本课题博士生效率50%，最多指导4人。",
+      "housing": [
+        "professor_apartment"
+      ],
+      "needs_institute": true,
+      "specialties": [
+        "卤化物",
+        "氧化物",
+        "分子"
+      ]
+    },
+    "academician": {
+      "name": "院士",
+      "cost": 1400,
+      "daily_pay": 60,
+      "description": "每人负责一个进阶课题，增加同时研发的名额。",
+      "housing": [
+        "academician_villa"
+      ],
+      "needs_institute": true,
+      "specialties": [
+        "卤化物",
+        "氧化物",
+        "分子"
+      ]
+    }
+  },
+  "events": {
+    "check_seconds": 60,
+    "first_after_seconds": 120,
+    "person_cooldown_seconds": 480,
+    "daily_cap": 3,
+    "max_pending": 5,
+    "request_lifetime_seconds": 960,
+    "chance": 0.45,
+    "types": {
+      "housing_upgrade": {
+        "title": "想布置自己的房间",
+        "cost": 45,
+        "morale": 16,
+        "weight": 1.0,
+        "detail": "希望添置书桌和绿植；只改善房间舒适度，不增加床位。"
+      },
+      "move_request": {
+        "title": "想换一处住处",
+        "cost": 25,
+        "morale": 20,
+        "weight": 0.7,
+        "detail": "需要另一栋同类住宅有空床位，才会正式搬家。"
+      },
+      "family_visit": {
+        "title": "想接家人来小聚",
+        "cost": 35,
+        "morale": 18,
+        "weight": 1.0,
+        "detail": "安排一次探亲餐会；家人是临时访客，不占永久床位。"
+      }
+    }
+  },
+  "projects": {
+    "hydrogen_sulfide": {
+      "name": "基础课题 · 硫化氢配方",
+      "cost": 60,
+      "seconds": 40,
+      "specialty": "分子",
+      "requires": {
+        "doctor": 1
+      },
+      "optional": {
+        "professor": 1
+      },
+      "note": "博士生可独立开展的教学课题。完成解锁已有参考的配方，键长由玩家调整。",
+      "legacy": true
+    },
+    "hydrogen_chloride": {
+      "name": "进阶课题 · 氯化氢配方",
+      "cost": 160,
+      "seconds": 70,
+      "specialty": "分子",
+      "requires": {
+        "academician": 1,
+        "doctor": 2
+      },
+      "optional": {
+        "professor": 1
+      },
+      "note": "院士主持、博士生实施的教学课题。复用已有分子参考，不表示首次发现或证明稳定性。",
+      "legacy": true
+    },
+    "perovskite_chloride": {
+      "name": "氯化物钙钛矿配方研发",
+      "cost": 280,
+      "seconds": 90,
+      "specialty": "卤化物",
+      "requires": {
+        "academician": 1,
+        "doctor": 2
+      },
+      "optional": {
+        "professor": 1
+      },
+      "note": "以已有参考结构为教学配方开展替换元素研发。完成只解锁配方，原子位置、键长与匹配度仍由玩家调整；不代表证明了材料真实稳定性。",
+      "legacy": true
+    },
+    "buffer_storage": {
+      "name": "反应釜缓冲仓",
+      "cost": 120,
+      "seconds": 180,
+      "specialty": "分子",
+      "requires": {
+        "doctor": 1
+      },
+      "optional": {
+        "professor": 1
+      },
+      "note": "改进收集和暂存工艺：所有反应炉容量增加3份。教授可加速研究。"
+    },
+    "process_control": {
+      "name": "批次过程控制",
+      "cost": 360,
+      "seconds": 300,
+      "specialty": "分子",
+      "requires": {
+        "professor": 1,
+        "doctor": 2
+      },
+      "optional": {},
+      "note": "教授带队、博士实施：所有反应炉生产速度提升15%，不改变科学评分。"
+    },
+    "parallel_screening": {
+      "name": "并行几何筛选流程",
+      "cost": 700,
+      "seconds": 480,
+      "specialty": "分子",
+      "requires": {
+        "academician": 1,
+        "doctor": 2
+      },
+      "optional": {
+        "professor": 1
+      },
+      "note": "院士主持开发筛选方法：批量查看库存中各批次的参考几何评分，辅助选择订单样品。只适用于已有参考的结构。"
+    },
+    "laminate_design": {
+      "name": "分层构件 · 热阻网络方法",
+      "cost": 240,
+      "seconds": 240,
+      "specialty": "分子",
+      "requires": {
+        "doctor": 2,
+        "professor": 1
+      },
+      "optional": {},
+      "note": "教授指导博士在科研院所建立铜铝标准层料的串并联热阻模型；完成解锁有适用范围的模型方案和本岛装配。不是测得任意铜铝合金物性。"
+    }
+  },
+  "posts": {
+    "auto": "自动安排",
+    "workshop": "车间生产",
+    "logistics": "装炉收集",
+    "research": "团队研发"
+  },
+  "production": {
+    "maximum_rate": 3.0
+  }
+}

@@ -1,0 +1,65 @@
+extends "res://tests/test_player_material_ui.gd"
+const Fixtures=preload("res://tests/laminate_fixture.gd")
+func capture(name: String) -> void:
+	game.toast_panel.hide(); game._update_labels(); await process_frame; await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png("res://artifacts/"+name+"-v020.png")
+func island_refresh() -> void:
+	game._sync_world(); await process_frame; await process_frame
+	game.order_bubbles._refresh(); await process_frame; await process_frame
+func tap(at: Vector2) -> void:
+	await game._test_touch(at,true); await game._test_touch(at,false); await process_frame; await process_frame
+func run() -> void:
+	Input.emulate_touch_from_mouse=true
+	game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var s=game.state; var p=s.planet
+	game._show_market(); await process_frame; await button("阅读合作来信")
+	check(game.modal.get_script()==preload("res://scripts/planet_panel.gd"),"journey entry routes from mailbox to the actual planet module")
+	await button("领取合作")
+	game._close_modal(); Fixtures.campus(s); check(Fixtures.research(s),"UI visitor fixture completes actual campus research")
+	var rid=Fixtures.specimen(s); var id=Fixtures.design(s,rid)
+	for orientation in ["parallel","series"]:
+		for mode in ["same_size","same_mass"]: Fixtures.design(s,rid,orientation,mode)
+	var rid2=Fixtures.specimen(s,1,8); Fixtures.design(s,rid2,"parallel","same_mass"); Fixtures.design(s,rid2,"series","same_mass")
+	Fixtures.make(s,id)
+	var grey=Fixtures.visitor(s,"light",false); await island_refresh(); var guest=game.campus_view.guests[int(grey.id)]
+	var begin=guest.transport.position; s.market.tick(2,s.economy,s.templates,s.island_rules.visitors); await process_frame
+	check(guest.transport.position.distance_to(begin)>.1 and not guest.buyer.node.visible,"vehicle moves toward plaza before buyer gets out")
+	s.market.tick(4,s.economy,s.templates,s.island_rules.visitors); await island_refresh()
+	check(guest.transport.get_meta("vehicle_style")=="bicycle" and guest.buyer.node.visible and not guest.material_cargo.visible,"lightweight buyer arrives by bicycle without invented cargo")
+	check(game.order_bubbles.bubbles[int(grey.id)].text.contains("查看需求"),"unsuitable physical stock leaves a clickable grey requirement bubble")
+	await capture("property-buyer-plaza")
+	var before=s.coins; await tap(game.order_bubbles.bubbles[int(grey.id)].get_global_rect().get_center())
+	check(game.modal.mode=="mail" and game.modal.focused_visitor==int(grey.id) and s.coins==before,"grey touch opens this buyer's mail without selling the wrong component")
+	check(find_button(game.modal,"交付构件")!=null and find_button(game.modal,"交付构件").disabled,"unfit or unmade candidates remain disabled in property mail")
+	await capture("property-buyer-mail")
+	var scroll=game.modal.scroll; var at=scroll.global_position+Vector2(340,370)
+	await game._test_touch(at,true)
+	for i in range(6):
+		var e=InputEventScreenDrag.new(); e.index=0; e.position=at+Vector2(0,-28*(i+1)); e.relative=Vector2(0,-28); Input.parse_input_event(e); await process_frame
+	await game._test_touch(at+Vector2(0,-168),false); await process_frame
+	check(scroll.scroll_vertical>80 and s.coins==before,"property quote cards scroll by touch without spending money")
+	await button("查看我的模型方案")
+	check(game.modal.dossier_family and game.modal.section=="dossiers","mail directs the player to actual archived method designs")
+	game._close_modal(); var buyer=Fixtures.visitor(s,"compact",false); await island_refresh(); guest=game.campus_view.guests[int(buyer.id)]
+	s.market.tick(6,s.economy,s.templates,s.island_rules.visitors); await island_refresh()
+	check(guest.transport.get_meta("vehicle_style")=="car" and guest.vehicle_rebuilds==1,"compact-instrument buyer uses one persistent car model")
+	check(game.order_bubbles.bubbles[int(buyer.id)].text.contains("点击交付"),"matching physical inventory lights up the direct-delivery bubble")
+	var sales=s.deliveries; var catalyst=s.upgrades; var touch=game.order_bubbles.bubbles[int(buyer.id)].get_global_rect().get_center()
+	await tap(touch)
+	check(s.deliveries==sales+1 and s.upgrades==catalyst+1 and p.laminates.count(id)==0,"real touch sells exactly one best-ranked product and awards premium once")
+	check(buyer.phase=="leaving" and guest.material_cargo.visible and not is_instance_valid(game.modal),"successful sale loads copper/silver cargo and starts visible departure")
+	await tap(touch); check(s.deliveries==sales+1,"repeat tap cannot re-use a finished visitor transaction")
+	await capture("property-buyer-loaded")
+	var departure=guest.transport.position; s.market.tick(3,s.economy,s.templates,s.island_rules.visitors); await process_frame; await process_frame
+	check(guest.transport.position.distance_to(departure)>.2,"loaded vehicle actually drives away")
+	s.market.tick(3,s.economy,s.templates,s.island_rules.visitors); await island_refresh()
+	check(not game.campus_view.guests.has(int(buyer.id)) and not game.order_bubbles.bubbles.has(int(buyer.id)),"expired departure removes both model and bubble")
+	game._show_market(); await process_frame; await capture("material-journey")
+	check(find_button(game.modal,"继续设计与对照")!=null,"completed real sale advances derived journey without a duplicate quest reward")
+	await button("继续设计与对照"); await button("装配 铜铝层芯")
+	check(find_button(game.modal,"交付 ·")==null and find_button(game.modal,"前往邮箱")!=null,"workbench has one mailbox route and no bypass sale button")
+	await button("前往邮箱"); check(game.modal.mode=="mail","factory route opens unified mailbox")
+	game._close_modal(); game._show_toolbox(); game.modal._tab("industrial"); await process_frame; await capture("material-inventory")
+	check(find_button(game.modal,"管理层芯装配")!=null,"industrial toolbox exposes own model components and finite feed")
+	check(game.modal.body.size.x<=game.modal.scroll.size.x+2,"material cards fit the fixed-width touch layout")
+	game.queue_free(); await process_frame; print("MATERIAL VISITOR UI: %d checks, %d failures" % [checks,failures.size()]); quit(0 if failures.is_empty() else 1)

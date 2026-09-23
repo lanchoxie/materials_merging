@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "model": "wetland_god_mode_v1",
+  "units_note": "河畔小兽、湿地鱼、耐湿谷物是教学物种；水位、营养、溶氧为0—1游戏指标，不能换算为真实浓度。样品身份决定允许的用途，不由几何评分推导真实物性。时间与繁殖速度为游戏压缩。",
+  "clock": {
+    "day_seconds": 60.0,
+    "season_days": 4,
+    "seasons": ["春", "夏", "秋", "冬"]
+  },
+  "ecology": {
+    "rain": [0.10, 0.14, 0.07, 0.03],
+    "evaporation": [0.035, 0.055, 0.04, 0.02],
+    "temperature": [2.0, 7.0, 1.0, -8.0],
+    "birth_interval_days": 3,
+    "mutation_range": 0.025,
+    "max_plots": 4,
+    "initial_seeds": 6,
+    "harvest_seeds": 2,
+    "harvest_food": 3
+  },
+  "regions": [
+    {"id":"wetland", "name":"芦苇湿地", "terrain":"浅水、芦苇与泥滩", "elevation":0.12, "moisture":0.78, "water":0.42, "oxygen":0.48, "temperature":20.0, "nutrients":0.55, "pollution":0.0},
+    {"id":"meadow", "name":"河畔草甸", "terrain":"河岸、草地与耕作土", "elevation":0.28, "moisture":0.58, "water":0.22, "oxygen":0.62, "temperature":21.0, "nutrients":0.62, "pollution":0.0},
+    {"id":"riverbank", "name":"砂砾河岸", "terrain":"流动水、砂砾与浅滩", "elevation":0.18, "moisture":0.67, "water":0.34, "oxygen":0.57, "temperature":19.0, "nutrients":0.42, "pollution":0.0},
+    {"id":"highland", "name":"风生高地", "terrain":"高地、灌木与风口", "elevation":0.76, "moisture":0.32, "water":0.08, "oxygen":0.71, "temperature":16.0, "nutrients":0.35, "pollution":0.0}
+  ],
+  "species": [
+    {"id":"marsh_fish", "name":"湿地鱼", "mature_days":2.0, "max_population":18},
+    {"id":"meadow_herbivore", "name":"河畔小兽", "mature_days":3.0, "max_population":12}
+  ],
+  "crops": [
+    {"id":"reed", "name":"芦苇", "days":3.0, "moisture_min":0.48, "moisture_max":0.95, "temperature_min":10.0, "temperature_max":31.0, "nutrient_use":0.06},
+    {"id":"grain", "name":"耐湿谷物", "days":4.0, "moisture_min":0.35, "moisture_max":0.8, "temperature_min":8.0, "temperature_max":29.0, "nutrient_use":0.09}
+  ],
+  "science_basis": [
+    {"topic":"水中溶氧与鱼类生存","url":"https://www.usgs.gov/water-science-school/science/dissolved-oxygen-and-water","checked":"2026-09-22","scope":"支持定性因果，不支持本游戏的0—1阈值或投放换算"},
+    {"topic":"遗传变异与跨代选择","url":"https://www.nps.gov/flfo/learn/education/unit-three-background.htm","checked":"2026-09-22","scope":"支持先有可遗传差异、再由生存繁殖筛选；本版仅一个简化性状"}
+  ],
+  "products": {
+    "sample_water":{"name":"水样 H₂O", "effect":"water", "amount":0.08, "description":"少量补水，提高水位和土壤湿度"},
+    "sample_oxygen":{"name":"氧气样品 O₂", "effect":"oxygen", "amount":0.10, "aquatic":true, "description":"向水域添加少量溶氧"},
+    "standard_water_crate":{"name":"标准水箱", "effect":"water", "amount":0.22, "unit":"局部水量", "description":"提高水位和土壤湿度"},
+    "oxygen_station":{"name":"便携供氧器", "effect":"building", "amount":1, "aquatic":true, "description":"安装后使用氧气动力补给盒"},
+    "oxygen_cartridge":{"name":"氧气动力补给盒", "effect":"oxygen_fuel", "amount":60, "aquatic":true, "requires":"oxygen_station", "description":"60个模拟秒内持续补充溶氧"},
+    "screen_station":{"name":"颗粒过滤机", "effect":"building", "amount":1, "aquatic":true, "description":"安装后使用颗粒滤盒"},
+    "screen_cartridge":{"name":"颗粒滤盒与动力", "effect":"filter_fuel", "amount":80, "aquatic":true, "requires":"screen_station", "description":"80个模拟秒内截留颗粒，不去除溶解营养"},
+    "runoff_feed":{"name":"营养实验供料", "effect":"nutrient", "amount":0.16, "description":"补充有限营养，同时增加有机颗粒负担"},
+    "frame_bundle":{"name":"结构构件包", "effect":"building", "amount":1, "land":true, "description":"搭起可开关的动物围栏，圈养需要饲料"},
+    "shade_canopy":{"name":"遮荫保水棚", "effect":"building", "amount":1, "description":"降低蒸发，也会减少作物生长光照"}
+  }
+}

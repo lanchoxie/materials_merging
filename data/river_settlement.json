@@ -1,0 +1,16 @@
+{
+  "center": [10, 10],
+  "radius": 14,
+  "meal_interval": 60,
+  "energy_capacity": 60,
+  "solar_per_second": 0.12,
+  "irrigation_energy": 0.04,
+  "eras": [
+    {"id":"wild", "name":"原野营地", "story":"旅人沿河游历，先留出动物的栖地。搭建自己的住处，收获第一批作物。"},
+    {"id":"agrarian", "name":"农耕聚落", "story":"两位旅人留下生活。粮仓供餐、干净的水与住处决定他们能否安居。"},
+    {"id":"modern", "name":"现代生态站", "story":"同一片聚落引入浮岛光伏器件。白天积蓄服务能量，用有限的水进行灌溉，居民开始维护与观察生态。"}
+  ],
+  "agrarian": {"blocks": 6, "shelter_cells": 2, "harvests": 1, "food": 3, "water": 0.25},
+  "modern": {"solar": 1, "harvests": 3, "meals": 4},
+  "scope": "这是可推进的游戏时代章节，不是史实年代推演。服务点为游戏数值，不能换算器件效率。不会凭空生成水或食物；尚无恐龙、战争、完整工业社会和未来科技。"
+}

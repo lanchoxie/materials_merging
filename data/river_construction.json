@@ -1,0 +1,25 @@
+{
+  "reach": 5.0,
+  "max_blocks": 512,
+  "max_sources": 96,
+  "height_limit": 8,
+  "recipes": {
+    "frame_bundle": {"units": 8, "kind": "block"},
+    "modern_silicon": {"units": 1, "kind": "solar"},
+    "modern_perovskite": {"units": 1, "kind": "solar"},
+    "field_floor": {"units": 8, "kind": "floor"},
+    "field_wall": {"units": 8, "kind": "block"},
+    "field_roof": {"units": 8, "kind": "roof"},
+    "field_fence": {"units": 8, "kind": "fence"},
+    "field_planter": {"units": 2, "kind": "planter"}
+  },
+  "kinds": {
+    "block": {"name": "木构方块", "color": "bd9267", "roof":true},
+    "solar": {"name": "太阳能方块", "color": "478bad"},
+    "floor": {"name":"石基方块","color":"a6aba3"},
+    "roof": {"name":"纤维屋顶","color":"b9a477","roof":true},
+    "fence": {"name":"木围栏","color":"c6a375"},
+    "planter": {"name":"种植箱","color":"a17951"}
+  },
+  "scope": "一包构件拆成8块；拆回原批次，全部收回才可还原整包。方块须与地面连通，暂不模拟真实结构强度。太阳能输出为统一的游戏服务点，不是实测器件效率。"
+}

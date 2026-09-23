@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "status": "design_only",
+  "runtime_import_enabled": false,
+  "reviewed_on": "2026-09-19",
+  "note": "Reference values are not measurements of player specimens. Different source conditions must not be merged into one physical sample. Null uncertainty does not mean zero uncertainty.",
+  "sources": [
+    {"id": "nist_metals_295k", "url": "https://www.nist.gov/ncnr/neutron-instruments/sample-environment/sample-mounting/reference-tables", "locator": "Physical properties of selected metals at 295K", "basis": "Page cites White 1979 and CRC 1975", "retrieved_on": "2026-09-19", "rights_status": "redistribution_review_required"},
+    {"id": "nbs_copper_1914", "url": "https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular31e2.pdf", "locator": "Printed page 61; PDF page 65, volume resistivity expression", "basis": "Bureau of Standards Circular 31, second edition, 1914; historical annealed copper standard", "retrieved_on": "2026-09-19", "rights_status": "redistribution_review_required"},
+    {"id": "doe_hydrogen_storage", "url": "https://www.energy.gov/cmei/fuels/hydrogen-storage", "locator": "Challenges; comparison based on lower heating values", "basis": "DOE educational reference", "retrieved_on": "2026-09-19", "rights_status": "redistribution_review_required"}
+  ],
+  "records": [
+    {
+      "id": "cu_k_295", "material_id": "copper_nist_table", "property": "thermal_conductivity", "evidence_kind": "handbook_reference",
+      "original": {"value": 400, "unit": "W/(m*K)"}, "normalized": {"value": 400, "unit": "W/(m*K)"}, "conversion": "identity",
+      "conditions": {"temperature_K": 295, "pressure_Pa": null, "phase": "solid", "grade_or_processing": "not specified in table", "direction": null},
+      "uncertainty": null, "uncertainty_note": "not provided by source", "source_id": "nist_metals_295k",
+      "scope": "Reference at stated temperature only; no automatic temperature extrapolation or component efficiency claim."
+    },
+    {
+      "id": "cu_density_295", "material_id": "copper_nist_table", "property": "density", "evidence_kind": "handbook_reference",
+      "original": {"value": 8.96, "unit": "g/mL"}, "normalized": {"value": 8960, "unit": "kg/m3"}, "conversion": "multiply_1000",
+      "conditions": {"temperature_K": 295, "pressure_Pa": null, "phase": "solid", "grade_or_processing": "not specified in table"},
+      "uncertainty": null, "uncertainty_note": "not provided by source", "source_id": "nist_metals_295k", "scope": "Table reference; not apparent density of a porous component."
+    },
+    {
+      "id": "al_k_295", "material_id": "aluminum_nist_table", "property": "thermal_conductivity", "evidence_kind": "handbook_reference",
+      "original": {"value": 235, "unit": "W/(m*K)"}, "normalized": {"value": 235, "unit": "W/(m*K)"}, "conversion": "identity",
+      "conditions": {"temperature_K": 295, "pressure_Pa": null, "phase": "solid", "grade_or_processing": "not specified in table", "direction": null},
+      "uncertainty": null, "uncertainty_note": "not provided by source", "source_id": "nist_metals_295k", "scope": "Do not apply to arbitrary aluminum alloys or lava-temperature equipment."
+    },
+    {
+      "id": "al_density_295", "material_id": "aluminum_nist_table", "property": "density", "evidence_kind": "handbook_reference",
+      "original": {"value": 2.70, "unit": "g/mL"}, "normalized": {"value": 2700, "unit": "kg/m3"}, "conversion": "multiply_1000",
+      "conditions": {"temperature_K": 295, "pressure_Pa": null, "phase": "solid", "grade_or_processing": "not specified in table"},
+      "uncertainty": null, "uncertainty_note": "not provided by source", "source_id": "nist_metals_295k", "scope": "Table reference; shape and component volume must be supplied separately."
+    },
+    {
+      "id": "ss304_k_295", "material_id": "stainless_steel_304_nist_table", "property": "thermal_conductivity", "evidence_kind": "handbook_reference",
+      "original": {"value": 15, "unit": "W/(m*K)"}, "normalized": {"value": 15, "unit": "W/(m*K)"}, "conversion": "identity",
+      "conditions": {"temperature_K": 295, "pressure_Pa": null, "phase": "solid", "grade_or_processing": "304; processing not specified", "direction": null},
+      "uncertainty": null, "uncertainty_note": "not provided by source", "source_id": "nist_metals_295k", "scope": "Do not extend to all steels or infer strength and corrosion resistance from this record."
+    },
+    {
+      "id": "ss304_density_295", "material_id": "stainless_steel_304_nist_table", "property": "density", "evidence_kind": "handbook_reference",
+      "original": {"value": 8, "unit": "g/mL"}, "normalized": {"value": 8000, "unit": "kg/m3"}, "conversion": "multiply_1000",
+      "conditions": {"temperature_K": 295, "pressure_Pa": null, "phase": "solid", "grade_or_processing": "304; processing not specified"},
+      "uncertainty": null, "uncertainty_note": "not provided by source", "source_id": "nist_metals_295k", "scope": "Rounded source value; conversion adds no measurement precision."
+    },
+    {
+      "id": "cu_iacs_resistivity_293", "material_id": "copper_annealed_historical_standard", "property": "electrical_resistivity", "evidence_kind": "historical_standard_reference",
+      "original": {"value": 1.7241, "unit": "microohm*cm"}, "normalized": {"value": 1.7241e-8, "unit": "ohm*m"}, "conversion": "multiply_1e-8",
+      "conditions": {"temperature_K": 293.15, "pressure_Pa": null, "phase": "solid", "grade_or_processing": "100 percent standard annealed copper, Circular 31 second edition"},
+      "uncertainty": null, "uncertainty_note": "not assigned here; historical unit realization not re-evaluated", "source_id": "nbs_copper_1914", "scope": "Historical reference rounded for teaching; not the resistivity of every copper sample."
+    },
+    {
+      "id": "cu_iacs_conductivity_293", "material_id": "copper_annealed_historical_standard", "property": "electrical_conductivity", "evidence_kind": "derived_reference",
+      "original": {"value": 1.7241, "unit": "microohm*cm"}, "normalized": {"value": 58001276.028072625, "unit": "S/m"}, "conversion": "reciprocal_normalized_record", "derived_from": "cu_iacs_resistivity_293", "display_significant_digits": 5,
+      "conditions": {"temperature_K": 293.15, "pressure_Pa": null, "phase": "solid", "grade_or_processing": "100 percent standard annealed copper, Circular 31 second edition"},
+      "uncertainty": null, "uncertainty_note": "inherits source limitations; arithmetic digits are not measurement precision", "source_id": "nbs_copper_1914", "scope": "Reciprocal only; no independent measurement and no alloy interpolation."
+    },
+    {
+      "id": "hydrogen_lhv_doe", "material_id": "hydrogen_doe_fuel_reference", "property": "lower_heating_value", "evidence_kind": "educational_reference",
+      "original": {"value": 120, "unit": "MJ/kg"}, "normalized": {"value": 120000000, "unit": "J/kg"}, "conversion": "multiply_1e6",
+      "conditions": {"temperature_K": null, "pressure_Pa": null, "phase": "not specified for mass-based comparison", "grade_or_processing": "hydrogen fuel", "heating_value_basis": "LHV"},
+      "uncertainty": null, "uncertainty_note": "rounded comparison value; detailed calorimetric conditions not given", "source_id": "doe_hydrogen_storage", "scope": "Fuel lower heating value, not stored-system energy density or electrical output."
+    }
+  ]
+}

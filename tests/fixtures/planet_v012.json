@@ -1,0 +1,1002 @@
+{
+	"extra_qualifications": {
+		"oxygen": {
+			"batch_id": "892ca95149c3",
+			"method": "reference_identity_v1",
+			"reference": "oxygen",
+			"work": {
+				"atoms": [
+					"O",
+					"O"
+				],
+				"baseline_id": "oxygen",
+				"bonds": [
+					[
+						0,
+						1,
+						2.0
+					]
+				],
+				"cell": [
+					6.0,
+					6.0,
+					6.0
+				],
+				"mode": "science",
+				"name": "氧气双星",
+				"periodic": false,
+				"positions": [
+					[
+						-0.604,
+						0.0,
+						0.0
+					],
+					[
+						0.604,
+						0.0,
+						0.0
+					]
+				]
+			}
+		}
+	},
+	"feed": 2,
+	"job": {
+		"duration": 25.0,
+		"fee": 10,
+		"id": 4,
+		"left": 18.0,
+		"recipe": "oxygen_cartridge",
+		"recipe_version": 1,
+		"source_batch": "892ca95149c3"
+	},
+	"joined": true,
+	"products": [
+		{
+			"id": 3,
+			"recipe": "oxygen_cartridge",
+			"recipe_version": 1,
+			"source_batch": "892ca95149c3"
+		}
+	],
+	"qualification": {},
+	"qualified": false,
+	"serial": 5,
+	"shipment_serial": 3,
+	"supplies": {
+		"oxygen_feed": 0,
+		"station_parts": 0
+	},
+	"version": 2,
+	"worlds": {
+		"active_id": "trial_b",
+		"version": 2,
+		"worlds": [
+			{
+				"allowance": 0,
+				"base": {},
+				"base_key": "",
+				"eco_allowance": {
+					"oxygen_cartridge": 4,
+					"oxygen_station": 2
+				},
+				"ecology": {
+					"history": [
+						{
+							"at": 0,
+							"regions": {
+								"fish": {
+									"bay": 6.0,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"loaded": 0.0,
+									"outer": 18.0,
+									"oxygen": 8.0,
+									"stress": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"loaded": 0.0,
+									"oxygen": 4.0,
+									"refuge": 18.0,
+									"sealed": true,
+									"sensitive": 80.0,
+									"tolerant": 20.0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 5,
+							"regions": {
+								"fish": {
+									"bay": 3.0,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 55.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 55.0,
+									"gate_open": true,
+									"loaded": 60.0,
+									"outer": 21.0,
+									"oxygen": 12.0,
+									"stress": 5,
+									"used": 5.0
+								},
+								"microbe": {
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.5,
+									"refuge": 18.1,
+									"sealed": true,
+									"sensitive": 80.5,
+									"tolerant": 19.5,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 10,
+							"regions": {
+								"fish": {
+									"bay": 0.000000000000000666133814775094,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 50.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 50.0,
+									"gate_open": true,
+									"loaded": 60.0,
+									"outer": 24.0,
+									"oxygen": 16.0,
+									"stress": 7,
+									"used": 10.0
+								},
+								"microbe": {
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.2,
+									"sealed": true,
+									"sensitive": 81.0,
+									"tolerant": 19.0,
+									"used": 0.0
+								}
+							}
+						}
+					],
+					"model": "oxygen_teaching_v1",
+					"regions": {
+						"fish": {
+							"bay": 0.0,
+							"dead": 0.0,
+							"device": true,
+							"enabled": true,
+							"energy": 47.0,
+							"flags": [
+								"leave"
+							],
+							"flow": 1.0,
+							"gas": 47.0,
+							"gate_open": true,
+							"loaded": 60.0,
+							"outer": 24.0,
+							"oxygen": 18.4,
+							"stress": 1,
+							"used": 13.0
+						},
+						"microbe": {
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"flags": [],
+							"flow": 1.0,
+							"gas": 0.0,
+							"loaded": 0.0,
+							"oxygen": 0.0,
+							"refuge": 18.26,
+							"sealed": true,
+							"sensitive": 81.3,
+							"tolerant": 18.7,
+							"used": 0.0
+						}
+					}
+				},
+				"event_serial": 3,
+				"events": [
+					{
+						"at": 0,
+						"id": 1,
+						"kind": "ecology",
+						"message": "缺氧鱼湾：供氧器就位，等待氧气与动力补给。",
+						"shipment": 1
+					},
+					{
+						"at": 0,
+						"id": 2,
+						"kind": "ecology",
+						"message": "缺氧鱼湾：已更换氧气与动力补给盒。",
+						"shipment": 2
+					},
+					{
+						"at": 1,
+						"id": 3,
+						"kind": "ecology",
+						"message": "鱼湾：低氧驱使鱼群沿开放通道游向外湾；迁移不等于死亡。",
+						"shipment": 0
+					}
+				],
+				"fraction": 0.0,
+				"id": "home",
+				"mode": "career",
+				"name": "试验湾 · 主世界",
+				"observation": false,
+				"paused": false,
+				"seconds": 13,
+				"seed": 9192026,
+				"zones": [
+					{
+						"id": "deep",
+						"target": 0,
+						"water": 0.0
+					},
+					{
+						"id": "shelf",
+						"target": 0,
+						"water": 0.0
+					}
+				]
+			},
+			{
+				"allowance": 3,
+				"base": {
+					"ecology": {
+						"history": [
+							{
+								"at": 0,
+								"regions": {
+									"fish": {
+										"bay": 6.0,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"loaded": 0.0,
+										"outer": 18.0,
+										"oxygen": 8.0,
+										"stress": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"loaded": 0.0,
+										"oxygen": 4.0,
+										"refuge": 18.0,
+										"sealed": true,
+										"sensitive": 80.0,
+										"tolerant": 20.0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 5,
+								"regions": {
+									"fish": {
+										"bay": 3.0,
+										"dead": 0.0,
+										"device": true,
+										"enabled": true,
+										"energy": 55.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 55.0,
+										"gate_open": true,
+										"loaded": 60.0,
+										"outer": 21.0,
+										"oxygen": 12.0,
+										"stress": 5,
+										"used": 5.0
+									},
+									"microbe": {
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.5,
+										"refuge": 18.1,
+										"sealed": true,
+										"sensitive": 80.5,
+										"tolerant": 19.5,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 10,
+								"regions": {
+									"fish": {
+										"bay": 0.000000000000000666133814775094,
+										"dead": 0.0,
+										"device": true,
+										"enabled": true,
+										"energy": 50.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 50.0,
+										"gate_open": true,
+										"loaded": 60.0,
+										"outer": 24.0,
+										"oxygen": 16.0,
+										"stress": 7,
+										"used": 10.0
+									},
+									"microbe": {
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.0,
+										"refuge": 18.2,
+										"sealed": true,
+										"sensitive": 81.0,
+										"tolerant": 19.0,
+										"used": 0.0
+									}
+								}
+							}
+						],
+						"model": "oxygen_teaching_v1",
+						"regions": {
+							"fish": {
+								"bay": 0.0,
+								"dead": 0.0,
+								"device": true,
+								"enabled": true,
+								"energy": 47.0,
+								"flags": [
+									"leave"
+								],
+								"flow": 1.0,
+								"gas": 47.0,
+								"gate_open": true,
+								"loaded": 60.0,
+								"outer": 24.0,
+								"oxygen": 18.4,
+								"stress": 1,
+								"used": 13.0
+							},
+							"microbe": {
+								"device": false,
+								"enabled": true,
+								"energy": 0.0,
+								"flags": [],
+								"flow": 1.0,
+								"gas": 0.0,
+								"loaded": 0.0,
+								"oxygen": 0.0,
+								"refuge": 18.26,
+								"sealed": true,
+								"sensitive": 81.3,
+								"tolerant": 18.7,
+								"used": 0.0
+							}
+						}
+					},
+					"fraction": 0.0,
+					"observation": false,
+					"seconds": 13,
+					"seed": 9192026,
+					"zones": [
+						{
+							"id": "deep",
+							"target": 0,
+							"water": 0.0
+						},
+						{
+							"id": "shelf",
+							"target": 0,
+							"water": 0.0
+						}
+					]
+				},
+				"base_key": "5c823dfc50c53a97b889e0baf66c05adefb6a416fb9128fa99b51bb8462f18fd",
+				"eco_allowance": {
+					"oxygen_cartridge": 4,
+					"oxygen_station": 2
+				},
+				"ecology": {
+					"history": [
+						{
+							"at": 0,
+							"regions": {
+								"fish": {
+									"bay": 6.0,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"loaded": 0.0,
+									"outer": 18.0,
+									"oxygen": 8.0,
+									"stress": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"loaded": 0.0,
+									"oxygen": 4.0,
+									"refuge": 18.0,
+									"sealed": true,
+									"sensitive": 80.0,
+									"tolerant": 20.0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 5,
+							"regions": {
+								"fish": {
+									"bay": 3.0,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 55.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 55.0,
+									"gate_open": true,
+									"loaded": 60.0,
+									"outer": 21.0,
+									"oxygen": 12.0,
+									"stress": 5,
+									"used": 5.0
+								},
+								"microbe": {
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.5,
+									"refuge": 18.1,
+									"sealed": true,
+									"sensitive": 80.5,
+									"tolerant": 19.5,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 10,
+							"regions": {
+								"fish": {
+									"bay": 0.000000000000000666133814775094,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 50.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 50.0,
+									"gate_open": true,
+									"loaded": 60.0,
+									"outer": 24.0,
+									"oxygen": 16.0,
+									"stress": 7,
+									"used": 10.0
+								},
+								"microbe": {
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.2,
+									"sealed": true,
+									"sensitive": 81.0,
+									"tolerant": 19.0,
+									"used": 0.0
+								}
+							}
+						}
+					],
+					"model": "oxygen_teaching_v1",
+					"regions": {
+						"fish": {
+							"bay": 0.0,
+							"dead": 0.0,
+							"device": true,
+							"enabled": true,
+							"energy": 47.0,
+							"flags": [
+								"leave"
+							],
+							"flow": 1.0,
+							"gas": 47.0,
+							"gate_open": true,
+							"loaded": 60.0,
+							"outer": 24.0,
+							"oxygen": 18.4,
+							"stress": 1,
+							"used": 13.0
+						},
+						"microbe": {
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"flags": [],
+							"flow": 1.0,
+							"gas": 0.0,
+							"loaded": 0.0,
+							"oxygen": 0.0,
+							"refuge": 18.26,
+							"sealed": true,
+							"sensitive": 81.3,
+							"tolerant": 18.7,
+							"used": 0.0
+						}
+					}
+				},
+				"event_serial": 1,
+				"events": [
+					{
+						"at": 13,
+						"id": 1,
+						"kind": "fork",
+						"message": "同起点试验已就绪 · 先放置水箱，再开始观察",
+						"shipment": 0
+					}
+				],
+				"fraction": 0.0,
+				"id": "trial_a",
+				"mode": "experiment",
+				"name": "实验 A",
+				"observation": false,
+				"paused": true,
+				"seconds": 13,
+				"seed": 9192026,
+				"zones": [
+					{
+						"id": "deep",
+						"target": 0,
+						"water": 0.0
+					},
+					{
+						"id": "shelf",
+						"target": 0,
+						"water": 0.0
+					}
+				]
+			},
+			{
+				"allowance": 3,
+				"base": {
+					"ecology": {
+						"history": [
+							{
+								"at": 0,
+								"regions": {
+									"fish": {
+										"bay": 6.0,
+										"dead": 0.0,
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"gate_open": true,
+										"loaded": 0.0,
+										"outer": 18.0,
+										"oxygen": 8.0,
+										"stress": 0,
+										"used": 0.0
+									},
+									"microbe": {
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"loaded": 0.0,
+										"oxygen": 4.0,
+										"refuge": 18.0,
+										"sealed": true,
+										"sensitive": 80.0,
+										"tolerant": 20.0,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 5,
+								"regions": {
+									"fish": {
+										"bay": 3.0,
+										"dead": 0.0,
+										"device": true,
+										"enabled": true,
+										"energy": 55.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 55.0,
+										"gate_open": true,
+										"loaded": 60.0,
+										"outer": 21.0,
+										"oxygen": 12.0,
+										"stress": 5,
+										"used": 5.0
+									},
+									"microbe": {
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.5,
+										"refuge": 18.1,
+										"sealed": true,
+										"sensitive": 80.5,
+										"tolerant": 19.5,
+										"used": 0.0
+									}
+								}
+							},
+							{
+								"at": 10,
+								"regions": {
+									"fish": {
+										"bay": 0.000000000000000666133814775094,
+										"dead": 0.0,
+										"device": true,
+										"enabled": true,
+										"energy": 50.0,
+										"flags": [
+											"leave"
+										],
+										"flow": 1.0,
+										"gas": 50.0,
+										"gate_open": true,
+										"loaded": 60.0,
+										"outer": 24.0,
+										"oxygen": 16.0,
+										"stress": 7,
+										"used": 10.0
+									},
+									"microbe": {
+										"device": false,
+										"enabled": true,
+										"energy": 0.0,
+										"flags": [],
+										"flow": 1.0,
+										"gas": 0.0,
+										"loaded": 0.0,
+										"oxygen": 0.0,
+										"refuge": 18.2,
+										"sealed": true,
+										"sensitive": 81.0,
+										"tolerant": 19.0,
+										"used": 0.0
+									}
+								}
+							}
+						],
+						"model": "oxygen_teaching_v1",
+						"regions": {
+							"fish": {
+								"bay": 0.0,
+								"dead": 0.0,
+								"device": true,
+								"enabled": true,
+								"energy": 47.0,
+								"flags": [
+									"leave"
+								],
+								"flow": 1.0,
+								"gas": 47.0,
+								"gate_open": true,
+								"loaded": 60.0,
+								"outer": 24.0,
+								"oxygen": 18.4,
+								"stress": 1,
+								"used": 13.0
+							},
+							"microbe": {
+								"device": false,
+								"enabled": true,
+								"energy": 0.0,
+								"flags": [],
+								"flow": 1.0,
+								"gas": 0.0,
+								"loaded": 0.0,
+								"oxygen": 0.0,
+								"refuge": 18.26,
+								"sealed": true,
+								"sensitive": 81.3,
+								"tolerant": 18.7,
+								"used": 0.0
+							}
+						}
+					},
+					"fraction": 0.0,
+					"observation": false,
+					"seconds": 13,
+					"seed": 9192026,
+					"zones": [
+						{
+							"id": "deep",
+							"target": 0,
+							"water": 0.0
+						},
+						{
+							"id": "shelf",
+							"target": 0,
+							"water": 0.0
+						}
+					]
+				},
+				"base_key": "5c823dfc50c53a97b889e0baf66c05adefb6a416fb9128fa99b51bb8462f18fd",
+				"eco_allowance": {
+					"oxygen_cartridge": 4,
+					"oxygen_station": 2
+				},
+				"ecology": {
+					"history": [
+						{
+							"at": 0,
+							"regions": {
+								"fish": {
+									"bay": 6.0,
+									"dead": 0.0,
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"gate_open": true,
+									"loaded": 0.0,
+									"outer": 18.0,
+									"oxygen": 8.0,
+									"stress": 0,
+									"used": 0.0
+								},
+								"microbe": {
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"loaded": 0.0,
+									"oxygen": 4.0,
+									"refuge": 18.0,
+									"sealed": true,
+									"sensitive": 80.0,
+									"tolerant": 20.0,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 5,
+							"regions": {
+								"fish": {
+									"bay": 3.0,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 55.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 55.0,
+									"gate_open": true,
+									"loaded": 60.0,
+									"outer": 21.0,
+									"oxygen": 12.0,
+									"stress": 5,
+									"used": 5.0
+								},
+								"microbe": {
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.5,
+									"refuge": 18.1,
+									"sealed": true,
+									"sensitive": 80.5,
+									"tolerant": 19.5,
+									"used": 0.0
+								}
+							}
+						},
+						{
+							"at": 10,
+							"regions": {
+								"fish": {
+									"bay": 0.000000000000000666133814775094,
+									"dead": 0.0,
+									"device": true,
+									"enabled": true,
+									"energy": 50.0,
+									"flags": [
+										"leave"
+									],
+									"flow": 1.0,
+									"gas": 50.0,
+									"gate_open": true,
+									"loaded": 60.0,
+									"outer": 24.0,
+									"oxygen": 16.0,
+									"stress": 7,
+									"used": 10.0
+								},
+								"microbe": {
+									"device": false,
+									"enabled": true,
+									"energy": 0.0,
+									"flags": [],
+									"flow": 1.0,
+									"gas": 0.0,
+									"loaded": 0.0,
+									"oxygen": 0.0,
+									"refuge": 18.2,
+									"sealed": true,
+									"sensitive": 81.0,
+									"tolerant": 19.0,
+									"used": 0.0
+								}
+							}
+						}
+					],
+					"model": "oxygen_teaching_v1",
+					"regions": {
+						"fish": {
+							"bay": 0.0,
+							"dead": 0.0,
+							"device": true,
+							"enabled": true,
+							"energy": 47.0,
+							"flags": [
+								"leave"
+							],
+							"flow": 1.0,
+							"gas": 47.0,
+							"gate_open": true,
+							"loaded": 60.0,
+							"outer": 24.0,
+							"oxygen": 18.4,
+							"stress": 1,
+							"used": 13.0
+						},
+						"microbe": {
+							"device": false,
+							"enabled": true,
+							"energy": 0.0,
+							"flags": [],
+							"flow": 1.0,
+							"gas": 0.0,
+							"loaded": 0.0,
+							"oxygen": 0.0,
+							"refuge": 18.26,
+							"sealed": true,
+							"sensitive": 81.3,
+							"tolerant": 18.7,
+							"used": 0.0
+						}
+					}
+				},
+				"event_serial": 1,
+				"events": [
+					{
+						"at": 13,
+						"id": 1,
+						"kind": "fork",
+						"message": "同起点试验已就绪 · 先放置水箱，再开始观察",
+						"shipment": 0
+					}
+				],
+				"fraction": 0.0,
+				"id": "trial_b",
+				"mode": "experiment",
+				"name": "实验 B",
+				"observation": false,
+				"paused": true,
+				"seconds": 13,
+				"seed": 9192026,
+				"zones": [
+					{
+						"id": "deep",
+						"target": 0,
+						"water": 0.0
+					},
+					{
+						"id": "shelf",
+						"target": 0,
+						"water": 0.0
+					}
+				]
+			}
+		]
+	}
+}

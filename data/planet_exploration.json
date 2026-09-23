@@ -1,0 +1,23 @@
+{
+  "radius": 512.0,
+  "home_radius": 30.0,
+  "cell_size": 1.0,
+  "chunk_cells": 16,
+  "stream_radius": 3,
+  "chunks_per_frame": 1,
+  "site_spacing": 64.0,
+  "eye_height": 1.62,
+  "walk_speed": 3.2,
+  "run_speed": 5.2,
+  "wading_multiplier": 0.55,
+  "player_radius": 0.24,
+  "step_height": 0.62,
+  "gravity": 18.0,
+  "jump_speed": 7.0,
+  "body_height": 1.75,
+  "click_slop": 8.0,
+  "click_hold_ms": 450,
+  "mouse_sensitivity": 0.003,
+  "touch_sensitivity": 0.004,
+  "joystick_radius": 58.0
+}

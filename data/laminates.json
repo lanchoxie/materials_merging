@@ -1,0 +1,56 @@
+{
+  "model": "cu_al_laminate_v1",
+  "project": "laminate_design",
+  "temperature_K": 295,
+  "molar_mass_g_mol": {
+    "Cu": 63.546,
+    "Al": 26.982
+  },
+  "manufacturing": {
+    "fee": 24,
+    "seconds": 48,
+    "pack_kg": 0.1,
+    "feed_price": {
+      "Cu": 22,
+      "Al": 12
+    },
+    "max_feed_kg": 5,
+    "max_products": 64
+  },
+  "orders": {
+    "compact": {
+      "name": "微型仪器商 · 窄槽换热芯",
+      "max_mass_kg": 0.1,
+      "max_area_m2": 0.0001,
+      "target_G_W_K": 0.34,
+      "minimum_ratio": 0.65,
+      "reward": 88,
+      "premium_ratio": 0.97,
+      "premium_upgrades": 1,
+      "story": "仪器厂正在寻找能放入窄槽的换热芯。按模型热导、截面和质量验收；接近目标也收购，符合精品条件追加催化晶。",
+      "short_text": "窄槽换热芯",
+      "vehicle": "car"
+    },
+    "light": {
+      "name": "空岛载具商 · 轻量冷却芯",
+      "max_mass_kg": 0.054,
+      "max_area_m2": 0.0002,
+      "target_G_W_K": 0.39,
+      "minimum_ratio": 0.65,
+      "reward": 92,
+      "premium_ratio": 0.97,
+      "premium_upgrades": 1,
+      "story": "载具厂需要轻量冷却芯。相同热导下更轻、更适合安装的方案更受欢迎；仅收购有来源的标准层料构件模型。",
+      "short_text": "轻量冷却芯",
+      "vehicle": "bicycle"
+    }
+  },
+  "order_cooldown_seconds": 240,
+  "sources": {
+    "transport": "https://web.mit.edu/16.unified/www/SPRING/propulsion/notes/node118.html",
+    "thermal": "https://www.nist.gov/ncnr/neutron-instruments/sample-environment/sample-mounting/reference-tables",
+    "Cu": "https://periodic-table.rsc.org/element/29/copper",
+    "Al": "https://periodic-table.rsc.org/element/13/aluminium"
+  },
+  "scope": "仅针对标准铜层与铝层的致密、无反应、理想接触装配模型。原子数比作为投料摩尔比提案，不是合金结构认证；按摩尔质量和参考密度换算体积分数。横穿层片按串联，沿层片按并联。忽略界面热阻、互扩散、金属间化合物和相变；电导率、强度、腐蚀、寿命、毒性及模型误差仍未知。模型仅在295 K附近作教学比较，非真实制造工艺或实测产品。价格、工时、合同阈值为游戏规则。"
+}

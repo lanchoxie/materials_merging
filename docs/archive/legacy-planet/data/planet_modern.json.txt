@@ -1,0 +1,207 @@
+{
+  "model": "modern_city_v1",
+  "nodes": {
+    "roof": [
+      -2.4,
+      -1.2
+    ],
+    "field": [
+      -2.5,
+      1.1
+    ],
+    "battery": [
+      -0.4,
+      -1.7
+    ],
+    "compute": [
+      1.7,
+      -1.25
+    ],
+    "cooling": [
+      2.5,
+      0.7
+    ],
+    "recycle": [
+      0.3,
+      1.6
+    ],
+    "homes": [
+      1.45,
+      2.0
+    ],
+    "junction": [
+      0,
+      0
+    ],
+    "park": [
+      -0.6,
+      0.85
+    ]
+  },
+  "names": {
+    "roof": "轻型屋顶",
+    "field": "地面光伏场",
+    "battery": "储能站",
+    "compute": "算力中心",
+    "cooling": "冷却回路",
+    "recycle": "回收工坊",
+    "homes": "住宅区",
+    "junction": "城市环路",
+    "park": "口袋公园"
+  },
+  "solar": {
+    "roof": {
+      "area_m2": 6,
+      "max_mass_kg": 35
+    },
+    "field": {
+      "area_m2": 10,
+      "max_mass_kg": 180
+    }
+  },
+  "panels": {
+    "modern_silicon": {
+      "name": "硅组件·教学规格",
+      "efficiency": 0.2,
+      "mass_kg_m2": 12,
+      "decay_s": 2e-05,
+      "color": "4b849f"
+    },
+    "modern_perovskite": {
+      "name": "钙钛矿薄膜·教学规格",
+      "efficiency": 0.24,
+      "mass_kg_m2": 3,
+      "decay_s": 0.00015,
+      "color": "9672b0"
+    }
+  },
+  "day": {
+    "period": 240,
+    "daylight": 150,
+    "peak_W_m2": 900,
+    "cloud_start": 75,
+    "cloud_end": 105,
+    "cloud_fraction": 0.35
+  },
+  "battery": {
+    "capacity_J": 150000,
+    "charge_W": 1000,
+    "discharge_W": 900,
+    "charge_efficiency": 0.9,
+    "discharge_efficiency": 0.9
+  },
+  "loads": {
+    "homes": 320,
+    "fan": 80,
+    "compute": 950,
+    "recycle": 180
+  },
+  "policies": {
+    "residents": [
+      "homes",
+      "fan",
+      "compute",
+      "recycle"
+    ],
+    "compute": [
+      "fan",
+      "compute",
+      "homes",
+      "recycle"
+    ],
+    "circular": [
+      "homes",
+      "fan",
+      "recycle",
+      "compute"
+    ]
+  },
+  "heat": {
+    "capacity_J_K": 1000,
+    "passive_W_K": 8,
+    "sink_scale_W_K": 85,
+    "cutoff_K_above_ambient": 28,
+    "restart_K_above_ambient": 12
+  },
+  "sinks": {
+    "modern_copper_sink": {
+      "reference": "copper_light",
+      "name": "等重铜散热芯"
+    },
+    "modern_aluminum_sink": {
+      "reference": "aluminum_light",
+      "name": "等重铝散热芯"
+    }
+  },
+  "deliveries": {
+    "modern_battery": {
+      "site": "battery",
+      "install": "battery"
+    },
+    "modern_server": {
+      "site": "compute",
+      "install": "server"
+    },
+    "modern_fan": {
+      "site": "cooling",
+      "install": "fan"
+    },
+    "modern_recycler": {
+      "site": "recycle",
+      "install": "recycler"
+    },
+    "modern_scrap": {
+      "site": "recycle",
+      "scrap": 8
+    }
+  },
+  "jobs": {
+    "lighting": {
+      "name": "夜间照明调度",
+      "work": 100,
+      "duration": 180,
+      "demand_factor": 0.75
+    },
+    "cooling": {
+      "name": "冷却排程",
+      "work": 100,
+      "duration": 180,
+      "demand_factor": 0.75
+    }
+  },
+  "recycling": {
+    "input": 2,
+    "recovered": 1.4,
+    "residue": 0.6,
+    "work": 24,
+    "park_parts": 4,
+    "park_work": 30
+  },
+  "people": {
+    "travel_seconds": 10,
+    "count": 6
+  },
+  "limits": {
+    "history": 60,
+    "stock": 99,
+    "ledger": 1000000000000.0
+  },
+  "science_note": "光伏效率、质量、衰减、储能、热容和调度效果为教学器件规格，不是玩家结构实测。照度日夜为压缩游戏时间，电网采用理想汇流；铜铝导热参考只用于有说明的散热映射。",
+  "sources": {
+    "pv": "https://www.energy.gov/cmei/systems/solar-photovoltaic-cell-basics",
+    "perovskite": "https://www.energy.gov/cmei/systems/perovskite-solar-cells",
+    "storage": "https://samrepo.nlr.gov/help/battery_storage_btm.html",
+    "cooling": "https://www.energy.gov/cmei/femp/articles/best-practices-guide-energy-efficient-data-center-design"
+  },
+  "trial_products": {
+    "modern_silicon": 2,
+    "modern_perovskite": 2,
+    "modern_battery": 2,
+    "modern_server": 2,
+    "modern_fan": 2,
+    "modern_recycler": 2,
+    "modern_scrap": 4,
+    "modern_copper_sink": 2,
+    "modern_aluminum_sink": 2
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "production": {
+    "seconds_per_unit": 24,
+    "base_capacity": 5,
+    "capacity_per_level": 2,
+    "level_speed_bonus": 0.2,
+    "drop_probability": 0.2,
+    "drop_pity": 8
+  },
+  "logistics": {
+    "installation_seconds": 18,
+    "collection_seconds": 3,
+    "cupboard_capacity": 30
+  },
+  "consumables": {
+    "noodles": {
+      "name": "暖心泡面",
+      "cost": 12,
+      "rounds": 4,
+      "hunger_recovery": 40,
+      "description": "在公寓吃完后，可完成4次收集；恢复40点饥饿。"
+    },
+    "cola": {
+      "name": "冰镇可乐",
+      "cost": 6,
+      "rounds": 2,
+      "hunger_recovery": 15,
+      "description": "可完成2次收集；恢复15点饥饿。"
+    }
+  },
+  "visitors": {
+    "max_active": 3,
+    "arrival_interval": 65,
+    "stay_seconds": 240,
+    "arrival_seconds": 6,
+    "departure_seconds": 5,
+    "property_target_quality": 0.95,
+    "property_rewards": {
+      "premium": 90,
+      "matching": 60,
+      "substitute": 20
+    },
+    "exhibition_reward": 18,
+    "material_every": 3,
+    "material_slot": 1
+  },
+  "relics": {
+    "every_plots": 3,
+    "kinds": [
+      "crystal_fox",
+      "orbit_mobile",
+      "moon_lamp"
+    ]
+  }
+}

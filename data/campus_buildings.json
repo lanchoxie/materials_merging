@@ -1,0 +1,144 @@
+{
+  "schema": 1,
+  "roads": {
+    "cost": 8,
+    "width": 0.3
+  },
+  "performance": {
+    "visible_people": 24,
+    "visible_buildings": 36,
+    "mobile_visible_people": 12,
+    "mobile_visible_buildings": 16,
+    "mobile_max_fps": 30,
+    "world_refresh_seconds": 0.5,
+    "web_visible_people": 16,
+    "web_visible_buildings": 24
+  },
+  "buildings": {
+    "institute": {
+      "name": "科研院所",
+      "cost": 240,
+      "capacity": 6,
+      "capacity_per_level": 4,
+      "max_level": 4,
+      "upgrade_cost": 180,
+      "role": "research",
+      "description": "团队研究的工作场所；需连通广场道路。"
+    },
+    "engineer_house": {
+      "name": "工程师小窝",
+      "cost": 60,
+      "capacity": 4,
+      "capacity_per_level": 2,
+      "max_level": 3,
+      "upgrade_cost": 70,
+      "role": "engineer",
+      "description": "工程师共享住宅，升级增加床位。"
+    },
+    "doctor_dorm": {
+      "name": "博士公寓",
+      "cost": 120,
+      "capacity": 4,
+      "capacity_per_level": 4,
+      "max_level": 4,
+      "upgrade_cost": 100,
+      "role": "doctor",
+      "description": "4人间起步，每层增加4个床位。"
+    },
+    "professor_apartment": {
+      "name": "教授公寓",
+      "cost": 260,
+      "capacity": 2,
+      "capacity_per_level": 2,
+      "max_level": 5,
+      "upgrade_cost": 180,
+      "role": "professor",
+      "description": "每层2间独立住房。教授在公寓、食堂、研究所之间生活。"
+    },
+    "academician_villa": {
+      "name": "院士别墅",
+      "cost": 580,
+      "capacity": 1,
+      "capacity_per_level": 1,
+      "max_level": 2,
+      "upgrade_cost": 380,
+      "role": "academician",
+      "description": "院士独立住宅；工程师会从食堂送餐。"
+    },
+    "canteen": {
+      "name": "星光食堂",
+      "cost": 90,
+      "capacity": 12,
+      "capacity_per_level": 8,
+      "max_level": 3,
+      "upgrade_cost": 80,
+      "role": "meal",
+      "description": "饥饿时来这里吃饭，院士由空闲工程师送餐。"
+    },
+    "park": {
+      "name": "散步公园",
+      "cost": 55,
+      "capacity": 12,
+      "capacity_per_level": 4,
+      "max_level": 3,
+      "upgrade_cost": 55,
+      "role": "leisure",
+      "description": "博士会来散步；适当休息恢复心情。"
+    },
+    "workshop": {
+      "name": "工艺车间",
+      "cost": 150,
+      "capacity": 2,
+      "capacity_per_level": 1,
+      "max_level": 3,
+      "upgrade_cost": 120,
+      "role": "manufacturing",
+      "description": "工程师到岗后加工星球成品；与反应炉施工共享人手，需连通广场。"
+    }
+  },
+  "props": {
+    "flower": {
+      "name": "小花盆",
+      "cost": 12,
+      "requires_deliveries": 0
+    },
+    "bench": {
+      "name": "长椅",
+      "cost": 20,
+      "requires_deliveries": 0
+    },
+    "lamp": {
+      "name": "庭院灯",
+      "cost": 25,
+      "requires_deliveries": 0
+    },
+    "fence": {
+      "name": "护栏",
+      "cost": 10,
+      "requires_deliveries": 0
+    },
+    "trophy": {
+      "name": "初见成就杯",
+      "cost": 0,
+      "requires_deliveries": 3
+    },
+    "crystal_fox": {
+      "name": "晶晶小狐狸",
+      "cost": 45,
+      "requires_deliveries": 0,
+      "exploration": true
+    },
+    "orbit_mobile": {
+      "name": "原子风铃",
+      "cost": 45,
+      "requires_deliveries": 0,
+      "exploration": true
+    },
+    "moon_lamp": {
+      "name": "月亮夜灯",
+      "cost": 45,
+      "requires_deliveries": 0,
+      "exploration": true
+    }
+  }
+}

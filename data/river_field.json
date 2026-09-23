@@ -1,0 +1,22 @@
+{
+  "reach": 5.0,
+  "max_stock": 999,
+  "max_changed_nodes": 4096,
+  "max_craft_records": 2048,
+  "resources": {
+    "timber": {"name": "枯枝木料", "node": "枯枝堆", "hits": 3, "yield": 4, "renew_seconds": 480, "color": "bc9265", "icon": "block"},
+    "stone": {"name": "散石", "node": "散石堆", "hits": 3, "yield": 4, "renew_seconds": 720, "color": "a7b7b8", "icon": "stone"},
+    "fiber": {"name": "植物纤维", "node": "纤维草", "hits": 2, "yield": 3, "renew_seconds": 300, "color": "94bd73", "icon": "seed"},
+    "fruit": {"name": "野果", "node": "野果丛", "hits": 2, "yield": 3, "renew_seconds": 360, "color": "ecad69", "icon": "fruit"},
+    "grain": {"name": "谷穗", "icon": "seed", "color": "ddbe65"}
+  },
+  "garden": {"growth_seconds": 180, "initial_moisture": 0.18, "water_add": 0.65, "evaporation": 0.0015, "minimum_moisture": 0.25, "harvest_grain": 3, "harvest_seeds": 2, "rain_period_seconds":240, "rain_duration_seconds":100, "rain_per_second":0.0007, "roof_evaporation_multiplier":0.45, "roof_growth_multiplier":0.55},
+  "feeding": {"minimum_hunger":0.12, "hunger_reduction":0.35},
+  "recipes": {
+    "field_floor": {"id":"field_floor","version":1,"name":"河湾石基包","reference":"natural","input":"","fee":0,"seconds":18,"natural_inputs":{"stone":4},"description":"4份散石加工为8块石基；用于铺地和台阶。"},
+    "field_wall": {"id":"field_wall","version":1,"name":"河湾木墙包","reference":"natural","input":"","fee":0,"seconds":22,"natural_inputs":{"timber":4},"description":"4份采集木料加工为8块木墙；可搭柱与墙。"},
+    "field_roof": {"id":"field_roof","version":1,"name":"纤维屋顶包","reference":"natural","input":"","fee":0,"seconds":24,"natural_inputs":{"timber":2,"fiber":3},"description":"2份木料和3份纤维加工为8块屋顶；遮雨保湿，但遮光也会减慢作物生长。"},
+    "field_fence": {"id":"field_fence","version":1,"name":"河湾围栏包","reference":"natural","input":"","fee":0,"seconds":20,"natural_inputs":{"timber":3,"fiber":1},"description":"3份木料和1份纤维加工为8段围栏，限制小兽通行。"},
+    "field_planter": {"id":"field_planter","version":1,"name":"河湾种植箱包","reference":"natural","input":"","fee":0,"seconds":20,"natural_inputs":{"timber":3,"stone":2},"description":"3份木料和2份散石加工为2个种植箱，每箱单独记录湿度和作物。"}
+  }
+}

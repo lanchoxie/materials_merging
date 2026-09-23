@@ -1,0 +1,17 @@
+{
+  "animal_interval": 240,
+  "animal_target": 4,
+  "plant_regrow_seconds": 180,
+  "harvest_radius": 8.0,
+  "harvest_maturity": 0.9,
+  "harvest_remaining": 0.2,
+  "active_radius": 82.0,
+  "visible_radius": 64.0,
+  "visitor_interval": 150,
+  "visitor_stay_seconds": 210,
+  "visitor_capacity": 2,
+  "visitor_food_cost": 0.18,
+  "max_sites": 300,
+  "wild_environment": {"moisture": 0.58, "water": 0.35, "temperature": 20.0, "pollution": 0.0, "enclosed": false, "oxygen": 0.55},
+  "scope": "教学再生与外来迁入。营地访客是旅行者，不是死亡居民复活；野生植被是有限可再生食物。远离的地点暂停模拟，加载不会重置状态。"
+}

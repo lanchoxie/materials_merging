@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "model": "thermal_fixture_v1",
+  "source": {
+    "id": "nist_ncnr_295k",
+    "url": "https://www.nist.gov/ncnr/neutron-instruments/sample-environment/sample-mounting/reference-tables",
+    "title": "NIST NCNR: Reference Tables, physical properties at 295 K",
+    "accessed": "2026-09-19",
+    "scope": "Four numeric reference facts, converted to SI; original schema and explanations. Not a copied table or a measured player specimen. Source table cites White (1979) and CRC (1975); no NIST endorsement."
+  },
+  "materials": {
+    "copper": {
+      "name": "铜",
+      "symbol": "Cu",
+      "color": "d99367",
+      "density_kg_m3": 8960.0,
+      "conductivity_W_mK": 400.0,
+      "temperature_K": 295.0,
+      "uncertainty": null,
+      "electrical_conductivity_S_m": null,
+      "toxicity": null,
+      "heat_capacity_J_kgK": null,
+      "phase": "solid",
+      "origin": "supplier_reference"
+    },
+    "aluminum": {
+      "name": "铝",
+      "symbol": "Al",
+      "color": "c5d9df",
+      "density_kg_m3": 2700.0,
+      "conductivity_W_mK": 235.0,
+      "temperature_K": 295.0,
+      "uncertainty": null,
+      "electrical_conductivity_S_m": null,
+      "toxicity": null,
+      "heat_capacity_J_kgK": null,
+      "phase": "solid",
+      "origin": "supplier_reference"
+    }
+  },
+  "fixture": {
+    "length_m": 0.1,
+    "area_m2": 0.0001,
+    "mass_kg": 0.054,
+    "hot_K": 296.0,
+    "cold_K": 294.0,
+    "contact_resistance_K_W": 0.5,
+    "external_resistance_K_W": 1.5,
+    "assumptions": "Steady 1D conduction, insulated sides, constant k near 295 K; contact/external resistance and geometry are illustrative design assumptions, not measured values."
+  },
+  "thermal_game": {
+    "model": "device_heat_v1",
+    "generation_per_flow_squared": 1.5,
+    "passive_cooling": 1.5,
+    "conductance_scale": 18.0,
+    "cutoff": 45.0,
+    "restart": 20.0,
+    "maximum": 100.0,
+    "scope": "Dimensionless gameplay load. Conductance is mapped to cooling by a tuned coefficient; not a prediction of real pump temperature, lifetime or efficiency."
+  },
+  "designs": {
+    "copper_compact": {
+      "material": "copper",
+      "mode": "same_size",
+      "name": "铜芯·紧凑",
+      "version": 1
+    },
+    "aluminum_compact": {
+      "material": "aluminum",
+      "mode": "same_size",
+      "name": "铝芯·紧凑",
+      "version": 1
+    },
+    "copper_light": {
+      "material": "copper",
+      "mode": "same_mass",
+      "name": "铜芯·等重",
+      "version": 1
+    },
+    "aluminum_light": {
+      "material": "aluminum",
+      "mode": "same_mass",
+      "name": "铝芯·等重",
+      "version": 1
+    }
+  },
+  "device_mounts": {
+    "microbe": {
+      "name": "窄槽支架",
+      "max_area_m2": 0.0001,
+      "max_mass_kg": 0.1
+    },
+    "fish": {
+      "name": "轻量支架",
+      "max_area_m2": 0.0002,
+      "max_mass_kg": 0.054
+    },
+    "headwater": {
+      "name": "窄槽支架",
+      "max_area_m2": 0.0001,
+      "max_mass_kg": 0.1
+    },
+    "marsh": {
+      "name": "窄槽支架",
+      "max_area_m2": 0.0001,
+      "max_mass_kg": 0.1
+    },
+    "estuary": {
+      "name": "轻量支架",
+      "max_area_m2": 0.0002,
+      "max_mass_kg": 0.054
+    }
+  },
+  "formula_source": {
+    "title": "NASA TFAWS 2012: The Thermal Network, slide 25",
+    "url": "https://tfaws.nasa.gov/TFAWS12/Proceedings/Form%20Factors%20Grey%20Bodies%20and%20Radks%20Course.pdf",
+    "page": 25,
+    "accessed": "2026-09-19"
+  }
+}
