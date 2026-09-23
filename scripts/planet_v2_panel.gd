@@ -92,10 +92,10 @@ func setup(model) -> void:
 	counters=UI.paragraph("",16,UI.GOLD); counters.size_flags_horizontal=Control.SIZE_EXPAND_FILL; time_row.add_child(counters)
 	right_panel=UI.box(self,Rect2(976,99,436,740)); var col=UI.column(right_panel,10)
 	info=UI.paragraph("",17,UI.MINT); col.add_child(info)
-	var nav=UI.row(col,8)
-	for entry in [["observe","生命"],["bag","背包"],["explore","远行"],["build","搭建"],["era","时代"],["journal","年鉴"]]:
+	var nav=GridContainer.new(); nav.columns=4; nav.add_theme_constant_override("h_separation",5); col.add_child(nav)
+	for entry in [["observe","生命"],["bag","背包"],["explore","远行"],["build","搭建"],["ranch","村庄"],["era","时代"],["journal","年鉴"]]:
 		var b=UI.button(entry[1],_tab.bind(entry[0])); b.size_flags_horizontal=Control.SIZE_EXPAND_FILL; nav.add_child(b); tabs[entry[0]]=b
-		b.add_theme_font_size_override("font_size",14)
+		b.add_theme_font_size_override("font_size",14); b.custom_minimum_size.x=82
 	scroll=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; col.add_child(scroll)
 	body=UI.column(scroll,10); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	inspect_button=UI.button("世界 / 远行",_toggle_details); inspect_button.position=Vector2(1240,170); inspect_button.size=Vector2(148,44); inspect_button.hide(); add_child(inspect_button)
@@ -195,16 +195,19 @@ func _use_item(id: String,alternate: String="") -> void:
 		if view.first_person and alternate!="reed": _act("v2_field_plant")
 		else: _act("v2_plant",{"crop":alternate if alternate=="reed" else "grain"})
 	elif type=="sample":
-		var local=view.first_person and (target.get("kind")=="planter" or target.get("type")=="tree")
+		var local=view.first_person and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree")
 		_act("v2_field_water" if local else "v2_deploy_sample",{"batch_id":action.batch_id,"region_id":selected_region,"token":state.planet.shipment_serial})
 	elif type=="product":
 		var product_id=-1
 		for product in state.planet.products:
 			if product.recipe==action.recipe: product_id=int(product.id); break
 		if product_id<0: message="没有完整的成品包；先拆回构件并在搭建页整包收纳。"; _live(); return
-		var local=view.first_person and (target.get("kind")=="planter" or target.get("type")=="tree") and action.recipe=="standard_water_crate"
+		var local=view.first_person and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree") and action.recipe=="standard_water_crate"
 		_act("v2_field_water" if local else "v2_deploy_product",{"product_id":product_id,"region_id":selected_region,"token":state.planet.shipment_serial})
-	elif type=="collect": _act("v2_field_collect")
+	elif type=="collect":
+		if target.has("entity") or target.get("kind") in ["trough","feeder"]:
+			show_details=true; _exploration_layout(); _tab("ranch"); message=preload("res://scripts/river_ranch_panel.gd").describe(state.planet.v2,target).split("\n")[0]; _live()
+		else: _act("v2_field_collect")
 	elif type=="feed": _act("v2_field_feed",{"resource":action.resource})
 	if not target.is_empty(): view.field_view.feedback(target.point)
 	if is_instance_valid(backpack): backpack.feedback.text=message; backpack.refresh()
@@ -291,11 +294,11 @@ func _aim() -> void:
 		if id.is_empty(): aim_label.text="空格 · B 打开背包"
 		elif action.get("type") in ["sample","product"]:
 			var water=action.get("reference")=="water" or action.get("recipe")=="standard_water_crate"
-			aim_label.text=str(item.get("name","已用完"))+ (" · E 浇水" if water and (target.get("kind")=="planter" or target.get("type")=="tree") else (" · 这里需要水" if (target.get("kind")=="planter" or target.get("type")=="tree") else " · E 使用于"+str(v.region().name)))
+			aim_label.text=str(item.get("name","已用完"))+ (" · E 浇水" if water and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree") else (" · 这里需要水" if (target.get("kind") in ["planter","trough"] or target.get("type")=="tree") else " · E 使用于"+str(v.region().name)))
 		elif action.get("type")=="plant": aim_label.text=v.Target.prompt(v,target)+" · E 播种"
 	if target.has("entity"):
 		var rage=v.combat.records.get(target.entity.key,{}).get("anger",0)
-		aim_label.text="%s · 血量 %.0f%% · 怒气 %.0f%% · %s" % [target.name,target.health*100,rage,v.combat.reaction(target.entity)]
+		aim_label.text="%s · 血量 %.0f%% · 怒气 %.0f%% · %s" % [target.name,target.health*100,rage,v.ranch.lives.get(target.entity.key,{}).get("task",v.combat.reaction(target.entity))]+" · 手套 E 查看"
 	action_button.text="采集 E" if action.get("type")=="collect" else ("拆回 E" if build_mode=="remove" else ("放置 E" if action.get("type")=="build" else "使用 E"))
 
 func _tab(id: String) -> void:
@@ -316,7 +319,7 @@ func _key() -> String:
 	var life=[]; var crops=[]
 	for a in r.animals: life.append(a.id)
 	for c in r.crops: crops.append([c.crop,c.ready])
-	return str([selected_region,section,_in_wilderness(),v.population.enabled,stock,state.planet.products,life,crops,r.buildings,r.enclosed,v.world.events.size(),v.world.events[0],v.world.seeds,v.world.food,v.construction.revision,v.field.revision,v.settlement.era])
+	return str([selected_region,section,_in_wilderness(),v.population.enabled,stock,state.planet.products,life,crops,r.buildings,r.enclosed,v.world.events.size(),v.world.events[0],v.world.seeds,v.world.food,v.construction.revision,v.field.revision,v.ranch.revision,v.settlement.era])
 
 func _redraw(reset_scroll: bool=false) -> void:
 	if body==null: return
@@ -328,6 +331,7 @@ func _redraw(reset_scroll: bool=false) -> void:
 		"explore": _journey()
 		"journal": _journal()
 		"build": _building()
+		"ranch": preload("res://scripts/river_ranch_panel.gd").build(self)
 		"era": _era()
 	_live()
 
@@ -447,6 +451,9 @@ func _live() -> void:
 		var residents=""
 		for p in v.settlement.people: residents+="%s · %s · 健康%.0f%% / 饥饿%.0f%%\n" % [p.name,p.task,p.health*100,p.hunger*100]
 		widgets.residents.text=residents if not residents.is_empty() else "满足住处、作物与水源条件后，旅人愿意定居。"
+	for p in v.settlement.people:
+		var worker="worker:"+str(int(p.id))
+		if widgets.has(worker): widgets[worker].text=p.name+" · "+v.ranch.role(int(p.id))+"\n"+v.ranch.job_label(int(p.id))+" · 饥饿%.0f%%" % (p.hunger*100)
 	if section!="observe" or not widgets.has("environment"): return
 	widgets.environment.text="水位 %.0f%% · 土壤湿度 %.0f%%\n溶氧 %.0f%% · 温度 %.1f°C\n土壤营养 %.0f%% · 颗粒负担 %.0f%%" % [r.water*100,r.moisture*100,r.oxygen*100,r.temperature,r.nutrients*100,r.pollution*100]
 	var generation=0
@@ -467,13 +474,19 @@ func _sync() -> void:
 	var v=state.planet.v2; var at=_observer_position()
 	v.population.observe(at)
 	if not view.first_person: view.selected=selected_region
+	view.ranch=v.ranch
 	view.sync(v.world,v.season())
+	view.life_view.ranch=v.ranch
 	view.life_view.sync(v.population,at,v.world.paused)
 	view.walker.barriers.append_array(view.life_view.barriers)
 	v.construction.obstacles=view.walker.barriers.duplicate()
 	view.walker.construction=v.construction
 	view.construction_view.sync(v.construction,at)
 	view.field_view.sync(v.field,v.construction,at,int(v.world.elapsed))
+	view.settlement_view.ranch=v.ranch
+	view.settlement_view.construction=v.construction
+	view.settlement_view.paused=v.world.paused
+	view.settlement_view.depot_position=v.ranch.depot_at(v)
 	view.settlement_view.sync(v.settlement,at)
 	view.life_view.era=v.settlement.era
 	_live(); _aim()

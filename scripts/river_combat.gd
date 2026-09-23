@@ -15,13 +15,13 @@ func entities(v) -> Array:
 			var fish=a.species=="marsh_fish"; var spread=1.0 if r.enclosed else 2.2
 			var at=Vector2(c.x+a.x*spread,c.z+a.z*spread)
 			if fish: at=Vector2(t.river_x(c.z+a.z*2.2)+a.x*0.4,c.z+a.z*2.2)
-			out.append({"key":"animal:"+id+":"+str(int(a.id)),"type":"animal","region":id,"id":a.id,"row":a,"position":at,"origin":Vector2(c.x,c.z),"scale":spread,"fish":fish,"name":("湿地鱼" if fish else ("护群小兽" if int(a.id)%3==0 else "草甸小兽")),"height":0.35 if fish else 0.8})
+			out.append({"key":"animal:"+id+":"+str(int(a.id)),"type":"animal","region":id,"id":a.id,"row":a,"position":at,"origin":Vector2(c.x,c.z),"scale":spread,"fish":fish,"name":("湿地鱼" if fish else "草甸小鹿"),"height":0.35 if fish else 0.8})
 	var observer=Vector2(v.actor.eye.x,v.actor.eye.z) if not v.actor.is_empty() else Vector2.ZERO
 	for s in v.population.visible_sites(observer):
 		for kind in ["animals","visitors"]:
 			for a in s[kind]:
 				var human=kind=="visitors"; var key=("visitor:" if human else "wild:")+str(s.id)+":"+str(int(a.id))
-				out.append({"key":key,"type":"visitor" if human else "wild","row":a,"position":Vector2(s.x+a.x,s.z+a.z),"origin":Vector2(s.x,s.z),"scale":1.0,"fish":false,"name":a.name if human else ("护群小兽" if int(a.id)%3==0 else "林间小兽"),"height":1.55 if human else 0.8,"id":a.id,"site":s.id})
+				out.append({"key":key,"type":"visitor" if human else "wild","row":a,"position":Vector2(s.x+a.x,s.z+a.z),"origin":Vector2(s.x,s.z),"scale":1.0,"fish":false,"name":a.name if human else ("林地野猪" if a.species=="woodland_boar" else "林间小鹿"),"height":1.55 if human else 0.8,"id":a.id,"site":s.id})
 	for a in v.settlement.people:
 		out.append({"key":"resident:"+str(int(a.id)),"type":"resident","row":a,"position":Vector2(a.x,a.z),"origin":Vector2.ZERO,"scale":1.0,"fish":false,"name":a.name,"height":1.65,"id":a.id})
 	return out
@@ -30,7 +30,7 @@ func busy(key: String) -> bool:
 	return records.get(key,{}).get("anger",0)>0
 
 func reaction(entity: Dictionary) -> String:
-	return "逃跑" if entity.fish or (entity.type in ["animal","wild"] and int(entity.id)%3!=0) else "反击"
+	return "逃跑" if entity.fish or (entity.type in ["animal","wild"] and entity.row.get("species")!="woodland_boar") else "反击"
 
 func strike(target: Dictionary,v) -> String:
 	if player_health<=0: return "你需要回营地休息"
@@ -39,6 +39,7 @@ func strike(target: Dictionary,v) -> String:
 	var e: Dictionary=target.entity
 	if e.row.get("health",1)<=0: return "目标已经离开"
 	if not records.has(e.key) and records.size()>=int(rules.max_records): return "遭遇记录已满，等待已有怒气消退"
+	v.ranch.attacked(e,int(v.world.elapsed))
 	var r=records.get(e.key,{"anger":0.0,"wait":float(rules.enemy_cooldown),"home_x":e.position.x,"home_z":e.position.y,"mode":reaction(e)})
 	r.anger=minf(100,r.anger+float(rules.anger_per_hit)); records[e.key]=r
 	e.row.health=maxf(0,float(e.row.get("health",1))-float(rules.hit_damage)); attack_left=float(rules.hit_cooldown); revision+=1

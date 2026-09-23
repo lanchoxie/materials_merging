@@ -14,7 +14,7 @@ func entries(state) -> Dictionary:
 		var spec=rules.tools[id]
 		result["tool:"+id]=_item("tool:"+id,spec.name,"tools",spec.icon,-1,spec.description,{"type":id})
 	result["seed:grain"]=_item("seed:grain","混合种子","supplies","seed",int(v.world.seeds),"装备到快捷栏，瞄准空种植箱按 E 播谷物。水样或标准水箱可单独浇这一箱；成熟后用采集手套收获留种。上帝视角保留区域播种。",{"type":"plant","crop":"grain"})
-	result["food"]=_item("food","粮仓饲料","supplies","food",int(v.world.food),"收获和野外采集进入粮仓，圈养动物与居民按需取食。",{})
+	result["food"]=_item("food","粮仓口粮","supplies","food",int(v.world.food),"收获和野外采集进入粮仓。在星球的村庄页把口粮存进公共仓库，居民会走去吃饭。动物使用谷穗、野果和设施补给。",{})
 	for id in v.field.stock:
 		var spec=v.field.rules.resources[id]; var key="raw:"+str(id)
 		if int(v.field.stock[id])<=0 and key not in slots: continue

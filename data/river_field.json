@@ -137,6 +137,33 @@
         "stone": 2
       },
       "description": "3份木料和2份散石加工为2个种植箱，每箱单独记录湿度和作物。"
+    },
+    "field_trough": {
+      "id": "field_trough",
+      "version": 1,
+      "name": "石砌饮水槽包",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 24,
+      "natural_inputs": {
+        "stone": 4
+      },
+      "description": "采集原料在工艺车间加工为1个石砌饮水槽。放置后需补充有限的水或谷穗，动物走近后使用；村民可从公共仓库搬运补给。"
+    },
+    "field_feeder": {
+      "id": "field_feeder",
+      "version": 1,
+      "name": "木制饲草架包",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 24,
+      "natural_inputs": {
+        "timber": 3,
+        "fiber": 2
+      },
+      "description": "采集原料在工艺车间加工为1个木制饲草架。放置后需补充有限的水或谷穗，动物走近后使用；村民可从公共仓库搬运补给。"
     }
   }
 }

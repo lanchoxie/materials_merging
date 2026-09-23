@@ -9,6 +9,7 @@ const CENTERS=Terrain.CENTERS
 var terrain=Terrain.new()
 var walker=Walker.new(terrain)
 var hands
+var ranch
 var first_person=false
 var has_walk_position=false
 var chunks={}
@@ -56,8 +57,8 @@ func _ready() -> void:
 		var n=MeshInstance3D.new(); terrain_root.add_child(n); water_nodes[id]=n
 		crop_nodes[id]=MeshInstance3D.new(); terrain_root.add_child(crop_nodes[id])
 		building_nodes[id]=MeshInstance3D.new(); terrain_root.add_child(building_nodes[id])
-	for kind in ["marsh_fish","meadow_herbivore"]: meshes[kind]=_animal_mesh(kind)
-	life_view=LifeView.new(); life_view.terrain=terrain; life_view.material=mat; life_view.animal_mesh=meshes.meadow_herbivore; terrain_root.add_child(life_view)
+	for kind in ["marsh_fish","meadow_herbivore","woodland_boar"]: meshes[kind]=_animal_mesh(kind)
+	life_view=LifeView.new(); life_view.terrain=terrain; life_view.material=mat; life_view.animal_mesh=meshes.meadow_herbivore; life_view.boar_mesh=meshes.woodland_boar; terrain_root.add_child(life_view)
 	construction_view=preload("res://scripts/river_construction_view.gd").new(); construction_view.material=mat; terrain_root.add_child(construction_view)
 	settlement_view=preload("res://scripts/river_settlement_view.gd").new(); settlement_view.material=mat; settlement_view.terrain=terrain; terrain_root.add_child(settlement_view)
 	field_view=preload("res://scripts/river_field_view.gd").new(); field_view.material=mat; terrain_root.add_child(field_view)
@@ -145,6 +146,14 @@ func _animal_mesh(kind: String) -> Mesh:
 		_cube(st,Vector3.ZERO,Vector3(0.22,0.15,0.48),Color("f2cb81"))
 		_cube(st,Vector3(0,0,0.27),Vector3(0.33,0.06,0.14),Color("e0a761"))
 		for side in [-1,1]: _cube(st,Vector3(side*0.114,0.035,-0.15),Vector3(0.016,0.055,0.065),Color("263c48"))
+	elif kind=="woodland_boar":
+		_cube(st,Vector3(0,0.34,0),Vector3(0.56,0.45,0.76),Color("8a6754"))
+		_cube(st,Vector3(0,0.31,-0.48),Vector3(0.4,0.28,0.32),Color("b38b73"))
+		for side in [-1,1]:
+			_cube(st,Vector3(side*0.21,0.65,-0.25),Vector3(0.15,0.20,0.08),Color("79543e"))
+			_cube(st,Vector3(side*0.2,0.35,-0.64),Vector3(0.06,0.16,0.07),Color("f2e4c1"))
+			_cube(st,Vector3(side*0.20,0.42,-0.42),Vector3(0.025,0.05,0.08),Color("292c30"))
+			for z in [-0.23,0.23]: _cube(st,Vector3(side*0.18,0.1,z),Vector3(0.1,0.2,0.12),Color("624d43"))
 	else:
 		_cube(st,Vector3(0,0.3,0),Vector3(0.34,0.3,0.55),Color("e2c5a3"))
 		_cube(st,Vector3(0,0.5,-0.26),Vector3(0.3,0.28,0.3),Color("e9d3b6"))
@@ -259,3 +268,7 @@ func _process(dt: float) -> void:
 			node.rotation.y=lerp_angle(node.rotation.y,atan2(-delta.x,-delta.z),minf(1,dt*6))
 		node.position=node.position.lerp(target,minf(1,dt*6))
 		node.scale=Vector3.ONE*(0.65 if a.age<1 else 1.0)
+		if ranch!=null and a.species!="marsh_fish":
+			var task=ranch.lives.get("animal:"+id+":"+str(int(a.id)),{}).get("task","")
+			node.rotation.x=lerpf(node.rotation.x,0.22 if task in ["吃草","饮水","吃饲料"] else 0.0,minf(1,dt*6))
+			if task=="休息": node.scale.y*=0.5

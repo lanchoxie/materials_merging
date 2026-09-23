@@ -186,15 +186,17 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 					return v2.nature.plant(str(payload.get("species","")),Vector2(aim.point.x,aim.point.z),v2)
 				"v2_strike": return v2.combat.strike(aim,v2)
 				"v2_mini_pack":
-					v2.construction.occupied=v2.field.gardens
+					v2.ranch.sync(v2)
 					return preload("res://scripts/river_miniatures.gd").pack(v2.construction,aim)
 				"v2_mini_unfold": return preload("res://scripts/river_miniatures.gd").unfold(v2.construction,str(payload.get("id","")),v2.actor)
 		"v2_mini_exhibit":
 			return preload("res://scripts/river_miniatures.gd").exhibit(v2.construction,str(payload.get("id","")),int(payload.get("plot",-1)),state.plots)
 		"v2_build", "v2_dismantle":
 			if not v2.active: return "请先进入星球"
-			v2.construction.occupied=v2.field.gardens
+			v2.ranch.sync(v2)
 			return v2.construction.interact("place" if action=="v2_build" else "remove",str(payload.get("kind","block")),products,v2.actor,str(payload.get("recipe","")))
+		"v2_ranch_transfer", "v2_ranch_water", "v2_ranch_trade", "v2_ranch_empty":
+			return preload("res://scripts/river_ranch_actions.gd").command(state,action,payload)
 		"v2_field_collect", "v2_field_plant", "v2_field_feed", "v2_field_water":
 			return _field_action(state,action,payload)
 		"v2_field_pantry":
@@ -272,7 +274,7 @@ func _field_action(state,action: String,payload: Dictionary) -> String:
 		if target.type=="resource": return v2.field.collect(target.node,int(v2.world.elapsed))
 		if target.type=="facility" and target.recipe=="frame_bundle":
 			var r=v2.world.regions[target.region]; r.enclosed=not r.enclosed
-			return "围栏已关闭，动物改从粮仓取食" if r.enclosed else "围栏已打开，动物恢复自然觅食"
+			return "围栏已关闭，请放置饲草架和饮水槽，或亲手喂食" if r.enclosed else "围栏已打开，动物恢复自然觅食"
 		if target.type=="block" and target.kind=="planter":
 			var was_ready=v2.field.gardens.get(target.key,{}).get("growth",0)>=1
 			var result=v2.field.harvest(target.key,v2.world)
@@ -285,14 +287,21 @@ func _field_action(state,action: String,payload: Dictionary) -> String:
 	if action=="v2_field_feed":
 		var resource=str(payload.get("resource","fruit"))
 		if resource not in ["fruit","grain"] or int(v2.field.stock.get(resource,0))<1: return "背包缺少野果或谷穗"
-		if target.type!="animal": return "走近并瞄准一只草甸小兽"
+		if target.get("kind")=="feeder":
+			v2.ranch.sync(v2)
+			var f=v2.ranch.facilities[target.key]
+			if resource!="grain" or f.stock>=v2.ranch.rules.facilities.feeder.capacity: return "饲草架需要谷穗，且不能超过容量"
+			v2.field.stock.grain-=1; v2.field.revision+=1
+			return v2.ranch.fill(target.key,"grain",v2)
+		if not target.has("entity") or target.entity.type not in ["animal","wild"]: return "走近并瞄准一只小兽"
 		if target.get("fish",false): return "鱼类不使用这种食物，未消耗库存"
-		for animal in v2.world.regions[target.region].animals:
-			if animal.id!=target.id: continue
-			if animal.hunger<float(v2.field.rules.feeding.minimum_hunger): return "它已经吃饱了，没有消耗食物"
-			v2.field.stock[resource]-=1; v2.field.revision+=1; animal.hunger=maxf(0,animal.hunger-float(v2.field.rules.feeding.hunger_reduction))
-			return "%s吃了一份%s，饥饿降到%.0f%%" % [target.name,v2.field.rules.resources[resource].name,animal.hunger*100]
+		var animal=target.entity.row
+		if animal.get("hunger",0.15)<float(v2.field.rules.feeding.minimum_hunger): return "它已经吃饱了，没有消耗食物"
+		v2.field.stock[resource]-=1; v2.field.revision+=1; animal.hunger=maxf(0,animal.get("hunger",0.15)-float(v2.field.rules.feeding.hunger_reduction))
+		v2.ranch.fed(target.entity,int(v2.world.elapsed))
+		return "%s吃了一份%s，饥饿降到%.0f%%" % [target.name,v2.field.rules.resources[resource].name,animal.hunger*100]
 	if action=="v2_field_water":
+		if target.get("kind")=="trough": return preload("res://scripts/river_ranch_actions.gd").water(state,payload,str(target.key))
 		var is_tree=target.type=="tree"
 		if not is_tree and (target.type!="block" or target.kind!="planter"): return "瞄准幼树或已播种的种植箱浇水"
 		var reason=v2.nature.water_error(target.tree_id,v2.construction.terrain) if is_tree else v2.field.water_error(target.key)

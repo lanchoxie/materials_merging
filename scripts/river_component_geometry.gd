@@ -1,6 +1,13 @@
 extends RefCounted
 const G=preload("res://scripts/river_geometry.gd")
 static func draw(st: SurfaceTool,p: Vector3,kind: String,color: Color) -> void:
+	if kind in ["trough","feeder"]:
+		G.cube(st,p+Vector3(0,-0.42,0),Vector3(1,0.16,1),color.darkened(0.15))
+		for x in [-0.44,0.44]: G.cube(st,p+Vector3(x,0,0),Vector3(0.12,1,1),color)
+		for z in [-0.44,0.44]: G.cube(st,p+Vector3(0,0,z),Vector3(1,1,0.12),color)
+		if kind=="feeder":
+			for x in [-0.27,0,0.27]: G.cube(st,p+Vector3(x,0.3,-0.505),Vector3(0.07,0.6,0.03),color.lightened(0.3))
+		return
 	if kind=="fence":
 		for x in [-0.4,0.4]: G.cube(st,p+Vector3(x,0,0),Vector3(0.18,1,0.9),color)
 		for y in [-0.25,0.25]: G.cube(st,p+Vector3(0,y,0),Vector3(1,0.14,0.16),color.lightened(0.12))

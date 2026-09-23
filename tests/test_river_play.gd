@@ -70,8 +70,10 @@ func _initialize() -> void:
 	check(v.world.regions.meadow.animals==ids and c.serialize()==buildings,"era transition preserves living animals and player architecture")
 	pg.command(s,"v2_next_era"); check(v.settlement.era==1,"next era still requires light technology and sustained meals")
 	v.world.food=20; var food=v.world.food
-	v.advance(240)
-	check(v.settlement.meals>=4 and v.world.food<food and v.settlement.people.size()==2,"settlers consume finite food and persist as people")
+	for i in range(4): pg.command(s,"v2_ranch_transfer",{"item":"ration","amount":5})
+	var supplied=v.ranch.depot.ration
+	for i in range(3): v.advance(240)
+	check(v.settlement.meals>=4 and v.world.food<food and v.ranch.depot.ration<supplied and v.settlement.people.size()==2,"settlers walk to eat finite explicitly supplied public food and persist as people")
 	manufacture(s,"modern_silicon")
 	v.actor=actor_above(c,Vector2(19,14)); pg.command(s,"v2_build",{"kind":"solar"})
 	check(c.count_kind("solar")==1 and pg.products.is_empty(),"actual factory photovoltaic product is installed once")

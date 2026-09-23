@@ -7,6 +7,7 @@ var sites={}
 var active_sites=[]
 var enabled=true
 var combat
+var ranch
 
 func _init() -> void:
 	for id in Terrain.CENTERS:
@@ -22,7 +23,7 @@ func _site(id: String,p: Vector2,camp: bool,home: bool=false) -> Dictionary:
 
 func _animal(site: Dictionary) -> Dictionary:
 	var id=int(site.serial); site.serial+=1
-	return {"id":id,"species":"meadow_herbivore","health":0.9,"age":0.5,"x":sin(id*9.1)*2,"z":cos(id*4.7)*2}
+	return {"id":id,"species":"woodland_boar" if id%2==0 else "meadow_herbivore","health":0.9,"age":0.5,"x":sin(id*9.1)*2,"z":cos(id*4.7)*2}
 
 func _visitor(site: Dictionary) -> Dictionary:
 	var id=int(site.serial); site.serial+=1
@@ -64,6 +65,8 @@ func advance(regions: Dictionary) -> Array:
 				else: s.animals.append(_animal(s))
 		if not s.home:
 			for a in s.animals:
+				if ranch!=null:
+					a.age+=1.0/60; continue
 				a.age+=1.0/60; a.health=clampf(a.health+(0.0002 if s.flora>0.15 else -0.002),0,1)
 				if combat!=null and combat.busy("wild:"+str(s.id)+":"+str(int(a.id))): continue
 				var target=Vector2(sin(float(s.seconds)*0.03+a.id)*3,cos(float(s.seconds)*0.023+a.id*7)*3)
@@ -136,7 +139,9 @@ func restore(data) -> bool:
 			if not a is Dictionary or not _num(a.get("id"),1,s.serial-1,true) or int(a.id) in ids or not _num(a.get("x"),-9,9) or not _num(a.get("z"),-9,9): return false
 			ids.append(int(a.id))
 		for a in s.animals:
-			if a.get("species")!="meadow_herbivore" or not _num(a.get("health"),0,1) or not _num(a.get("age"),0,1e12): return false
+			if a.get("species") not in ["meadow_herbivore","woodland_boar"] or not _num(a.get("health"),0,1) or not _num(a.get("age"),0,1e12): return false
+		for a in s.animals:
+			if a.has("hunger") and not _num(a.hunger,0,1): return false
 		for v in s.visitors:
 			if v.has("health") and not _num(v.health,0,1): return false
 			if not _num(v.get("born"),0,s.seconds,true) or not v.get("name") is String or v.name.length()>24 or v.get("state") not in ["进营","离营","采集","休息"]: return false

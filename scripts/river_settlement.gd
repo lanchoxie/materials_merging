@@ -8,6 +8,7 @@ var energy=0.0
 var people: Array=[]
 var irrigation=false
 var combat
+var ranch
 
 func center() -> Vector2:
 	return Vector2(rules.center[0],rules.center[1])
@@ -52,12 +53,13 @@ func tick(world: Dictionary, construction) -> void:
 	var housing=construction.shelter_cells(center(),rules.radius)>=int(rules.agrarian.shelter_cells)
 	for person in people:
 		person.hunger=minf(1,person.hunger+0.0015)
-		if int(world.elapsed)%int(rules.meal_interval)==0 and world.food>0 and person.hunger>0.12:
+		if ranch==null and int(world.elapsed)%int(rules.meal_interval)==0 and world.food>0 and person.hunger>0.12:
 			world.food-=1; person.hunger=maxf(0,person.hunger-0.35); meals+=1
 		var safe=housing and meadow.water>0.12 and person.hunger<0.65
 		person.health=clampf(person.health+(0.0002 if safe else -0.0007),0,1)
 		var night=posmod(int(world.elapsed),60)<12 or posmod(int(world.elapsed),60)>48
 		person.task="缺少食物" if person.hunger>0.65 else ("休息" if night else ("设备巡检" if era>=2 else "田间观察"))
+		if ranch!=null: continue
 		if combat!=null and combat.busy("resident:"+str(int(person.id))): continue
 		var target=center()+Vector2(3,3+int(person.id)*0.7) if night else center()+Vector2(2+sin(world.elapsed*0.03+person.id)*2,-2)
 		var pos=Vector2(person.x,person.z).move_toward(target,0.09)

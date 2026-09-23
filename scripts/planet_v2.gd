@@ -15,6 +15,8 @@ const Nature=preload("res://scripts/river_nature.gd")
 const Combat=preload("res://scripts/river_combat.gd")
 var nature=Nature.new()
 var combat=Combat.new()
+const Ranch=preload("res://scripts/river_ranch.gd")
+var ranch=Ranch.new()
 var actor: Dictionary={}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_v2.json"))
 var world: Dictionary={}
@@ -29,6 +31,7 @@ func _link_geometry() -> void:
 	construction.terrain.nature=nature
 	field.terrain=construction.terrain; population.terrain=construction.terrain
 	population.combat=combat; settlement.combat=combat
+	population.ranch=ranch; settlement.ranch=ranch
 
 func fresh() -> Dictionary:
 	var w={"version":1,"elapsed":0,"remainder":0.0,"paused":false,"speed":1,"current_region":"wetland","next_animal":1,"seeds":int(rules.ecology.initial_seeds),"food":0,"events":[],"receipts":[],"regions":{}}
@@ -141,7 +144,10 @@ func _step() -> void:
 		for a in r.animals:
 			a.age+=1.0/ds
 			var fish=a.species=="marsh_fish"
-			var food_ok=r.water>0.15 if fish else (r.moisture>0.3 and not r.enclosed)
+			if not fish:
+				if a.health>0: survivors.append(a)
+				continue
+			var food_ok=r.water>0.15
 			if r.enclosed and not fish and world.food>0 and int(world.elapsed)%int(ds)==0 and a.hunger>0.3:
 				world.food-=1; a.hunger=maxf(0,a.hunger-0.6)
 			a.hunger=clampf(a.hunger+(-0.12 if food_ok else 0.15)/ds,0,1)
@@ -177,6 +183,8 @@ func _step() -> void:
 		var a=_animal(kind,int(world.next_animal),0,1.0); a.origin="迁入"
 		world.next_animal+=1; r.animals.append(a)
 		_event("%s栖地恢复，一只新的%s #%d 从外界迁入。" % [r.name,species(kind).name,a.id])
+
+	ranch.tick(self)
 
 func collect_wild(at: Vector2) -> String:
 	if not population.harvest(at): return "走近成熟野生植被再采集；采集后需要等待再生"
@@ -256,7 +264,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 	return "已消耗1份库存，将%s送达%s" % [p.name,r.name]
 
 func serialize() -> Dictionary:
-	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize()}
+	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize()}
 
 func _number(v,lo: float,hi: float,whole: bool=false) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
@@ -337,8 +345,12 @@ func restore(data) -> bool:
 	var restored_field=Field.new()
 	restored_field.terrain=restored_construction.terrain
 	if data.has("field") and not restored_field.restore(data.field,restored_construction,int(w.elapsed)): return false
+	var restored_ranch=Ranch.new()
+	if data.has("ranch") and not restored_ranch.restore(data.ranch,restored_construction,int(w.elapsed),restored_settlement.people): return false
+	ranch=restored_ranch
 	field=restored_field; restored_construction.occupied=field.gardens
 	inventory=restored_inventory
 	world=w.duplicate(true); population=restored_population; construction=restored_construction; settlement=restored_settlement; nature=restored_nature; combat=restored_combat; actor={}; active=false
 	_link_geometry()
+	ranch.sync(self)
 	return true
