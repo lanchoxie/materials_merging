@@ -16,6 +16,7 @@ var viewport
 var caption
 var clock=0.0
 var target={}
+var editor_open=false
 
 func setup(model) -> void:
 	state=model; set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -60,9 +61,20 @@ func _aim() -> Dictionary:
 	return best
 
 func _interact() -> void:
+	if editor_open: return
 	hands.swing(); target=_aim()
 	if target.is_empty(): caption.text="走近反应釜或建筑再互动；光桥尽头通往河湾。"; return
 	requested.emit(str(target.kind),int(target.index))
+
+func set_editor_open(open: bool) -> void:
+	editor_open=open
+	input.set_walking(not open)
+	process_mode=Node.PROCESS_MODE_DISABLED if open else Node.PROCESS_MODE_INHERIT
+	viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED if open else SubViewport.UPDATE_ALWAYS
+	if not open:
+		# Refresh edited reactor geometry without recreating the observer or its position.
+		world.setup(state); campus.sync(); miniatures.sync(state); _camera()
+		input.grab_focus()
 
 func _process(dt: float) -> void:
 	if world==null or input==null: return

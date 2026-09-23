@@ -36,6 +36,7 @@ var apply_button: Button
 var palette: Control
 var replace_group: bool = false
 var palette_buttons: Dictionary = {}
+var return_button: Button
 
 func setup(model, index: int) -> void:
 	state = model
@@ -57,6 +58,7 @@ func setup(model, index: int) -> void:
 	sub.position = Vector2(52, 76)
 	add_child(sub)
 	var close_b = UI.button("返回工坊  ×", _cancel)
+	return_button=close_b
 	close_b.position = Vector2(1240, 38)
 	close_b.size.x = 150
 	add_child(close_b)
@@ -457,7 +459,11 @@ func handle_back() -> bool:
 	if is_instance_valid(palette):
 		_close_palette()
 		return true
-	return false
+	_cancel()
+	return true
+
+func set_return_label(text: String) -> void:
+	return_button.text=text+"  ×"
 
 func _show_palette() -> void:
 	_close_palette()

@@ -36,6 +36,7 @@ var save_label: Label
 var toast_panel: PanelContainer
 var toast_label: Label
 var modal: Control
+var editor_return_view: Control
 var refresh_clock: float = 0
 var save_clock: float = 0
 var toast_clock: float = 0
@@ -549,6 +550,8 @@ func _close_modal() -> void:
 	if is_instance_valid(modal):
 		modal.queue_free()
 	modal = null
+	if is_instance_valid(editor_return_view): editor_return_view.queue_free()
+	editor_return_view = null
 	market_rows.clear()
 	shop_buttons.clear()
 	purchase_confirm_button = null
@@ -658,14 +661,13 @@ func _show_sandbox() -> void:
 	body.add_child(UI.paragraph("工作台支持增删原子、增加/移除连接、命名保存；晶胞和周期边界将在后续结构章节加入。",13,UI.MUTED))
 
 func _open_sandbox_editor(structure: Dictionary) -> void:
-	_close_modal()
 	var editor = SandboxEditor.new()
-	add_child(editor)
+	_begin_structure_editor(editor)
 	editor.setup(state,structure,selected_reactor)
-	modal=editor
+	if is_instance_valid(editor_return_view): editor.set_return_label("返回漫步")
 	editor.saved.connect(func(): _toast("作品已保存，可以继续编辑或装入炉子"))
 	editor.applied.connect(func(): _action("作品已应用，反应炉开始新一轮生产"))
-	editor.dismissed.connect(func(): modal=null; _show_sandbox())
+	editor.dismissed.connect(func(): _finish_structure_editor(editor,true))
 
 func _save_baseline_work(baseline_id: String) -> void:
 	var info: Dictionary = state.baseline_data(baseline_id)
@@ -978,13 +980,33 @@ func _open_editor() -> void:
 	if state.reactors[selected_reactor].get("sandbox",false):
 		_open_sandbox_editor(state.reactor_work(state.reactors[selected_reactor]))
 		return
-	_close_modal()
 	var editor = Editor.new()
-	add_child(editor)
+	_begin_structure_editor(editor)
 	editor.setup(state,selected_reactor)
-	modal = editor
-	editor.applied.connect(func(): modal = null; _action("修改已提交；更换元素等待博士装炉，已有产物会保留。"))
-	editor.dismissed.connect(func(): modal = null)
+	if is_instance_valid(editor_return_view): editor.set_return_label("返回漫步")
+	editor.applied.connect(func(): _finish_structure_editor(editor); _action("修改已提交；更换元素等待博士装炉，已有产物会保留。"))
+	editor.dismissed.connect(func(): _finish_structure_editor(editor))
+
+func _begin_structure_editor(editor: Control) -> void:
+	# Keep the caller's camera and scene alive only for this editor visit.
+	var return_view: Control=modal if is_instance_valid(modal) and modal.has_method("set_editor_open") else null
+	if is_instance_valid(return_view):
+		return_view.set_editor_open(true)
+		modal=null
+	_close_modal()
+	editor_return_view=return_view
+	if is_instance_valid(return_view): world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
+	add_child(editor); modal=editor
+
+func _finish_structure_editor(editor: Control,return_to_library: bool=false) -> void:
+	if modal!=editor: return
+	editor.queue_free(); modal=null
+	if is_instance_valid(editor_return_view):
+		modal=editor_return_view; editor_return_view=null
+		modal.set_editor_open(false)
+		world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
+	elif return_to_library: _show_sandbox()
+	else: world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:

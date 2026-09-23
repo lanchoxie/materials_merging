@@ -54,6 +54,8 @@ var drag_origin := Vector3.ZERO
 var grab_offset := Vector3.ZERO
 var pending_confirmation: Callable
 var confirmation: ConfirmationDialog
+var return_button: Button
+var return_label="返回作品库"
 
 func setup(model, structure: Dictionary, index: int = -1) -> void:
 	state = model
@@ -99,6 +101,7 @@ func setup(model, structure: Dictionary, index: int = -1) -> void:
 	mode_choice.item_selected.connect(_set_mode)
 	add_child(mode_choice)
 	var close_button := UI.button("返回作品库  ×", _request_close)
+	return_button=close_button
 	close_button.position = Vector2(1192, 31)
 	close_button.size = Vector2(210, 50)
 	add_child(close_button)
@@ -495,13 +498,16 @@ func _apply() -> void:
 func _request_close() -> void:
 	if draft != original:
 		pending_confirmation = _close
-		confirmation.dialog_text = "还有尚未保存的修改。返回作品库将舍弃本次草稿；库存和金币不会变化。"
+		confirmation.dialog_text = "还有尚未保存的修改。%s将舍弃本次草稿；库存和金币不会变化。" % return_label
 		confirmation.popup_centered()
 	else: _close()
 
 func _close() -> void:
 	dismissed.emit()
 	queue_free()
+
+func set_return_label(text: String) -> void:
+	return_label=text; return_button.text=text+"  ×"
 
 func handle_back() -> bool:
 	if confirmation.visible: confirmation.hide()

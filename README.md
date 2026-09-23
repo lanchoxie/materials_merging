@@ -4,7 +4,7 @@
 
 把分子装进透明的反应釜，看它们慢慢生产。用收获的材料扩建工坊、招募伙伴，或走过光桥，去林地里种树、搭屋，再把自己的作品带回家。
 
-**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-ranch-13)** · [更新了什么](docs/RANCH-13.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
+**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-ranch-13.1)** · [更新了什么](docs/RANCH-13.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
 
 ![透明反应釜里转动的分子，与周围的浮岛小屋](docs/screenshots/reactors.png)
 
@@ -41,13 +41,13 @@
 
 ## 走进自己的小岛
 
-点击“走进浮岛”，从反应釜、小屋和展台旁走过。走近反应釜可以打开原子工作台，沿着光桥则能前往河湾。第一人称中有手持物品、走动和挥动动画。
+点击“走进浮岛”，从反应釜、小屋和展台旁走过。走近反应釜可以打开原子工作台，完成编辑后继续从原处漫步；沿着光桥则能前往河湾。第一人称中有手持物品、走动和挥动动画。
 
 ![第一人称漫步浮岛，近看小屋和反应釜](docs/screenshots/island-walk.png)
 
 ## 开始试玩
 
-在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-ranch-13) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-ranch-13 开发预览**；Android 真机体验仍待验证。
+在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-ranch-13.1) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-ranch-13.1 开发预览**；Android 真机体验仍待验证。
 
 | 操作 | 电脑 | 手机 |
 | --- | --- | --- |
