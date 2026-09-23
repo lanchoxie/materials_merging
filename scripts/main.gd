@@ -1302,6 +1302,8 @@ func _show_island_walk() -> void:
 		elif kind=="miniatures": _show_miniatures()
 		elif kind=="workshop": _show_factory()
 		elif kind=="reactor": _select_plot(index); _open_editor()
+		elif kind in ["engineer_house","doctor_dorm","professor_apartment","academician_villa","house"]:
+			if not panel.enter_residence(index): _close_modal(); _select_plot(index)
 		else: _close_modal(); _select_plot(index))
 
 func _show_miniatures() -> void:

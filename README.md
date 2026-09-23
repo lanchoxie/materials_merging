@@ -4,7 +4,7 @@
 
 把分子装进透明的反应釜，看它们慢慢生产。用收获的材料扩建工坊、招募伙伴，或走过光桥，去林地里种树、搭屋，再把自己的作品带回家。
 
-**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-frontier-17)** · [更新了什么](docs/FRONTIER-17.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
+**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-interiors-18)** · [更新了什么](docs/RESIDENCE-INTERIORS-18.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
 
 ![透明反应釜里转动的分子，与周围的浮岛小屋](docs/screenshots/reactors.png)
 
@@ -53,6 +53,16 @@
 
 ![第一人称漫步浮岛，近看小屋和反应釜](docs/screenshots/island-walk.png)
 
+对准工程师小窝、博士公寓、教授公寓或院士别墅按 **E / 互动**，走进房间看看。坐在椅子或沙发上，躺上床看天花板，打开门再走回岛屿；按 E 或跳跃就能起身。住宅升级会增加家具、书架、绿植和收藏；博士与教授公寓的楼层台可以带你去已经开放的楼层。
+
+![升级后的工程师小窝，有木床、工具书架与沙发](docs/screenshots/residence-engineer.png)
+
+![博士公寓内的多人寝室、共享书桌与楼层台](docs/screenshots/residence-doctor.png)
+
+![院士别墅的书房、会客区与室内庭院](docs/screenshots/residence-villa.png)
+
+进出住宅始终保留第一人称，回岛时回到刚才的门外位置。详见 [住宅漫步指南](docs/RESIDENCE-INTERIORS-18.md)。
+
 ## 从反应釜开始做有机物
 
 现在可以合成尿素、乙醇和甘油。在合成页左上角选分子，选中自己的反应釜，打开「有机物 · 反应釜合成」，准备元素并等待博士装炉、炉内合成，再收获尿素和水样；工艺车间制造配料罐，河湾里加入样品，等晶粒溶解后分装成有限的溶液，施用到种植箱。温和补肥会加快生长，过量施用会让叶尖受损；旁边的种植箱可以作为对照。每个批次、每瓶溶液和每个地块都有独立账本，未知毒性不会被当成安全或通用伤害。
@@ -70,7 +80,7 @@
 
 ## 开始试玩
 
-在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-frontier-17) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-frontier-17 开发预览**；Android 真机体验仍待验证。
+在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-interiors-18) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-interiors-18 开发预览**；Android 真机体验仍待验证。
 
 | 操作 | 电脑 | 手机 |
 | --- | --- | --- |

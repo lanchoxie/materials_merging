@@ -1,0 +1,34 @@
+{
+  "interaction_distance": 2.8,
+  "door_seconds": 0.35,
+  "walk_speed": 2.6,
+  "eye_height": 1.55,
+  "body_height": 1.7,
+  "player_radius": 0.22,
+  "types": {
+    "engineer_house": {
+      "name": "工程师小窝", "style": "木工与铜色灯光", "max_level": 3,
+      "width": 7.4, "depth": 8.4, "floors": false,
+      "wall": "e8d7ba", "wood": "997253", "accent": "569c91", "fabric": "cd875e",
+      "upgrades": ["木床、餐椅与工作台", "工具架、绿植与阅读角", "双人沙发、陈列柜与模型收藏"]
+    },
+    "doctor_dorm": {
+      "name": "博士公寓", "style": "四人寝室与共享书桌", "max_level": 4,
+      "width": 8.4, "depth": 9.0, "floors": true,
+      "wall": "dde7e5", "wood": "9cafa5", "accent": "659eb4", "fabric": "7294ae",
+      "upgrades": ["四张床、书桌与储物柜", "新增楼层、饮水与泡面角", "新增楼层、阅读沙发与书架", "新增楼层、绿植与成果展示"]
+    },
+    "professor_apartment": {
+      "name": "教授公寓", "style": "屏风卧区与落地书墙", "max_level": 5,
+      "width": 9.2, "depth": 9.6, "floors": true,
+      "wall": "e6e1db", "wood": "957567", "accent": "a086b0", "fabric": "83939f",
+      "upgrades": ["双卧区、书墙与会客区", "新增楼层、茶台与阅读灯", "新增楼层、绿植与休闲角", "新增楼层、藏书与材料模型", "新增楼层、荣誉陈列与更多藏书"]
+    },
+    "academician_villa": {
+      "name": "院士别墅", "style": "庭院、黄铜与温润石材", "max_level": 2,
+      "width": 10.8, "depth": 10.8, "floors": false,
+      "wall": "f0e5d1", "wood": "876956", "accent": "508c83", "fabric": "ac9774",
+      "upgrades": ["主卧、长书墙、会客沙发与室内庭院", "扩建休闲区、第二间卧室与荣誉展廊"]
+    }
+  }
+}
