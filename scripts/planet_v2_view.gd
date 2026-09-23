@@ -228,14 +228,23 @@ func set_first_person(enabled: bool) -> void:
 	_camera(0.0 if enabled else 1.0)
 	_terrain(maxi(0,season_seen))
 
-func travel(at: Vector2) -> void:
-	if not terrain.inside(at,3): return
+func travel(at: Vector2) -> bool:
+	if not terrain.inside(at,3): return false
+	var found=false
+	for radius in range(0,9):
+		for n in range(1 if radius==0 else 16):
+			var candidate=at+Vector2.from_angle(n*TAU/16)*radius
+			if terrain.inside(candidate,3) and not terrain.blocked(candidate,walker.barriers) and (walker.construction==null or not walker.construction.overlaps(candidate,terrain.ground(candidate),float(terrain.rules.body_height))):
+				at=candidate; found=true; break
+		if found: break
+	if not found: return false
 	if not first_person: set_first_person(true)
 	var target=Vector2(10,10) if at.length()<32 else (at/float(terrain.rules.site_spacing)).round()*float(terrain.rules.site_spacing)
 	var toward=target-at
 	walker.position=at; walker.yaw=atan2(-toward.x,-toward.y); walker.pitch=-0.12
 	walker.reset_height()
 	walker.stop(); _camera(0); _terrain(maxi(0,season_seen))
+	return true
 
 func orbit(amount: float) -> void:
 	yaw+=amount

@@ -1,6 +1,7 @@
 extends RefCounted
 ## Encounter simulation uses real seconds, never accelerated ecological days.
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/river_combat.json"))
+var world_radius=float(JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_exploration.json")).radius)
 var player_health=100.0
 var attack_left=0.0
 var hurt_flash=0.0
@@ -102,7 +103,7 @@ func restore(data) -> bool:
 		var r=data.records[key]
 		if not key is String or key.length()>100 or not r is Dictionary or r.get("mode") not in ["逃跑","反击"]: return false
 		for k in ["anger","wait","home_x","home_z"]:
-			if not _num(r.get(k),-512 if k.begins_with("home") else 0,512 if k.begins_with("home") else (100 if k=="anger" else rules.enemy_cooldown)): return false
+			if not _num(r.get(k),-world_radius if k.begins_with("home") else 0,world_radius if k.begins_with("home") else (100 if k=="anger" else rules.enemy_cooldown)): return false
 	player_health=data.player_health; records=data.records.duplicate(true); revision+=1; return true
 
 func _num(n,lo: float,hi: float) -> bool:

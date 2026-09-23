@@ -136,7 +136,7 @@ func restore(data,t) -> bool:
 	for id in data.trees:
 		var row=data.trees[id]
 		if not row is Dictionary or not rules.species.has(row.get("species")) or not row.get("cut") is bool: return false
-		if not _num(row.get("x"),-512,512) or not _num(row.get("z"),-512,512): return false
+		if not _num(row.get("x"),-float(t.rules.radius),float(t.rules.radius)) or not _num(row.get("z"),-float(t.rules.radius),float(t.rules.radius)): return false
 		var p=Vector2(row.x,row.z)
 		if not t.inside(p,2): return false
 		if str(id).begins_with("p:"):

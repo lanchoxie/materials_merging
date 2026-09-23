@@ -57,7 +57,7 @@ func setup(model) -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var heading=UI.label("河湾 · 一片会生长的世界",30,UI.MINT); heading.position=Vector2(28,18); add_child(heading)
-	var sub=UI.label("上帝视角 ↔ 第一人称   /   0.21 开发预览 · 单星球版   /   约1公里探索区",14,UI.MUTED); sub.position=Vector2(30,62); add_child(sub)
+	var sub=UI.label("上帝视角 ↔ 第一人称   /   0.21 开发预览 · 单星球版   /   约16公里探索区",14,UI.MUTED); sub.position=Vector2(30,62); add_child(sub)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1288,22); close.size=Vector2(124,48); add_child(close)
 	time_label=UI.label("",19,UI.GOLD); time_label.position=Vector2(680,28); time_label.size=Vector2(580,38); time_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; add_child(time_label)
 	var region_bar=UI.row(self,8); region_bar.position=Vector2(28,99)
@@ -171,6 +171,14 @@ func _travel(id: String) -> void:
 	view.travel(destination.at); explore_input.set_walking(true)
 	show_details=false; _exploration_layout(); message="抵达"+str(destination.name)+"。M查看旅途，成熟的金色野草可以采集。"
 	if id=="homestead": message="采集坡：装备手套，瞄准枯枝堆、散石或果丛按E；原料可带回工艺车间。"
+	_redraw(); _sync()
+
+func _travel_waypoint(id: String) -> void:
+	var point=state.planet.v2.journey.points.get(id,{})
+	if point.is_empty(): return
+	if not view.travel(Vector2(point.x,point.z)): message="路标附近已被堵住，暂时无法落脚"; _live(); return
+	explore_input.set_walking(true)
+	show_details=false; _exploration_layout(); message="返回"+str(point.name)
 	_redraw(); _sync()
 
 func _primary() -> void:
@@ -353,7 +361,7 @@ func _key() -> String:
 	var life=[]; var crops=[]
 	for a in r.animals: life.append(a.id)
 	for c in r.crops: crops.append([c.crop,c.ready])
-	return str([selected_region,section,_in_wilderness(),v.population.enabled,stock,state.planet.products,life,crops,r.buildings,r.enclosed,v.world.events.size(),v.world.events[0],v.world.seeds,v.world.food,v.construction.revision,v.field.revision,v.ranch.revision,v.organics.revision,v.settlement.era])
+	return str([selected_region,section,_in_wilderness(),v.population.enabled,stock,state.planet.products,life,crops,r.buildings,r.enclosed,v.world.events.size(),v.world.events[0],v.world.seeds,v.world.food,v.construction.revision,v.field.revision,v.ranch.revision,v.organics.revision,v.journey.revision,v.settlement.era,v.settlement.people.map(func(p): return [p.id,p.get("generation",0)])])
 
 func _redraw(reset_scroll: bool=false) -> void:
 	if body==null: return
@@ -376,7 +384,7 @@ func _observation() -> void:
 		widgets.explore=UI.paragraph("",16); nearby.add_child(widgets.explore)
 		nearby.add_child(UI.button("采集附近成熟植被",_collect_wild,true))
 		nearby.add_child(UI.button("远行与营地",_open_journey))
-		nearby.add_child(UI.paragraph("远郊先开放游历与采集。材料投放、播种和圈养仍在起始河湾的四个试验区进行。",15))
+		nearby.add_child(UI.paragraph("远郊可砍树、挖填、搭建、放种植箱并配料。区域级投放与时代聚落仍在起始河湾；M可以保存路标。",15))
 		return
 	var v=state.planet.v2; var r=v.region()
 	var life=_card("这片土地上的生命")
@@ -398,10 +406,17 @@ func _observation() -> void:
 
 func _journey() -> void:
 	var destinations=_card("沿河而行")
-	destinations.add_child(UI.paragraph("约1公里宽的探索区，也可以全程步行。先用这些路标看看远方。",15))
+	destinations.add_child(UI.paragraph("直径约16公里，面积约为旧地图256倍。附近地形随行加载，走远后卸载画面；砍树、挖土、建筑与栖地记录仍保留。",15))
 	for id in view.terrain.LANDMARKS:
 		var item=view.terrain.LANDMARKS[id]
 		destinations.add_child(UI.button(str(item.name)+"  ↗",_travel.bind(id)))
+	var marks=_card("我的路标 · %d / %d" % [state.planet.v2.journey.points.size(),view.terrain.rules.max_waypoints])
+	marks.add_child(UI.button("记住当前位置",func(): _update_actor(); _act("v2_waypoint_add"),true))
+	for id in state.planet.v2.journey.points:
+		var point=state.planet.v2.journey.points[id]; var row=UI.row(marks,8)
+		row.add_child(UI.button("%s · %.0f, %.0f米" % [point.name,point.x,point.z],_travel_waypoint.bind(id)))
+		row.add_child(UI.button("移除",func(): _act("v2_waypoint_remove",{"id":id})))
+	marks.add_child(UI.paragraph("M打开远行；路标会随存档保留。移除只删标记，不回收建筑。",14))
 	var life=_card("附近的生命")
 	widgets.explore=UI.paragraph("",15); life.add_child(widgets.explore)
 	life.add_child(UI.button("采集附近成熟植被",_collect_wild,true))
@@ -437,7 +452,13 @@ func _era() -> void:
 	widgets.era=UI.paragraph("",15,UI.GOLD); card.add_child(widgets.era)
 	if s.era==0: card.add_child(UI.paragraph("住处是你实际搭的建筑，不是要找一个叫‘屋檐’的物品。用木构搭立柱，再横接屋顶；屋顶正下方至少留2格空地，每格都能站直、不被方块堵住。屋顶旁露天的地面不算住处。",14))
 	if s.era<2:
-		card.add_child(UI.button("建立"+str(s.rules.eras[s.era+1].name),func(): _act("v2_next_era"),true))
+		var promote=UI.button("建立"+str(s.rules.eras[s.era+1].name),func(): _act("v2_next_era"),true); card.add_child(promote); widgets.era_advance=promote
+	card.add_child(UI.button("打开村庄 · 公共仓库补给",func(): _tab("ranch")))
+	card.add_child(UI.button("去车间制作屋顶",func(): workshop_requested.emit("field_roof")))
+	if s.era==1: card.add_child(UI.button("去车间制作光伏",func(): workshop_requested.emit("modern_silicon")))
+	if s.era>0 and s.people.size()<2:
+		var invite=UI.button("邀请新旅人 · 补充空缺岗位",func(): _act("v2_recruit_resident")); card.add_child(invite); widgets.era_recruit=invite
+		card.add_child(UI.paragraph("准备可住空间、公共仓库2份食物与1份水样；消耗为新居民的安家补给。",14))
 	card.add_child(UI.button("回草甸营地",func(): _travel("home"); _tool("observe")))
 	widgets.residents=UI.paragraph("",15); card.add_child(widgets.residents)
 	card.add_child(UI.paragraph("这是同一世界的游戏时代章节，保留动物个体和你的建筑。史前物种、完整工业时代与未来科技仍待扩展。",13,UI.MUTED))
@@ -475,13 +496,15 @@ func _live() -> void:
 		world_title.text="远郊 · %.0f, %.0f米" % [view.walker.position.x,view.walker.position.y]
 		info.text="远郊探索\n林地 · 河流 · 营地"
 		if view.walker.position.length()>float(view.terrain.rules.radius)-28:
-			world_title.text="海岸 · 已到当前探索区边缘"
+			world_title.text="边界 · 当前探索区直径约16公里，可用M返回路标"
 	counters.text="种子 %d · 饲料 %d\n1分钟=1天 · 每4天换季" % [v.world.seeds,v.world.food]
 	if not message.is_empty(): status.text=message
 	for key in regions: regions[key].modulate=UI.MINT if key==selected_region and not _in_wilderness() else Color.WHITE
 	for key in tabs: tabs[key].modulate=UI.MINT if key==section else Color.WHITE
 	if widgets.has("explore"): widgets.explore.text=_nearby_text()
 	if widgets.has("era"):
+		if widgets.has("era_recruit"): widgets.era_recruit.disabled=not v.settlement.recruit_error(v.construction).is_empty()
+		if widgets.has("era_advance"): widgets.era_advance.disabled=not v.settlement.ready(v.world,v.construction)
 		widgets.era.text=v.settlement.requirements(v.world,v.construction)+"\n太阳能服务点 %.1f/60 · %s" % [v.settlement.energy,"灌溉运行中" if v.settlement.irrigation else "待机"]
 		var residents=""
 		for p in v.settlement.people: residents+="%s · %s · 健康%.0f%% / 饥饿%.0f%%\n" % [p.name,p.task,p.health*100,p.hunger*100]

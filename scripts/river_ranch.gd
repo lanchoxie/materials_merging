@@ -3,6 +3,7 @@ extends RefCounted
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/river_ranch.json"))
 var depot={"seed":0,"water":0,"timber":0,"stone":0,"fruit":0,"grain":0,"ration":0}
 var lives={}
+var life_groups={}
 var facilities={}
 var jobs={}
 var trades={}
@@ -17,6 +18,9 @@ func depot_at(v) -> Vector2:
 func life(key: String) -> Dictionary:
 	if not lives.has(key):
 		if lives.size()>=int(rules.max_lives): return {}
+		var group=_life_group(key)
+		if not life_groups.has(group): life_groups[group]={}
+		life_groups[group][key]=true
 		lives[key]={"thirst":0.18,"fatigue":0.08,"fear":0.0,"trust":0.0,"task":"闲逛","fed_at":-1000,"hurt_at":-1000,"memory":[]}
 	return lives[key]
 
@@ -158,17 +162,27 @@ func tick(v) -> void:
 	_tick_workers(v)
 	sync(v)
 
+func _life_group(key: String) -> String:
+	return key.left(key.rfind(":"))
+
 func _prune(v) -> void:
-	var alive={}
+	# Only active locations can lose an animal/visitor; remote encounters are paused.
+	var alive={}; var groups=[]
 	for id in v.world.regions:
+		groups.append("animal:"+str(id))
 		for a in v.world.regions[id].animals: alive["animal:"+str(id)+":"+str(int(a.id))]=true
-	for id in v.population.sites:
+	for id in v.population.simulation_keys():
+		groups.append("wild:"+str(id)); groups.append("visitor:"+str(id))
 		for a in v.population.sites[id].animals: alive["wild:"+str(id)+":"+str(int(a.id))]=true
 		for a in v.population.sites[id].visitors: alive["visitor:"+str(id)+":"+str(int(a.id))]=true
+	groups.append("resident")
 	for person in v.settlement.people: alive["resident:"+str(int(person.id))]=true
-	for records in [lives,trades]:
-		for key in records.keys():
-			if not alive.has(key): records.erase(key)
+	for group in groups:
+		for key in life_groups.get(group,{}).keys():
+			if not alive.has(key): lives.erase(key); life_groups[group].erase(key)
+		if life_groups.get(group,{}).is_empty(): life_groups.erase(group)
+	for key in trades.keys():
+		if _life_group(key) in groups and not alive.has(key): trades.erase(key)
 
 func role(id: int) -> String:
 	return "农夫 · 细心、亲近动物" if id==1 else "工匠 · 沉稳、爱惜材料"
@@ -320,5 +334,10 @@ func restore(data,c,elapsed: int,people: Array) -> bool:
 		if j.stage=="work" and j.action!="收获" and j.cargo!={j.item:1}: return false
 	for key in data.trades:
 		if not key is String or key.length()>100 or not _num(data.trades[key],0,rules.trade.stock_per_visit,true): return false
-	depot=data.depot.duplicate(true); lives=data.lives.duplicate(true); facilities=data.facilities.duplicate(true); jobs=data.jobs.duplicate(true); trades=data.trades.duplicate(true)
+	depot=data.depot.duplicate(true); lives=data.lives.duplicate(true); life_groups.clear()
+	for key in lives:
+		var group=_life_group(key)
+		if not life_groups.has(group): life_groups[group]={}
+		life_groups[group][key]=true
+	facilities=data.facilities.duplicate(true); jobs=data.jobs.duplicate(true); trades=data.trades.duplicate(true)
 	return true

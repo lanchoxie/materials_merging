@@ -19,6 +19,8 @@ const Ranch=preload("res://scripts/river_ranch.gd")
 var ranch=Ranch.new()
 const Organics=preload("res://scripts/river_organics.gd")
 var organics=Organics.new()
+const Journey=preload("res://scripts/river_journey.gd")
+var journey=Journey.new()
 var actor: Dictionary={}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_v2.json"))
 var world: Dictionary={}
@@ -268,7 +270,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize()}
+	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize()}
 
 func _number(v,lo: float,hi: float,whole: bool=false) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
@@ -353,6 +355,9 @@ func restore(data) -> bool:
 	if data.has("ranch") and not restored_ranch.restore(data.ranch,restored_construction,int(w.elapsed),restored_settlement.people): return false
 	var restored_organics=Organics.new()
 	if data.has("organics") and not restored_organics.restore(data.organics,restored_construction): return false
+	var restored_journey=Journey.new()
+	if data.has("journey") and not restored_journey.restore(data.journey,restored_construction.terrain): return false
+	journey=restored_journey
 	organics=restored_organics
 	ranch=restored_ranch
 	field=restored_field; restored_construction.occupied=field.gardens

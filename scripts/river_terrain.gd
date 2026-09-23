@@ -5,7 +5,7 @@ var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://dat
 var nature
 var trees: Array[Vector2]=[]
 var tree_cache={}
-const LANDMARKS={"home":{"name":"起始河湾","at":Vector2(10,15)},"homestead":{"name":"采集坡 · 小屋营地","at":Vector2(16,22)},"camp":{"name":"旅人林间营地","at":Vector2(68,68)},"woods":{"name":"西岸林地","at":Vector2(-124,68)},"ridge":{"name":"远方高原","at":Vector2(196,-188)}}
+const LANDMARKS={"home":{"name":"起始河湾","at":Vector2(10,15)},"homestead":{"name":"采集坡 · 小屋营地","at":Vector2(16,22)},"camp":{"name":"旅人林间营地","at":Vector2(68,68)},"woods":{"name":"西岸林地","at":Vector2(-124,68)},"ridge":{"name":"远方高原","at":Vector2(196,-188)},"frontier":{"name":"千米林海 · 远征起点","at":Vector2(1348,1348)},"far_river":{"name":"六公里外 · 上游河谷","at":Vector2(-8,-6140)}}
 
 func _init() -> void:
 	# Compatibility/sample list only; walking queries nearby chunks, never this list.

@@ -4,7 +4,7 @@
 
 把分子装进透明的反应釜，看它们慢慢生产。用收获的材料扩建工坊、招募伙伴，或走过光桥，去林地里种树、搭屋，再把自己的作品带回家。
 
-**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-organic-16)** · [更新了什么](docs/ORGANIC-16.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
+**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-frontier-17)** · [更新了什么](docs/FRONTIER-17.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
 
 ![透明反应釜里转动的分子，与周围的浮岛小屋](docs/screenshots/reactors.png)
 
@@ -30,6 +30,14 @@
 - **把作品带回家**：微缩器能把连在一起的小建筑装入背包，带回浮岛摆成展品；收回后也能在河湾展开。
 
 ![带回浮岛的小作品，摆在自己的展台上](docs/screenshots/miniature.png)
+
+## 去更远的原野，经营自己的时代
+
+按 **M / 世界·远行**，去千米林海或六公里外的河谷。沿途砍树、采集、挖填和搭建，把喜欢的地点记成路标，再随时回来。树桩、建筑和栖地进度会保留；附近画面随行加载。
+
+![六公里外的河谷与野生动物](docs/screenshots/frontier-river.png)
+
+原野营地、农耕聚落、现代生态站共用同一个世界。时代页逐项显示住处、收获、补给、居民状态与发电进度，告诉你还缺什么、去哪里完成。新阶段保留已有建筑和生命；完整条件见 [探索与时代指南](docs/FRONTIER-17.md)。
 
 ## 给河湾添一点烟火气
 
@@ -62,7 +70,7 @@
 
 ## 开始试玩
 
-在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-organic-16) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-organic-16 开发预览**；Android 真机体验仍待验证。
+在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-frontier-17) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-frontier-17 开发预览**；Android 真机体验仍待验证。
 
 | 操作 | 电脑 | 手机 |
 | --- | --- | --- |
@@ -77,7 +85,7 @@
 
 建议先试这条小旅程：**收获水样 → 走过光桥 → 砍树收树种 → 在空地种下 → 用水样浇灌**。想盖房子，再把木料送到浮岛的工艺车间加工。
 
-当前探索区直径约1公里。地形支持地表挖填，地下洞穴和房屋室内尚未开放。微缩作品上限为64块、8×8×8格；时代与生态系统会继续扩展。村民目前采用简单的局部绕行，请给仓库与田地留通道。
+当前探索区直径约16.4公里，地形随行加载；按M保存路标。地形支持地表挖填，地下洞穴和房屋室内尚未开放。微缩作品上限为64块、8×8×8格；时代与生态系统会继续扩展。村民目前采用简单的局部绕行，请给仓库与田地留通道。
 
 <details>
 <summary>给关心科学与开发的朋友</summary>

@@ -78,6 +78,8 @@ func _initialize() -> void:
 	v.actor=actor_above(c,Vector2(19,14)); pg.command(s,"v2_build",{"kind":"solar"})
 	check(c.count_kind("solar")==1 and pg.products.is_empty(),"actual factory photovoltaic product is installed once")
 	v.world.regions.meadow.crops=[{"crop":"grain","growth":1.0,"ready":true},{"crop":"grain","growth":1.0,"ready":true}]; v.harvest()
+	pg.command(s,"v2_ranch_water",{"batch_id":sample.id,"token":pg.shipment_serial})
+	v.advance(60)
 	pg.command(s,"v2_next_era"); check(v.settlement.era==2,"modern chapter requires actual solar plus agriculture and meals")
 	var original_time=v.world.elapsed
 	v.world.regions.meadow.water=0.5; v.world.regions.meadow.moisture=0.5; v.world.elapsed=30

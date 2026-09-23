@@ -41,6 +41,7 @@ func sync(model,at: Vector2) -> void:
 			G.cube(st,Vector3(0,0.8,-0.34),Vector3(0.45,0.3,0.3),Color("d4b06f")); carry.mesh=st.commit(); root.add_child(carry)
 			var label=Label3D.new(); label.font=preload("res://assets/fonts/NotoSansCJKsc-Regular.otf"); label.font_size=26; label.pixel_size=0.009; label.position.y=1.95; label.billboard=BaseMaterial3D.BILLBOARD_ENABLED; root.add_child(label)
 		var node=members[person.id]; node.set_meta("target",target)
+		node.get_child(0).mesh=_mesh(model.era,int(person.id))
 		var j=ranch.jobs.get(str(int(person.id)),{}) if ranch!=null else {}
 		node.get_child(1).visible=not j.get("cargo",{}).is_empty()
 		node.get_child(2).text=person.name+"\n"+("农夫" if int(person.id)==1 else "工匠")

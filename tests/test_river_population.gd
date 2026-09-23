@@ -69,7 +69,7 @@ func _run() -> void:
 	closed.population.sites.wetland.animal_clock=240
 	check(not closed.population.advance(closed.world.regions).has("wetland"),"hypoxic water does not repopulate fish")
 	var t=Terrain.new(); var second=Terrain.new()
-	check(t.rules.radius==512 and t.inside(Vector2(500,0)) and not t.inside(Vector2(520,0)),"bounded world has roughly one kilometre diameter")
+	check(t.rules.radius==8192 and t.inside(Vector2(8000,0)) and not t.inside(Vector2(8200,0)),"bounded world has roughly sixteen kilometre diameter")
 	var reference=t.chunk_trees(Vector2i(12,-12)).duplicate()
 	for z in range(-20,21):
 		for x in range(-20,21): t.chunk_trees(Vector2i(x,z))

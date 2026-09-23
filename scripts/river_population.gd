@@ -47,9 +47,8 @@ func _suitable(env: Dictionary) -> bool:
 
 func advance(regions: Dictionary) -> Array:
 	var arrivals=[]
-	for key in sites:
+	for key in simulation_keys():
 		var s: Dictionary=sites[key]
-		if not s.home and key not in active_sites: continue
 		var env=regions[key] if s.home else rules.wild_environment
 		s.seconds+=1
 		var good=_suitable(env)
@@ -94,9 +93,21 @@ func nearest(at: Vector2) -> Dictionary:
 		if d<distance: best=s; distance=d
 	return best
 
+func simulation_keys() -> Array:
+	return Terrain.CENTERS.keys()+active_sites
+
+func nearby_keys(at: Vector2) -> Array:
+	var result=Terrain.CENTERS.keys(); var center=(at/float(terrain.rules.site_spacing)).round()
+	var span=ceili(float(rules.visible_radius)/float(terrain.rules.site_spacing))+1
+	for z in range(-span,span+1):
+		for x in range(-span,span+1):
+			var key="%d:%d" % [int(center.x)+x,int(center.y)+z]
+			if sites.has(key): result.append(key)
+	return result
+
 func visible_sites(at: Vector2) -> Array:
 	var result=[]
-	for key in sites:
+	for key in nearby_keys(at):
 		var s=sites[key]
 		if Vector2(s.x,s.z).distance_squared_to(at)<pow(float(rules.visible_radius),2): result.append(s)
 	return result

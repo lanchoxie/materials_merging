@@ -83,6 +83,9 @@ func sample_candidates(state,reference: String) -> Array:
 func command(state,action: String,payload: Dictionary={}) -> String:
 	if action.begins_with("organic_"): return preload("res://scripts/river_organic_actions.gd").command(state,action,payload)
 	match action:
+		"v2_waypoint_add": return v2.journey.remember(v2)
+		"v2_waypoint_remove": return v2.journey.remove(str(payload.get("id","")))
+		"v2_recruit_resident": return v2.settlement.recruit(v2.construction) if v2.active else "请先进入星球"
 		"laminate_research":
 			if not joined: return "先领取合作补给"
 			return state.campus_start_research(laminates.model.rules.project)
