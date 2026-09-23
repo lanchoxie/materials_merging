@@ -1,0 +1,58 @@
+extends "res://tests/test_island_loop.gd"
+const Flow=preload("res://scripts/organic_synthesis.gd")
+const Placement=preload("res://tests/test_ranch13.gd")
+
+func _initialize() -> void:
+	var s=State.new(); var flow=Flow.new(); var r=s.reactors[0]
+	check(s.storage.batches.is_empty() and flow.stock(s,"urea")==0,"fresh game has no granted organic product")
+	var q=flow.status(s,0,"urea")
+	check(q.phase=="prepare" and q.missing=={"C":1,"N":2},"uses two stored H and existing reactor atoms, only buys missing C and N")
+	var coins=s.coins; flow.start(s,0,"urea")
+	check(not r.has("installation") and s.coins==coins,"missing elements cannot silently start or charge a molecule")
+	flow.buy_missing(s,0,"urea")
+	check(s.coins==coins-q.element_cost and flow.stock(s,"urea")==0 and s.reference_id(r)=="water","element purchase changes only stock, never synthesizes or replaces reactor")
+	q=flow.status(s,0,"urea"); coins=s.coins; var elements=s.element_inventory.duplicate()
+	flow.start(s,0,"urea")
+	check(s.coins==coins-s.edit_cost(r) and r.has("installation"),"submit reserves actual level-dependent reactor edit fee")
+	check(s.element_inventory.C==0 and s.element_inventory.N==0 and s.element_inventory.H==0,"installation reserves exact net new elements")
+	check(s.reference_id(r)=="water" and flow.stock(s,"urea")==0,"pending install continues old water instead of granting target molecule")
+	coins=s.coins; flow.start(s,0,"urea"); check(s.coins==coins,"double submit cannot double charge pending job")
+	check(flow.status(s,0,"urea").message.contains("博士"),"missing logistics staff is explained")
+	s.cancel_installation(0)
+	check(s.coins==coins+12 and s.element_inventory==elements and flow.stock(s,"urea")==0,"cancel restores original reservations, never grants organic samples")
+	var worker=doctor(s)
+	flow.start(s,0,"urea"); var left=r.installation.remaining; advance(s,1)
+	check(r.installation.remaining==left,"doctor walking does not count as installation work")
+	s.store_road(4); left=r.installation.remaining; advance(s,12)
+	check(r.installation.remaining==left and flow.status(s,0,"urea").message.contains("未连通"),"disconnected reactor stalls real organic installation")
+	s.campus_road(4)
+	for i in range(160):
+		if not r.has("installation"): break
+		advance(s,1)
+	check(not r.has("installation") and s.reference_id(r)=="urea","hired doctor walks through campus and installs actual urea graph")
+	check(r.get("sandbox",false) and r.atoms.size()==8 and s.quality(r)<0.98,"installed urea has actual eight atoms and unoptimized coordinates")
+	check(flow.stock(s,"urea")==0 and r.pending==0,"finishing installation does not instantly produce a molecule")
+	var current=s.signature(r)
+	for i in range(80):
+		if r.pending>0: break
+		advance(s,1)
+	check(r.pending==1 and flow.status(s,0,"urea").phase=="ready" and flow.stock(s,"urea")==0,"reactor elapsed production fills its output buffer before backpack")
+	flow.harvest(s,0,"urea")
+	var candidates=s.planet.sample_candidates(s,"urea")
+	check(candidates.size()==1 and candidates[0].id==current and candidates[0].quantity==1,"harvest transfers reactor's exact immutable structure batch")
+	flow.harvest(s,0,"urea"); check(flow.stock(s,"urea")==1,"repeated harvest cannot duplicate product")
+	var candidate=candidates[0]; var v=s.planet.v2; v.active=true
+	var helper=Placement.new(); var tank=helper.place(v,"mixing_tank",Vector2(12,12)); helper.look(v,Vector2(12,12),0.5)
+	var response=s.planet.command(s,"organic_add",{"batch_id":candidate.id,"token":s.planet.shipment_serial})
+	check(v.organics.tanks[tank].solid_g==5 and flow.stock(s,"urea")==0,"mixing tank consumes only the sample produced and harvested above")
+	check(v.organics.inputs[candidate.id].work==candidate.work,"mixing source retains reactor-produced molecular identity")
+	var before=v.organics.serialize(); s.planet.command(s,"organic_add",{"batch_id":candidate.id,"token":s.planet.shipment_serial})
+	check(v.organics.serialize()==before,"empty produced batch cannot be consumed again")
+	# No new save schema: the normal paid installation survives full save/load.
+	var other=State.new(); doctor(other); flow.buy_missing(other,0,"urea"); flow.start(other,0,"urea"); advance(other,1)
+	var path="res://saves/test-organic15-flow.json"; other.save_game(path); var copy=State.new()
+	check(copy.load_game(path) and copy.reactors[0].has("installation"),"full save preserves paid organic installation")
+	check(copy.element_inventory==other.element_inventory and copy.coins==other.coins,"save/reentry never repurchases reserved elements or fees")
+	for suffix in ["",".bak"]: DirAccess.remove_absolute(ProjectSettings.globalize_path(path+suffix))
+	s.close_science(); other.close_science(); copy.close_science(); helper.free()
+	print("ORGANIC15: %d checks, %d failures" % [checks,failures.size()]); quit(0 if failures.is_empty() else 1)

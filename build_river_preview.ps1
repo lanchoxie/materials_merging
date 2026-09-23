@@ -19,7 +19,7 @@ $riverPage=$riverPage.Replace('"args":[]','"args":["--river-preview"]')
 [IO.File]::WriteAllText($riverHtml,$riverPage,[Text.UTF8Encoding]::new($false))
 $riverManifest=@{
     name='0.21 river development preview'
-    revision='organic-14.1'
+    revision='organic-15'
     formalRelease=$false
     builtAt=(Get-Date).ToString('o')
     pckSHA256=(Get-FileHash builds/web-river-preview/index.pck -Algorithm SHA256).Hash.ToLowerInvariant()

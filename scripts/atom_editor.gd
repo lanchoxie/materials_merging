@@ -2,6 +2,7 @@ extends Control
 
 signal applied
 signal dismissed
+signal synthesis_requested
 const UI = preload("res://scripts/ui.gd")
 var state
 var reactor_index: int = 0
@@ -62,6 +63,8 @@ func setup(model, index: int) -> void:
 	close_b.position = Vector2(1240, 38)
 	close_b.size.x = 150
 	add_child(close_b)
+	var synthesis=UI.button("有机物合成路线",_request_synthesis)
+	synthesis.position=Vector2(965,38); synthesis.size=Vector2(250,48); add_child(synthesis)
 	_build_view()
 	_build_sidebar()
 	_render_molecule()
@@ -449,6 +452,14 @@ func _apply() -> void:
 func _cancel() -> void:
 	dismissed.emit()
 	queue_free()
+
+func _request_synthesis() -> void:
+	if points==state.reactors[reactor_index].positions and symbols==state.atom_symbols(state.reactors[reactor_index]):
+		synthesis_requested.emit(); return
+	var dialog=ConfirmationDialog.new(); dialog.dialog_text="前往有机物合成路线？尚未应用的坐标或元素修改会舍弃；库存和金币不变。"; dialog.ok_button_text="前往合成"; dialog.cancel_button_text="继续编辑"; add_child(dialog)
+	dialog.confirmed.connect(func(): synthesis_requested.emit())
+	dialog.canceled.connect(func(): dialog.queue_free())
+	dialog.popup_centered(Vector2i(560,170))
 
 func _close_palette() -> void:
 	if is_instance_valid(palette): palette.queue_free()

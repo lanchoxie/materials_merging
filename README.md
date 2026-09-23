@@ -4,7 +4,7 @@
 
 把分子装进透明的反应釜，看它们慢慢生产。用收获的材料扩建工坊、招募伙伴，或走过光桥，去林地里种树、搭屋，再把自己的作品带回家。
 
-**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-organic-14.1)** · [更新了什么](docs/ORGANIC-14.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
+**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-organic-15)** · [更新了什么](docs/ORGANIC-15.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
 
 ![透明反应釜里转动的分子，与周围的浮岛小屋](docs/screenshots/reactors.png)
 
@@ -47,18 +47,20 @@
 
 ## 从反应釜开始做有机物
 
-首个有机物预览从尿素开始：在结构工作台选择「尿素 · 一片新叶」，收集尿素和水样；工艺车间制造配料罐，河湾里加入样品，等晶粒溶解后分装成有限的溶液，施用到种植箱。温和补肥会加快生长，过量施用会让叶尖受损；旁边的种植箱可以作为对照。每个批次、每瓶溶液和每个地块都有独立账本，未知毒性不会被当成安全或通用伤害。
+首个有机物预览从尿素开始：选中自己的反应釜，打开「有机物 · 反应釜合成」，准备元素并等待博士装炉、炉内合成，再收获尿素和水样；工艺车间制造配料罐，河湾里加入样品，等晶粒溶解后分装成有限的溶液，施用到种植箱。温和补肥会加快生长，过量施用会让叶尖受损；旁边的种植箱可以作为对照。每个批次、每瓶溶液和每个地块都有独立账本，未知毒性不会被当成安全或通用伤害。
 
 ![配料罐中的晶粒和水](docs/screenshots/organic-mixing.png)
 
 ![施肥后的作物与未施肥对照](docs/screenshots/organic-garden.png)
 
-完整流程见 [有机物入门](docs/ORGANIC-14.md)。
+![尿素在自己的反应釜中合成，完成后等待收获](docs/screenshots/organic-reactor.png)
+
+先看 [反应釜合成路线](docs/ORGANIC-15.md)，再去 [河湾配水与施肥](docs/ORGANIC-14.md)。
 
 
 ## 开始试玩
 
-在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-organic-14.1) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-organic-14.1 开发预览**；Android 真机体验仍待验证。
+在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-organic-15) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-organic-15 开发预览**；Android 真机体验仍待验证。
 
 | 操作 | 电脑 | 手机 |
 | --- | --- | --- |

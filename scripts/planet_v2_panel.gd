@@ -2,6 +2,7 @@ extends Control
 signal dismissed
 signal acted(message: String)
 signal workshop_requested(recipe_id: String)
+signal synthesis_requested
 const UI=preload("res://scripts/ui.gd")
 const View=preload("res://scripts/planet_v2_view.gd")
 const ExplorationInput=preload("res://scripts/river_exploration_input.gd")

@@ -5,11 +5,12 @@ static func build(panel) -> void:
 	var v=panel.state.planet.v2; var o=v.organics
 	var intro=panel._card("一片新叶 · 有机物")
 	intro.add_child(UI.paragraph("反应釜的尿素和水 → 配料罐 → 背包中的溶液 → 种植箱。留一箱不施肥，对比相同湿度下的生长。",16))
+	intro.add_child(UI.button("回浮岛反应釜 · 合成尿素",func(): panel.synthesis_requested.emit(),true))
 	intro.add_child(UI.button("到工艺车间制造配料罐",func(): panel.workshop_requested.emit("field_mixing_tank")))
 	var target=v.Target.query(v)
 	if target.get("kind")!="mixing_tank":
 		var guide=panel._card("走近你的配料罐")
-		guide.add_child(UI.paragraph("车间使用2份木料、3份散石，做出可放置的罐。背包拿起，在地面放下；换采集手套，对准罐按 E 查看。\n尿素在反应釜的结构工作台选择「尿素 · 一片新叶」，调整结构后收集产物。",16))
+		guide.add_child(UI.paragraph("车间使用2份木料、3份散石，做出可放置的罐。背包拿起，在地面放下；换采集手套，对准罐按 E 查看。\n先点上方「回浮岛反应釜」：准备元素、博士装炉、等待合成、收获到背包。配料罐不会凭空生成尿素。",16))
 	else:
 		var key=str(target.key); var card=panel._card("配料罐 · "+key)
 		var stats=UI.paragraph("",16,UI.MINT); card.add_child(stats); panel.widgets["organic_stats"]=stats

@@ -412,6 +412,7 @@ func _rebuild_sidebar() -> void:
 		var edit_b = UI.button("进入原子工作台   →", _open_editor,true)
 		edit_b.disabled = float(r.build_left) > 0
 		side.add_child(edit_b)
+		side.add_child(UI.button("有机物 · 反应釜合成",_show_organic_synthesis.bind(selected_reactor)))
 		var h = UI.row(side,8)
 		var harvest = UI.button("收获",func(): _action(state.harvest(selected_reactor)))
 		harvest.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -666,7 +667,8 @@ func _open_sandbox_editor(structure: Dictionary) -> void:
 	editor.setup(state,structure,selected_reactor)
 	if is_instance_valid(editor_return_view): editor.set_return_label("返回漫步")
 	editor.saved.connect(func(): _toast("作品已保存，可以继续编辑或装入炉子"))
-	editor.applied.connect(func(): _action("作品已应用，反应炉开始新一轮生产"))
+	editor.applied.connect(func(): _action("已提交博士装炉；旧炉继续生产，完成后切换新分子" if not state.reactors[editor.reactor_index].get("installation",{}).is_empty() else "坐标已保存，反应釜继续生产"))
+	editor.synthesis_requested.connect(func(): _show_organic_synthesis(editor.reactor_index))
 	editor.dismissed.connect(func(): _finish_structure_editor(editor,true))
 
 func _save_baseline_work(baseline_id: String) -> void:
@@ -717,6 +719,7 @@ func _show_factory(recipe_id: String="") -> void:
 	panel.acted.connect(_action)
 	panel.mail_requested.connect(_show_market)
 	panel.planet_requested.connect(func(): last_factory_recipe=panel.selected_recipe; _show_planet_v2())
+	panel.synthesis_requested.connect(func(): _show_organic_synthesis())
 	panel.campus_requested.connect(func(tab):
 		last_factory_recipe=panel.selected_recipe
 		if tab=="build":
@@ -735,9 +738,21 @@ func _show_planet_v2() -> void:
 	panel.setup(state)
 	panel.acted.connect(_action)
 	panel.workshop_requested.connect(_show_factory)
+	panel.synthesis_requested.connect(func(): _show_organic_synthesis())
 	panel.dismissed.connect(func():
 		if modal==panel: modal=null
 		if not snapshot_mode and not visual_test: state.save_game())
+
+func _show_organic_synthesis(index: int=-1) -> void:
+	var panel=preload("res://scripts/organic_reactor_panel.gd").new()
+	_begin_structure_editor(panel)
+	panel.setup(state,index)
+	if is_instance_valid(editor_return_view): panel.set_return_label("返回漫步")
+	panel.acted.connect(_action)
+	panel.dismissed.connect(func(): _finish_structure_editor(panel))
+	panel.campus_requested.connect(_show_campus)
+	panel.planet_requested.connect(_show_planet_v2)
+	panel.edit_requested.connect(func(i): _select_plot(int(state.reactors[i].plot)); _open_editor())
 
 func _deliver_market(index: int) -> void:
 	_action(state.deliver(index))
@@ -986,13 +1001,15 @@ func _open_editor() -> void:
 	if is_instance_valid(editor_return_view): editor.set_return_label("返回漫步")
 	editor.applied.connect(func(): _finish_structure_editor(editor); _action("修改已提交；更换元素等待博士装炉，已有产物会保留。"))
 	editor.dismissed.connect(func(): _finish_structure_editor(editor))
+	editor.synthesis_requested.connect(func(): _show_organic_synthesis(editor.reactor_index))
 
 func _begin_structure_editor(editor: Control) -> void:
 	# Keep the caller's camera and scene alive only for this editor visit.
-	var return_view: Control=modal if is_instance_valid(modal) and modal.has_method("set_editor_open") else null
+	var return_view: Control=modal if is_instance_valid(modal) and modal.has_method("set_editor_open") else editor_return_view
+	editor_return_view=null
 	if is_instance_valid(return_view):
 		return_view.set_editor_open(true)
-		modal=null
+		if modal==return_view: modal=null
 	_close_modal()
 	editor_return_view=return_view
 	if is_instance_valid(return_view): world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED

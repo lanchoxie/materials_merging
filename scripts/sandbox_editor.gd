@@ -4,6 +4,7 @@ extends Control
 signal saved
 signal applied
 signal dismissed
+signal synthesis_requested
 
 const UI = preload("res://scripts/ui.gd")
 const MAX_ATOMS := 64
@@ -105,6 +106,9 @@ func setup(model, structure: Dictionary, index: int = -1) -> void:
 	close_button.position = Vector2(1192, 31)
 	close_button.size = Vector2(210, 50)
 	add_child(close_button)
+	if reactor_index>=0:
+		var synthesis=UI.button("反应釜合成",_request_synthesis)
+		synthesis.position=Vector2(34,790); synthesis.size=Vector2(210,46); add_child(synthesis)
 	_build_stage()
 	_build_tools()
 	_build_footer()
@@ -501,6 +505,13 @@ func _request_close() -> void:
 		confirmation.dialog_text = "还有尚未保存的修改。%s将舍弃本次草稿；库存和金币不会变化。" % return_label
 		confirmation.popup_centered()
 	else: _close()
+
+func _request_synthesis() -> void:
+	if draft!=original:
+		pending_confirmation=func(): synthesis_requested.emit()
+		confirmation.dialog_text="前往反应釜合成路线？尚未保存的草稿修改会舍弃；元素和金币不变。"
+		confirmation.popup_centered()
+	else: synthesis_requested.emit()
 
 func _close() -> void:
 	dismissed.emit()

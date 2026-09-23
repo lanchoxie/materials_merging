@@ -3,6 +3,7 @@ signal dismissed
 signal acted(message: String)
 signal mail_requested
 signal planet_requested
+signal synthesis_requested
 signal campus_requested(tab: String)
 const UI=preload("res://scripts/ui.gd")
 const WorkshopAccess=preload("res://scripts/workshop_access.gd")
@@ -205,6 +206,9 @@ func _workshop() -> void:
 	_button("前往星球 · 使用现有成品",func(): planet_requested.emit(),true)
 
 func _natural_workshop(info: Dictionary) -> void:
+	if selected_recipe=="field_mixing_tank":
+		_text("尿素由浮岛反应釜合成；这里制造用来配水的设备。",16,UI.MINT)
+		_button("前往反应釜 · 合成尿素",func(): synthesis_requested.emit(),true)
 	var p=state.planet; var access=WorkshopAccess.status(state); var field=p.v2.field
 	_text(str(info.name),24,UI.MINT); _text(str(info.description),17,UI.TEXT)
 	_text("星球采集 → 背包原料 → 工程师加工 → 回星球搭建",16,UI.GOLD)
