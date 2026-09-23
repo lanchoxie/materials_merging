@@ -31,6 +31,14 @@ func set_tool(kind: String) -> void:
 	elif kind in ["plant","tree_plant"]:
 		G.cube(st,Vector3(0,0.18,-0.09),Vector3(0.05,0.24,0.05),Color("92714d"))
 		G.cube(st,Vector3(0,0.3,-0.09),Vector3(0.23,0.12,0.12),Color("8ec975"))
+	elif kind=="organic_solution":
+		G.cube(st,Vector3(0,0.22,-0.14),Vector3(0.18,0.28,0.18),Color("8bd5d7"))
+		G.cube(st,Vector3(0,0.39,-0.14),Vector3(0.10,0.08,0.10),Color("dac389"))
+		G.cube(st,Vector3(0,0.23,-0.235),Vector3(0.13,0.11,0.015),Color("f6e9bf"))
+		G.cube(st,Vector3(0,0.23,-0.245),Vector3(0.065,0.05,0.012),Color("5ca879"))
+	elif kind=="organic_sample":
+		G.cube(st,Vector3(0,0.22,-0.14),Vector3(0.22,0.24,0.19),Color("f3eee0"))
+		G.cube(st,Vector3(0,0.25,-0.242),Vector3(0.14,0.07,0.02),Color("6cbea6"))
 	else:
 		G.cube(st,Vector3(0,0.22,-0.14),Vector3(0.25,0.24,0.25),Color("69cdbb") if kind.begins_with("mini") else Color("cfa974"))
 		G.cube(st,Vector3(0,0.23,-0.27),Vector3(0.13,0.12,0.015),Color("f3dfba"))

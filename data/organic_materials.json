@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "references": {
+    "urea": {
+      "name": "尿素",
+      "formula": "CH4N2O",
+      "cas": "57-13-6",
+      "water_solubility": {
+        "value": null,
+        "unit": "g/L",
+        "qualitative": "易溶于水",
+        "conditions": {"solvent": "water", "temperature_c": 20},
+        "evidence": "reported",
+        "source": "https://hpvchemicals.oecd.org/UI/handler.axd?id=89564308-0887-4614-8a20-e542ce76221a",
+        "note": "来源报告1080 g/L，另有SDS报告624 g/L；体积基准尚待核对，因此不启用定量饱和外推。首版只处理少量尿素的配水。"
+      },
+      "biodegradation": {
+        "value": "可经微生物转化",
+        "conditions": "土壤/水中的转化受环境条件影响",
+        "evidence": "reported",
+        "source": "https://hpvchemicals.oecd.org/UI/handler.axd?id=89564308-0887-4614-8a20-e542ce76221a",
+        "runtime_enabled": false
+      },
+      "toxicity_endpoints": null,
+      "plant_effect": {
+        "value": "可作氮肥；局部高浓度施用可能伤苗",
+        "conditions": "土壤中水解产生的局部氨/高pH条件；不是任意生物的通用毒性",
+        "evidence": "reported",
+        "source": "https://extension.umn.edu/agriculture/crop-production/nutrient-management-for-minnesota-crops/fertilizer-urea"
+      }
+    }
+  },
+  "game": {
+    "label": "教学配料单位；不代表反应釜的真实产率或农业施用建议",
+    "sample_urea_g": 5.0,
+    "sample_water_l": 1.0,
+    "tank_capacity_l": 2.0,
+    "tank_solid_limit_g": 40.0,
+    "temperature_c": 20.0,
+    "dissolve_g_per_second": 0.5,
+    "bottle_l": 0.25,
+    "max_tanks": 32,
+    "max_bottles": 32,
+    "max_inputs": 128,
+    "max_plots": 128,
+    "gentle_concentration_g_l": 6.0,
+    "gentle_soil_g": 2.5,
+    "soil_limit_g": 40.0,
+    "uptake_g_per_second": 0.006,
+    "growth_bonus": 0.4,
+    "injury_per_overdose": 0.35,
+    "injury_recovery_per_second": 0.001,
+    "water_moisture_per_l": 0.6
+  }
+}

@@ -52,6 +52,7 @@ func sync(v) -> void:
 		var b=v.construction.blocks[key]
 		if rules.facilities.has(b.kind): facility(key,b.kind)
 	v.construction.occupied=v.field.gardens.duplicate()
+	v.construction.occupied.merge(v.organics.protected_keys())
 	for key in facilities:
 		if facilities[key].stock>0 or facilities[key].integrity<0.999: v.construction.occupied[key]=true
 	for job in jobs.values():

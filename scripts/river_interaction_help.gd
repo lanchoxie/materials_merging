@@ -2,13 +2,15 @@ extends RefCounted
 ## Describe the selected action, not a generic instruction for every target.
 static func button_text(action: Dictionary,target: Dictionary) -> String:
 	match action.get("type",""):
-		"collect": return "查看 E" if target.has("entity") or target.get("kind") in ["trough","feeder"] else "采集 E"
+		"collect": return "查看 E" if target.has("entity") or target.get("kind") in ["trough","feeder","mixing_tank"] else "采集 E"
 		"strike": return "攻击 E"
 		"build","mini_unfold","fill": return "放置 E"
 		"remove": return "拆回 E"
 		"plant","tree_plant": return "种植 E"
 		"axe": return "砍树 E"
 		"dig": return "挖土 E"
+		"organic_solution": return "施肥 E"
+		"organic_sample": return "加料 E"
 		"feed": return "喂食 E"
 	return "使用 E"
 
@@ -25,6 +27,9 @@ static func prompt(v,item: Dictionary,target: Dictionary,fallback: String) -> St
 		elif kind=="strike": text+=" · E/F 攻击"
 		else: text+=" · F 攻击 · "+button_text(action,target)
 		return text
+	if kind=="organic_solution": return str(item.name)+" · 瞄准种植箱 E 施肥 · 重复施用会累积"
+	if kind=="organic_sample": return "尿素 · 瞄准配料罐 E 加入5教学克"
+	if target.get("kind")=="mixing_tank" and kind=="sample": return "配料罐 · E 加入1份水样（1教学升）"
 	if kind=="strike": return "挥拳 · 瞄准%.1f米内的动物或人物 · E/F 攻击" % v.combat.rules.reach
 	if kind=="tree_plant": return str(item.name)+" · 瞄准空地，E种植"
 	if kind=="fill": return "土方 ×%d · 瞄准地面，E填高" % item.quantity

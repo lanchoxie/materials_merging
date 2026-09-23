@@ -122,7 +122,7 @@ func covered(b: Dictionary,c) -> bool:
 		if not roof.is_empty() and c.rules.kinds[roof.kind].get("roof",false): return true
 	return false
 
-func tick(world: Dictionary,c) -> void:
+func tick(world: Dictionary,c,organics=null) -> void:
 	for id in changed.keys():
 		if changed[id].ready_at>0 and changed[id].ready_at<=world.elapsed: changed.erase(id); revision+=1
 	for key in gardens:
@@ -130,7 +130,7 @@ func tick(world: Dictionary,c) -> void:
 		var roof=covered(b,c)
 		var rain=float(rules.garden.rain_per_second) if int(world.elapsed)%int(rules.garden.rain_period_seconds)<int(rules.garden.rain_duration_seconds) and not roof else 0.0
 		plot.moisture=clampf(plot.moisture-float(rules.garden.evaporation)*(float(rules.garden.roof_evaporation_multiplier) if roof else 1.0)+rain,0,1)
-		if plot.moisture>=float(rules.garden.minimum_moisture): plot.growth=minf(1,plot.growth+(float(rules.garden.roof_growth_multiplier) if roof else 1.0)/float(rules.garden.growth_seconds))
+		if plot.moisture>=float(rules.garden.minimum_moisture): plot.growth=minf(1,plot.growth+(organics.growth_factor(key) if organics!=null else 1.0)*(float(rules.garden.roof_growth_multiplier) if roof else 1.0)/float(rules.garden.growth_seconds))
 
 func serialize() -> Dictionary:
 	return {"version":1,"stock":stock.duplicate(),"changed":changed.duplicate(true),"crafts":crafts.duplicate(true),"gardens":gardens.duplicate(true)}

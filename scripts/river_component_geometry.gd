@@ -1,6 +1,17 @@
 extends RefCounted
 const G=preload("res://scripts/river_geometry.gd")
 static func draw(st: SurfaceTool,p: Vector3,kind: String,color: Color) -> void:
+	if kind=="mixing_tank":
+		G.cube(st,p+Vector3(0,-0.40,0),Vector3(0.88,0.18,0.88),Color("426969"))
+		for x in [-0.36,0.36]:
+			for z in [-0.36,0.36]: G.cube(st,p+Vector3(x,0.03,z),Vector3(0.085,0.82,0.085),color)
+		for y in [-0.30,0.38]:
+			for z in [-0.38,0.38]: G.cube(st,p+Vector3(0,y,z),Vector3(0.85,0.07,0.07),color)
+			for x in [-0.38,0.38]: G.cube(st,p+Vector3(x,y,0),Vector3(0.07,0.07,0.85),color)
+		G.cube(st,p+Vector3(0.44,-0.15,0),Vector3(0.12,0.12,0.18),Color("d5ac66"))
+		G.cube(st,p+Vector3(0.47,-0.02,0),Vector3(0.06,0.16,0.06),Color("d5ac66"))
+		for y in [-0.15,0.0,0.15]: G.cube(st,p+Vector3(-0.27,y,0.402),Vector3(0.12,0.025,0.025),Color("f6e1ad"))
+		return
 	if kind in ["trough","feeder"]:
 		G.cube(st,p+Vector3(0,-0.42,0),Vector3(1,0.16,1),color.darkened(0.15))
 		for x in [-0.44,0.44]: G.cube(st,p+Vector3(x,0,0),Vector3(0.12,1,1),color)

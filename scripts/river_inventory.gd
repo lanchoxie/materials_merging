@@ -44,6 +44,9 @@ func entries(state) -> Dictionary:
 		var key="recipe:"+recipe_id
 		if quantity>0 or key in slots:
 			result[key]=_item(key,str(spec.get("name",recipe_id)),category,icon,quantity,description,action)
+	for id in v.organics.bottles:
+		var bottle=v.organics.bottles[id]; var key="solution:"+str(id)
+		result[key]=_item(key,"尿素溶液 #%s" % id,"products","sample",1,"250 mL · %.2f g/L\n这瓶含%.2f教学克尿素。瞄准已播种的种植箱按 E 施用；先比较一箱补肥、一箱不施肥，重复施用会累积。不能用作饮水或饲料。" % [bottle.mass_g/bottle.water_l,bottle.mass_g],{"type":"organic_solution","id":id})
 	var live_batches={}
 	for batch in state.storage.batches:
 		var key="sample:"+str(batch.id)
@@ -59,6 +62,9 @@ func entries(state) -> Dictionary:
 		var description="批次 %s · 保留这份结构的来源与身份。\n" % str(batch.id)
 		description+=str(rule.description) if not rule.is_empty() else "尚未定义该样品的星球用途；可留在浮岛用于研究或订单。"
 		var action={} if rule.is_empty() else {"type":"sample","batch_id":str(batch.id),"reference":ref}
+		if ref=="urea":
+			description="批次 %s · 有机物 · 易溶于水。\n拿起后瞄准配料罐加料。1份对应5教学克，适量补肥、过量伤苗，未开放动物毒理推断。" % str(batch.id)
+			action={"type":"organic_sample","batch_id":str(batch.id),"reference":ref}
 		result[key]=_item(key,str(batch.formula),"samples","sample",int(batch.quantity),description,action)
 	for key in sample_cache.keys():
 		if not live_batches.has(key): sample_cache.erase(key)
@@ -90,7 +96,7 @@ func restore(data) -> bool:
 		if not id is String or id.length()>160: return false
 		if id.is_empty(): continue
 		if seen.has(id): return false
-		if not (id.begins_with("recipe:") or id.begins_with("sample:") or id.begins_with("raw:") or id.begins_with("tree:") or id.begins_with("mini:") or id=="seed:grain" or id=="food" or (id.begins_with("tool:") and rules.tools.has(id.trim_prefix("tool:")))): return false
+		if not (id.begins_with("solution:") or id.begins_with("recipe:") or id.begins_with("sample:") or id.begins_with("raw:") or id.begins_with("tree:") or id.begins_with("mini:") or id=="seed:grain" or id=="food" or (id.begins_with("tool:") and rules.tools.has(id.trim_prefix("tool:")))): return false
 		seen[id]=true
 	slots=data.slots.duplicate(); selected=int(n)
 	return true

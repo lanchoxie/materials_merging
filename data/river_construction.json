@@ -43,6 +43,10 @@
     "field_feeder": {
       "units": 1,
       "kind": "feeder"
+    },
+    "field_mixing_tank": {
+      "units": 1,
+      "kind": "mixing_tank"
     }
   },
   "kinds": {
@@ -79,6 +83,10 @@
     "feeder": {
       "name": "木制饲草架",
       "color": "b99260"
+    },
+    "mixing_tank": {
+      "name": "有机配料罐",
+      "color": "53aa9e"
     }
   },
   "scope": "一包构件拆成8块；拆回原批次，全部收回才可还原整包。方块须与地面连通，暂不模拟真实结构强度。太阳能输出为统一的游戏服务点，不是实测器件效率。"

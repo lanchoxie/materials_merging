@@ -81,6 +81,7 @@ func sample_candidates(state,reference: String) -> Array:
 	return candidates
 
 func command(state,action: String,payload: Dictionary={}) -> String:
+	if action.begins_with("organic_"): return preload("res://scripts/river_organic_actions.gd").command(state,action,payload)
 	match action:
 		"laminate_research":
 			if not joined: return "先领取合作补给"
@@ -433,6 +434,8 @@ func restore(data,state) -> bool:
 	if not data.joined and (factory.purchased.Cu>0 or factory.purchased.Al>0 or not factory.job.is_empty()): return false
 	var restored_v2=PlanetV2.new()
 	if data.has("v2") and not restored_v2.restore(data.v2): return false
+	for receipt in restored_v2.organics.inputs.values():
+		if not state.sandbox_validate(receipt.work) or state.sandbox_reference(receipt.work).get("reference_id","")!=receipt.reference: return false
 	for craft_id in restored_v2.field.crafts:
 		if int(craft_id)>=int(data.serial): return false
 		var craft=restored_v2.field.crafts[craft_id]

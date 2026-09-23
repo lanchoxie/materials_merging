@@ -72,13 +72,14 @@ static func prompt(v,target: Dictionary) -> String:
 			var spec=v.field.rules.resources[target.node.kind]
 			return text+" · E 采集 %d/%d" % [int(v.field.changed.get(target.node.id,{}).get("hits",0)),spec.hits]
 		"block":
+			if target.kind=="mixing_tank": return text+" · E 查看配料 / 背包拿起尿素或水样加料"
 			if target.kind in ["trough","feeder"]:
 				var f=v.ranch.facility(target.key,target.kind); var spec=v.ranch.rules.facilities[target.kind]
 				return text+" · 储料%d/%d · %s" % [f.stock,spec.capacity,"装备水样补充" if target.kind=="trough" else "装备谷穗补充"]
 			if target.kind=="planter":
 				var plot=v.field.gardens.get(target.key,{})
 				if plot.is_empty(): return text+" · 装备种子播种"
-				return text+" · 生长%.0f%% / 湿度%.0f%% · %s" % [plot.growth*100,plot.moisture*100,"E 收获" if plot.growth>=1 else ("需要浇水" if plot.moisture<0.25 else "正在生长")]
+				return text+" · 生长%.0f%% / 湿度%.0f%% · %s" % [plot.growth*100,plot.moisture*100,"E 收获" if plot.growth>=1 else ("需要浇水" if plot.moisture<0.25 else ("叶尖受损，停止追加肥料" if v.organics.injury(target.key)>0.15 else ("补肥生长中" if v.organics.growth_factor(target.key)>1 else "正在生长")))]
 			return text+" · 装备拆卸锤可收回"
 		"creature": return text+" · 血量%.0f%% · %s" % [target.health*100,v.combat.reaction(target.entity)]
 		"animal": return text+" · 健康%.0f%% · %s" % [target.health*100,"观察水质与溶氧" if target.fish else "装备野果喂食"]

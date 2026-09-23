@@ -17,6 +17,8 @@ var nature=Nature.new()
 var combat=Combat.new()
 const Ranch=preload("res://scripts/river_ranch.gd")
 var ranch=Ranch.new()
+const Organics=preload("res://scripts/river_organics.gd")
+var organics=Organics.new()
 var actor: Dictionary={}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_v2.json"))
 var world: Dictionary={}
@@ -109,7 +111,8 @@ func advance(seconds: float) -> void:
 
 func _step() -> void:
 	nature.tick(construction.terrain)
-	field.tick(world,construction)
+	field.tick(world,construction,organics)
+	organics.tick(field,construction)
 	settlement.tick(world,construction)
 	var ds=float(rules.clock.day_seconds)
 	var changed_season=int(world.elapsed)%(int(ds)*int(rules.clock.season_days))==0
@@ -264,7 +267,8 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 	return "已消耗1份库存，将%s送达%s" % [p.name,r.name]
 
 func serialize() -> Dictionary:
-	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize()}
+	organics.prune_empty(construction)
+	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize()}
 
 func _number(v,lo: float,hi: float,whole: bool=false) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
@@ -347,6 +351,9 @@ func restore(data) -> bool:
 	if data.has("field") and not restored_field.restore(data.field,restored_construction,int(w.elapsed)): return false
 	var restored_ranch=Ranch.new()
 	if data.has("ranch") and not restored_ranch.restore(data.ranch,restored_construction,int(w.elapsed),restored_settlement.people): return false
+	var restored_organics=Organics.new()
+	if data.has("organics") and not restored_organics.restore(data.organics,restored_construction): return false
+	organics=restored_organics
 	ranch=restored_ranch
 	field=restored_field; restored_construction.occupied=field.gardens
 	inventory=restored_inventory

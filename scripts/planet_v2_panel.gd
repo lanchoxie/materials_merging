@@ -96,7 +96,7 @@ func setup(model) -> void:
 	right_panel=UI.box(self,Rect2(976,99,436,740)); var col=UI.column(right_panel,10)
 	info=UI.paragraph("",17,UI.MINT); col.add_child(info)
 	var nav=GridContainer.new(); nav.columns=4; nav.add_theme_constant_override("h_separation",5); col.add_child(nav)
-	for entry in [["observe","生命"],["bag","背包"],["explore","远行"],["build","搭建"],["ranch","村庄"],["era","时代"],["journal","年鉴"]]:
+	for entry in [["observe","生命"],["bag","背包"],["explore","远行"],["build","搭建"],["ranch","村庄"],["era","时代"],["journal","年鉴"],["organics","配料"]]:
 		var b=UI.button(entry[1],_tab.bind(entry[0])); b.size_flags_horizontal=Control.SIZE_EXPAND_FILL; nav.add_child(b); tabs[entry[0]]=b
 		b.add_theme_font_size_override("font_size",14); b.custom_minimum_size.x=82
 	scroll=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; col.add_child(scroll)
@@ -221,6 +221,10 @@ func _use_item(id: String,alternate: String="") -> void:
 	elif type=="plant":
 		if view.first_person and alternate not in ["reed","region"]: _act("v2_field_plant")
 		else: _act("v2_plant",{"crop":alternate if alternate=="reed" else "grain"})
+	elif type=="organic_solution":
+		_act("organic_apply",{"id":action.id,"token":state.planet.shipment_serial})
+	elif type=="organic_sample" or (type=="sample" and target.get("kind")=="mixing_tank" and alternate!="deploy"):
+		_act("organic_add",{"batch_id":action.batch_id,"token":state.planet.shipment_serial})
 	elif type=="sample":
 		var local=view.first_person and alternate!="deploy" and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree")
 		_act("v2_field_water" if local else "v2_deploy_sample",{"batch_id":action.batch_id,"region_id":selected_region,"token":state.planet.shipment_serial})
@@ -232,7 +236,9 @@ func _use_item(id: String,alternate: String="") -> void:
 		var local=view.first_person and alternate!="deploy" and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree") and action.recipe=="standard_water_crate"
 		_act("v2_field_water" if local else "v2_deploy_product",{"product_id":product_id,"region_id":selected_region,"token":state.planet.shipment_serial})
 	elif type=="collect":
-		if target.has("entity") or target.get("kind") in ["trough","feeder"]:
+		if target.get("kind")=="mixing_tank":
+			show_details=true; _exploration_layout(); _tab("organics"); _live()
+		elif target.has("entity") or target.get("kind") in ["trough","feeder"]:
 			show_details=true; _exploration_layout(); _tab("ranch"); message=preload("res://scripts/river_ranch_panel.gd").describe(state.planet.v2,target).split("\n")[0]; _live()
 		else: _act("v2_field_collect")
 	elif type=="feed": _act("v2_field_feed",{"resource":action.resource})
@@ -346,7 +352,7 @@ func _key() -> String:
 	var life=[]; var crops=[]
 	for a in r.animals: life.append(a.id)
 	for c in r.crops: crops.append([c.crop,c.ready])
-	return str([selected_region,section,_in_wilderness(),v.population.enabled,stock,state.planet.products,life,crops,r.buildings,r.enclosed,v.world.events.size(),v.world.events[0],v.world.seeds,v.world.food,v.construction.revision,v.field.revision,v.ranch.revision,v.settlement.era])
+	return str([selected_region,section,_in_wilderness(),v.population.enabled,stock,state.planet.products,life,crops,r.buildings,r.enclosed,v.world.events.size(),v.world.events[0],v.world.seeds,v.world.food,v.construction.revision,v.field.revision,v.ranch.revision,v.organics.revision,v.settlement.era])
 
 func _redraw(reset_scroll: bool=false) -> void:
 	if body==null: return
@@ -358,6 +364,7 @@ func _redraw(reset_scroll: bool=false) -> void:
 		"explore": _journey()
 		"journal": _journal()
 		"build": _building()
+		"organics": preload("res://scripts/river_organic_panel.gd").build(self)
 		"ranch": preload("res://scripts/river_ranch_panel.gd").build(self)
 		"era": _era()
 	_live()
@@ -509,7 +516,9 @@ func _sync() -> void:
 	v.construction.obstacles=view.walker.barriers.duplicate()
 	view.walker.construction=v.construction
 	view.construction_view.sync(v.construction,at)
-	view.field_view.sync(v.field,v.construction,at,int(v.world.elapsed))
+	view.field_view.sync(v.field,v.construction,at,int(v.world.elapsed),v.organics)
+	view.organic_view.sync(v.organics,v.construction,at)
+	if section=="organics": preload("res://scripts/river_organic_panel.gd").live(self)
 	view.settlement_view.ranch=v.ranch
 	view.settlement_view.construction=v.construction
 	view.settlement_view.paused=v.world.paused

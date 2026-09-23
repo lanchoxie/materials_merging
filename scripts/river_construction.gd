@@ -122,7 +122,7 @@ func interact(mode: String, kind: String, products: Array, actor: Dictionary, re
 	if mode == "remove":
 		var k := str(hit.hit)
 		if k.is_empty(): return "这里没有自建构件；挖土请装备铲子"
-		if occupied.has(k): return "先收获种植箱里的作物，再拆回种植箱"
+		if occupied.has(k): return "先收获作物、用完土壤余肥，或清空设施余料，再拆回"
 		var rest := blocks.duplicate(); rest.erase(k)
 		if not connected(rest): return "上方或旁边还有依赖它的构件，请从边缘往回拆"
 		var b: Dictionary = blocks[k]; sources[b.source].remaining+=1; blocks.erase(k); revision+=1

@@ -164,6 +164,20 @@
         "fiber": 2
       },
       "description": "采集原料在工艺车间加工为1个木制饲草架。放置后需补充有限的水或谷穗，动物走近后使用；村民可从公共仓库搬运补给。"
+    },
+    "field_mixing_tank": {
+      "id": "field_mixing_tank",
+      "version": 1,
+      "name": "有机配料罐",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 28,
+      "natural_inputs": {
+        "timber": 2,
+        "stone": 3
+      },
+      "description": "2份木料和3份散石加工为1个配料罐。放在河湾后加入反应釜的尿素和水，分装后给种植箱施肥；少量与过量会有不同结果。"
     }
   }
 }

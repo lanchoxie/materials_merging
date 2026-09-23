@@ -39,7 +39,9 @@ func _run() -> void:
 	await press("暂停")
 	var elapsed=p.v2.world.elapsed; p.tick(2); check(elapsed==p.v2.world.elapsed,"pause button stops simulation")
 	await capture("v021-river-overview")
-	var point=panel.viewport_box.global_position+panel.view.camera.unproject_position(Vector3(10,2,-10))
+	await create_timer(0.4).timeout
+	var ground=panel.view.terrain.ground(Vector2(10,-10))
+	var point=panel.viewport_box.global_position+panel.view.camera.unproject_position(Vector3(10,ground,-10))
 	await game._test_pointer(point,true); await game._test_pointer(point,false)
 	check(p.v2.world.current_region=="highland","map click selects the projected terrain region")
 	await press("河畔草甸"); await press("近看")
@@ -47,7 +49,7 @@ func _run() -> void:
 	panel._tab("bag"); await process_frame
 	var coins=s.coins; var water=p.v2.region().water
 	panel.backpack.selected_id="sample:"+str(s.storage.batches[0].id); panel.backpack.refresh()
-	await press("在当前区域使用")
+	await press("投放当前区域")
 	check(p.v2.region().water>water and s.coins==coins,"UI deploys real sample without planet coin cost")
 	panel._close_backpack(); await process_frame
 	await press("生命"); await press("播谷物")

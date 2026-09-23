@@ -23,7 +23,7 @@ func _process(dt: float) -> void:
 	pulse_time-=dt; pulse.position.y+=dt*0.7; pulse.scale=Vector3.ONE*(0.5+pulse_time*3)
 	if pulse_time<=0: pulse.hide()
 
-func sync(field,c,at: Vector2,now: int) -> void:
+func sync(field,c,at: Vector2,now: int,organics=null) -> void:
 	var cell=Vector2i(floori(at.x/8),floori(at.y/8)); var key=str([cell,field.revision])
 	if key!=seen:
 		seen=key; var st=G.surface(material); var count=0
@@ -43,7 +43,7 @@ func sync(field,c,at: Vector2,now: int) -> void:
 		resource_mesh.mesh=st.commit() if count>0 else null
 	var signature=[]
 	for id in field.gardens:
-		var g=field.gardens[id]; signature.append([id,int(g.growth*12),int(g.moisture*8)])
+		var g=field.gardens[id]; signature.append([id,int(g.growth*12),int(g.moisture*8),int(organics.injury(id)*8) if organics!=null else 0])
 	key=str([cell,signature])
 	if key==crops_seen: return
 	crops_seen=key; var st=G.surface(material); var count=0
@@ -53,6 +53,7 @@ func sync(field,c,at: Vector2,now: int) -> void:
 		count+=1; G.cube(st,p,Vector3(0.80,0.02,0.8),Color("aa8a5b").lerp(Color("4e4033"),plot.moisture))
 		for i in range(4):
 			var h=0.06+plot.growth*0.65; var stem=p+Vector3((i%2)*0.4-0.2,h/2,(i/2)*0.4-0.2)
-			G.cube(st,stem,Vector3(0.10,h,0.10),Color("dec567") if plot.growth>=1 else Color("8bca68"))
+			G.cube(st,stem,Vector3(0.10,h,0.10),(Color("dec567") if plot.growth>=1 else Color("8bca68")).lerp(Color("a57445"),organics.injury(id) if organics!=null else 0))
+			if organics!=null and organics.injury(id)>0.15: G.cube(st,stem+Vector3(0.1,h*0.3,0),Vector3(0.22,0.07,0.14),Color("b38342"))
 			if plot.growth>0.55: G.cube(st,stem+Vector3(0,h/2,0),Vector3(0.18,0.15,0.18),Color("ead386"))
 	crops_mesh.mesh=st.commit() if count>0 else null

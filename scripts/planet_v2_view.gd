@@ -17,6 +17,7 @@ var stream
 var life_view
 var construction_view
 var settlement_view
+var organic_view
 var field_view
 var camera: Camera3D
 var terrain_root: Node3D
@@ -62,6 +63,7 @@ func _ready() -> void:
 	construction_view=preload("res://scripts/river_construction_view.gd").new(); construction_view.material=mat; terrain_root.add_child(construction_view)
 	settlement_view=preload("res://scripts/river_settlement_view.gd").new(); settlement_view.material=mat; settlement_view.terrain=terrain; terrain_root.add_child(settlement_view)
 	field_view=preload("res://scripts/river_field_view.gd").new(); field_view.material=mat; terrain_root.add_child(field_view)
+	organic_view=preload("res://scripts/river_organic_view.gd").new(); organic_view.material=mat; terrain_root.add_child(organic_view)
 	var ring=TorusMesh.new(); ring.inner_radius=4.8; ring.outer_radius=4.9; ring.rings=32; ring.ring_segments=4
 	marker=MeshInstance3D.new(); marker.mesh=ring; var m=StandardMaterial3D.new(); m.albedo_color=Color("f5d789"); m.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED; marker.material_override=m; add_child(marker)
 	_camera(1.0)
