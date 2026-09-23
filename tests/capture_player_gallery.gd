@@ -44,4 +44,3 @@ func _cabin(s) -> void:
 		v.actor={"eye":Vector3(7,3.5,z),"feet":Vector3(7,1.88,z+2),"direction":Vector3.LEFT}; s.planet.command(s,"v2_build",{"kind":"roof","recipe":"field_roof"})
 	preload("res://scripts/river_miniatures.gd").pack(v.construction,{"type":"block","key":v.construction.blocks.keys()[0]})
 	s.planet.command(s,"v2_mini_exhibit",{"id":"1","plot":3}); v.active=false
-

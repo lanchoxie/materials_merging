@@ -114,4 +114,3 @@ func _initialize() -> void:
 	check(rv.nature.chunk_versions.size()<=9,"one terrain/tree edit invalidates bounded neighboring chunks")
 	real.close_science(); reload.close_science()
 	print("SANDBOX12: %d checks, %d failures" % [checks,failures.size()]); s.close_science(); quit(0 if failures.is_empty() else 1)
-
