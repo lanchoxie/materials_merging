@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "note": "Ordered goal track (v0.23). stat = key in scripts/milestones.gd STATS; reward keys: coins, catalysts, materials [星砂, 晶露, 合金片].",
+  "milestones": [
+    {"id": "tune_80", "title": "调一调结构", "hint": "进入原子工作台，把几何匹配拖到 80% 以上", "stat": "best_fit", "target": 0.8, "reward": {"coins": 20}},
+    {"id": "harvest_1", "title": "第一次收获", "hint": "点一下亮起的反应炉，或按「收获」", "stat": "harvests", "target": 1, "reward": {"coins": 15}},
+    {"id": "crate_1", "title": "打开探索盲盒", "hint": "第一个探索盲盒免费", "stat": "crates", "target": 1, "reward": {"materials": [1, 0, 0]}},
+    {"id": "harvest_5", "title": "小有收成", "hint": "累计收获 5 份产物", "stat": "harvests", "target": 5, "reward": {"coins": 40}},
+    {"id": "fit_93", "title": "两星结构", "hint": "几何匹配达到 93%（★★）", "stat": "best_fit", "target": 0.93, "reward": {"coins": 60}},
+    {"id": "plots_6", "title": "开拓新土地", "hint": "选择岛边的空地块并开拓", "stat": "plots", "target": 6, "reward": {"coins": 60}},
+    {"id": "people_2", "title": "岛上的新伙伴", "hint": "在科研小镇招募第二位伙伴，或开探索盲盒碰碰运气", "stat": "people", "target": 2, "reward": {"coins": 50}},
+    {"id": "reactors_2", "title": "第二座反应炉", "hint": "在新土地上建造反应炉", "stat": "reactors", "target": 2, "reward": {"coins": 80, "materials": [0, 1, 0]}},
+    {"id": "deliver_1", "title": "第一笔订单", "hint": "访客来时，把库存卖给出价最高的人", "stat": "deliveries", "target": 1, "reward": {"coins": 60}},
+    {"id": "discover_2", "title": "新的结构", "hint": "换一种配方，发现第二种分子", "stat": "discovered", "target": 2, "reward": {"catalysts": 1}},
+    {"id": "level_2", "title": "炉子升级", "hint": "用金币和催化晶把一座反应炉升到 Lv.2", "stat": "max_level", "target": 2, "reward": {"coins": 120}},
+    {"id": "fit_98", "title": "完美契合", "hint": "几何匹配达到 98%（★★★）", "stat": "best_fit", "target": 0.98, "reward": {"catalysts": 1}},
+    {"id": "harvest_25", "title": "丰收的小岛", "hint": "累计收获 25 份产物", "stat": "harvests", "target": 25, "reward": {"coins": 150}},
+    {"id": "reactors_3", "title": "三炉齐开", "hint": "拥有三座反应炉", "stat": "reactors", "target": 3, "reward": {"coins": 200}},
+    {"id": "deliver_5", "title": "回头客", "hint": "累计完成 5 笔订单", "stat": "deliveries", "target": 5, "reward": {"coins": 150, "catalysts": 1}},
+    {"id": "discover_4", "title": "结构收藏家", "hint": "发现四种不同的分子结构", "stat": "discovered", "target": 4, "reward": {"coins": 250, "materials": [1, 1, 0]}},
+    {"id": "plots_9", "title": "小岛成形", "hint": "开拓到 9 块土地", "stat": "plots", "target": 9, "reward": {"coins": 300}},
+    {"id": "level_3", "title": "精炼之炉", "hint": "把一座反应炉升到 Lv.3", "stat": "max_level", "target": 3, "reward": {"coins": 300, "catalysts": 1}},
+    {"id": "discover_7", "title": "图鉴集齐", "hint": "集齐七种参考结构", "stat": "discovered", "target": 7, "reward": {"coins": 500}},
+    {"id": "harvest_100", "title": "原子工坊主", "hint": "累计收获 100 份产物", "stat": "harvests", "target": 100, "reward": {"coins": 500, "materials": [1, 1, 1]}}
+  ]
+}

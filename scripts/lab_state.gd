@@ -27,6 +27,7 @@ const StructureSandbox = preload("res://scripts/structure_sandbox.gd")
 const StructureStart = preload("res://scripts/structure_start.gd")
 const SandboxReference = preload("res://scripts/sandbox_reference.gd")
 const SciencePipeline = preload("res://scripts/science_pipeline.gd")
+const Milestones = preload("res://scripts/milestones.gd")
 var economy = Economy.new()
 var sandbox: RefCounted
 var science: RefCounted
@@ -55,6 +56,10 @@ var upgrades: int = 0
 var engineers: int = 1
 var scientists: int = 0
 var crate_count: int = 0
+## v0.23 goal track: ids of claimed milestones (progress itself is read from live state).
+var milestones_claimed: Array = []
+## Unix time of the last save; drives the capped offline catch-up.
+var saved_at: int = 0
 var discovered: Array = []
 var plots: Array = []
 var reactors: Array = []
@@ -564,6 +569,10 @@ func tick(delta: float):
 	_production_clock=0.0
 	market.tick(delta,economy,templates,island_rules.visitors,contracts.offers(self))
 	visitor_cooldown = maxf(0.0, visitor_cooldown - delta)
+	_produce(delta)
+
+## Reactor construction and output for `delta` seconds (shared by live ticks and offline catch-up).
+func _produce(delta: float) -> void:
 	for r in reactors:
 		var active_time = delta
 		if float(r.build_left) > 0.0:
@@ -591,6 +600,26 @@ func tick(delta: float):
 			r.progress = maxf(0,float(r.progress)-produced)
 			r.stock = mini(1000000, int(r.stock) + produced)
 			r.pending = mini(1000000, int(r.get("pending", 0)) + produced)
+
+const OFFLINE_MAX_SECONDS = 7200
+const OFFLINE_RATE = 0.5
+const OFFLINE_MIN_SECONDS = 60
+
+## Capped offline progress: reactors (only) run for half the time away, up to two hours.
+## Payroll, campus life and the planet stay paused, matching "离线不计薪".
+func offline_catch_up(now: int) -> Dictionary:
+	if saved_at <= 0 or now - saved_at < OFFLINE_MIN_SECONDS: return {}
+	var away := mini(now - saved_at, 1000000000)
+	var simulated := minf(float(away), OFFLINE_MAX_SECONDS) * OFFLINE_RATE
+	var units_before := 0; var coins_before := 0.0
+	for r in reactors: units_before += int(r.pending); coins_before += float(r.stored_coins)
+	var left := simulated
+	while left > 0.0:
+		_produce(minf(left, 10.0)); left -= 10.0
+	saved_at = now
+	var units := 0; var stored := 0.0
+	for r in reactors: units += int(r.pending); stored += float(r.stored_coins)
+	return {"away": away, "simulated": simulated, "capped": away > OFFLINE_MAX_SECONDS, "units": units - units_before, "coins": stored - coins_before}
 
 func click_energy() -> String:
 	coins = minf(100000000.0, coins + 2.0)
@@ -1013,7 +1042,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 21, "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 22, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1075,8 +1104,12 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 21, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 22, true):
 		return false
+	if int(data.version)>=22:
+		if not data.get("milestones_claimed") is Array or not _number_ok(data.get("saved_at"),0,4102444800,true): return false
+		for id in data.milestones_claimed:
+			if not id is String: return false
 	if int(data.version)>=11 and not PlanetProgram.new().restore(data.get("planet"),self): return false
 	if int(data.version)==12 and data.planet.version!=2: return false
 	if int(data.version)==13 and data.planet.version!=3: return false
@@ -1324,6 +1357,14 @@ func load_game(path: String = "") -> bool:
 			r.stock=waiting; r.pending=waiting
 		market.spawn(economy,templates,island_rules.visitors)
 		storage.finds["3"]="crystal_fox"
+	milestones_claimed=[]
+	if int(data.version)>=22:
+		for id in data.milestones_claimed: milestones_claimed.append(str(id))
+		saved_at=int(data.saved_at)
+	else:
+		# Goals already reached before v0.23 are marked done without paying them out again.
+		saved_at=0
+		Milestones.settle_existing(self)
 	return true
 
 

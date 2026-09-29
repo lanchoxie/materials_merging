@@ -2,7 +2,7 @@
   "version": 1,
   "production": {
     "seconds_per_unit": 24,
-    "base_capacity": 5,
+    "base_capacity": 12,
     "capacity_per_level": 2,
     "level_speed_bonus": 0.2,
     "drop_probability": 0.2,
