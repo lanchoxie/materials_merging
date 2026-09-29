@@ -23,13 +23,13 @@ Goal: same systems, 10× the feel. Lowest risk, highest payoff.
 - ✅ Settings: sound toggle button in the top bar.
 - ✅ Tests: new `tests/test_juice.gd` (autoloads load, sounds exist & import, combo math, no errors).
 
-## v0.23.0 "Goals" — always know what's next  ⬜
-- Data-driven milestone track (`data/milestones.json`) with rewards and an in-world pointer arrow.
-- Achievements ("firsts") with a toast + Codex page.
-- Reactor buffer 5 → 12 base; capped offline catch-up (e.g. 2 h at 50 %), "welcome back" summary.
-- Edits no longer wipe stock (old batch is kept, tagged with its old fingerprint).
-- Collapse science caveats in the HUD into ⓘ tooltips.
-- Save v22 + migration test.
+## v0.23.0 "Goals" — always know what's next  ✅
+- ✅ Data-driven milestone track (`data/milestones.json`, 20 goals) with rewards, quest-bar progress and a claim button.
+- ✅ Goal list dialog (doubles as the "firsts" record; a separate achievement page was folded into it).
+- ✅ Reactor buffer 5 → 12 base; capped offline catch-up (2 h at 50 %), "welcome back" summary.
+- ✅ Edits no longer wipe stock (this was already true: the old batch goes to the toolbox).
+- ⏭ Collapse science caveats in the HUD into ⓘ tooltips → moved to v0.25 "Looks".
+- ✅ Save v22 + migration test (reached goals settle without payout).
 
 ## v0.24.0 "Discovery" — collect the periodic table  ⬜
 - Molecule Codex with cards (rarity by complexity), first-synthesis reveal animation + fanfare.
@@ -41,6 +41,7 @@ Goal: same systems, 10× the feel. Lowest risk, highest payoff.
 - Water shader strip for the river & island sea; glass/fresnel shader for reactors.
 - Tree sway vertex shader; limbed animals/villagers with walk swing.
 - Fullscreen 3D + overlay HUD for the river; touch tap-to-interact.
+- Collapse science caveats in the HUD into ⓘ tooltips (moved from v0.23).
 - River perf: per-chunk tree cache, remesh only dirty chunk, incremental island LOD.
 
 ## v0.26.0 "Frontier with purpose"  ⬜

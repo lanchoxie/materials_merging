@@ -65,6 +65,10 @@ var feedback=IslandFeedback.new()
 var pointer_position: Vector2=Vector2(720,450)
 var shown_coins: float=-1.0
 var sound_button: Button
+const Milestones=preload("res://scripts/milestones.gd")
+var goal_button: Button
+var goal_bar: ProgressBar
+var welcome: Dictionary={}
 
 func _ready() -> void:
 	if OS.has_feature("web"):
@@ -77,7 +81,7 @@ func _ready() -> void:
 	snapshot_mode = "--capture" in OS.get_cmdline_user_args()
 	visual_test = "--visual-test" in OS.get_cmdline_user_args() or "--release-ui-test" in OS.get_cmdline_user_args()
 	if not snapshot_mode and not visual_test:
-		state.load_game()
+		if state.load_game(): welcome=state.offline_catch_up(int(Time.get_unix_time_from_system()))
 	theme = UI.make_theme()
 	_build_ui()
 	building_drag.setup(self)
@@ -94,6 +98,8 @@ func _ready() -> void:
 		_run_visual_test.call_deferred()
 	if "--river-preview" in OS.get_cmdline_user_args() and not visual_test and not snapshot_mode:
 		_show_planet_v2.call_deferred()
+	elif not welcome.is_empty():
+		_show_welcome.call_deferred(welcome)
 
 func _build_ui() -> void:
 	var bg = ColorRect.new()
@@ -144,12 +150,13 @@ func _build_ui() -> void:
 	_build_toolbar()
 	order_bubbles=OrderBubbles.new(); add_child(order_bubbles); order_bubbles.setup(self)
 	toast_panel = UI.box(self, Rect2(365, 710, 650, 60), Color("29494a"))
+	toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toast_label = UI.paragraph("", 15, UI.TEXT)
 	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.22 手感更新  ·  音效 · 连击 · 完美契合 · 点炉收获", 11, UI.MUTED)
+	save_label = UI.label("v0.23 小岛目标  ·  20 个目标 · 离线收益 · 炉仓 12 份", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -239,9 +246,34 @@ func _build_world() -> void:
 	var q = UI.row(quest,14)
 	q.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	q.add_child(UI.label("↗",25,UI.GOLD))
+	# The claim button sits left of the toast's footprint so it stays visible after every action.
+	goal_button = UI.button("领取", _claim_goal, true)
+	goal_button.custom_minimum_size.x = 66
+	goal_button.hide()
+	q.add_child(goal_button)
+	var goal_column = VBoxContainer.new()
+	goal_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	goal_column.alignment = BoxContainer.ALIGNMENT_CENTER
+	goal_column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	goal_column.add_theme_constant_override("separation", 5)
+	q.add_child(goal_column)
 	quest_label = UI.paragraph("",14)
 	quest_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	q.add_child(quest_label)
+	goal_column.add_child(quest_label)
+	goal_bar = ProgressBar.new()
+	goal_bar.show_percentage = false
+	goal_bar.max_value = 1.0
+	goal_bar.step = 0.0
+	goal_bar.custom_minimum_size.y = 5
+	goal_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for part in [["background", Color("0f2029")], ["fill", UI.GOLD]]:
+		var bar_style: StyleBoxFlat = UI.style(part[1], 3, part[1])
+		bar_style.set_content_margin_all(0)
+		goal_bar.add_theme_stylebox_override(part[0], bar_style)
+	goal_column.add_child(goal_bar)
+	var all_goals = UI.button("目标", _show_goals)
+	all_goals.custom_minimum_size.x = 66
+	q.add_child(all_goals)
 
 func _build_toolbar() -> void:
 	var panel = UI.box(self, Rect2(24,798,1392,78))
@@ -503,6 +535,71 @@ func _sfx() -> Node:
 func _ambience(sound: String) -> void:
 	if _sfx(): _sfx().ambience(sound)
 
+## Goal track in the quest bar. A finished goal always wins the bar; otherwise the planet
+## journey (once joined) keeps its place, and the goal in progress shows with its bar.
+func _update_goal() -> void:
+	var goal: Dictionary = Milestones.current(state)
+	var ready: bool = not goal.is_empty() and Milestones.done(state, goal)
+	var was_ready: bool = goal_button.visible
+	goal_button.visible = ready
+	goal_bar.visible = not goal.is_empty()
+	if ready and not was_ready:
+		var fx = get_node_or_null("/root/Fx")
+		if fx: fx.punch(goal_button, 0.25, 0.4)
+	var count := "目标 %d/%d" % [Milestones.claimed_count(state) + (1 if not goal.is_empty() else 0), Milestones.all().size()]
+	if ready:
+		quest_label.text = "%s · 已完成「%s」 · 领取 %s" % [count, goal.title, Milestones.reward_text(goal)]
+		goal_bar.value = 1.0
+	elif state.planet.joined:
+		var journey=preload("res://scripts/material_journey.gd").next(state)
+		quest_label.text="材料路线 %d/6 · %s · 邮箱查看下一步" % [journey.index,journey.title]
+		goal_bar.visible = false
+	elif goal.is_empty():
+		quest_label.text = "所有目标都已完成 · 继续收集结构图鉴，或穿过光桥去河湾探索"
+	else:
+		quest_label.text = "%s · %s：%s  (%s)" % [count, goal.title, goal.hint, Milestones.progress_text(state, goal)]
+		var value := Milestones.stat(state, str(goal.stat))
+		goal_bar.value = clampf(value / maxf(float(goal.target), 0.0001), 0.0, 1.0)
+
+func _claim_goal() -> void:
+	var goal: Dictionary = Milestones.current(state)
+	if goal.is_empty() or not Milestones.done(state, goal): return
+	if is_instance_valid(goal_button): pointer_position = goal_button.get_global_rect().get_center()
+	_action(Milestones.claim(state))
+
+func _show_goals() -> void:
+	var body = _dialog("小岛目标", "按顺序完成目标，领取金币、建材与催化晶。进度随时从小岛实况读取。")
+	var current: Dictionary = Milestones.current(state)
+	for goal in Milestones.all():
+		var claimed: bool = str(goal.id) in state.milestones_claimed
+		var is_current: bool = not current.is_empty() and goal.id == current.id
+		var row = PanelContainer.new()
+		row.add_theme_stylebox_override("panel", UI.style(Color("1d3a45") if is_current else Color("152a33"), 12))
+		body.add_child(row)
+		var h = UI.row(row, 12)
+		var mark = "✓" if claimed else ("★" if is_current else "·")
+		h.add_child(UI.label(mark, 20, UI.MINT if claimed else (UI.GOLD if is_current else UI.MUTED)))
+		var text = UI.column(h, 2)
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		text.add_child(UI.label(str(goal.title), 17, UI.TEXT if claimed or is_current else UI.MUTED))
+		text.add_child(UI.paragraph("%s · 奖励 %s" % [goal.hint, Milestones.reward_text(goal)], 13))
+		if is_current:
+			if Milestones.done(state, goal): h.add_child(UI.button("领取", func(): _close_modal(); _claim_goal(), true))
+			else: h.add_child(UI.label(Milestones.progress_text(state, goal), 15, UI.GOLD))
+
+func _show_welcome(away: Dictionary) -> void:
+	if is_instance_valid(modal) or away.is_empty(): return
+	var minutes := int(float(away.away) / 60.0)
+	var span := "%d 小时 %d 分" % [minutes / 60, minutes % 60] if minutes >= 60 else "%d 分钟" % minutes
+	var body = _dialog("欢迎回来！", "你离开了 %s。离线时反应炉以半速运转（最多计 2 小时），伙伴不工作也不领薪。" % span, false, 340)
+	body.add_child(UI.label("反应炉新产出  %d 份" % int(away.units), 22, UI.MINT))
+	body.add_child(UI.label("待收金币  +%d" % int(away.coins), 22, UI.GOLD))
+	if bool(away.capped): body.add_child(UI.paragraph("离开超过 2 小时的部分不计入；满仓的反应炉会暂停，记得常回来收获。", 13))
+	elif int(away.units) == 0: body.add_child(UI.paragraph("反应炉已满仓，收获后才会继续生产。", 13))
+	body.add_child(UI.button("去收获", _close_modal, true))
+	var sfx = _sfx()
+	if sfx: sfx.play("discovery")
+
 func _toggle_sound() -> void:
 	if _sfx() == null: return
 	var on: bool = _sfx().toggle()
@@ -531,15 +628,7 @@ func _update_labels() -> void:
 		for c in side.get_children():
 			if c is Button and c.text.begins_with("进入原子"):
 				c.disabled = r.build_left > 0
-	var steps = ["第一步：进入原子工作台，移动彩球，观察金币 / 秒的变化。", "下一步：收获产物，打开免费探索箱，招募第二位工程师。", "下一步：开拓土地，建一座新反应炉，发现不同结构。", "下一步：完成精品订单，获得催化晶，升级你的反应炉。"]
-	var step = 0
-	if state.total_harvests > 0: step = 1
-	if state.engineers > 1: step = 2
-	if state.reactors.size() > 1: step = 3
-	quest_label.text = steps[step]
-	if state.planet.joined:
-		var journey=preload("res://scripts/material_journey.gd").next(state)
-		quest_label.text="材料路线 %d/6 · %s · 邮箱查看下一步" % [journey.index,journey.title]
+	_update_goal()
 	for entry in market_rows:
 		if is_instance_valid(entry.button):
 			var quote: Dictionary = state.delivery_quote(entry.index)
@@ -580,6 +669,7 @@ func _action(message: String) -> void:
 	_toast(message)
 	_sync_world()
 	_rebuild_sidebar()
+	_update_goal()
 	if not snapshot_mode and not visual_test:
 		state.save_game()
 
@@ -603,7 +693,7 @@ func _close_modal() -> void:
 	shop_buttons.clear()
 	purchase_confirm_button = null
 
-func _dialog(title: String, subtitle: String, wide: bool = false) -> VBoxContainer:
+func _dialog(title: String, subtitle: String, wide: bool = false, height: int = 668) -> VBoxContainer:
 	_close_modal()
 	modal = Control.new()
 	modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -613,7 +703,7 @@ func _dialog(title: String, subtitle: String, wide: bool = false) -> VBoxContain
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	modal.add_child(dim)
 	var w = 930 if wide else 600
-	var panel = UI.box(modal,Rect2((1440-w)/2,106,w,668))
+	var panel = UI.box(modal,Rect2((1440-w)/2,106 if height>=668 else (900-height)/2,w,height))
 	var outer = UI.column(panel,13)
 	var head = UI.row(outer)
 	var label = UI.label(title,27,UI.MINT)

@@ -30,6 +30,45 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.23.0 "Goals": always know what's next
+Save format **v22** (adds `milestones_claimed` and `saved_at`). v1–v21 saves still load; goals the player has
+already reached are marked done **without** paying out again, so old islands don't get a windfall.
+
+**Goal track** (`data/milestones.json` and `scripts/milestones.gd`)
+- 20 ordered goals: tune, harvest, crate, stars, expand, hire, build, deliver, discover, upgrade, perfect fit, and so on.
+  Each pays coins, building materials or catalysts.
+- Progress is read live from state; only the ids of claimed goals are saved, so nothing can drift.
+- The quest bar shows goal n/20 with a gold progress bar. A finished goal shows a **领取** button (placed
+  left of the toast so it's never covered) and gets its own feedback: banner, fanfare, coins flying to the counter.
+- A **目标** button opens the full list (✓ done / ★ current / · upcoming).
+- After material-journey players (planet joined) claim everything that's ready, the bar goes back to the journey text.
+
+**Idle loop**
+- Reactor buffer: 5 → **12** base units (+2 per level, unchanged). A reactor now runs ~5 min unattended, not 2.
+- **Offline catch-up**: on load, reactors run for half the time away, capped at 2 hours. They still stop when full.
+  Payroll, campus and planet stay paused, keeping the existing promise "离线不计薪".
+  A compact **欢迎回来！** dialog summarizes the time away, new units and coins waiting.
+
+**Fixes**
+- The toast no longer swallows clicks (it covered part of the world view and the quest bar for 4 s after
+  every action).
+- `_dialog()` takes an optional height for short dialogs.
+- Coin-burst callbacks hold the coin counter weakly. In v0.22.0, coins still in flight when the main scene was
+  freed (tests, quitting) raised a script error. There was no gameplay impact, but it showed up in `test_material_visitor_ui`.
+
+**Test run:** 41 pass / 17 fail. The 17 failures are the same tests with the same error lines as the baseline
+(diffed per test). `test_planet_retirement` only fails in a fresh worktree.
+
+**Already true, dropped from the plan:** "edits no longer wipe stock". `apply_structure_edit` already collects
+the old batch into the toolbox before changing the structure.
+
+**Tests**
+- New `tests/test_goals.gd` (92 checks): data sanity, ordered claiming and no double payout, v22 round-trip,
+  validation, v21 migration without payout, offline half-speed/cap/no payroll/idempotence, quest bar, claim
+  button, dialogs.
+- `test_island_loop` now reads the capacity from rules instead of the literal 5; `test_state` expects save v22.
+- `dev/capture_goals.gd` screenshots the quest bar, goal list and welcome dialog.
+
 ## v0.22.0 "Juice": the island finally feels alive
 Save format is unchanged (still v21), so old saves load as-is.
 

@@ -36,6 +36,7 @@ static func looks_like_failure(message: String) -> bool:
 ## Classify the change since the last capture. Pure, so tests can check it without a UI.
 static func classify(a: Dictionary, b: Dictionary, message: String) -> String:
 	if a.is_empty(): return "none"
+	if message.begins_with("目标达成"): return "goal"
 	if b.levels > a.levels: return "upgrade"
 	if b.reactors > a.reactors: return "build"
 	if b.deliveries > a.deliveries: return "sell"
@@ -84,6 +85,13 @@ func react(game, message: String) -> String:
 			if gained > 0:
 				_coins_to_counter(game, fx, sfx, origin, coin_target, gained)
 			_material_pops(fx, origin, before, after)
+		"goal":
+			sfx.play("discovery")
+			fx.banner("目标达成！", message.get_slice("·", 0).trim_prefix("目标达成").strip_edges(), Fx.GOLD)
+			_coins_to_counter(game, fx, sfx, origin, coin_target, gained)
+			_material_pops(fx, origin, before, after)
+			if after.catalysts > before.catalysts:
+				fx.pop_text(origin + Vector2(0, -60), "催化晶 +%d" % (after.catalysts - before.catalysts), Fx.LILAC, 24, 80.0, 0.3)
 		"empty":
 			sfx.play("error", 1.1)
 		"sell":
@@ -137,10 +145,13 @@ func _coins_to_counter(game, fx, sfx, origin: Vector2, target: Vector2, amount: 
 	fx.pop_text(origin + Vector2(0, -28), "+%d" % amount, Fx.GOLD, 28 if amount < 100 else 34)
 	var tokens := clampi(int(sqrt(float(amount)) * 0.9), 3, 12)
 	var arrived := [0]
+	# Coins can still be in flight when the scene closes: hold the counter weakly, never the game.
+	var counter_ref: WeakRef = weakref(game.gold_label)
 	fx.burst(origin, target, tokens, Fx.GOLD, func():
 		arrived[0] += 1
 		sfx.play("coin", 1.0 + arrived[0] * 0.045, -3.0)
-		fx.punch(game.gold_label, 0.1))
+		var counter = counter_ref.get_ref()
+		if counter: fx.punch(counter, 0.1))
 
 func _material_pops(fx, origin: Vector2, a: Dictionary, b: Dictionary) -> void:
 	var delay := 0.2
