@@ -9,6 +9,7 @@ extends RefCounted
 const MAX_ATOMS: int = 64
 const MAX_COORDINATE: float = 20.0
 const MAX_NAME_LENGTH: int = 48
+const StructureStart = preload("res://scripts/structure_start.gd")
 
 var elements: Dictionary = {}
 var baselines: Dictionary = {}
@@ -41,7 +42,7 @@ func new_structure(name: String = "未命名样品", baseline_id: String = "") -
 	if baselines.has(baseline_id):
 		var source: Dictionary = baselines[baseline_id]
 		result.atoms = source.get("atoms", []).duplicate()
-		result.positions = source.get("positions", []).duplicate(true)
+		result.positions = StructureStart.positions(source.get("positions", []), "sandbox:" + baseline_id)
 		result.bonds = source.get("bonds", []).duplicate(true)
 	return result
 

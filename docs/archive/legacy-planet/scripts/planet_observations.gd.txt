@@ -1,0 +1,65 @@
+extends RefCounted
+## Cross-chapter observation cards. Values are scoped to this game's model or ledger.
+var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_observations.json"))
+
+func fresh() -> Array:
+	return []
+
+func _number(value) -> float:
+	return float(value) if value is int or value is float else 0.0
+
+func _value(w: Dictionary, path: String) -> float:
+	match path:
+		"zones_target": return float(w.get("zones",[]).reduce(func(sum,z): return sum+_number(z.get("target",0)),0.0))
+		"zones_water": return float(w.get("zones",[]).reduce(func(sum,z): return sum+_number(z.get("water",0)),0.0))
+		"ecology_microbe_oxygen": return _number(w.get("ecology",{}).get("regions",{}).get("microbe",{}).get("oxygen",0))
+		"ecology_microbe_sensitive": return _number(w.get("ecology",{}).get("regions",{}).get("microbe",{}).get("sensitive",0))
+		"ecology_fish_dead": return _number(w.get("ecology",{}).get("regions",{}).get("fish",{}).get("dead",0))
+		"watershed_nutrient":
+			var x=w.get("watershed",{}); var total=_number(x.get("source",0))+_number(x.get("added",0))
+			for r in x.get("regions",{}).values(): total+=_number(r.get("nutrient",0))+_number(r.get("algae",0))+_number(r.get("detritus",0))
+			return total
+		"watershed_waste": return _number(w.get("watershed",{}).get("waste",0))
+		"village_food": return _number(w.get("village",{}).get("stock",{}).get("food",0))
+		"habitat_alive":
+			var alive=0.0
+			for animal in w.get("habitat",{}).get("animals",[]): alive+=1.0 if bool(animal.get("alive",false)) else 0.0
+			return alive
+		"habitat_dead": return _number(w.get("habitat",{}).get("kills",0))
+		"industry_electric": return _number(w.get("industry",{}).get("electric_J",0))
+		"industry_useful_heat": return _number(w.get("industry",{}).get("useful_heat_J",0))
+		"modern_load": return _number(w.get("modern",{}).get("load_J",0))
+		"modern_heat": return _number(w.get("modern",{}).get("heat_J",0))
+	return 0.0
+
+func snapshot(w: Dictionary, trigger: String) -> Dictionary:
+	var facts=[]
+	for spec in rules.cards:
+		var value=_value(w,str(spec.path))
+		facts.append({"id":str(spec.id),"domain":str(spec.domain),"label":str(spec.label),"value":value,"unit":str(spec.unit),"kind":str(spec.kind),"source":str(spec.source),"method":str(spec.method)})
+	return {"at":int(w.get("seconds",0)),"world_id":str(w.get("id","")),"trigger":trigger.left(96),"facts":facts}
+
+func record(book: Array,w: Dictionary,trigger: String) -> void:
+	var item=snapshot(w,trigger)
+	if not book.is_empty() and int(book.back().get("at",-1))==int(item.at) and str(book.back().get("trigger",""))==str(item.trigger):
+		book[book.size()-1]=item
+	else: book.append(item)
+	while book.size()>64: book.pop_front()
+
+func compare(a: Dictionary,b: Dictionary) -> Dictionary:
+	var result={"same_origin":str(a.get("base_key",""))==str(b.get("base_key","")) and not str(a.get("base_key","")) .is_empty(),"rows":[]}
+	if not result.same_origin: return result
+	for spec in rules.cards:
+		var av=_value(a,str(spec.path)); var bv=_value(b,str(spec.path))
+		result.rows.append({"id":str(spec.id),"domain":str(spec.domain),"label":str(spec.label),"a":av,"b":bv,"delta":bv-av,"unit":str(spec.unit),"kind":str(spec.kind),"source":str(spec.source),"method":str(spec.method)})
+	return result
+
+func valid(item: Dictionary) -> bool:
+	if not item is Dictionary or not (item.get("at") is int or item.get("at") is float) or int(item.at)<0 or int(item.at)>10000000: return false
+	if not item.get("world_id") is String or item.world_id.length()>64 or not item.get("trigger") is String or item.trigger.length()>96: return false
+	if not item.get("facts") is Array or item.facts.size()!=rules.cards.size(): return false
+	var seen=[]
+	for fact in item.facts:
+		if not fact is Dictionary or fact.id in seen or not (fact.get("value") is int or fact.get("value") is float) or not is_finite(float(fact.value)): return false
+		seen.append(fact.id)
+	return true

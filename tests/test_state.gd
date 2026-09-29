@@ -90,6 +90,7 @@ func _initialize():
 	check(state.coins == coins_after_harvest, "harvest cannot collect coins twice")
 	state.change_template(0, "methane")
 	Fixtures.install(state)
+	state.apply_edit(0, state.templates.methane.positions.duplicate(true))
 	Fixtures.offer(state,"methane")
 	check(r.stock == 0 and r.stored_coins == 0.0 and r.pending == 0, "switch clears previous product buffers")
 	for n in range(80): state.tick(1)
@@ -98,6 +99,7 @@ func _initialize():
 	check(state.upgrades == 1 and state.deliveries == 2, "next template premium order works")
 	state.change_template(0, "water")
 	Fixtures.install(state)
+	state.apply_edit(0, state.templates.water.positions.duplicate(true))
 	Fixtures.offer(state,"methane")
 	for n in range(80): state.tick(1)
 	state.harvest(0)
@@ -111,7 +113,9 @@ func _initialize():
 	state.tick(1.0)
 	check(building.build_left>0 and building.stock==0,"travel and construction block production")
 	for n in range(40): state.tick(1.0)
-	check(building.build_left==0 and building.stock>0,"on-site engineers complete construction")
+	check(building.build_left==0,"on-site engineers complete construction")
+	for n in range(40): state.tick(1.0)
+	check(building.stock>0,"unoptimized starting geometry still produces after its slower cycle")
 	# This test checks the old science API; recruitment is covered by campus integration.
 	state.campus.setup(2,1)
 	state._sync_campus_counts()
@@ -168,7 +172,7 @@ func _initialize():
 	valid_file.plots[0].rid = 0
 	check(not loaded._validate_save(valid_file), "save rejects inconsistent plot ownership")
 	var baseline = JSON.parse_string(FileAccess.get_file_as_string(save_path + ".bak"))
-	check(int(baseline.version) == 20, "new saves use version twenty")
+	check(int(baseline.version) == 21, "new saves use version twenty-one")
 	valid_file = baseline.duplicate(true)
 	valid_file.plots[9].x = valid_file.plots[4].x
 	valid_file.plots[9].z = valid_file.plots[4].z

@@ -1,0 +1,42 @@
+extends RefCounted
+const G=preload("res://scripts/river_geometry.gd")
+static func draw(st: SurfaceTool,p: Vector3,kind: String,color: Color) -> void:
+	if kind=="mixing_tank":
+		G.cube(st,p+Vector3(0,-0.40,0),Vector3(0.88,0.18,0.88),Color("426969"))
+		for x in [-0.36,0.36]:
+			for z in [-0.36,0.36]: G.cube(st,p+Vector3(x,0.03,z),Vector3(0.085,0.82,0.085),color)
+		for y in [-0.30,0.38]:
+			for z in [-0.38,0.38]: G.cube(st,p+Vector3(0,y,z),Vector3(0.85,0.07,0.07),color)
+			for x in [-0.38,0.38]: G.cube(st,p+Vector3(x,y,0),Vector3(0.07,0.07,0.85),color)
+		G.cube(st,p+Vector3(0.44,-0.15,0),Vector3(0.12,0.12,0.18),Color("d5ac66"))
+		G.cube(st,p+Vector3(0.47,-0.02,0),Vector3(0.06,0.16,0.06),Color("d5ac66"))
+		for y in [-0.15,0.0,0.15]: G.cube(st,p+Vector3(-0.27,y,0.402),Vector3(0.12,0.025,0.025),Color("f6e1ad"))
+		return
+	if kind in ["trough","feeder"]:
+		G.cube(st,p+Vector3(0,-0.42,0),Vector3(1,0.16,1),color.darkened(0.15))
+		for x in [-0.44,0.44]: G.cube(st,p+Vector3(x,0,0),Vector3(0.12,1,1),color)
+		for z in [-0.44,0.44]: G.cube(st,p+Vector3(0,0,z),Vector3(1,1,0.12),color)
+		if kind=="feeder":
+			for x in [-0.27,0,0.27]: G.cube(st,p+Vector3(x,0.3,-0.505),Vector3(0.07,0.6,0.03),color.lightened(0.3))
+		return
+	if kind=="fence":
+		for x in [-0.4,0.4]: G.cube(st,p+Vector3(x,0,0),Vector3(0.18,1,0.9),color)
+		for y in [-0.25,0.25]: G.cube(st,p+Vector3(0,y,0),Vector3(1,0.14,0.16),color.lightened(0.12))
+		return
+	G.cube(st,p,Vector3.ONE,color)
+	match kind:
+		"solar":
+			G.cube(st,p+Vector3(0,0.505,0),Vector3(0.90,0.025,0.90),Color("233c70"))
+			for x in [-0.3,0.0,0.3]: G.cube(st,p+Vector3(x,0.523,0),Vector3(0.012,0.01,0.88),Color("88cbd9"))
+		"planter":
+			G.cube(st,p+Vector3(0,0.505,0),Vector3(0.80,0.01,0.80),Color("967a50"))
+			for z in [-0.45,0.45]: G.cube(st,p+Vector3(0,0.5,z),Vector3(1.02,0.12,0.12),color.lightened(0.2))
+			for x in [-0.45,0.45]: G.cube(st,p+Vector3(x,0.5,0),Vector3(0.12,0.12,1.02),color.lightened(0.2))
+		"roof":
+			for x in [-0.4,-0.2,0,0.2,0.4]: G.cube(st,p+Vector3(x,0.51,0),Vector3(0.12,0.06,1.03),color.lightened(0.15))
+			for z in [-0.3,0.3]: G.cube(st,p+Vector3(0,0.56,z),Vector3(1,0.025,0.035),Color("795c3b"))
+		"floor":
+			G.cube(st,p+Vector3(0,0.505,0),Vector3(1.002,0.015,0.025),color.darkened(0.25))
+			for x in [-0.24,0.24]: G.cube(st,p+Vector3(x,0.505,0),Vector3(0.025,0.015,1.002),color.darkened(0.25))
+		_:
+			for y in [-0.25,0.25]: G.cube(st,p+Vector3(0,y,0),Vector3(1.004,0.015,1.004),Color("97704e"))

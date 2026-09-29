@@ -53,21 +53,8 @@ static func workshop(p,id: String) -> void:
 		p.laminate_progress=UI.paragraph("",16,UI.GOLD); p.body.add_child(p.laminate_progress)
 		p._button("取消装配 · 退回层料",func(): p._do("laminate_cancel"))
 	p._button("查看我的材料",p._open_dossiers)
-	p._button("城市部署与观察",func(): p.section="observe"; p._choose_recipe(id))
-	p._text("性质采购 · 选最适合的构件",20,UI.MINT)
-	p._text("订单按模型热导、截面和质量收货，共用%d秒采购冷却。精品奖励升级晶石。" % factory.model.rules.order_cooldown_seconds,14)
-	for order_id in factory.model.rules.orders:
-		var order=factory.model.rules.orders[order_id]
-		p._text(str(order.name),17,UI.TEXT)
-		p._text("热导目标 %.3f W/K · ≤%.0f g\n截面≤%.2f cm² · 最低%.0f%%目标\n精品≥%.0f%% · 奖励%d枚晶石" % [order.target_G_W_K,order.max_mass_kg*1000,order.max_area_m2*10000,order.minimum_ratio*100,order.premium_ratio*100,order.premium_upgrades],14)
-		var candidates=[]
-		for key in program.materials.designs:
-			var design=program.materials.designs[key]
-			if design.basis!="family_model": continue
-			var q=factory.quote(design,order_id); candidates.append({"id":key,"quote":q,"score":1000*int(q.ready)+100*int(q.premium)+q.ratio})
-		candidates.sort_custom(func(a,b): return a.score>b.score)
-		for item in candidates.slice(0,4):
-			var q=item.quote; var key=str(item.id); var name=factory.model.name(program.materials.designs[key])
-			p._text("%s\n%s · %.0f%%目标 · 库存%d" % [name,q.reason,q.ratio*100,factory.count(key)],14,UI.MINT if q.ready else UI.MUTED)
-			p._button("交付 · %d金币%s" % [q.payment," + 晶石" if q.premium else ""],func(): p._do("laminate_deliver",{"design_id":key,"order_id":order_id}),false,not q.ready)
-	if factory.cooldown>0: p._text("下一轮采购约%d秒后开放" % ceili(factory.cooldown),15,UI.GOLD)
+	p._text("构件可交给广场收购商；星球上的设备用途将逐步开放。",15)
+	p._text("交付给广场收购商",20,UI.MINT)
+	p._text("订单统一在浮岛邮箱。客人乘车到场后，亮起的头顶气泡可交付最合适的成品；缺货时点击气泡查看条件。",15)
+	p._button("前往邮箱 · 查看性质订单",func(): p.mail_requested.emit(),true)
+	if factory.cooldown>0: p._text("性质采购冷却还剩约%d秒；结束后等待下一轮来访。" % ceili(factory.cooldown),15,UI.GOLD)

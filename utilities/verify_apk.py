@@ -6,17 +6,21 @@ import zipfile
 import sys
 
 root = Path(__file__).resolve().parent.parent
-apk = root / 'builds' / (sys.argv[1] if len(sys.argv) > 1 else 'AtomAtelier-0.14.0-android.apk')
+if len(sys.argv) != 2 or Path(sys.argv[1]).name != sys.argv[1]:
+    raise SystemExit('Pass the APK filename from builds/ explicitly.')
+apk = root / 'builds' / sys.argv[1]
 extracted = root / 'artifacts' / (apk.stem + '-smoke')
 with zipfile.ZipFile(apk) as package:
     assert package.testzip() is None, 'Corrupt APK entry'
     names = package.namelist()
-    for database in ['materials', 'elements', 'economy', 'baselines', 'campus_people', 'campus_buildings', 'island_balance', 'planet_balance', 'planet_ecology', 'material_lab', 'planet_watershed', 'planet_village']:
-        path = f'data/{database}.json'
-        assert 'assets/' + path in names, 'Missing database: ' + database
-        assert json.loads(package.read('assets/' + path)) == json.loads((root / path).read_text(encoding='utf-8')), 'Database not current: ' + database
-    for script in ['main', 'ui', 'lab_state', 'atom_editor', 'world_view', 'economy', 'specimen', 'structure_sandbox', 'sandbox_editor', 'sandbox_reference', 'science_pipeline', 'science_jobs', 'science_chart', 'campus_sim', 'campus_payroll', 'campus_layout', 'campus_view', 'campus_panel', 'island_storage', 'island_logistics', 'island_market', 'island_panel', 'island_guest', 'order_bubbles', 'building_drag', 'campus_architecture', 'static_geometry', 'planet_program', 'planet_worlds', 'planet_view', 'planet_panel', 'planet_ecology', 'planet_ecology_view', 'planet_ecology_chart', 'planet_ecology_panel', 'material_lab', 'material_lab_view', 'material_lab_panel', 'planet_thermal', 'planet_watershed', 'planet_watershed_view', 'planet_watershed_panel', 'planet_watershed_chart', 'planet_village', 'planet_village_view', 'planet_village_panel']:
-        assert 'assets/scripts/' + script + '.gdc' in names, 'Missing game script: ' + script
+    for database in (root / 'data').glob('*.json'):
+        path = 'assets/data/' + database.name
+        assert path in names, 'Missing database: ' + database.name
+        assert json.loads(package.read(path)) == json.loads(database.read_text(encoding='utf-8-sig')), 'Database not current: ' + database.name
+    for script in (root / 'scripts').glob('*.gd'):
+        assert 'assets/scripts/' + script.stem + '.gdc' in names, 'Missing game script: ' + script.name
+    for retired in ['planet_worlds', 'planet_panel', 'planet_view', 'planet_modern']:
+        assert 'assets/scripts/' + retired + '.gdc' not in names, 'Retired gameplay was repackaged: ' + retired
     assert any('NotoSansCJKsc-Regular' in n for n in names), 'Missing Chinese font'
     assert 'assets/assets/fonts/OFL.txt' in names, 'Missing font license'
     assert 'assets/assets/licenses/Godot-MIT.txt' in names, 'Missing Godot license'
@@ -44,5 +48,5 @@ report = {
     'native_libraries': natives,
     'physical_device_test': 'not performed',
 }
-(root / 'artifacts/apk-audit.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
+(root / 'artifacts' / (apk.stem + '-audit.json')).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
 print(json.dumps(report, ensure_ascii=False, indent=2))

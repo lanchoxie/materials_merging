@@ -1004,7 +1004,10 @@ func _update_map_lookup() -> void:
 		var position_xz: Vector2 = Vector2(coord) * PITCH
 		_map_min = _map_min.min(position_xz)
 		_map_max = _map_max.max(position_xz)
-	_move_camera_target(_camera_target)
+	# The first-person host owns its perspective camera; rebuilding edited
+	# structures must not recenter it using the management camera's orbit.
+	if camera.projection==Camera3D.PROJECTION_ORTHOGONAL:
+		_move_camera_target(_camera_target)
 
 
 func _choose_visible_details() -> void:

@@ -45,7 +45,7 @@ func _initialize() -> void:
 	check(save_result.begins_with("作品已保存"), "named work saves")
 	var loaded := state.load_sandbox_structure(save_name)
 	check(not loaded.is_empty() and loaded.name == save_name and loaded.atoms == work.atoms, "named work loads")
-	check(loaded.bonds == work.bonds and loaded.positions == work.positions, "named work round trips topology and coordinates")
+	check(loaded.bonds == work.bonds and preload("res://tests/fixtures_v09.gd").same(loaded.positions, work.positions), "named work round trips topology and coordinates within JSON precision")
 	check(state.list_sandbox_structures().size() >= 1, "saved work appears in library")
 	check(state.delete_sandbox_structure(save_name), "named work deletes")
 	check(state.load_sandbox_structure(save_name).is_empty(), "deleted work is unavailable")

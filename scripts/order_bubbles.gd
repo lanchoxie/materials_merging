@@ -53,7 +53,7 @@ func _refresh() -> void:
 		var rows: Array=game.state.visitor_candidates(id)
 		var ready=not rows.is_empty() and bool(rows[0].ready) and bool(rows[0].matching)
 		var b: Button=bubbles[id]
-		b.text=game.state.market.request_text(v,game.state.templates)+("\n点击交付" if ready else "\n缺货 · 查看需求")
+		b.text=game.state.market.request_text(v,game.state.templates)+("\n点击交付" if ready else ("\n冷却中 · 查看需求" if game.state.contracts.is_material(v) and game.state.planet.laminates.cooldown>0 else "\n缺货 · 查看需求"))
 		b.add_theme_stylebox_override("normal",UI.style(Color("b0e2c3") if ready else Color("40505b"),12))
 		b.add_theme_color_override("font_color",Color("163e36") if ready else Color("c4ccd0"))
 	for id in bubbles.keys():

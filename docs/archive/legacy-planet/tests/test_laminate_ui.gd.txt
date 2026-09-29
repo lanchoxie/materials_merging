@@ -1,0 +1,51 @@
+extends "res://tests/test_player_material_ui.gd"
+const Fixtures=preload("res://tests/laminate_fixture.gd")
+func capture(name: String) -> void:
+	game.toast_panel.hide(); await process_frame; await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png("res://artifacts/"+name+"-v019.png")
+func run() -> void:
+	Input.emulate_touch_from_mouse=true
+	game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var s=game.state; var p=s.planet
+	Fixtures.act(s,"join"); Fixtures.campus(s); var rid=Fixtures.specimen(s)
+	game._show_planet(); await process_frame; await button("我的材料"); await button("铜铝分层研发")
+	var panel=game.modal; var save=find_button(panel,"保存模型方案")
+	check(save!=null and save.disabled,"unresearched model button is present and locked")
+	check(panel.view.player_view.laminate.visible and panel.view.player_view.atom_count==3,"molar proposal renders alongside a separate standard-layer model")
+	await button("研发分层方法")
+	check(s.campus.research_jobs.size()==1,"research button starts actual campus team project")
+	for i in range(1800):
+		if p.laminates.unlocked(s): break
+		s.tick(1)
+	panel._redraw(); await process_frame; await process_frame
+	check(p.laminates.unlocked(s) and not find_button(panel,"保存模型方案").disabled,"finished research unlocks the calculated design in UI")
+	await button("保存模型方案"); var id=str(p.materials.designs.keys()[0]); var first_key=panel.view.player_view.laminate_key
+	await capture("laminate-parallel")
+	await button("横穿层片"); await button("保存模型方案")
+	check(p.materials.designs.size()==2 and panel.view.player_view.laminate_key!=first_key,"orientation switch changes the 3D assembly and saved calculation")
+	await capture("laminate-series")
+	await button("装配 铜铝层芯 · 顺流")
+	check(panel.section=="workshop" and panel.selected_recipe==id,"saved method design opens its paid manufacturing page")
+	var buy=find_button(panel,"Cu 100g"); var coins=s.coins; var scroll=panel.body.get_parent(); var at=buy.get_global_rect().get_center()
+	await game._test_touch(at,true)
+	for i in range(6):
+		var drag=InputEventScreenDrag.new(); drag.index=0; drag.relative=Vector2(0,-25); drag.position=at+Vector2(0,-25*(i+1)); Input.parse_input_event(drag); await process_frame
+	await game._test_touch(at+Vector2(0,-150),false); await process_frame
+	check(scroll.scroll_vertical>10 and s.coins==coins,"swiping over industrial feed button scrolls without purchase")
+	await button("Cu 100g"); await button("Al 100g"); await button("装配1件")
+	check(p.laminates.job.get("design_id")==id and panel.laminate_progress!=null,"actual reserved manufacturing order has a progress display")
+	for i in range(960):
+		if p.laminates.count(id)>0: break
+		s.tick(1)
+	panel._redraw(); await process_frame; await process_frame
+	check(p.laminates.count(id)==1 and find_button(panel,"前往邮箱")!=null,"manufactured component routes to the shared visitor mailbox")
+	scroll.scroll_vertical=100000; await process_frame; await capture("laminate-orders")
+	await button("城市部署与观察"); await button("开启现代城市"); await drop("modern_cooling")
+	check(p.worlds.get_world().modern.custom_sink.get("id")==id and p.laminates.count(id)==0,"touch drag consumes manufactured stock in career city")
+	check(panel.view.modern_view.custom_badge.visible,"city shows installed model component badge")
+	await capture("laminate-city")
+	await button("我的材料"); await button("自由假设")
+	check(not panel.view.player_view.laminate.visible and panel.view.player_view.specimen.scale==Vector3.ONE,"leaving method view restores actual specimen display")
+	check(panel.body.size.x<=scroll.size.x+2,"new controls fit scrolling sidebar width")
+	check(preload("res://scripts/planet_program.gd").new().restore(JSON.parse_string(JSON.stringify(p.serialize(),"",true,true)),s),"UI-created method, inventory and city save restore together")
+	game.queue_free(); await process_frame; print("LAMINATE UI: %d checks, %d failures" % [checks,failures.size()]); quit(0 if failures.is_empty() else 1)

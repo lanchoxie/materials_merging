@@ -20,7 +20,7 @@ static func bake(root: Node3D) -> void:
 
 static func _gather(node: Node3D, transform: Transform3D, groups: Dictionary) -> void:
 	for child in node.get_children():
-		if not child is Node3D or child.name in ["Molecule","Building"]: continue
+		if not child is Node3D or child.name in ["Molecule","Building"] or child.get_meta("dynamic_geometry",false): continue
 		var relative: Transform3D = transform * child.transform
 		if child is MeshInstance3D and child.mesh != null:
 			var mat = child.material_override

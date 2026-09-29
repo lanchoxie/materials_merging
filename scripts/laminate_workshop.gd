@@ -56,10 +56,10 @@ func take(id: String,destination: String) -> bool:
 	stock[id]=count(id)-1
 	var ledger=installed if destination=="installed" else sold
 	ledger[id]=int(ledger.get(id,0))+1; return true
-func quote(proof: Dictionary,order_id: String) -> Dictionary:
+func quote(proof: Dictionary,order_id: String,terms: Dictionary={}) -> Dictionary:
 	var q={"ready":false,"premium":false,"payment":0,"reason":"需要已制成的模型构件","ratio":0.0}
 	if not model.rules.orders.has(order_id) or not model.valid(proof): return q
-	var r=model.rules.orders[order_id]; var design=proof.result
+	var r=model.rules.orders[order_id] if terms.is_empty() else terms; var design=proof.result
 	q.ratio=minf(1,float(design.conductance_W_K)/float(r.target_G_W_K))
 	if design.mass_kg>float(r.max_mass_kg)+1e-9 or design.area_m2>float(r.max_area_m2)+1e-12: q.reason="超过买家的重量或截面限制"; return q
 	if q.ratio<float(r.minimum_ratio): q.reason="模型热导未达到最低用途要求"; return q
@@ -67,13 +67,14 @@ func quote(proof: Dictionary,order_id: String) -> Dictionary:
 	if cooldown>0: q.reason="买家采购冷却中"; return q
 	if count(proof.id)<1: return q
 	q.ready=true; q.reason="精品：模型符合合同" if q.premium else "可交付接近目标的构件"; return q
-func deliver(state,proof: Dictionary,order_id: String) -> String:
-	var q=quote(proof,order_id)
+func deliver(state,proof: Dictionary,order_id: String,terms: Dictionary={}) -> String:
+	var q=quote(proof,order_id,terms)
+	var contract=model.rules.orders.get(order_id,{}) if terms.is_empty() else terms
 	if not q.ready: return q.reason
 	if not take(str(proof.id),"sold"): return "成品不足"
 	state.coins+=q.payment; deliveries+=1; cooldown=float(model.rules.order_cooldown_seconds)
-	if q.premium: state.upgrades+=int(model.rules.orders[order_id].premium_upgrades); premiums+=1
-	return "模型合同交付：%d金币%s" % [q.payment,("，额外%d枚升级晶石" % model.rules.orders[order_id].premium_upgrades) if q.premium else ""]
+	if q.premium: state.upgrades+=int(contract.premium_upgrades); premiums+=1
+	return "模型合同交付：%d金币%s" % [q.payment,("，额外%d枚升级晶石" % contract.premium_upgrades) if q.premium else ""]
 func serialize() -> Dictionary:
 	return {"version":1,"feed":feed.duplicate(),"purchased":purchased.duplicate(),"consumed":consumed.duplicate(),"made":made.duplicate(),"stock":stock.duplicate(),"installed":installed.duplicate(),"sold":sold.duplicate(),"job":job.duplicate(true),"serial":serial,"cooldown":cooldown,"deliveries":deliveries,"premiums":premiums}
 func restore(data,designs: Dictionary) -> bool:

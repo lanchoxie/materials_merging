@@ -2,6 +2,7 @@ extends Control
 ## Campus UI delegates all transactions to the model facade.
 signal changed(message: String)
 signal dismissed
+signal factory_requested
 const UI=preload("res://scripts/ui.gd")
 var state
 var selected_plot=-1
@@ -14,6 +15,7 @@ var prop_choice="flower"
 var live_labels: Array=[]
 var live_quotes: Array=[]
 var refresh_clock=0.0
+var scroll_memory=preload("res://scripts/panel_scroll.gd").new()
 
 func setup(model, plot: int=-1) -> void:
 	state=model; selected_plot=plot
@@ -24,6 +26,7 @@ func setup(model, plot: int=-1) -> void:
 	var head=UI.row(outer)
 	title=UI.label("科研小镇 · 每个人都有自己的生活",26,UI.MINT); title.size_flags_horizontal=Control.SIZE_EXPAND_FILL; head.add_child(title)
 	head.add_child(UI.button("回到小岛",_close))
+	head.add_child(UI.button("工艺车间",func(): factory_requested.emit()))
 	clock_label=UI.label("",15,UI.GOLD); outer.add_child(clock_label)
 	var tabs=UI.row(outer)
 	for entry in [["overview","小镇概览"],["people","居民与招募"],["build","建筑与庭院"],["research","团队研发"],["requests","居民心愿"]]:
@@ -32,8 +35,9 @@ func setup(model, plot: int=-1) -> void:
 	body=UI.column(scroll,12); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	_show("overview")
 
-func _show(tab: String) -> void:
-	current_tab=tab; UI.clear(body); live_labels.clear(); live_quotes.clear(); scroll.scroll_vertical=0
+func _show(tab: String, keep_position: bool=false) -> void:
+	scroll_memory.refresh(scroll,not keep_position)
+	current_tab=tab; UI.clear(body); live_labels.clear(); live_quotes.clear()
 	match tab:
 		"overview": _overview()
 		"people": _people()
@@ -124,6 +128,7 @@ func _buildings() -> void:
 			body.add_child(UI.label("%s · %d层 · 容量%d人" % [info.name,level,state.layout.capacity(plot)],22,UI.MINT))
 			var upgrade=UI.button("改造至下一层 · %d金币" % (int(info.upgrade_cost)*level),_upgrade)
 			upgrade.disabled=level>=int(info.max_level); body.add_child(upgrade)
+			if plot.kind=="workshop": body.add_child(UI.button("进入工艺车间 · 制造材料",func(): factory_requested.emit(),true))
 	if plot.kind=="plaza":
 		body.add_child(UI.paragraph("公共交通入口保留通行空间；可在广场外的地块布置道路、护栏与庭院。",18)); return
 	body.add_child(UI.label("庭院小物件 · 与主建筑共用地块",23,UI.LILAC))
@@ -141,7 +146,7 @@ func _buildings() -> void:
 		row.add_child(UI.button("摆放所选物件" if existing.is_empty() else "收入工具箱",_prop.bind(slot,existing.is_empty())))
 
 func _research() -> void:
-	body.add_child(UI.paragraph("博士生承担研发，基础课题可独立开展；每名院士同时主持一个进阶课题。教授是可选导师，到岗时让同课题博士生效率提升50%（最多4人），每人只参加一个课题。研究解锁工艺能力；换元素是博士的装炉任务，键长仍由你调整。",18,UI.TEXT))
+	body.add_child(UI.paragraph("博士生承担研发，基础课题可独立开展；每名院士同时主持一个进阶课题。教授在部分基础课题中可选，在分层方法等课题中必需；到岗时让同课题博士生效率提升50%（最多4人），每人只参加一个课题。研究解锁工艺能力；换元素是博士的装炉任务，键长仍由你调整。",18,UI.TEXT))
 	var capacity=UI.label("",20,UI.GOLD); body.add_child(capacity); live_labels.append({"kind":"capacity","label":capacity})
 	for job in state.campus.research_jobs:
 		var label=UI.paragraph("",19,UI.MINT); body.add_child(label); live_labels.append({"kind":"job","id":int(job.id),"label":label})
@@ -194,17 +199,18 @@ func _update_live() -> void:
 
 func _done(message: String) -> void:
 	changed.emit(message)
-	_show(current_tab)
+	_show(current_tab,true)
 func _hire(role: String) -> void: _done(state.campus_hire(role))
 func _build(kind: String) -> void: _done(state.campus_build(selected_plot,kind))
 func _upgrade() -> void: _done(state.campus_upgrade(selected_plot))
 func _road() -> void: _done(state.campus_road(selected_plot))
-func _pick_prop(kind: String) -> void: prop_choice=kind; _show("build")
+func _pick_prop(kind: String) -> void: prop_choice=kind; _show("build",true)
 func _prop(slot: int, empty: bool) -> void: _done(state.campus_prop(selected_plot,slot,prop_choice) if empty else state.campus_remove_prop(selected_plot,slot))
 func _resolve(id: int, choice: String) -> void: _done(state.campus_resolve_request(id,choice))
 func _start_research(project: String) -> void: _done(state.campus_start_research(project))
 func _confirm_dismiss(id: int) -> void:
 	var person: Dictionary=state.campus.person(id)
+	scroll_memory.refresh(scroll,true)
 	UI.clear(body); live_labels.clear()
 	body.add_child(UI.label("确认请%s离岛？" % person.get("name","这位居民"),27,UI.GOLD))
 	body.add_child(UI.paragraph("招募费用不退还，床位会空出；其所在研发团队将等待补员。",19))

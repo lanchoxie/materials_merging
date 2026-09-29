@@ -27,5 +27,13 @@ static func buy(s) -> void:
 	act(s,"laminate_buy",{"element":"Cu"}); act(s,"laminate_buy",{"element":"Al"})
 static func make(s,id: String) -> void:
 	buy(s); act(s,"laminate_pack",{"design_id":id}); s.planet.tick(48,1)
-static func ship(s,id: String,site: String="modern_cooling") -> String:
-	return act(s,"deploy",{"world_id":s.planet.worlds.active_id,"site_id":site,"recipe":id,"token":s.planet.shipment_serial})
+static func visitor(s,order_id: String="compact",arrive: bool=true) -> Dictionary:
+	s.market.visitors.clear()
+	var rules=s.island_rules.visitors.duplicate(true); rules.material_every=1; rules.material_slot=0
+	s.market.spawn(s.economy,s.templates,rules,[s.contracts.request(order_id)])
+	var v=s.market.visitors[-1]
+	if arrive: s.market.tick(float(rules.arrival_seconds),s.economy,s.templates,rules)
+	return v
+static func sell(s,id: String,order_id: String) -> String:
+	var v=visitor(s,order_id)
+	return act(s,"laminate_deliver",{"design_id":id,"visitor_id":v.id})

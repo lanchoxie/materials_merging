@@ -1,0 +1,116 @@
+extends SceneTree
+const State=preload("res://scripts/lab_state.gd")
+const Program=preload("res://scripts/planet_program.gd")
+const Fixture=preload("res://tests/laminate_fixture.gd")
+const Model=preload("res://scripts/laminate_model.gd")
+var checks=0
+var failures=[]
+func check(ok: bool,message: String) -> void:
+	checks+=1
+	if not ok: failures.append(message); push_error(message)
+func encoded(value): return JSON.parse_string(JSON.stringify(value,"",true,true))
+func same(a,b) -> bool: return preload("res://scripts/electrical_lab.gd").new()._same(a,b)
+func restore(p,s) -> bool: return Program.new().restore(encoded(p.serialize()),s)
+func _initialize() -> void:
+	create_timer(45).timeout.connect(func(): push_error("Laminate test timeout"); quit(2))
+	var s=State.new(); var p=s.planet; var f=p.laminates; var m=f.model
+	check(s.elements.has("Cu") and s.elements.has("Al") and s.purchase_quote("Cu",1).unit_price>0,"new Cu/Al atoms have actual shop entries")
+	check(m.counts({"atoms":["Cu","Al","O"]}).is_empty() and m.counts({"atoms":["Cu","Cu"]}).is_empty(),"method refuses unrelated or one-phase specimens")
+	for counts in [{"Cu":0,"Al":1},{"Cu":.5,"Al":1},{"Cu":1,"Al":1,"C":1},{"Cu":64,"Al":1},{"Cu":NAN,"Al":1}]:
+		check(not m.valid_counts(counts),"invalid composition is refused: "+str(counts))
+	Fixture.act(s,"join"); var rid=Fixture.specimen(s); var id=Fixture.design(s,rid)
+	check(p.materials.designs.is_empty(),"unresearched method cannot save a model-backed product")
+	var coins=s.coins; Fixture.buy(s); check(s.coins==coins and f.feed.Cu==0,"locked procurement cannot debit or give feed")
+	var d=m.build(rid,{"Cu":2,"Al":1},"parallel","same_size"); var serial=m.build(rid,{"Cu":2,"Al":1},"series","same_size")
+	var volume_cu=2.0*63.546/8960; var volume_al=26.982/2700
+	var fraction=volume_cu/(volume_cu+volume_al)
+	check(absf(d.volume_fraction_Cu-fraction)<1e-12 and absf(fraction-2.0/3)>.05,"molar proposal becomes volume ratio using molar masses and densities")
+	check(absf(d.properties.conductivity_W_mK-(fraction*400+(1-fraction)*235))<1e-9,"parallel layer conductance adds independent paths")
+	check(absf(serial.properties.conductivity_W_mK-1.0/(fraction/400+(1-fraction)/235))<1e-9,"series model adds thermal resistances")
+	check(serial.result.conductance_W_K<d.result.conductance_W_K and serial.id!=d.id,"orientation changes actual conductance and immutable identity")
+	check(absf(d.feed_kg.Cu+d.feed_kg.Al-d.result.mass_kg)<1e-12,"finite standard feed conserves manufactured mass")
+	check(d.properties.resistivity_ohm_m==null and d.basis=="family_model" and d.result.temperature_K==295,"unknown electrical property stays unknown and reference temperature remains explicit")
+	check(m.valid(encoded(d)),"model proof survives full-precision JSON")
+	var bad=d.duplicate(true); bad.properties.conductivity_W_mK*=2; check(not m.valid(bad),"manual changes cannot masquerade as the family calculation")
+	bad=d.duplicate(true); bad.counts.Cu=3; check(not m.valid(bad),"formula inputs cannot be changed without new proof")
+	Fixture.campus(s); var initial=s.coins; Fixture.act(s,"laminate_research")
+	check(s.campus.research_jobs.size()==1 and s.coins==initial-240,"one professor and two doctors start a paid method project")
+	check(s.campus.research_jobs[0].progress==0 and s.campus.research_rate(s.campus.research_jobs[0])==0,"commuting researchers do not provide remote work")
+	var positions=s.reactors[0].positions.duplicate(true)
+	for i in range(1800):
+		if f.unlocked(s): break
+		s.tick(1)
+	check(f.unlocked(s),"real researchers walk, work and finish the method under campus scheduling")
+	check(s.reactors[0].positions==positions and s.payroll.total_paid+s.payroll.accrued>0,"method research leaves atomic positions to player and wages continue accruing")
+
+	var fresh_work=s.new_sandbox_structure("实采铜铝提案")
+	for i in range(4): s.sandbox_add_atom(fresh_work,"Cu" if i<3 else "Al",[float(i)*2.5,0.0,0.0])
+	s.buy_elements("Cu",3); s.buy_elements("Al",1); s.apply_sandbox_to_reactor(0,fresh_work)
+	check(not s.reactors[0].get("installation",{}).is_empty() and s.element_inventory.Cu==0,"real shop atoms reserve into doctoral installation instead of instant substitution")
+	for i in range(960):
+		if s.reactors[0].get("installation",{}).is_empty() and s.reactors[0].pending>0: break
+		s.tick(1)
+	check(s.reactors[0].get("sandbox",false) and s.reactors[0].pending>0,"doctoral delivery installs the unknown CuAl proposal and finite reactor production completes")
+	s.harvest(0); var fresh_sample=s.product_snapshot(s.reactors[0]); Fixture.act(s,"archive_material",{"batch_id":fresh_sample.id})
+	check(p.materials.records.has(p.materials.identity(fresh_work)),"actual reactor harvest, collection and archive close the specimen loop")
+	id=Fixture.design(s,rid); var alternate=Fixture.design(s,rid,"series")
+	check(p.materials.designs.size()==2 and p.materials.designs.has(id),"researched orientations save as separate designs")
+	Fixture.design(s,rid); check(p.materials.designs.size()==2,"same design is deduplicated")
+	Fixture.act(s,"activate_modern"); var home=p.worlds.get_world(); var token=p.shipment_serial
+	Fixture.ship(s,id); check(home.modern.custom_sink.is_empty() and token==p.shipment_serial,"model knowledge alone is not career inventory")
+	Fixture.buy(s); var feed=f.feed.duplicate(); coins=s.coins
+	Fixture.act(s,"laminate_pack",{"design_id":id})
+	check(not f.job.is_empty() and s.coins==coins-24 and f.feed.Cu<feed.Cu,"assembly reserves real feed and charges once")
+	Fixture.act(s,"laminate_pack",{"design_id":id}); check(s.coins==coins-24,"busy workbench refuses duplicate payment")
+	p.tick(20,0); check(f.job.left==48,"no engineer means no manufacturing progress")
+	check(restore(p,s),"reserved feed and in-flight work restore")
+	Fixture.act(s,"laminate_cancel"); check(same(feed,f.feed) and s.coins==coins-24,"cancel returns feed, not sunk assembly fee")
+	Fixture.act(s,"laminate_pack",{"design_id":id})
+	for i in range(960):
+		if f.count(id)>0: break
+		s.tick(1)
+	check(f.count(id)==1 and f.made.get(id)==1,"arrived real island engineer produces a finite component")
+	check(restore(p,s),"manufactured feed and finished inventory conserve on restore")
+	Fixture.ship(s,id,"modern_roof"); check(f.count(id)==1,"wrong site does not consume manufactured stock")
+	Fixture.ship(s,id); check(home.modern.custom_sink.get("id")==id and f.count(id)==0 and f.installed[id]==1,"career sink consumes exactly one manufactured component")
+	Fixture.ship(s,id); check(f.installed[id]==1,"duplicate installed design cannot spend another component")
+	check(restore(p,s),"career installation receipt matches workshop output ledger")
+	Fixture.act(s,"fork"); var trial=p.worlds.get_world(); var real=f.serialize(); var actual_coins=s.coins
+	check(p.available_in(trial,id)==6,"copy of an installed career city gets six additional model trials")
+	for i in range(6): Fixture.ship(s,alternate if i%2==0 else id)
+	check(p.worlds.family_remaining(trial)==0 and f.serialize()==real and s.coins==actual_coins,"experimental trials are finite and independent of actual stock and money")
+	token=p.shipment_serial; Fixture.ship(s,alternate); check(token==p.shipment_serial,"seventh experimental placement is refused")
+	check(restore(p,s),"model trials keep their baseline and receipts across save")
+	Fixture.act(s,"reset_trial"); check(p.worlds.family_remaining(trial)==6 and trial.modern.custom_sink.id==id,"reset restores original installed model, no physical item refund")
+	bad=p.serialize(); bad.worlds.worlds[1].modern.family_receipts={}; bad.worlds.worlds[1].modern.custom_sink={}
+	check(not Program.new().restore(bad,s),"removing baseline receipts cannot counterfeit extra trial allowance")
+	Fixture.act(s,"select",{"world_id":"home"}); Fixture.make(s,id)
+	var q=f.quote(p.materials.designs[id],"compact"); check(q.ready and q.premium,"copper-rich same-size layer meets compact premium contract")
+	q=f.quote(p.materials.designs[id],"light"); check(not q.ready and q.reason.contains("重量"),"same component cannot bypass a lightweight buyer's mass limit")
+	coins=s.coins; var upgrades=s.upgrades; Fixture.sell(s,id,"compact")
+	check(f.count(id)==0 and f.sold[id]==1 and s.coins>coins and s.upgrades==upgrades+1,"premium shipment consumes stock and awards money plus one crystal")
+	Fixture.make(s,id); coins=s.coins; Fixture.sell(s,id,"compact")
+	check(s.coins==coins and f.count(id)==1,"shared procurement cooldown blocks repeated payout")
+	var light_rid=Fixture.specimen(s,1,8); var light=Fixture.design(s,light_rid,"parallel","same_mass"); Fixture.make(s,light)
+	for i in range(4): p.tick(60,0)
+	check(f.quote(p.materials.designs[light],"light").premium and f.quote(p.materials.designs[light],"light").ready,"lighter aluminum-rich proposal serves a different downstream demand")
+	check(not f.quote(p.materials.designs[light],"compact").ready,"larger lightweight cross-section cannot fit the compact contract")
+	Fixture.sell(s,light,"light"); check(f.deliveries==2 and restore(p,s),"distinct property orders share conserved sales accounting")
+	Fixture.buy(s); Fixture.act(s,"laminate_pack",{"design_id":id}); var left=f.job.left
+	var water=s.product_snapshot(s._new_reactor(8,"water",0)); s.storage.add_product(water,2); Fixture.act(s,"qualify",{"batch_id":water.id}); Fixture.act(s,"pack"); Fixture.act(s,"production_mode",{"mode":"island"})
+	p.tick(1,1); check(f.job.left==left,"one engineer's effort is not duplicated across standard and family benches")
+	Fixture.act(s,"cancel_pack"); p.tick(1,1); check(f.job.left==left-1,"family work resumes when priority standard job stops")
+	bad=p.serialize(); bad.laminates.feed.Cu+=.1; check(not Program.new().restore(bad,s),"counterfeit feed without purchase receipt is rejected")
+	bad=p.serialize(); bad.laminates.stock[id]+=1; check(not Program.new().restore(bad,s),"counterfeit finished goods without consumed feed are rejected")
+	bad=p.serialize(); bad.laminates.installed[id]=0; bad.laminates.stock[id]+=1
+	check(not Program.new().restore(bad,s),"balanced factory totals still require career-world installation matching")
+	bad=p.serialize(); bad.materials.designs[id].record_id=light_rid; check(not Program.new().restore(bad,s),"model cannot steal the identity of a different composition")
+	var legacy=JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/planet_v018.json")); var old=Program.new()
+	check(old.restore(legacy,s) and old.laminates.total()==0 and old.materials.designs.size()==1,"0.18 archive migrates without inventing factory goods")
+	check(restore(old,s),"migrated 0.18 custom device re-saves with family receipt fields")
+	var path="res://saves/laminates-v019-test.json"; s.save_game(path); var loaded=State.new()
+	check(loaded.load_game(path) and loaded.planet.laminates.job.design_id==id,"full game restores research, in-flight feed, sales and worlds together")
+	bad=JSON.parse_string(FileAccess.get_file_as_string(path)); bad.campus.unlocked_materials.erase("laminate_design")
+	check(not loaded._validate_save(bad),"outer save disallows manufacturing without completed research")
+	loaded.close_science(); s.close_science()
+	print("LAMINATES: %d checks, %d failures" % [checks,failures.size()]); quit(0 if failures.is_empty() else 1)

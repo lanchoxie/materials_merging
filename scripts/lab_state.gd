@@ -8,6 +8,7 @@ var planet=PlanetProgram.new()
 var storage=IslandStorage.new()
 var logistics=IslandLogistics.new()
 var market=IslandMarket.new()
+var contracts=preload("res://scripts/material_contracts.gd").new()
 var island_rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/island_balance.json"))
 
 const CampusSim = preload("res://scripts/campus_sim.gd")
@@ -23,6 +24,7 @@ var _production_clock: float = 0
 const Economy = preload("res://scripts/economy.gd")
 const Specimen = preload("res://scripts/specimen.gd")
 const StructureSandbox = preload("res://scripts/structure_sandbox.gd")
+const StructureStart = preload("res://scripts/structure_start.gd")
 const SandboxReference = preload("res://scripts/sandbox_reference.gd")
 const SciencePipeline = preload("res://scripts/science_pipeline.gd")
 var economy = Economy.new()
@@ -86,9 +88,6 @@ func _init():
 	_append_frontier()
 	if templates.has("water"):
 		var r = _new_reactor(4, "water", 0.0)
-		r.positions[1][0] += 0.20
-		r.positions[2][1] += 0.12
-		r.signature = signature(r)
 		reactors.append(r)
 		plots[4].kind = "reactor"
 		plots[4].rid = 0
@@ -415,13 +414,16 @@ func science_summary() -> String:
 
 func _new_reactor(plot_index: int, template_id: String, build_time: float) -> Dictionary:
 	var r = {"id": "R%03d" % _serial, "plot": plot_index, "template": template_id,
-		"level": 1, "positions": templates[template_id].positions.duplicate(true),
+		"level": 1, "positions": initial_positions(template_id, "R%03d" % _serial),
 		"progress": 0.0, "stock": 0, "pending": 0, "stored_coins": 0.0,
 		"build_left": build_time, "signature": ""}
 	r.atoms = templates[template_id].atoms.duplicate()
 	_serial += 1
 	r.signature = signature(r)
 	return r
+
+func initial_positions(template_id: String, reactor_id: String) -> Array:
+	return StructureStart.positions(templates[template_id].positions, "reactor:" + reactor_id + ":" + template_id)
 
 func _valid_index(index: int) -> bool:
 	return index >= 0 and index < reactors.size()
@@ -560,7 +562,7 @@ func tick(delta: float):
 	if _production_clock < 0.2: return
 	delta=_production_clock
 	_production_clock=0.0
-	market.tick(delta,economy,templates,island_rules.visitors)
+	market.tick(delta,economy,templates,island_rules.visitors,contracts.offers(self))
 	visitor_cooldown = maxf(0.0, visitor_cooldown - delta)
 	for r in reactors:
 		var active_time = delta
@@ -737,7 +739,7 @@ func place_reactor(plot_index: int, template_id: String = "water") -> String:
 	plots[plot_index].kind = "reactor"
 	plots[plot_index].rid = reactors.size() - 1
 	layout.mark_changed()
-	return "反应炉开始建造 · 工程师越多，建造越快"
+	return "反应炉开始建造 · 初始结构待调节，调整键长可提高产率"
 
 const DECORATIONS = {"garden":{"name":"晶体花园","cost":35},"house":{"name":"工程师小屋","cost":60},"road":{"name":"星砂小径","cost":18},"fence":{"name":"木质围栏","cost":24},"sculpture":{"name":"原子纪念雕塑","cost":85}}
 
@@ -830,7 +832,7 @@ func _update_order():
 
 func _first_visitor() -> Dictionary:
 	for v in market.visitors:
-		if v.phase=="visiting": return v
+		if v.phase=="visiting" and not contracts.is_material(v): return v
 	return {}
 
 func dismiss_visitor() -> String:
@@ -1011,7 +1013,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 20, "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 21, "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1073,7 +1075,7 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 20, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 21, true):
 		return false
 	if int(data.version)>=11 and not PlanetProgram.new().restore(data.get("planet"),self): return false
 	if int(data.version)==12 and data.planet.version!=2: return false
@@ -1084,7 +1086,7 @@ func _validate_save(data) -> bool:
 	if int(data.version)==17 and data.planet.version!=7: return false
 	if int(data.version)==18 and data.planet.version!=8: return false
 	if int(data.version)==19 and data.planet.version!=9: return false
-	if int(data.version)>=20 and data.planet.version!=10: return false
+	if int(data.version)>=20 and int(data.planet.version) not in [10,11]: return false
 	if int(data.version) >= 3:
 		# v0.3 saves may predate newly discoverable elements. Keep every
 		# existing quantity and initialize only symbols introduced in v0.4.
@@ -1205,16 +1207,26 @@ func _validate_save(data) -> bool:
 			if d.get("basis")=="family_model": uses_family=true
 		if uses_family or data.planet.laminates.purchased.Cu>0 or data.planet.laminates.purchased.Al>0:
 			if "laminate_design" not in data.campus.unlocked_materials: return false
+	if int(data.version)>=21 and data.get("market",{}).get("version")!=2: return false
 	if int(data.version)>=9:
 		if not IslandStorage.new().restore(data.get("storage"),layout.config.props.keys()+["road"],island_rules.consumables.keys(),data.plots): return false
 		for batch in data.storage.batches:
 			if not sandbox_validate(batch.work) or (not batch.reference.is_empty() and not templates.has(batch.reference)): return false
-		if not IslandMarket.new().restore(data.get("market"),island_rules.visitors,templates): return false
+		if not IslandMarket.new().restore(data.get("market"),island_rules.visitors,templates,contracts.valid_order): return false
+		for v in data.market.visitors:
+			if contracts.is_material(v) and (int(data.version)<21 or not data.planet.joined or "laminate_design" not in data.campus.unlocked_materials): return false
 		if not data.get("logistics_rounds") is Dictionary: return false
 		for id in data.logistics_rounds:
 			var maximum_rounds=0
 			for food in island_rules.consumables.values(): maximum_rounds=maxi(maximum_rounds,int(food.rounds))
 			if not str(id).is_valid_int() or not _number_ok(data.logistics_rounds[id],0,maximum_rounds,true): return false
+	if int(data.version)>=11:
+		var exhibits={}
+		for item in data.planet.get("v2",{}).get("construction",{}).get("miniatures",{}).values():
+			var plot=int(item.plot)
+			if plot<0: continue
+			if plot>=data.plots.size() or not data.plots[plot].unlocked or data.plots[plot].kind=="plaza" or exhibits.has(plot): return false
+			exhibits[plot]=true
 	return open_count <= MAX_UNLOCKED_PLOTS+1
 
 func load_game(path: String = "") -> bool:
@@ -1296,7 +1308,7 @@ func load_game(path: String = "") -> bool:
 	if int(data.version)>=9:
 		storage.restore(data.storage,layout.config.props.keys()+["road"],island_rules.consumables.keys(),plots)
 		if int(data.version)<10: _repair_legacy_references()
-		market.restore(data.market,island_rules.visitors,templates)
+		market.restore(data.market,island_rules.visitors,templates,contracts.valid_order)
 		logistics.rounds=data.logistics_rounds.duplicate()
 		for id in logistics.rounds: logistics.rounds[id]=int(logistics.rounds[id])
 		for r in reactors:
@@ -1475,7 +1487,7 @@ func _finish_logistics(events: Array) -> void:
 				"sandbox": _install_sandbox(r,payload.work)
 				"template":
 					r.sandbox=false; r.template=payload.template
-					r.atoms=templates[r.template].atoms.duplicate(); r.positions=templates[r.template].positions.duplicate(true)
+					r.atoms=templates[r.template].atoms.duplicate(); r.positions=initial_positions(r.template,r.id)
 					_reset_product(r)
 				"structure":
 					r.atoms=payload.atoms.duplicate(); r.positions=payload.positions.duplicate(true); _reset_product(r)
@@ -1526,10 +1538,13 @@ func store_road(plot: int) -> String:
 	return "小路已收入工具箱；断开的建筑会暂停人员通行"
 
 func visitor_candidates(id: int) -> Array:
+	var v=market.visitor(id)
+	if contracts.is_material(v): return contracts.candidates(self,v)
 	return market.candidates(id,storage.batches,economy)
 
 func fulfill_order(visitor_id: int, batch_id: String) -> String:
 	var visitor=market.visitor(visitor_id)
+	if contracts.is_material(visitor): return contracts.deliver(self,visitor,batch_id)
 	var batch=storage.batch(batch_id)
 	if visitor.is_empty() or visitor.phase!="visiting": return "这位客人尚未到达或已离开"
 	if batch.is_empty(): return "这个批次已用完，请先收集新产物"
@@ -1537,7 +1552,7 @@ func fulfill_order(visitor_id: int, batch_id: String) -> String:
 	if not quote.ready: return "库存不足或不符合订单，请先生产并收集"
 	if not storage.take_product(batch_id,int(visitor.order.quantity)): return "库存已变化，请重试"
 	coins+=int(quote.payment); upgrades+=int(quote.catalysts); deliveries+=1; visitor_visits+=1
-	market.leave(visitor_id)
+	market.leave(visitor_id,true)
 	return "%s成交！+%d金币%s" % ["精品" if quote.premium else "普通",int(quote.payment)," · 催化晶+1" if quote.premium else ""]
 
 func dismiss_market_visitor(id: int) -> String:

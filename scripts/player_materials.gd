@@ -29,7 +29,7 @@ func propose(record_id: String,kind: String,mode: String,properties: Dictionary)
 	if designs.has(proof.id): return "相同方案已保存，无需重复创建"
 	if designs.size()>=int(fixture.rules.max_designs): return "方案档案已满（96份）"
 	designs[proof.id]=proof
-	return "条件计算已保存；这是玩家假设方案，只能用于实验副本"
+	return "条件计算已保存；这是玩家假设方案，只能用于隔离计算"
 
 func serialize() -> Dictionary:
 	return {"version":2,"records":records.duplicate(true),"designs":designs.duplicate(true)}
@@ -48,23 +48,6 @@ func restore(data,state) -> bool:
 		if d.basis=="family_model":
 			if data.version<2 or not fixture.electrical._same(d.counts,preload("res://scripts/laminate_model.gd").new().counts(data.records[d.record_id].work)): return false
 	records=data.records.duplicate(true); designs=data.designs.duplicate(true); return true
-
-func check_world(w: Dictionary) -> bool:
-	for state in [w,w.base] if w.mode=="experiment" else [w]:
-		for kind in ["modern","industry"]:
-			var model=state[kind]; var snapshots=[model]
-			for h in model.history: snapshots.append(h.state)
-			for snapshot in snapshots:
-				var receipts=snapshot.get("custom_receipts",[])
-				if w.mode=="career" and not receipts.is_empty(): return false
-				for id in receipts:
-					if not designs.has(id) or designs[id].basis!="player_hypothesis": return false
-				for id in snapshot.get("family_receipts",{}):
-					if not designs.has(id) or designs[id].basis!="family_model": return false
-				var components=[snapshot.get("custom_sink",{})] if kind=="modern" else snapshot.get("custom_cables",{}).values()
-				for d in components:
-					if not d.is_empty() and (not designs.has(d.id) or not fixture.electrical._same(d,designs[d.id])): return false
-	return true
 
 func propose_laminate(state,record_id: String,orientation: String,mode: String) -> String:
 	if not state.planet.laminates.unlocked(state): return "先完成科研院所的分层构件方法研发"

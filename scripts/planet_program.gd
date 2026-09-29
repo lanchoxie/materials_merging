@@ -1,9 +1,11 @@
 extends RefCounted
 ## Coordinates atomic island transactions; simulation and views never debit inventory.
-const Worlds=preload("res://scripts/planet_worlds.gd")
+const Legacy=preload("res://scripts/retired_planet_data.gd")
 const Count=preload("res://scripts/island_storage.gd")
-var config: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_balance.json"))
-var worlds=Worlds.new(config)
+const PlanetV2=preload("res://scripts/planet_v2.gd")
+const WorkshopAccess=preload("res://scripts/workshop_access.gd")
+var config: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/factory_recipes.json"))
+var retired_planet: Dictionary={}
 var lab=preload("res://scripts/material_lab.gd").new()
 var reports: Dictionary={}
 var circuit_reports: Dictionary={}
@@ -21,23 +23,22 @@ var products: Array=[]
 var job: Dictionary={}
 var serial=1
 var shipment_serial=1
-var observing=false
-var observer_id=0
 var _reference_cache: Dictionary={}
 var notice=""
+var v2=PlanetV2.new()
 
 func _init() -> void:
 	for id in config.supplies: supplies[id]=0
-	worlds.custom_designs=materials.designs
 
 func recipe_ids() -> Array:
-	return ["standard_water_crate"]+config.recipes.keys()
+	return ["standard_water_crate"]+config.recipes.keys()+v2.field.rules.recipes.keys()
 
 func recipe(id: String) -> Dictionary:
+	if v2.field.rules.recipes.has(id): return v2.field.rules.recipes[id]
 	if materials.designs.has(id):
 		var d=materials.designs[id]; var name=str(materials.records[d.record_id].name)
 		if d.basis=="family_model": return {"id":id,"version":1,"name":laminates.model.name(d),"domain":"modern","reference":"laminate","input":"","fee":int(laminates.model.rules.manufacturing.fee),"seconds":float(laminates.model.rules.manufacturing.seconds),"description":"标准铜铝层料的理想装配模型，非合金实测。"}
-		return {"id":id,"version":1,"name":name+(" · 假设散热芯" if d.kind=="sink" else " · 假设导线"),"domain":"modern" if d.kind=="sink" else "industry","reference":"hypothesis","input":"","fee":0,"seconds":0,"description":"条件计算方案，仅供实验副本使用；不进入真实成品仓。"}
+		return {"id":id,"version":1,"name":name+(" · 假设散热芯" if d.kind=="sink" else " · 假设导线"),"domain":"calculation","reference":"hypothesis","input":"","fee":0,"seconds":0,"description":"保留计算依据的假设方案，不进入真实成品仓。"}
 	if id=="standard_water_crate":
 		return {"id":id,"version":int(config.recipe.version),"name":str(config.recipe.name),"reference":"water","input":"feed","fee":int(config.workshop.packing_cost),"seconds":float(config.workshop.packing_seconds),"description":"把合作方标准供料装入回收水箱。"}
 	return config.recipes.get(id,{})
@@ -66,15 +67,6 @@ func available_products(recipe_id: String="standard_water_crate") -> int:
 		if item.recipe==recipe_id: result+=1
 	return result
 
-func available_in(world: Dictionary,recipe_id: String) -> int:
-	if materials.designs.has(recipe_id):
-		if materials.designs[recipe_id].basis=="family_model": return laminates.count(recipe_id) if world.mode=="career" else worlds.family_remaining(world)
-		if world.mode!="experiment": return 0
-		var key="modern" if materials.designs[recipe_id].kind=="sink" else "industry"
-		return int(materials.fixture.rules.trial_placements)-world[key].custom_receipts.size()
-	if world.mode=="career": return available_products(recipe_id)
-	return int(world.allowance) if recipe_id=="standard_water_crate" else int(world.eco_allowance.get(recipe_id,0))
-
 func water_candidates(state) -> Array:
 	return sample_candidates(state,"water")
 
@@ -89,7 +81,11 @@ func sample_candidates(state,reference: String) -> Array:
 	return candidates
 
 func command(state,action: String,payload: Dictionary={}) -> String:
+	if action.begins_with("organic_"): return preload("res://scripts/river_organic_actions.gd").command(state,action,payload)
 	match action:
+		"v2_waypoint_add": return v2.journey.remember(v2)
+		"v2_waypoint_remove": return v2.journey.remove(str(payload.get("id","")))
+		"v2_recruit_resident": return v2.settlement.recruit(v2.construction) if v2.active else "请先进入星球"
 		"laminate_research":
 			if not joined: return "先领取合作补给"
 			return state.campus_start_research(laminates.model.rules.project)
@@ -99,53 +95,36 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 		"laminate_buy": return laminates.buy(state,str(payload.get("element",""))) if joined else "先领取合作补给"
 		"laminate_pack": return laminates.start(state,materials.designs.get(str(payload.get("design_id","")),{})) if joined else "先领取合作补给"
 		"laminate_cancel": return laminates.cancel()
-		"laminate_deliver": return laminates.deliver(state,materials.designs.get(str(payload.get("design_id","")),{}),str(payload.get("order_id",""))) if joined else "先领取合作补给"
+		"laminate_deliver": return state.fulfill_order(int(payload.get("visitor_id",-1)),str(payload.get("design_id",""))) if joined else "先领取合作补给"
 		"archive_material":
 			if not joined: return "先领取合作补给"
 			return materials.archive(state,str(payload.get("batch_id","")))
 		"propose_material":
 			if not joined or not payload.get("properties") is Dictionary: return "请选择结构并填写用途所需的假设"
 			return materials.propose(str(payload.get("record_id","")),str(payload.get("kind","")),str(payload.get("mode","")),payload.properties)
-		"activate_modern":
-			if not joined: return "先领取合作补给"
-			return worlds.activate_modern()
-		"modern":
-			if not joined: return "先领取合作补给"
-			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.modern)
-			var result=worlds.modern.control(w.modern,str(payload.get("control","")),str(payload.get("id","")))
-			if before!=worlds.ecology.canonical(w.modern): worlds._event(w,"modern",result)
-			return result
 		"compare_circuits":
 			if not joined: return "先领取合作补给"
 			var mode=str(payload.get("mode","")); var report=electrical.proof(mode)
 			if report.is_empty(): return "未知电学约束"
 			circuit_reports[mode]=report; return "已记录20°C导线计算对照；对应标准导线开放制作。"
-		"activate_industry":
-			if not joined: return "先领取合作补给"
-			return worlds.activate_industry(str(payload.get("era","ww1")))
-		"industry":
-			if not joined: return "先领取合作补给"
-			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.industry)
-			var result=worlds.industry.control(w.industry,str(payload.get("control","")),str(payload.get("id","")))
-			if before!=worlds.ecology.canonical(w.industry): worlds._event(w,"industry",result)
-			return result
 		"production_mode":
 			var mode=str(payload.get("mode",""))
 			if mode not in ["partner","island"]: return "未知工坊模式"
+			if mode=="partner" and not job.is_empty() and recipe(str(job.recipe)).has("natural_inputs"): return "采集材料必须由本岛工程师加工，不能切换成合作代工"
 			production_mode=mode
 			return "已交给合作工坊" if mode=="partner" else "已交给本岛车间；工程师到岗后才开始加工"
 		"join":
 			if joined: return "合作补给已领取"
 			joined=true; feed=int(config.workshop.starter_feed)
-			return "已加入试验湾合作，收到%d份标准供料" % feed
+			return "已加入浮岛工坊合作，收到%d份标准供料" % feed
 		"compare_materials":
-			if not joined: return "先领取试验湾合作"
+			if not joined: return "先领取浮岛工坊合作"
 			var mode=str(payload.get("mode","")); var proof=lab.proof(mode)
 			if proof.is_empty(): return "未知对照条件"
 			reports[mode]=proof
 			return "已记录%s计算对照；对应导热芯可在工坊制作。" % ("同尺寸" if mode=="same_size" else "同重量")
 		"qualify":
-			if not joined: return "先在邮箱领取试验湾合作"
+			if not joined: return "先在邮箱领取浮岛工坊合作"
 			var ref=str(payload.get("reference","water"))
 			if ref not in ["water","oxygen"]: return "暂无这个体系的工艺"
 			if qualified_for(ref): return "工艺已经解锁，无需重复提交样品"
@@ -171,95 +150,186 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 		"pack":
 			var info=recipe(str(payload.get("recipe","standard_water_crate")))
 			if info.is_empty(): return "未知工艺"
+			if info.has("natural_inputs"): return _pack_natural(state,info)
+			var mode=str(payload.get("production_mode",production_mode))
+			if mode not in ["partner","island"]: return "未知加工方式"
+			if mode=="island":
+				var access=WorkshopAccess.status(state)
+				if not access.ready: return access.message
 			if not qualified_for(str(info.reference)): return "先完成材料对照或提交对应结构样品解锁工艺"
 			if not job.is_empty(): return "装罐台正在工作"
 			if products.size()>=int(config.workshop.product_limit): return "成品仓已满，请先部署成品"
 			if input_count(str(info.input))<1 or state.coins<float(info.fee): return "需要1份对应供料与%d金币工费" % int(info.fee)
 			_input_add(str(info.input),-1); state.coins-=float(info.fee)
+			production_mode=mode
 			job={"id":serial,"recipe":str(info.id),"recipe_version":int(info.version),"left":float(info.seconds),"duration":float(info.seconds),"fee":int(info.fee),"source_batch":str(evidence(str(info.reference)).batch_id)}
 			serial+=1
 			return "%s制作中 · 标准工时%d秒，完工后自动入库" % [info.name,int(info.seconds)]
 		"cancel_pack":
 			if job.is_empty(): return "装罐台当前空闲"
+			if recipe(str(job.recipe)).has("natural_inputs"):
+				var reason=v2.field.cancel(int(job.id))
+				if not reason.is_empty(): return reason
+				job.clear(); return "采集材料已全部退回背包"
 			# Supply is reserved until completion; service fee covers interrupted work.
 			_input_add(str(recipe(str(job.recipe)).input),1); job.clear()
 			return "已退回预留供料；本次装罐费不退还"
-		"deploy":
-			var id=str(payload.get("world_id","")); var site=str(payload.get("site_id",""))
-			var recipe_id=str(payload.get("recipe","standard_water_crate"))
-			if recipe(recipe_id).is_empty(): return "未知成品"
-			if not Count.count_ok(payload.get("token")) or int(payload.token)!=shipment_serial: return "这次投放已处理或已过期，请重新选择水箱"
-			if not joined or not worlds.can_deploy(id,site,recipe_id): return "落点不适用：请检查支架的尺寸/重量限制、已有设备或剩余补给"
-			var w=worlds.get_world(id); var component: Dictionary={}; var old: Dictionary={}
-			if lab.is_component(recipe_id): old=worlds.component_region(w,site).component.duplicate(true)
-			if w.mode=="career":
-				if available_products(recipe_id)<=0: return "主仓库暂无这个成品，请先制作"
-				if materials.designs.get(recipe_id,{}).get("basis")=="family_model":
-					if not laminates.take(recipe_id,"installed"): return "层芯库存不足"
-				for i in range(products.size()):
-					if products[i].recipe==recipe_id:
-						if lab.is_component(recipe_id): component=products[i].duplicate(true)
-						products.remove_at(i); break
-				if not old.is_empty(): products.append(old)
-			else:
-				if available_in(w,recipe_id)<=0: return "本次实验配给已用完，可以重置实验"
-				if recipe_id.begins_with("custom:"): pass
-				elif recipe_id=="standard_water_crate": w.allowance=int(w.allowance)-1
-				else: w.eco_allowance[recipe_id]=int(w.eco_allowance[recipe_id])-1
-				if lab.is_component(recipe_id):
-					component={"id":0,"recipe":recipe_id,"recipe_version":1,"source_batch":lab.proof(str(lab.data.designs[recipe_id].mode)).batch_id}
-					if not old.is_empty(): w.eco_allowance[old.recipe]=int(w.eco_allowance[old.recipe])+1
-			worlds.deploy(id,site,shipment_serial,recipe_id,component); shipment_serial+=1
-			return "%s已交付%s%s" % [recipe(recipe_id).name,w.name,"；开始观察后运行" if w.paused else ""]
-		"select":
-			var id=str(payload.get("world_id",""))
-			if worlds.get_world(id).is_empty(): return "这个世界不存在"
-			worlds.active_id=id; return "已切换到%s" % worlds.get_world().name
-		"fork":
-			if not joined: return "先领取试验湾合作"
-			return worlds.fork(bool(payload.get("dry",false)),str(payload.get("era","")))
-		"reset_trial": return worlds.reset_trial(bool(payload.get("fresh",false)),str(payload.get("era","")))
-		"activate_habitat":
-			if not joined: return "先领取合作补给"
-			return worlds.activate_habitat()
-		"habitat":
-			if not joined: return "先领取合作补给"
-			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.habitat)
-			var result=worlds.habitat.control(w.habitat,str(payload.get("id","")))
-			if before!=worlds.ecology.canonical(w.habitat): worlds._event(w,"habitat",result)
+		"v2_enter":
+			return v2.enter(str(payload.get("region_id","wetland")))
+		"v2_chop", "v2_dig", "v2_fill", "v2_tree_plant", "v2_strike", "v2_mini_pack", "v2_mini_unfold":
+			if not v2.active or v2.actor.is_empty(): return "进入星球第一人称后再操作"
+			if v2.combat.player_health<=0: return "先回营地休息"
+			var aim=v2.Target.query(v2)
+			match action:
+				"v2_chop": return v2.nature.chop(str(aim.get("tree_id","")),v2.field,v2.construction.terrain)
+				"v2_dig", "v2_fill":
+					if aim.get("type")!="terrain": return "请瞄准没有植物或构件遮挡的地面"
+					return v2.nature.terraform(-1 if action=="v2_dig" else 1,aim.point,v2)
+				"v2_tree_plant":
+					if aim.get("type")!="terrain": return "请瞄准空地种树"
+					return v2.nature.plant(str(payload.get("species","")),Vector2(aim.point.x,aim.point.z),v2)
+				"v2_strike": return v2.combat.strike(aim,v2)
+				"v2_mini_pack":
+					v2.ranch.sync(v2)
+					return preload("res://scripts/river_miniatures.gd").pack(v2.construction,aim)
+				"v2_mini_unfold": return preload("res://scripts/river_miniatures.gd").unfold(v2.construction,str(payload.get("id","")),v2.actor)
+		"v2_mini_exhibit":
+			return preload("res://scripts/river_miniatures.gd").exhibit(v2.construction,str(payload.get("id","")),int(payload.get("plot",-1)),state.plots)
+		"v2_build", "v2_dismantle":
+			if not v2.active: return "请先进入星球"
+			v2.ranch.sync(v2)
+			return v2.construction.interact("place" if action=="v2_build" else "remove",str(payload.get("kind","block")),products,v2.actor,str(payload.get("recipe","")))
+		"v2_ranch_transfer", "v2_ranch_water", "v2_ranch_trade", "v2_ranch_empty":
+			return preload("res://scripts/river_ranch_actions.gd").command(state,action,payload)
+		"v2_field_collect", "v2_field_plant", "v2_field_feed", "v2_field_water":
+			return _field_action(state,action,payload)
+		"v2_field_pantry":
+			var id=str(payload.get("resource",""))
+			if id not in ["fruit","grain"] or int(v2.field.stock.get(id,0))<1: return "背包中没有这种收获"
+			v2.field.stock[id]-=1; v2.world.food+=1; v2.field.revision+=1; return "取出1份收获送入星球粮仓"
+		"v2_repack":
+			return v2.construction.repack(str(payload.get("source_id","")),products,int(config.workshop.product_limit))
+		"v2_next_era":
+			var previous=v2.settlement.era
+			var result=v2.settlement.advance_era(v2.world,v2.construction)
+			if previous!=v2.settlement.era: v2._event(result)
 			return result
-		"activate_village":
-			if not joined: return "先领取合作补给"
-			return worlds.activate_village()
-		"village":
-			if not joined: return "先领取合作补给"
-			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.village)
-			var result=worlds.village.control(w.village,str(payload.get("control","")),str(payload.get("id","")))
-			if before!=worlds.ecology.canonical(w.village): worlds._event(w,"village",result)
-			return result
-		"activate_watershed":
-			if not joined: return "先领取合作补给"
-			return worlds.activate_watershed(str(payload.get("era","devonian")))
-		"watershed":
-			if not joined: return "先领取合作补给"
-			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.watershed)
-			var result=worlds.watershed.control(w.watershed,str(payload.get("site","")),str(payload.get("control","")))
-			if before!=worlds.ecology.canonical(w.watershed): worlds._event(w,"watershed",result)
-			return result
-		"ecology":
-			if not joined: return "先领取合作补给"
-			var w=worlds.get_world(); var before=worlds.ecology.canonical(w.ecology)
-			var result=worlds.ecology.control(w.ecology,str(payload.get("site","")),str(payload.get("control","")))
-			if before!=worlds.ecology.canonical(w.ecology): worlds._event(w,"ecology",result)
-			return result
-		"pause":
-			var w=worlds.get_world(); w.paused=not w.paused
-			return "观察已暂停" if w.paused else "观察继续"
-		"step_world":
-			var w=worlds.get_world(); w.paused=true; worlds.tick_world(w,30.0)
-			return "当前世界推进30秒，已暂停"
-		"step_pair": return worlds.step_pair()
+		"v2_pause":
+			return v2.set_paused(bool(payload.get("paused",not v2.world.paused)))
+		"v2_speed":
+			return v2.set_speed(int(payload.get("speed",1)))
+		"v2_plant":
+			return v2.plant(str(payload.get("crop","grain")))
+		"v2_harvest":
+			return v2.harvest()
+		"v2_pen":
+			return v2.toggle_pen()
+		"v2_renewal":
+			v2.population.enabled=bool(payload.get("enabled",not v2.population.enabled))
+			return "自然补充已开启" if v2.population.enabled else "自然补充已暂停；原有生命仍继续活动"
+		"v2_collect_wild":
+			var x=payload.get("x",0); var z=payload.get("z",0)
+			if not (x is float or x is int) or not (z is float or z is int) or not is_finite(float(x)) or not is_finite(float(z)): return "无效位置"
+			return v2.collect_wild(Vector2(float(x),float(z)))
+		"v2_deploy_sample":
+			if not Count.count_ok(payload.get("token")) or int(payload.token)!=shipment_serial: return "这次投放已处理，请重新选择样品"
+			var batch=state.storage.batch(str(payload.get("batch_id","")))
+			if batch.is_empty(): return "工具箱里已经没有这个批次"
+			var ref=str(state.sandbox_reference(batch.work).get("reference_id",""))
+			if ref not in ["water","oxygen"]: return "当前仅开放已识别水样和氧气样品的环境用途"
+			var use="sample_"+ref; var target=str(payload.get("region_id",""))
+			var reason=v2.quote(target,use)
+			if not reason.is_empty(): return reason
+			var record={"kind":"sample","batch_id":batch.id,"work":batch.work.duplicate(true),"reference":ref}
+			if not state.storage.take_product(batch.id,1): return "样品数量不足"
+			shipment_serial+=1
+			return v2.deploy(target,use,record)
+		"v2_deploy_product":
+			if not joined: return "先领取浮岛合作补给"
+			if not Count.count_ok(payload.get("product_id")): return "请选择仓库中的成品"
+			var product_id=int(payload.product_id); var target=str(payload.get("region_id",""))
+			for i in range(products.size()):
+				if int(products[i].id)!=product_id: continue
+				var item=products[i].duplicate(true); var reason=v2.quote(target,str(item.recipe))
+				if not reason.is_empty(): return reason
+				products.remove_at(i)
+				return v2.deploy(target,str(item.recipe),{"kind":"product","product":item})
+			return "星球仓库找不到这件成品"
 	return "未知的星球操作"
+
+func _pack_natural(state,info: Dictionary) -> String:
+	if not joined: return "先在工艺车间领取合作，登记原料加工"
+	var access=WorkshopAccess.status(state)
+	if not access.ready: return access.message
+	if not job.is_empty(): return "车间正在加工，请等当前订单完成"
+	if products.size()>=int(config.workshop.product_limit): return "成品仓已满"
+	var reason=v2.field.reserve(str(info.id),serial)
+	if not reason.is_empty(): return reason
+	production_mode="island"
+	job={"id":serial,"recipe":str(info.id),"recipe_version":int(info.version),"left":float(info.seconds),"duration":float(info.seconds),"fee":0,"source_batch":"river:"+str(serial)}
+	serial+=1
+	return "已预留采集材料，等待本岛工程师加工；无需另买原料"
+
+func _field_action(state,action: String,payload: Dictionary) -> String:
+	if not v2.active: return "请先进入星球"
+	var target=v2.Target.query(v2)
+	if target.is_empty(): return "瞄准5米内的采集点、种植箱或小兽"
+	if action=="v2_field_collect":
+		if target.type=="resource": return v2.field.collect(target.node,int(v2.world.elapsed))
+		if target.type=="facility" and target.recipe=="frame_bundle":
+			var r=v2.world.regions[target.region]; r.enclosed=not r.enclosed
+			return "围栏已关闭，请放置饲草架和饮水槽，或亲手喂食" if r.enclosed else "围栏已打开，动物恢复自然觅食"
+		if target.type=="block" and target.kind=="planter":
+			var was_ready=v2.field.gardens.get(target.key,{}).get("growth",0)>=1
+			var result=v2.field.harvest(target.key,v2.world)
+			if was_ready and not v2.field.gardens.has(target.key): v2.settlement.harvests+=1
+			return result
+		return v2.Target.prompt(v2,target)
+	if action=="v2_field_plant":
+		if target.type!="block" or target.kind!="planter": return "装备种子，瞄准一个空种植箱播种"
+		return v2.field.plant(target.key,v2.world,v2.construction)
+	if action=="v2_field_feed":
+		var resource=str(payload.get("resource","fruit"))
+		if resource not in ["fruit","grain"] or int(v2.field.stock.get(resource,0))<1: return "背包缺少野果或谷穗"
+		if target.get("kind")=="feeder":
+			v2.ranch.sync(v2)
+			var f=v2.ranch.facilities[target.key]
+			if resource!="grain" or f.stock>=v2.ranch.rules.facilities.feeder.capacity: return "饲草架需要谷穗，且不能超过容量"
+			v2.field.stock.grain-=1; v2.field.revision+=1
+			return v2.ranch.fill(target.key,"grain",v2)
+		if not target.has("entity") or target.entity.type not in ["animal","wild"]: return "走近并瞄准一只小兽"
+		if target.get("fish",false): return "鱼类不使用这种食物，未消耗库存"
+		var animal=target.entity.row
+		if animal.get("hunger",0.15)<float(v2.field.rules.feeding.minimum_hunger): return "它已经吃饱了，没有消耗食物"
+		v2.field.stock[resource]-=1; v2.field.revision+=1; animal.hunger=maxf(0,animal.get("hunger",0.15)-float(v2.field.rules.feeding.hunger_reduction))
+		v2.ranch.fed(target.entity,int(v2.world.elapsed))
+		return "%s吃了一份%s，饥饿降到%.0f%%" % [target.name,v2.field.rules.resources[resource].name,animal.hunger*100]
+	if action=="v2_field_water":
+		if target.get("kind")=="trough": return preload("res://scripts/river_ranch_actions.gd").water(state,payload,str(target.key))
+		var is_tree=target.type=="tree"
+		if not is_tree and (target.type!="block" or target.kind!="planter"): return "瞄准幼树或已播种的种植箱浇水"
+		var reason=v2.nature.water_error(target.tree_id,v2.construction.terrain) if is_tree else v2.field.water_error(target.key)
+		if not reason.is_empty(): return reason
+		if not Count.count_ok(payload.get("token")) or int(payload.token)!=shipment_serial: return "这次浇水已处理"
+		if payload.has("batch_id"):
+			var batch=state.storage.batch(str(payload.batch_id))
+			if batch.is_empty() or state.sandbox_reference(batch.work).get("reference_id")!="water": return "请选择已识别的水样；其他结构不能代替"
+			if not state.storage.take_product(batch.id,1): return "水样不足"
+		else:
+			var index=-1
+			for i in range(products.size()):
+				if products[i].id==payload.get("product_id") and products[i].recipe=="standard_water_crate": index=i; break
+			if index<0: return "没有这件标准水箱"
+			products.remove_at(index)
+		shipment_serial+=1
+		if is_tree:
+			v2.nature.water(target.tree_id,v2.construction.terrain)
+			return "消耗一份水，幼树土壤变湿，生长加快"
+		v2.field.water(target.key)
+		var source="水样批次 "+str(payload.batch_id).left(80) if payload.has("batch_id") else "标准水箱 #"+str(payload.product_id)
+		v2._event("种植箱%s收到1份%s；湿润只作用于这一箱。" % [target.key,source])
+		return "这一箱土壤变湿了；已消耗1份水，旁边种植箱不受影响"
+	return "这个目标暂不能执行该操作"
 
 func tick(dt: float,effort: float=0.0) -> void:
 	if not is_finite(dt) or dt<=0 or dt>60: return
@@ -269,14 +339,15 @@ func tick(dt: float,effort: float=0.0) -> void:
 		job.left=maxf(0,float(job.left)-dt*rate)
 		if float(job.left)<=0:
 			products.append({"id":int(job.id),"recipe":str(job.recipe),"recipe_version":int(job.recipe_version),"source_batch":str(job.source_batch)})
+			if recipe(str(job.recipe)).has("natural_inputs"): v2.field.crafts[str(job.id)].complete=true; v2.field.revision+=1
 			notice="%s制作完成，已收入工业成品仓" % recipe(str(job.recipe)).name; job.clear()
-	if observing: worlds.tick(dt)
+	v2.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":10,"laminates":laminates.serialize(),"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"worlds":worlds.serialize()}
+	return {"version":11,"laminates":laminates.serialize(),"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"retired_planet":retired_planet.duplicate(true),"v2":v2.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8,9,10]: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8,9,10,11]: return false
 	data=data.duplicate(true)
 	if data.version<5: data.production_mode="partner"
 	if data.get("production_mode") not in ["partner","island"]: return false
@@ -299,7 +370,8 @@ func restore(data,state) -> bool:
 		data.circuit_reports={}
 	if data.version<8:
 		if not data.get("supplies") is Dictionary or data.supplies.size()!=23: return false
-		for id in worlds.modern.rules.trial_products: data.supplies[str(id)+"_kit"]=0
+		for id in config.supplies:
+			if not data.supplies.has(id): data.supplies[id]=0
 	if not data.get("circuit_reports") is Dictionary or data.circuit_reports.size()>2: return false
 	for mode in data.circuit_reports:
 		if not electrical.valid_report(data.circuit_reports[mode],str(mode)) or data.get("joined")!=true: return false
@@ -336,7 +408,7 @@ func restore(data,state) -> bool:
 	if not data.job.is_empty():
 		if not _valid_product(data.job,data,ids) or data.products.size()>=int(config.workshop.product_limit): return false
 		var info=recipe(str(data.job.recipe))
-		var stock=int(data.feed) if info.input=="feed" else int(data.supplies[info.input])
+		var stock=0 if info.has("natural_inputs") else (int(data.feed) if info.input=="feed" else int(data.supplies[info.input]))
 		if stock>=int(config.workshop.inventory_limit): return false
 		for key in ["left","duration"]:
 			if not (data.job.get(key) is int or data.job.get(key) is float) or not is_finite(float(data.job[key])): return false
@@ -348,35 +420,51 @@ func restore(data,state) -> bool:
 	var factory=preload("res://scripts/laminate_workshop.gd").new()
 	if int(data.version)>=10 and not factory.restore(data.get("laminates"),archive.designs): return false
 	if not data.joined and (not archive.records.is_empty() or not archive.designs.is_empty()): return false
-	var restored=Worlds.new(config)
-	if int(data.version)>=2 and (not data.get("worlds") is Dictionary or data.worlds.get("version")!=data.version): return false
-	if not restored.restore(data.get("worlds")): return false
-	for w in restored.worlds:
-		if not archive.check_world(w): return false
+	var retired=Legacy.new()
+	if not retired.restore(data.get("retired_planet",{}) if int(data.version)>=11 else data.get("worlds")): return false
 	if not data.job.is_empty(): ids.append(int(data.job.id))
-	for r in restored.component_regions(restored.get_world("home")):
-		if not r.component.is_empty():
-			if not _valid_product(r.component,data,ids): return false
-			ids.append(int(r.component.id))
-	if not data.joined and (int(data.feed)>0 or not data.products.is_empty() or not data.job.is_empty() or restored.worlds.size()>1): return false
+	for component in retired.components():
+		if not _valid_product(component,data,ids): return false
+		ids.append(int(component.id))
+	if not data.joined and (int(data.feed)>0 or not data.products.is_empty() or not data.job.is_empty()): return false
 	if not data.joined:
-		if restored.get_world("home").village.enabled: return false
-		if restored.get_world("home").habitat.enabled: return false
-		if restored.get_world("home").industry.enabled: return false
-		if restored.get_world("home").modern.enabled: return false
 		for n in data.supplies.values():
 			if int(n)>0: return false
 	for id in archive.designs:
-		if archive.designs[id].basis=="family_model" and int(factory.installed.get(id,0))!=int(restored.get_world("home").modern.family_receipts.get(id,0)): return false
+		if archive.designs[id].basis=="family_model" and int(factory.installed.get(id,0))!=int(retired.family_receipts().get(id,0)): return false
+	for id in retired.family_receipts():
+		if not archive.designs.has(id) or archive.designs[id].basis!="family_model" or int(factory.installed.get(id,0))!=int(retired.family_receipts()[id]): return false
 	if not data.joined and (factory.purchased.Cu>0 or factory.purchased.Al>0 or not factory.job.is_empty()): return false
-	laminates=factory; materials=archive; restored.custom_designs=materials.designs
+	var restored_v2=PlanetV2.new()
+	if data.has("v2") and not restored_v2.restore(data.v2): return false
+	for receipt in restored_v2.organics.inputs.values():
+		if not state.sandbox_validate(receipt.work) or state.sandbox_reference(receipt.work).get("reference_id","")!=receipt.reference: return false
+	for craft_id in restored_v2.field.crafts:
+		if int(craft_id)>=int(data.serial): return false
+		var craft=restored_v2.field.crafts[craft_id]
+		if not craft.complete and (str(int(data.job.get("id",-1)))!=craft_id or data.job.get("recipe")!=craft.recipe or data.production_mode!="island"): return false
+	for source in restored_v2.construction.sources.values():
+		if not _valid_product(source.product,data,ids): return false
+		ids.append(int(source.product.id))
+	for receipt in restored_v2.world.receipts:
+		if receipt.get("kind")=="product":
+			if not _valid_product(receipt.get("product"),data,ids): return false
+			if receipt.use!=receipt.product.recipe: return false
+			ids.append(int(receipt.product.id))
+		elif receipt.get("kind")=="sample":
+			if not receipt.get("batch_id") is String or receipt.batch_id.is_empty() or receipt.batch_id.length()>120: return false
+			if receipt.get("reference") not in ["water","oxygen"] or receipt.use!="sample_"+receipt.reference: return false
+			if not receipt.get("work") is Dictionary or not state.sandbox_validate(receipt.work): return false
+			if state.sandbox_reference(receipt.work).get("reference_id","")!=receipt.reference: return false
+		else: return false
+	laminates=factory; materials=archive; retired_planet=retired.data
 	production_mode=data.production_mode
 	reports=data.reports.duplicate(true)
 	circuit_reports=data.circuit_reports.duplicate(true)
 	joined=data.joined; qualified=data.qualified; qualification=data.qualification.duplicate(true)
 	feed=int(data.feed); products=data.products.duplicate(true); job=data.job.duplicate(true)
 	extra_qualifications=data.extra_qualifications.duplicate(true); supplies=data.supplies.duplicate(true)
-	serial=int(data.serial); shipment_serial=int(data.shipment_serial); worlds=restored; observing=false
+	serial=int(data.serial); shipment_serial=int(data.shipment_serial); v2=restored_v2
 	return true
 
 func _valid_product(product,data,ids: Array) -> bool:
@@ -384,6 +472,14 @@ func _valid_product(product,data,ids: Array) -> bool:
 	if not Count.count_ok(product.get("id")) or int(product.id)<1 or int(product.id)>=int(data.serial) or int(product.id) in ids: return false
 	var info=recipe(str(product.get("recipe","")))
 	if info.is_empty(): return false
+	if info.has("natural_inputs"):
+		var world_data=data.get("v2",{})
+		if not world_data is Dictionary or not world_data.get("field") is Dictionary or not world_data.field.get("crafts") is Dictionary or not data.get("job") is Dictionary: return false
+		var record=world_data.field.crafts.get(str(int(product.id)),{})
+		if not record is Dictionary or record.get("recipe")!=info.id: return false
+		var in_progress=data.get("job",{}).get("id")==product.id
+		if record.get("complete")!=not in_progress: return false
+		return product.get("recipe_version")==int(info.version) and product.get("source_batch")=="river:"+str(int(product.id))
 	var q=data.qualification if info.reference=="water" else data.extra_qualifications.get(info.reference,{})
 	if str(info.reference).begins_with("fixture:"): q=data.reports.get(str(info.reference).trim_prefix("fixture:"),{})
 	if str(info.reference).begins_with("circuit:"): q=data.circuit_reports.get(str(info.reference).trim_prefix("circuit:"),{})

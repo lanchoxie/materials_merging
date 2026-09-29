@@ -1,0 +1,99 @@
+extends RefCounted
+const UI=preload("res://scripts/ui.gd")
+const POLICIES={"care":"居民优先","production":"生产优先","communications":"通信优先"}
+
+static func circuit(p) -> void:
+	var lab=p.state.planet.electrical
+	p._text("同样的电，送到哪里？",23,UI.MINT)
+	p._text("铜铝导线 · 20°C历史标准参考\n回路总长40 m、母线24 V、额定400 W恒阻负载。",15)
+	var row=UI.row(p.body,6)
+	for mode in ["same_size","same_mass"]:
+		row.add_child(UI.button("同截面" if mode=="same_size" else "同金属重量",func(): p.circuit_mode=mode; p._redraw(),p.circuit_mode==mode))
+	p._text("每根截面2.5 mm²" if p.circuit_mode=="same_size" else "导体总重889 g，允许截面改变",16,UI.GOLD)
+	for id in lab.data.materials:
+		var material=lab.data.materials[id]; var r=lab.calculate(id,p.circuit_mode)
+		p._text("%s · %.3f Ω" % [material.name,r.resistance_ohm],20,Color(material.color))
+		p._text("截面%.2f mm² · 导体%.0f g\n负载得到%.1f W · 导线损耗%.1f W\n电阻率 %.4f × 10^(-8) Ω·m" % [r.area_m2*1e6,r.mass_kg*1000,r.load_W,r.wire_loss_W,float(material.resistivity_ohm_m)*1e8],15)
+	p._text("同粗铜线损耗较低；等重铝线更粗，但不一定放得进窄槽。诊所和通信站截面上限4 mm²，其他线路10 mm²。",15,UI.MINT)
+	if not p.state.planet.joined: p._button("领取合作与首次供料",func(): p._do("join"),true)
+	elif not p.state.planet.circuit_reports.has(p.circuit_mode): p._button("记录电学对照 · 开放导线",func(): p._do("compare_circuits",{"mode":p.circuit_mode}),true)
+	else:
+		for id in lab.data.designs:
+			if lab.data.designs[id].mode==p.circuit_mode: p._button("制作"+str(lab.data.designs[id].name),func(): p.section="workshop"; p._choose_recipe(id))
+	p._text("R=ρL/A，I=V/(R线+R负载)，P=I²R。只比较固定温度直流恒阻负载；实际港口还受发电功率预算限制。未计算线缆升温、接触、绝缘或安全载流。",14)
+	p._text("铜来自NBS Circular 31，铝来自NBS Handbook 109的EC-H19栏。参考材料不是玩家分子的实测性质；未给出的误差与毒性保持未知。",14)
+	p._button("返回工业港观察",func(): p._scene("industry","generator_set"))
+
+static func build(p) -> void:
+	var program=p.state.planet; var world=program.worlds.get_world(); var w=world.industry; var model=program.worlds.industry; var rules=model.rules
+	if not program.joined:
+		p._text("工业港 · 电与后方生活",23,UI.MINT); p._button("领取合作与首次供料",func(): p._do("join"),true); return
+	if not w.enabled:
+		p._text("工业港 · 选择历史灵感",23,UI.MINT)
+		for era in rules.eras:
+			p._button(str(rules.eras[era].name),func(): p._do("activate_industry",{"era":era}),true)
+		p._text("一战背景关注电线和通信中断；二战背景关注警报、灯火和电站修复。场景虚构，材料改变当地资源取舍，不推演真实战争胜负。",15)
+		p._text("先制作动力机组和燃料，再用电学对照选择导线。初始备件和加工料有限。",15); return
+	p._text(str(rules.eras[w.era].name),22,UI.MINT)
+	var row=UI.row(p.body,6)
+	row.add_child(UI.button("继续观察" if world.paused else "暂停观察",func(): p._do("pause"),true))
+	row.add_child(UI.button("回到当前" if p.replay_index>=0 else "回看过程",func(): p._replay()))
+	if p.replay_index>=0:
+		var slider=HSlider.new(); slider.min_value=0; slider.max_value=w.history.size()-1; slider.step=1; slider.value=p.replay_index; slider.custom_minimum_size.y=36; p.body.add_child(slider)
+		slider.value_changed.connect(func(value): p.replay_index=int(value); p._live())
+		p._text("历史只读，不退回燃料、备件或物资。",14,UI.GOLD)
+	else: p._button("工业港观察30秒 · 推进后暂停",func(): p._do("step_world"))
+	var status=UI.paragraph("",16,UI.TEXT); p.body.add_child(status); p.industry_widgets.status=status
+	if p.replay_index<0:
+		p._button("导线对照 · 选材与制作",func(): p.section="circuits"; p._redraw())
+		p._text("供电先给谁",20,UI.MINT)
+		row=UI.row(p.body,4)
+		for id in POLICIES: row.add_child(UI.button(POLICIES[id],func(): p._do("industry",{"control":"policy","id":id}),w.policy==id))
+		p._button(("关闭动力站" if w.running else "开启动力站") if w.engine else "动力站等待安装机组",func(): p._do("industry",{"control":"engine"}),false,not w.engine)
+		p._button("解除住宅灯火管制" if w.blackout else "住宅灯火管制 · 腾出照明用电",func(): p._do("industry",{"control":"blackout"}))
+		p._button("暂停工程师检修" if w.repairs else "恢复工程师检修",func(): p._do("industry",{"control":"repairs"}))
+	p._text("线路、居民与设备",20,UI.MINT)
+	var lines=UI.paragraph("",14,UI.TEXT); p.body.add_child(lines); p.industry_widgets.lines=lines
+	if p.replay_index<0:
+		p._text("下一批加工用途",20,UI.MINT)
+		row=UI.row(p.body,6)
+		for id in ["civil","military"]: row.add_child(UI.button("民用修复物资" if id=="civil" else "军需维修物资",func(): p._do("industry",{"control":"output","id":id}),w.factory_kind==id))
+		p._text("两种订单共用同一批原料、工人和电；切换只影响下一批，不重复消耗在制投料。运抵仓库才计入交付；车辆也消耗有限燃料。",14)
+	p._text("补给与投放",20,UI.MINT)
+	p._text("动力机组和余热回收器 → 动力站\n燃料、备件、加工料 → 运输仓库\n导线 → 住宅、诊所、车间或通信站\n旧导线换下后封存，不返还可出售物品。",15)
+	if p.replay_index<0:
+		var menu=OptionButton.new(); menu.custom_minimum_size.y=44; p.body.add_child(menu); menu.add_item("选择工业港补给…")
+		for id in rules.deliveries: menu.add_item(str(program.recipe(id).name)); menu.set_item_metadata(menu.item_count-1,id)
+		menu.item_selected.connect(func(index):
+			if index>0: p._choose_recipe(str(menu.get_item_metadata(index))))
+	p._button("收起能量账本" if p.industry_details else "展开能量账本与历史边界",func(): p.industry_details=not p.industry_details; p._redraw(); p._live())
+	if p.industry_details:
+		var ledger=UI.paragraph("",14,UI.MUTED); p.body.add_child(ledger); p.industry_widgets.ledger=ledger
+		p._text(str(rules.science_note)+" 汽油44 MJ/kg为DOE低位热值参考；25%发电与60%余热是游戏机组方案，不是历史机组实测。",14)
+	p._text("副本与时代起点",20,UI.MINT)
+	if program.worlds.worlds.size()<3:
+		p._button("复制工业港为独立实验",func(): p._do("fork"),false,p.replay_index>=0)
+		for era in rules.eras: p._button("新实验 · "+str(rules.eras[era].name),func(): p._do("fork",{"era":era}),false,p.replay_index>=0)
+	else: p._button("两个实验同步推进10秒",func(): p._do("step_pair"),false,p.replay_index>=0 or not program.worlds.can_step_pair())
+	if world.mode=="experiment": p._button("重置工业港实验 · 回到起点",func(): p._do("reset_trial"),false,p.replay_index>=0)
+	p._events(world)
+
+static func live(p) -> void:
+	if p.industry_widgets.is_empty(): return
+	var world=p.display_snapshot(); var w=world.industry; var model=p.state.planet.worlds.industry; var rules=model.rules
+	var event=rules.eras[w.era]
+	var situation="中断已发生，查看检修进度" if w.event_done else "%d秒后：%s" % [maxi(0,int(event.event_at)-int(w.elapsed)),event.event_name]
+	p.industry_widgets.status.text="%s\n燃料 %.3f kg · 电力 %.0f W\n线损 %.0f W · 余热供暖 %.0f%%\n生活温暖 %.0f / 诊疗服务 %.0f\n交付：民用 %.0f · 军需 %.0f" % ["警报中 · "+situation if w.alert else situation,w.stock.fuel_kg,w.generated_W,w.wire_loss_W,w.heat_service*100,w.warmth,w.care,w.shipped.civil,w.shipped.military]
+	var lines=[]
+	for id in rules.loads:
+		var wire="未接线" if w.cables[id].is_empty() else str(model.electrical.data.designs[w.cables[id]].name)
+		if w.get("custom_cables",{}).has(id): wire="玩家假设导线 · "+str(w.custom_cables[id].id).right(5)
+		lines.append("%s · %s\n%.0f / %.0f W · 设备%.0f%%" % [rules.names[id],wire,w.flow[id],rules.loads[id].rated_W,w.integrity[id]*100])
+	lines.append("动力站完整度 %.0f%% · 备件 %.0f\n原料 %.0f · 在制 %.0f / %.0f 工时" % [w.integrity.power*100,w.stock.spares,w.stock.stock,w.factory.progress,rules.factory.work])
+	if not w.repair.target.is_empty(): lines.append("工程师检修%s：%.0f / %.0f" % [rules.names[w.repair.target],w.repair.progress,rules.people.repair_work])
+	for person in w.people:
+		var target=person.route[-1] if not person.route.is_empty() else person.at
+		lines.append("居民%d · %s%s" % [int(person.id)+1,"前往" if not person.route.is_empty() else ("避难于" if person.task=="shelter" else "驻留"),rules.names[target]])
+	p.industry_widgets.lines.text="\n".join(lines)
+	if p.industry_widgets.has("ledger"):
+		p.industry_widgets.ledger.text="累计燃料 %.4f kg / 化学能 %.1f kJ\n发电 %.1f / 机组余热 %.1f / 机组散失 %.1f kJ\n负载 %.1f / 线损 %.1f / 闲置电 %.1f kJ\n住宅得热 %.1f / 未利用热 %.1f kJ\n已耗原料 %.0f / 已产物资 %.0f\n维修用备件 %.0f / 完成检修 %d次\n运输燃料 %.4f kg / 做功 %.1f / 散热 %.1f kJ" % [w.used.fuel_kg,w.chemical_J/1000,w.electric_J/1000,w.heat_J/1000,w.engine_loss_J/1000,w.load_J/1000,w.wire_loss_J/1000,w.unused_J/1000,w.useful_heat_J/1000,w.rejected_heat_J/1000,w.used.stock,w.completed,w.used.spares,w.repairs_completed,w.transport_fuel_kg,w.transport_J/1000,w.transport_loss_J/1000]

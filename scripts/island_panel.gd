@@ -2,7 +2,9 @@ extends Control
 signal dismissed
 signal acted(message: String)
 signal arrange(kind: String)
-signal planet_requested
+signal factory_requested
+signal planet_v2_requested
+signal material_navigation(route: String)
 const UI=preload("res://scripts/ui.gd")
 var state
 var selected_plot=-1
@@ -16,6 +18,7 @@ var timers: Array=[]
 var clock=0.0
 var fingerprint=""
 var ranked=false
+var scroll_memory=preload("res://scripts/panel_scroll.gd").new()
 
 func setup(model, plot: int, page: String="toolbox", visitor: int=-1) -> void:
 	state=model; selected_plot=plot; mode=page; focused_visitor=visitor
@@ -36,13 +39,14 @@ func setup(model, plot: int, page: String="toolbox", visitor: int=-1) -> void:
 	_redraw()
 
 func _tab(id: String) -> void:
-	section=id; scroll.scroll_vertical=0; _redraw()
+	section=id; _redraw(true)
 
 func _card(title: String) -> VBoxContainer:
 	var panel=PanelContainer.new(); body.add_child(panel)
 	var col=UI.column(panel,10); col.add_child(UI.label(title,22,UI.MINT)); return col
 
-func _redraw() -> void:
+func _redraw(reset_scroll: bool=false) -> void:
+	scroll_memory.refresh(scroll,reset_scroll)
 	UI.clear(body); timers.clear()
 	fingerprint=_fingerprint()
 	if mode=="mail": _mail()
@@ -79,17 +83,32 @@ func _products() -> void:
 
 func _industrial() -> void:
 	var p=state.planet
-	body.add_child(UI.paragraph("工业成品用于星球部署，和反应炉的结构样品分别保管。实验副本的虚拟配给不会进入这里。",18))
-	body.add_child(UI.button("前往试验湾 · 生产与投放",func(): planet_requested.emit(),true))
+	body.add_child(UI.paragraph("工业成品用于星球部署或订单交付，和反应炉的结构样品分别保管。",18))
+	body.add_child(UI.button("工艺车间 · 制造成品",func(): factory_requested.emit(),true))
+	body.add_child(UI.button("进入河湾 · 上帝视角",func(): planet_v2_requested.emit(),true))
 	for id in p.recipe_ids():
+		if p.available_products(id)==0: continue
 		var info=p.recipe(id); var card=_card("%s · 主仓库 %d件" % [info.name,p.available_products(id)])
 		card.add_child(UI.label("对应供料 %d份" % p.input_count(info.input),18,UI.GOLD))
 		for product in p.products:
 			if product.recipe==id:
 				var origin="工业参考对照" if p.lab.is_component(id) else "来源样品批次"
 				card.add_child(UI.paragraph("成品 #%d · %s %s" % [int(product.id),origin,str(product.source_batch)],15))
+	var family=_card("我的模型构件 · %d件" % p.laminates.total())
+	family.add_child(UI.paragraph("标准层料：Cu %.1fg / Al %.1fg；在制层料已单独预留。" % [p.laminates.feed.Cu*1000,p.laminates.feed.Al*1000],17))
+	for id in p.materials.designs:
+		var d=p.materials.designs[id]
+		if d.basis=="family_model" and p.laminates.count(id)>0: family.add_child(UI.paragraph("%s · 库存%d件" % [p.laminates.model.name(d),p.laminates.count(id)],18,UI.MINT))
+	family.add_child(UI.button("管理层芯装配",func(): material_navigation.emit("workshop")))
 
 func _materials() -> void:
+	var field=state.planet.v2.field
+	var gathered=_card("从河湾带回的收获")
+	for id in field.stock:
+		gathered.add_child(UI.label("%s ×%d" % [field.rules.resources[id].name,field.stock[id]],18,UI.MINT))
+		if id in ["fruit","grain"]:
+			gathered.add_child(UI.button("取1份送入星球粮仓",func(): _done(state.planet.command(state,"v2_field_pantry",{"resource":id}))))
+	gathered.add_child(UI.button("工艺车间 · 加工采集材料",func(): factory_requested.emit(),true))
 	body.add_child(UI.paragraph("建材用于向浮岛边缘开拓；催化晶用于反应炉升级。它们与摆件、小路和生活补给分别存放。",19))
 	for i in range(3):
 		var card=_card(["星砂","晶露","合金片"][i]); card.add_child(UI.label("库存 %d" % int(state.materials[i]),24,UI.GOLD))
@@ -128,17 +147,26 @@ func _decor() -> void:
 		var button=UI.button("选择庭院位置 · 有库存免费 / 新购%d金币" % int(info.cost),func(): arrange.emit(kind); _close()); card.add_child(button)
 
 func _mail() -> void:
-	var cooperation=_card("星际合作来信 · 第一片水面")
-	cooperation.add_child(UI.paragraph("试验湾的封闭盆地已经冷却。带上你的水样，解锁装罐工艺，把水送往深槽或浅台。",18))
-	cooperation.add_child(UI.button("进入材料试验星球",func(): planet_requested.emit(),true))
+	if focused_visitor<0:
+		var cooperation=_card("星球探索与浮岛制造")
+		cooperation.add_child(UI.paragraph("走进河湾、森林和营地，带上工具箱里的样品与工坊成品，观察土地和生命的变化。",18))
+		cooperation.add_child(UI.button("上帝星球 · 河湾世界",func(): planet_v2_requested.emit(),true))
+		cooperation.add_child(UI.button("工艺车间 · 制造成品",func(): factory_requested.emit()))
+		var next=preload("res://scripts/material_journey.gd").next(state)
+		var guide=_card("铜铝研发路线 · %d/6 · %s" % [next.index,next.title])
+		guide.add_child(UI.paragraph(next.detail,17))
+		if next.route!="mail": guide.add_child(UI.button(next.action,func(): material_navigation.emit(next.route)))
+	else: body.add_child(UI.button("查看全部来访与研发路线",func(): focused_visitor=-1; _redraw()))
 	body.add_child(UI.paragraph("来访客人最多3位，按各自的时间离岛。亮起的气泡可直接交付最合适的同类批次；灰色气泡可查看需求与替代品报价。",18))
 	if state.market.visitors.is_empty(): body.add_child(UI.label("广场暂时安静，下一位客人正在路上。",23,UI.MINT))
 	var visitors: Array=state.market.visitors.duplicate()
 	visitors.sort_custom(func(a,b): return int(a.id)==focused_visitor and int(b.id)!=focused_visitor)
 	for v in visitors:
-		var card=_card("%s · %s" % [v.order.name,state.market.request_text(v,state.templates)])
+		var card=_card(str(v.order.name)+" · 收购1件" if state.contracts.is_material(v) else "%s · %s" % [v.order.name,state.market.request_text(v,state.templates)])
 		var timer=UI.label("",17,UI.GOLD); card.add_child(timer); timers.append({"id":int(v.id),"label":timer})
 		card.add_child(UI.paragraph(v.order.story,17))
+		if state.contracts.is_material(v):
+			_material_order(card,v); continue
 		if str(v.order.get("property",""))!="exhibition": card.add_child(UI.paragraph("参考几何目标%d%% · 相差≤%d个百分点为精品；替代品按折价交付。几何评分不等同于真实物性。" % [roundi(float(v.order.target_quality)*100),roundi(float(v.order.tolerance)*100)],15))
 		var rows: Array=state.visitor_candidates(int(v.id))
 		if rows.is_empty(): card.add_child(UI.paragraph("暂时没有入库产物。去反应炉收集，再来看看。",18,UI.GOLD))
@@ -149,12 +177,24 @@ func _mail() -> void:
 			var b=UI.button("交付%d份" % int(v.order.quantity),func(): _done(state.fulfill_order(int(v.id),str(q.batch_id))),bool(q.premium)); b.disabled=not q.ready; row.add_child(b)
 		var dismiss=UI.button("送别这位客人",func(): _done(state.dismiss_market_visitor(int(v.id)))); dismiss.disabled=v.phase!="visiting"; card.add_child(dismiss)
 
+func _material_order(card: VBoxContainer,v: Dictionary) -> void:
+	var terms=v.order.terms
+	card.add_child(UI.paragraph("模型热导目标 %.3f W/K · 质量≤%.1fg · 截面≤%.2fcm²\n至少达到目标%.0f%%；%.0f%%为精品。此单条件在到访时固定。" % [terms.target_G_W_K,terms.max_mass_kg*1000,terms.max_area_m2*10000,terms.minimum_ratio*100,terms.premium_ratio*100],17,UI.GOLD))
+	var rows=state.visitor_candidates(int(v.id))
+	if rows.is_empty(): card.add_child(UI.paragraph("尚无已保存的模型层芯。先完成方法研发，再为铜铝提案保存方案。",18))
+	for q in rows.slice(0,8):
+		var row=UI.row(card); var label=UI.paragraph("%s · 库存%d\n%s · %.0f%%目标 · %d金币%s" % [q.name,q.quantity,q.reason,q.ratio*100,q.payment," + %d催化晶" % q.catalysts if q.premium else ""],17)
+		label.size_flags_horizontal=Control.SIZE_EXPAND_FILL; row.add_child(label)
+		var button=UI.button("交付构件",func(): _done(state.fulfill_order(int(v.id),q.batch_id)),q.premium); button.disabled=not q.ready; row.add_child(button)
+	card.add_child(UI.button("查看我的模型方案",func(): material_navigation.emit("materials")))
+	var dismiss=UI.button("送别这位客人",func(): _done(state.dismiss_market_visitor(int(v.id)))); dismiss.disabled=v.phase!="visiting"; card.add_child(dismiss)
+
 func _fingerprint() -> String:
 	var visitors=[]
 	for v in state.market.visitors: visitors.append([v.id,v.phase])
 	var quantities=[]
 	for batch in state.storage.batches: quantities.append([batch.id,batch.quantity])
-	return str([visitors,quantities,state.storage.decorations,state.storage.consumables,state.storage.cupboards,state.element_inventory,state.campus.unlocked_materials,state.deliveries,state.planet.feed,state.planet.products.size(),state.planet.job.get("id",0)])
+	return str([visitors,quantities,state.storage.decorations,state.storage.consumables,state.storage.cupboards,state.element_inventory,state.campus.unlocked_materials,state.deliveries,state.planet.feed,state.planet.products.size(),state.planet.job.get("id",0),state.planet.materials.records.size(),state.planet.materials.designs.size(),state.planet.laminates.feed,state.planet.laminates.stock,state.planet.laminates.job.get("id",0),ceili(state.planet.laminates.cooldown)])
 
 func _live() -> void:
 	status.text="金币 %d  ·  入库批次 %d / 512  ·  已开拓土地 %d" % [int(state.coins),state.storage.batches.size(),state.unlocked_plot_count()]

@@ -13,6 +13,7 @@ class Island extends Node3D:
 	var _detailed_plots={0:true,1:true,2:true}
 
 class Model extends RefCounted:
+	var contracts=preload("res://scripts/material_contracts.gd").new()
 	var reactors: Array=[]
 	var storage=preload("res://scripts/island_storage.gd").new()
 	var market=preload("res://scripts/island_market.gd").new()

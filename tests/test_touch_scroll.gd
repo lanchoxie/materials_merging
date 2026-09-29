@@ -39,18 +39,21 @@ func run() -> void:
 	await swipe(b.get_global_rect().get_center(),Vector2(0,-150))
 	check(scroll.scroll_vertical>80,"finger starting on purchase button scrolls element list")
 	check(s.coins==coins,"purchase-button swipe does not spend money")
+	# Separate the reverse gesture from the previous flick inertia; judge displacement.
+	await create_timer(.8).timeout; scroll.scroll_vertical=200; await process_frame; await process_frame
+	var downward_start=scroll.scroll_vertical
 	await swipe(scroll.get_global_rect().get_center(),Vector2(0,110))
-	check(scroll.scroll_vertical<150,"finger swipe down moves content back")
+	check(scroll.scroll_vertical<downward_start-60,"finger swipe down moves content back")
 	game._close_modal(); s.campus.setup(4,0); game._show_campus("people"); await process_frame; await process_frame
 	scroll=game.modal.scroll
 	await swipe(scroll.global_position+Vector2(180,320),Vector2(0,-140))
 	check(scroll.scroll_vertical>40,"resident cards scroll by dragging card content")
-	game._close_modal(); game._show_planet(); var p=game.modal
-	s.planet.command(s,"join"); s.planet.command(s,"activate_village"); p._scene("village"); await process_frame; await process_frame
-	scroll=scrolls(p)[0]; var policy=s.planet.worlds.get_world().village.policy
+	game._close_modal(); game._show_factory(); var p=game.modal
+	s.planet.command(s,"join"); p._open_materials(); p.material_details=true; p._redraw(); await process_frame; await process_frame
+	scroll=scrolls(p)[0]; coins=s.coins; var reports=s.planet.reports.duplicate(true)
 	await swipe(scroll.global_position+Vector2(140,350),Vector2(0,-170))
-	check(scroll.scroll_vertical>80,"planet observation sidebar scrolls by content swipe")
-	check(s.planet.worlds.get_world().village.policy==policy and not p.dragging and not p.rotating,"sidebar swipe neither changes policy nor starts a world gesture")
+	check(scroll.scroll_vertical>80,"independent factory sidebar scrolls by content swipe")
+	check(s.coins==coins and s.planet.reports==reports,"factory swipe neither purchases nor records a calculation")
 	game._close_modal()
 	var body=game._dialog("滚动回归","手指起点覆盖嵌套卡片、文字和按钮")
 	for i in range(12):

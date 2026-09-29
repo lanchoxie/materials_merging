@@ -4,6 +4,7 @@ extends Control
 signal saved
 signal applied
 signal dismissed
+signal synthesis_requested
 
 const UI = preload("res://scripts/ui.gd")
 const MAX_ATOMS := 64
@@ -54,6 +55,8 @@ var drag_origin := Vector3.ZERO
 var grab_offset := Vector3.ZERO
 var pending_confirmation: Callable
 var confirmation: ConfirmationDialog
+var return_button: Button
+var return_label="返回作品库"
 
 func setup(model, structure: Dictionary, index: int = -1) -> void:
 	state = model
@@ -99,9 +102,13 @@ func setup(model, structure: Dictionary, index: int = -1) -> void:
 	mode_choice.item_selected.connect(_set_mode)
 	add_child(mode_choice)
 	var close_button := UI.button("返回作品库  ×", _request_close)
+	return_button=close_button
 	close_button.position = Vector2(1192, 31)
 	close_button.size = Vector2(210, 50)
 	add_child(close_button)
+	if reactor_index>=0:
+		var synthesis=UI.button("反应釜合成",_request_synthesis)
+		synthesis.position=Vector2(34,790); synthesis.size=Vector2(210,46); add_child(synthesis)
 	_build_stage()
 	_build_tools()
 	_build_footer()
@@ -165,7 +172,7 @@ func _build_stage() -> void:
 	scene.add_child(specimens)
 	viewbox.gui_input.connect(_view_input)
 	var controls := UI.row(body, 7)
-	for entry in [["↶ 左转", _orbit.bind(-0.28, 0.0)], ["右转 ↷", _orbit.bind(0.28, 0.0)], ["俯视", _orbit.bind(0.0, 0.20)], ["仰视", _orbit.bind(0.0, -0.20)], ["放大 +", _zoom.bind(0.82)], ["缩小 −", _zoom.bind(1.22)], ["适应视图", _fit_view]]:
+	for entry in [["← 左转", _orbit.bind(-0.28, 0.0)], ["右转 →", _orbit.bind(0.28, 0.0)], ["俯视", _orbit.bind(0.0, 0.20)], ["仰视", _orbit.bind(0.0, -0.20)], ["放大 +", _zoom.bind(0.82)], ["缩小 −", _zoom.bind(1.22)], ["适应视图", _fit_view]]:
 		var button := UI.button(entry[0], entry[1])
 		button.custom_minimum_size = Vector2(0, 50)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -495,13 +502,23 @@ func _apply() -> void:
 func _request_close() -> void:
 	if draft != original:
 		pending_confirmation = _close
-		confirmation.dialog_text = "还有尚未保存的修改。返回作品库将舍弃本次草稿；库存和金币不会变化。"
+		confirmation.dialog_text = "还有尚未保存的修改。%s将舍弃本次草稿；库存和金币不会变化。" % return_label
 		confirmation.popup_centered()
 	else: _close()
+
+func _request_synthesis() -> void:
+	if draft!=original:
+		pending_confirmation=func(): synthesis_requested.emit()
+		confirmation.dialog_text="前往反应釜合成路线？尚未保存的草稿修改会舍弃；元素和金币不变。"
+		confirmation.popup_centered()
+	else: synthesis_requested.emit()
 
 func _close() -> void:
 	dismissed.emit()
 	queue_free()
+
+func set_return_label(text: String) -> void:
+	return_label=text; return_button.text=text+"  ×"
 
 func handle_back() -> bool:
 	if confirmation.visible: confirmation.hide()
@@ -524,7 +541,7 @@ func _update_readout() -> void:
 		reference_label.text = "原子艺术 · 连接与晶胞都是创作工具。\n创意作品不声称真实稳定性或化学键能。"
 	elif not id.is_empty():
 		var info: Dictionary = state.baseline_data(id)
-		reference_label.text = "参考起点：%s · 可调整几何\n%s" % [str(info.get("formula", id)), str(info.get("description", "教学几何参考，不代表真实势能。"))]
+		reference_label.text = "配方参考：%s · 当前坐标可自由调节\n%s" % [str(info.get("formula", id)), str(info.get("description", "教学几何参考，不代表真实势能。"))]
 	else:
 		reference_label.text = "自由探索 · 应用时检查可用参考\n无适用参考的作品保留探索用途；半径与连线不能证明稳定性。"
 	for symbol in element_buttons:

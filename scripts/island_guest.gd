@@ -14,10 +14,19 @@ var time=0.0
 var head=Vector3.ZERO
 var animation_key=""
 var interpolation_elapsed=0.0
+var material_cargo: Node3D
 
 func setup(model, island, factory, id: int) -> void:
 	state=model; world=island; artist=factory; visitor_id=id
-	_create_transport(id-1)
+	var v=state.market.visitor(id)
+	var style=["bicycle","car","minibus"].find(str(v.get("order",{}).get("vehicle","")))
+	_create_transport(id-1 if style<0 else style)
+	if state.contracts.is_material(v):
+		material_cargo=Node3D.new(); transport.add_child(material_cargo)
+		var height=.65 if style==0 else .88
+		box(material_cargo,Vector3(.36,.12,.44),Vector3(0,height,.18),Color("dba46e"))
+		box(material_cargo,Vector3(.36,.08,.44),Vector3(0,height+.10,.18),Color("bed5dc"))
+		material_cargo.hide()
 
 func box(parent, dimensions, at, color): return artist.box(parent,dimensions,at,color)
 func ball(parent, radius, at, color): return artist.ball(parent,radius,at,color)
@@ -76,6 +85,7 @@ func _process(delta: float) -> void:
 	if state==null: return
 	var v: Dictionary=state.market.visitor(visitor_id)
 	if v.is_empty(): return
+	if is_instance_valid(material_cargo): material_cargo.visible=bool(v.get("fulfilled",false))
 	time+=delta
 	var key=str(v.phase)+":"+str(v.age)
 	if key!=animation_key: animation_key=key; interpolation_elapsed=0.0

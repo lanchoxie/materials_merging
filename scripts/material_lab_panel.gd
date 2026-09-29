@@ -3,7 +3,7 @@ const UI=preload("res://scripts/ui.gd")
 
 static func build(p) -> void:
 	var lab=p.state.planet.lab; var mode=p.material_mode
-	p._text("给城市选散热芯" if p.material_return_mode=="modern" else "给供氧器选一颗芯",23,UI.MINT)
+	p._text("铜与铝 · 导热构件计算",23,UI.MINT)
 	p._text("空间有限，还是重量有限？\n换一个约束，材料的优势也会改变。",16,UI.TEXT)
 	var row=UI.row(p.body,8)
 	for entry in [["same_size","同尺寸"],["same_mass","同重量"]]:
@@ -21,11 +21,11 @@ static func build(p) -> void:
 	else:
 		var designs=UI.row(p.body,8)
 		for id in ["copper","aluminum"]:
-			var key="modern_"+id+"_sink" if mode=="same_mass" and p.material_return_mode=="modern" else id+("_compact" if mode=="same_size" else "_light")
+			var key=id+("_compact" if mode=="same_size" else "_light")
 			designs.add_child(UI.button("制作"+str(p.state.planet.recipe(key).name),func(): p.section="workshop"; p._choose_recipe(key)))
-	p._text("现代城市采用等重芯。这里算的是295 K夹具参考，城市散热使用另行标注的教学映射，不是整机温度预测。" if p.material_return_mode=="modern" else "厌氧池为窄槽支架：截面≤1 cm²。鱼湾为轻量支架：材料≤54 g。安装前看限制，并非越强越适用。",15,UI.TEXT)
+	p._text("按尺寸或重量约束比较构件，保存计算依据。星球设备的具体用途会逐步接入。",15,UI.TEXT)
 	p._button("收起计算依据" if p.material_details else "查看计算依据与未知性质",func(): p.material_details=not p.material_details; p._redraw())
 	if p.material_details:
 		p._text("参考：NIST NCNR 295 K 金属物性。\n本例 G=kA/L，质量=ρAL；两端296/294 K、侧面绝热、常数导热率的一维稳态估算。流动光点表示热流，不是升温过程。",14)
-		p._text("整机还串联接触热阻0.5、外部热阻1.5 K/W，均为设计假设。游戏把整机热导映射为冷却量；负载0—100并非摄氏度，也不是真实设备性能预测。",14)
+		p._text("构件热导不能直接代表整机温度；接触、气流和设备几何还需要单独的模型。",14)
 		p._text("比热、电导率、毒性及误差：此数据集未收录，保留未知。工业参考材料不算玩家新发现的晶体；不据此推断任意新材料性质。",14,UI.GOLD)

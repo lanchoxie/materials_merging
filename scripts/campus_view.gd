@@ -104,7 +104,7 @@ func _rebuild_static() -> void:
 			var find_kind=str(state.storage.finds.get(str(i),""))
 			if not find_kind.is_empty() and find_kind!="collected":
 				_prop(node,find_kind,4)
-				var sparkle=Label3D.new(); sparkle.text="✧"; sparkle.font=preload("res://assets/fonts/NotoSansCJKsc-Regular.otf"); sparkle.font_size=64; sparkle.pixel_size=0.007; sparkle.modulate=Color("ffe2a4"); sparkle.position=_prop_offset(4)+Vector3(0,1.0,0); sparkle.billboard=BaseMaterial3D.BILLBOARD_ENABLED; node.add_child(sparkle)
+				var sparkle=Label3D.new(); sparkle.text="☆"; sparkle.font=preload("res://assets/fonts/NotoSansCJKsc-Regular.otf"); sparkle.font_size=64; sparkle.pixel_size=0.007; sparkle.modulate=Color("ffe2a4"); sparkle.position=_prop_offset(4)+Vector3(0,1.0,0); sparkle.billboard=BaseMaterial3D.BILLBOARD_ENABLED; node.add_child(sparkle)
 			for prop in p.get("props",[]): _prop(node,str(prop.kind),int(prop.slot))
 			_connect_fences(node,p.get("props",[]))
 		StaticGeometry.bake(node)

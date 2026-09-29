@@ -1,0 +1,592 @@
+{
+  "version": 5,
+  "note": "Gameplay units and timings; no physical planetary cooling or purity prediction.",
+  "workshop": {
+    "samples_required": 2,
+    "starter_feed": 2,
+    "feed_cost": 18,
+    "packing_cost": 12,
+    "packing_seconds": 25,
+    "inventory_limit": 99,
+    "product_limit": 32
+  },
+  "world": {
+    "seed": 9192026,
+    "capacity": 3,
+    "delivery_seconds": 8,
+    "max_events": 32,
+    "trial_allowance": 3,
+    "max_seconds": 10000000
+  },
+  "sites": [
+    {
+      "id": "deep",
+      "name": "深槽蓄水",
+      "description": "水集中在深槽，留下较多干燥岸地。",
+      "capacity": 3
+    },
+    {
+      "id": "shelf",
+      "name": "浅台漫流",
+      "description": "同样的水箱铺开更宽的浅水面。",
+      "capacity": 3
+    }
+  ],
+  "recipe": {
+    "id": "standard_water_crate",
+    "version": 1,
+    "name": "标准水箱",
+    "input_name": "标准供料包（含回收容器）",
+    "output_name": "标准水箱",
+    "equipment": "合作方独立装罐台",
+    "scope": "身份验证只证明结构参考相符；供料规格由合作方提供，几何评分不等于纯度。"
+  },
+  "supplies": {
+    "station_parts": {
+      "name": "供氧器组件包",
+      "price": 42,
+      "description": "扩散头、流量控制器和连接件；不含运行补给。"
+    },
+    "oxygen_feed": {
+      "name": "氧气动力供料包",
+      "price": 24,
+      "description": "合作方标准氧气与已充能动力模块；不是玩家样品的宏观纯度测量。"
+    },
+    "copper_kit": {
+      "name": "铜构件供料包",
+      "price": 36,
+      "description": "合作方预切工业材料与安装件；每包用于一个设计，工费另计。"
+    },
+    "aluminum_kit": {
+      "name": "铝构件供料包",
+      "price": 30,
+      "description": "合作方预切工业材料与安装件；每包用于一个设计，工费另计。"
+    },
+    "nutrient_kit": {
+      "name": "营养实验供料包",
+      "price": 18,
+      "description": "仅用于有限营养当量教学，不是实际施肥配方。"
+    },
+    "screen_kit": {
+      "name": "过滤机组件包",
+      "price": 46,
+      "description": "机械滤网、壳体与管件；另需滤盒和动力。"
+    },
+    "screen_feed": {
+      "name": "颗粒滤盒供料包",
+      "price": 22,
+      "description": "匹配颗粒目标的滤网、封存容器和已充能模块。"
+    },
+    "buffer_kit": {
+      "name": "植被缓冲组件包",
+      "price": 44,
+      "description": "合作方提供的活体植被、基质和浮岛试验支架。"
+    },
+    "harvest_kit": {
+      "name": "收割封存供料包",
+      "price": 16,
+      "description": "可回收作业工具和有限收集容器；收集物留在世界封存账本。"
+    },
+    "drinking_kit": {
+      "name": "生活饮水容器包",
+      "price": 28,
+      "description": "标准饮水桶与密封容器"
+    },
+    "frame_kit": {
+      "name": "结构构件供料包",
+      "price": 38,
+      "description": "木构框架与紧固件"
+    },
+    "tool_chest_kit": {
+      "name": "农工工具供料包",
+      "price": 24,
+      "description": "锄具、扳手与磨具耐用件"
+    },
+    "habitat_bridge_kit": {
+      "name": "标准连接桥构件",
+      "price": 52
+    },
+    "shade_kit": {
+      "name": "遮荫织物与支架",
+      "price": 34
+    },
+    "generator_kit": {
+      "name": "紧凑动力机组供料",
+      "price": 120
+    },
+    "gasoline_feed": {
+      "name": "标准汽油罐供料",
+      "price": 36
+    },
+    "recovery_kit": {
+      "name": "余热回收器供料",
+      "price": 70
+    },
+    "repair_kit": {
+      "name": "工业维修箱供料",
+      "price": 40
+    },
+    "industrial_feed": {
+      "name": "标准加工料箱供料",
+      "price": 44
+    },
+    "copper_wire_kit": {
+      "name": "铜线·等粗预切料与绝缘件",
+      "price": 44
+    },
+    "aluminum_wire_kit": {
+      "name": "铝线·等粗预切料与绝缘件",
+      "price": 30
+    },
+    "copper_wire_mass_kit": {
+      "name": "铜线·等重预切料与绝缘件",
+      "price": 44
+    },
+    "aluminum_wire_mass_kit": {
+      "name": "铝线·等重预切料与绝缘件",
+      "price": 30
+    },
+    "modern_silicon_kit": {
+      "name": "硅组件·教学规格标准供料",
+      "price": 90
+    },
+    "modern_perovskite_kit": {
+      "name": "钙钛矿薄膜·教学规格标准供料",
+      "price": 120
+    },
+    "modern_battery_kit": {
+      "name": "空储能模块标准供料",
+      "price": 100
+    },
+    "modern_server_kit": {
+      "name": "计算机组标准供料",
+      "price": 140
+    },
+    "modern_fan_kit": {
+      "name": "闭式风冷回路标准供料",
+      "price": 65
+    },
+    "modern_recycler_kit": {
+      "name": "分选回收设备标准供料",
+      "price": 80
+    },
+    "modern_scrap_kit": {
+      "name": "标准废构件箱标准供料",
+      "price": 24
+    },
+    "modern_copper_sink_kit": {
+      "name": "等重铜散热芯标准供料",
+      "price": 44
+    },
+    "modern_aluminum_sink_kit": {
+      "name": "等重铝散热芯标准供料",
+      "price": 30
+    }
+  },
+  "recipes": {
+    "oxygen_station": {
+      "id": "oxygen_station",
+      "version": 1,
+      "name": "便携供氧器",
+      "reference": "oxygen",
+      "input": "station_parts",
+      "fee": 20,
+      "seconds": 35,
+      "description": "组装扩散头与控制器。每个生态舱最多1台，安装后仍需补给。"
+    },
+    "oxygen_cartridge": {
+      "id": "oxygen_cartridge",
+      "version": 1,
+      "name": "氧气动力补给盒",
+      "reference": "oxygen",
+      "input": "oxygen_feed",
+      "fee": 10,
+      "seconds": 25,
+      "description": "封装标准氧气和动力模块。正常流量运行60秒；气源和动力都有限。"
+    },
+    "copper_compact": {
+      "id": "copper_compact",
+      "version": 1,
+      "name": "铜芯·紧凑",
+      "reference": "fixture:same_size",
+      "input": "copper_kit",
+      "fee": 16,
+      "seconds": 24,
+      "description": "按已对照的几何方案组装导热芯。拖到已安装的供氧器；换下的构件回到原世界库存。"
+    },
+    "aluminum_compact": {
+      "id": "aluminum_compact",
+      "version": 1,
+      "name": "铝芯·紧凑",
+      "reference": "fixture:same_size",
+      "input": "aluminum_kit",
+      "fee": 16,
+      "seconds": 24,
+      "description": "按已对照的几何方案组装导热芯。拖到已安装的供氧器；换下的构件回到原世界库存。"
+    },
+    "copper_light": {
+      "id": "copper_light",
+      "version": 1,
+      "name": "铜芯·等重",
+      "reference": "fixture:same_mass",
+      "input": "copper_kit",
+      "fee": 16,
+      "seconds": 24,
+      "description": "按已对照的几何方案组装导热芯。拖到已安装的供氧器；换下的构件回到原世界库存。"
+    },
+    "aluminum_light": {
+      "id": "aluminum_light",
+      "version": 1,
+      "name": "铝芯·等重",
+      "reference": "fixture:same_mass",
+      "input": "aluminum_kit",
+      "fee": 16,
+      "seconds": 24,
+      "description": "按已对照的几何方案组装导热芯。拖到已安装的供氧器；换下的构件回到原世界库存。"
+    },
+    "runoff_feed": {
+      "id": "runoff_feed",
+      "version": 1,
+      "name": "营养实验供料",
+      "reference": "water",
+      "input": "nutrient_kit",
+      "fee": 8,
+      "seconds": 18,
+      "description": "给上游有限营养舱补充60教学当量；开启输入后逐渐进入河流。",
+      "domain": "watershed"
+    },
+    "screen_station": {
+      "id": "screen_station",
+      "version": 1,
+      "name": "颗粒过滤机",
+      "reference": "water",
+      "input": "screen_kit",
+      "fee": 20,
+      "seconds": 30,
+      "description": "截留藻与有机碎屑颗粒，溶解营养仍会通过。安装后需要滤盒。",
+      "domain": "watershed"
+    },
+    "screen_cartridge": {
+      "id": "screen_cartridge",
+      "version": 1,
+      "name": "颗粒滤盒与动力",
+      "reference": "water",
+      "input": "screen_feed",
+      "fee": 10,
+      "seconds": 22,
+      "description": "容量30营养当量、动力80工作秒，均为教学设置。更换时旧盒截留物封存。",
+      "domain": "watershed"
+    },
+    "buffer_raft": {
+      "id": "buffer_raft",
+      "version": 1,
+      "name": "植被缓冲带",
+      "reference": "water",
+      "input": "buffer_kit",
+      "fee": 16,
+      "seconds": 28,
+      "description": "增加指定水域的植被吸收空间。生长占用营养，死亡可再释放，需要收割。",
+      "domain": "watershed"
+    },
+    "harvest_box": {
+      "id": "harvest_box",
+      "version": 1,
+      "name": "收割封存箱",
+      "reference": "water",
+      "input": "harvest_kit",
+      "fee": 8,
+      "seconds": 18,
+      "description": "30秒内收割指定藻类或植被，最多封存20营养当量；不会转成可出售的浮岛库存。",
+      "domain": "watershed"
+    },
+    "drinking_barrel": {
+      "id": "drinking_barrel",
+      "version": 1,
+      "name": "生活饮水桶",
+      "reference": "water",
+      "input": "drinking_kit",
+      "fee": 12,
+      "seconds": 20,
+      "description": "标准饮水容器；只进入河湾聚落生活用水账本。",
+      "domain": "village"
+    },
+    "frame_bundle": {
+      "id": "frame_bundle",
+      "version": 1,
+      "name": "结构构件包",
+      "reference": "water",
+      "input": "frame_kit",
+      "fee": 16,
+      "seconds": 26,
+      "description": "木构与紧固件标准包；由居民施工消耗。",
+      "domain": "village"
+    },
+    "tool_chest": {
+      "id": "tool_chest",
+      "version": 1,
+      "name": "农工工具箱",
+      "reference": "water",
+      "input": "tool_chest_kit",
+      "fee": 10,
+      "seconds": 22,
+      "description": "有限耐用量的锄具、扳手和磨具；使用会消耗耐用量。",
+      "domain": "village"
+    },
+    "habitat_bridge": {
+      "id": "habitat_bridge",
+      "version": 1,
+      "name": "栖地连接桥",
+      "reference": "water",
+      "input": "habitat_bridge_kit",
+      "fee": 18,
+      "seconds": 32,
+      "description": "投到未连接的峡口，接通两片栖地。植食动物与捕食者均能通过，之后可以关闭通道。",
+      "domain": "habitat"
+    },
+    "shade_canopy": {
+      "id": "shade_canopy",
+      "version": 1,
+      "name": "遮荫保水棚",
+      "reference": "water",
+      "input": "shade_kit",
+      "fee": 12,
+      "seconds": 26,
+      "description": "降低该栖地水点的蒸发，也减少植被生长光照。不是净水设备，不产生水。",
+      "domain": "habitat"
+    },
+    "generator_set": {
+      "id": "generator_set",
+      "version": 1,
+      "name": "紧凑动力机组",
+      "reference": "water",
+      "input": "generator_kit",
+      "fee": 28,
+      "seconds": 45,
+      "description": "投到动力站。消耗标准燃料产生有限电力和余热。",
+      "domain": "industry"
+    },
+    "fuel_can": {
+      "id": "fuel_can",
+      "version": 1,
+      "name": "标准汽油罐",
+      "reference": "water",
+      "input": "gasoline_feed",
+      "fee": 10,
+      "seconds": 20,
+      "description": "0.05 kg标准汽油供料；低位热值44 MJ/kg。容器、动力机组另计。",
+      "domain": "industry"
+    },
+    "heat_recovery": {
+      "id": "heat_recovery",
+      "version": 1,
+      "name": "余热回收器",
+      "reference": "water",
+      "input": "recovery_kit",
+      "fee": 18,
+      "seconds": 30,
+      "description": "投到动力站，回收部分余热供住宅。不会额外发电。",
+      "domain": "industry"
+    },
+    "repair_crate": {
+      "id": "repair_crate",
+      "version": 1,
+      "name": "工业维修箱",
+      "reference": "water",
+      "input": "repair_kit",
+      "fee": 12,
+      "seconds": 25,
+      "description": "四份标准备件，由工程师到场检修消耗。",
+      "domain": "industry"
+    },
+    "industry_stock": {
+      "id": "industry_stock",
+      "version": 1,
+      "name": "标准加工料箱",
+      "reference": "water",
+      "input": "industrial_feed",
+      "fee": 12,
+      "seconds": 24,
+      "description": "十二份标准加工坯料；需要到岗工人和电力才能变成民用或军需维修物资。",
+      "domain": "industry"
+    },
+    "copper_wire": {
+      "id": "copper_wire",
+      "version": 1,
+      "name": "铜线·等粗",
+      "reference": "circuit:same_size",
+      "input": "copper_wire_kit",
+      "fee": 12,
+      "seconds": 24,
+      "description": "按已记录的电学对照组装。拖到住宅、诊所、工厂或通信站；旧线封存，不退回可出售库存。",
+      "domain": "industry"
+    },
+    "aluminum_wire": {
+      "id": "aluminum_wire",
+      "version": 1,
+      "name": "铝线·等粗",
+      "reference": "circuit:same_size",
+      "input": "aluminum_wire_kit",
+      "fee": 12,
+      "seconds": 24,
+      "description": "按已记录的电学对照组装。拖到住宅、诊所、工厂或通信站；旧线封存，不退回可出售库存。",
+      "domain": "industry"
+    },
+    "copper_wire_mass": {
+      "id": "copper_wire_mass",
+      "version": 1,
+      "name": "铜线·等重",
+      "reference": "circuit:same_mass",
+      "input": "copper_wire_mass_kit",
+      "fee": 12,
+      "seconds": 24,
+      "description": "按已记录的电学对照组装。拖到住宅、诊所、工厂或通信站；旧线封存，不退回可出售库存。",
+      "domain": "industry"
+    },
+    "aluminum_wire_mass": {
+      "id": "aluminum_wire_mass",
+      "version": 1,
+      "name": "铝线·等重",
+      "reference": "circuit:same_mass",
+      "input": "aluminum_wire_mass_kit",
+      "fee": 12,
+      "seconds": 24,
+      "description": "按已记录的电学对照组装。拖到住宅、诊所、工厂或通信站；旧线封存，不退回可出售库存。",
+      "domain": "industry"
+    },
+    "modern_silicon": {
+      "id": "modern_silicon",
+      "name": "硅组件·教学规格",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_silicon_kit",
+      "fee": 20,
+      "seconds": 32,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_perovskite": {
+      "id": "modern_perovskite",
+      "name": "钙钛矿薄膜·教学规格",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_perovskite_kit",
+      "fee": 24,
+      "seconds": 36,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_battery": {
+      "id": "modern_battery",
+      "name": "空储能模块",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_battery_kit",
+      "fee": 24,
+      "seconds": 36,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_server": {
+      "id": "modern_server",
+      "name": "计算机组",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_server_kit",
+      "fee": 28,
+      "seconds": 40,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_fan": {
+      "id": "modern_fan",
+      "name": "闭式风冷回路",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_fan_kit",
+      "fee": 16,
+      "seconds": 28,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_recycler": {
+      "id": "modern_recycler",
+      "name": "分选回收设备",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_recycler_kit",
+      "fee": 20,
+      "seconds": 32,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_scrap": {
+      "id": "modern_scrap",
+      "name": "标准废构件箱",
+      "version": 1,
+      "reference": "water",
+      "input": "modern_scrap_kit",
+      "fee": 8,
+      "seconds": 18,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_copper_sink": {
+      "id": "modern_copper_sink",
+      "name": "等重铜散热芯",
+      "version": 1,
+      "reference": "fixture:same_mass",
+      "input": "modern_copper_sink_kit",
+      "fee": 12,
+      "seconds": 24,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "modern_aluminum_sink": {
+      "id": "modern_aluminum_sink",
+      "name": "等重铝散热芯",
+      "version": 1,
+      "reference": "fixture:same_mass",
+      "input": "modern_aluminum_sink_kit",
+      "fee": 12,
+      "seconds": 24,
+      "domain": "modern",
+      "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    }
+  },
+  "trial_products": {
+    "oxygen_station": 2,
+    "oxygen_cartridge": 4,
+    "copper_compact": 2,
+    "aluminum_compact": 2,
+    "copper_light": 2,
+    "aluminum_light": 2,
+    "runoff_feed": 2,
+    "screen_station": 3,
+    "screen_cartridge": 6,
+    "buffer_raft": 3,
+    "harvest_box": 6,
+    "drinking_barrel": 4,
+    "frame_bundle": 3,
+    "tool_chest": 3,
+    "habitat_bridge": 2,
+    "shade_canopy": 2,
+    "generator_set": 1,
+    "fuel_can": 4,
+    "heat_recovery": 1,
+    "repair_crate": 2,
+    "industry_stock": 2,
+    "copper_wire": 4,
+    "aluminum_wire": 4,
+    "copper_wire_mass": 4,
+    "aluminum_wire_mass": 4,
+    "modern_silicon": 2,
+    "modern_perovskite": 2,
+    "modern_battery": 2,
+    "modern_server": 2,
+    "modern_fan": 2,
+    "modern_recycler": 2,
+    "modern_scrap": 4,
+    "modern_copper_sink": 2,
+    "modern_aluminum_sink": 2
+  }
+}

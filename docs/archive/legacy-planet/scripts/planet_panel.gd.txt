@@ -1,0 +1,476 @@
+extends Control
+signal dismissed
+signal acted(message: String)
+signal mail_requested
+const UI=preload("res://scripts/ui.gd")
+const View=preload("res://scripts/planet_view.gd")
+const EcologyPanel=preload("res://scripts/planet_ecology_panel.gd")
+var state
+var view
+var viewport: SubViewport
+var viewport_box: SubViewportContainer
+var body: VBoxContainer
+var world_tabs: HBoxContainer
+var status: Label
+var caption: Label
+var tray_label: Label
+var tray: PanelContainer
+var ghost: PanelContainer
+var progress: ProgressBar
+var progress_text: Label
+var site_labels: Dictionary={}
+var section="workshop"
+var fingerprint=""
+var refresh=0.0
+var dragging=false
+var armed=false
+var rotating=false
+var pointer=Vector2.ZERO
+var start=Vector2.ZERO
+var touch_index=-1
+var token=0
+var target_world=""
+var closing=false
+var selected_recipe="standard_water_crate"
+var target_recipe="standard_water_crate"
+var tray_title: Label
+var eco_site="microbe"
+var eco_widgets: Dictionary={}
+var replay_index=-1
+var material_mode="same_size"
+var material_details=false
+var material_return_mode="ecology"
+var watershed_site="estuary"
+var watershed_widgets: Dictionary={}
+var village_widgets: Dictionary={}
+var watershed_details=false
+var watershed_menu: OptionButton
+var habitat_widgets: Dictionary={}
+var habitat_details=false
+var habitat_site="fern"
+var industry_widgets: Dictionary={}
+var industry_details=false
+var circuit_mode="same_size"
+var modern_widgets: Dictionary={}
+var modern_details=false
+var dossier_family=false
+var laminate_orientation="parallel"
+var laminate_details=false
+var laminate_progress: Label
+var dossier_id=""
+var dossier_kind="sink"
+var dossier_mode="same_size"
+var dossier_draft={"density_kg_m3":null,"conductivity_W_mK":null,"resistivity_ohm_m":null}
+var dossier_quote: Label
+var dossier_save: Button
+
+func setup(model) -> void:
+	state=model; state.planet.observing=true; state.planet.observer_id=get_instance_id()
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
+	var heading=UI.label("材料试验星球",30,UI.MINT); heading.position=Vector2(32,21); add_child(heading)
+	var subtitle=UI.label("EXPERIMENT 10    /    研发、分层与真实用途",14,UI.MUTED); subtitle.position=Vector2(34,65); add_child(subtitle)
+	var close=UI.button("返回浮岛",_close); close.position=Vector2(1285,27); close.size=Vector2(122,46); add_child(close)
+	world_tabs=HBoxContainer.new(); world_tabs.position=Vector2(24,107); world_tabs.size=Vector2(518,44); world_tabs.add_theme_constant_override("separation",10); add_child(world_tabs)
+	var scenes=HBoxContainer.new(); scenes.position=Vector2(550,107); scenes.add_theme_constant_override("separation",2); add_child(scenes)
+	scenes.add_child(UI.button("水与地形",func(): _scene("water","standard_water_crate")))
+	scenes.add_child(UI.button("生态试验",func(): _scene("ecology","oxygen_station")))
+	scenes.add_child(UI.button("河流湿地",func(): _scene("watershed")))
+	scenes.add_child(UI.button("河湾聚落",func(): _scene("village")))
+	scenes.add_child(UI.button("白垩纪",func(): _scene("habitat","standard_water_crate")))
+	scenes.add_child(UI.button("工业港",func(): _scene("industry","generator_set")))
+	scenes.add_child(UI.button("现代城市",func(): _scene("modern","modern_perovskite")))
+	for button in scenes.get_children():
+		button.add_theme_font_size_override("font_size",13)
+		for key in ["normal","hover","pressed","focus"]:
+			var style=UI.style(UI.INNER if key=="normal" else Color("2b4850"),12); style.content_margin_left=5; style.content_margin_right=5; button.add_theme_stylebox_override(key,style)
+	viewport_box=SubViewportContainer.new(); viewport_box.position=Vector2(24,165); viewport_box.size=Vector2(984,550); viewport_box.stretch=true; viewport_box.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(viewport_box)
+	viewport=SubViewport.new(); viewport.size=Vector2i(984,550); viewport.own_world_3d=true; viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; viewport_box.add_child(viewport)
+	if not OS.has_feature("web") and not OS.has_feature("android"): viewport.msaa_3d=Viewport.MSAA_2X
+	view=View.new(); viewport.add_child(view)
+	for id in ["deep","shelf","microbe","fish","headwater","marsh","estuary"]:
+		var badge=PanelContainer.new(); badge.add_theme_stylebox_override("panel",UI.style(Color("162f3a"),10)); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
+		var label=UI.label({"deep":"深槽蓄水","shelf":"浅台漫流","microbe":"厌氧微生物池","fish":"缺氧鱼湾","headwater":"上游径流口","marsh":"连通湿地","estuary":"下游河口"}[id],14,UI.TEXT); label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; badge.add_child(label); site_labels[id]=badge
+	var vb=PanelContainer.new(); vb.add_theme_stylebox_override("panel",UI.style(Color("162f3a"),10)); vb.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(vb); var vl=UI.label("河湾聚落",14,UI.TEXT); vl.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; vb.add_child(vl); site_labels["village_depot"]=vb
+	for id in state.planet.worlds.habitat.rules.regions:
+		var badge=PanelContainer.new(); var style=UI.style(Color("162f3a"),8); style.content_margin_top=4; style.content_margin_bottom=4; style.content_margin_left=8; style.content_margin_right=8; badge.add_theme_stylebox_override("panel",style); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
+		badge.add_child(UI.label(str(state.planet.worlds.habitat.rules.regions[id].name),13,UI.TEXT)); site_labels["habitat_"+str(id)]=badge
+	for id in state.planet.worlds.industry.ids():
+		var badge=PanelContainer.new(); var style=UI.style(Color("162f3a"),8); style.content_margin_top=4; style.content_margin_bottom=4; style.content_margin_left=8; style.content_margin_right=8; badge.add_theme_stylebox_override("panel",style); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
+		badge.add_child(UI.label(str(state.planet.worlds.industry.rules.names[id.trim_prefix("industry_")]),13,UI.TEXT)); site_labels[id]=badge
+	for id in state.planet.worlds.modern.rules.nodes:
+		if id=="junction": continue
+		var badge=PanelContainer.new(); var style=UI.style(Color("162f3a"),8); style.content_margin_top=3; style.content_margin_bottom=3; style.content_margin_left=6; style.content_margin_right=6; badge.add_theme_stylebox_override("panel",style); badge.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(badge)
+		badge.add_child(UI.label(str(state.planet.worlds.modern.rules.names[id]),12,UI.TEXT)); site_labels["modern_"+str(id)]=badge
+	var camera_row=HBoxContainer.new(); camera_row.position=Vector2(40,660); camera_row.size=Vector2(550,44); camera_row.add_theme_constant_override("separation",8); add_child(camera_row)
+	camera_row.add_child(UI.button("回到试验湾",func(): _cancel_gesture(); view.reset_camera()))
+	camera_row.add_child(UI.button("＋",func(): view.zoom(-0.8)))
+	camera_row.add_child(UI.button("－",func(): view.zoom(0.8)))
+	var help=UI.label("拖动旋转 · 滚轮缩放",13,UI.MUTED); camera_row.add_child(help)
+	var tray_box=UI.box(self,Rect2(24,728,984,116),UI.PANEL)
+	var inventory=UI.row(tray_box,20)
+	tray=PanelContainer.new(); tray.custom_minimum_size=Vector2(215,86); tray.add_theme_stylebox_override("panel",UI.style(Color("284b50"),14,UI.MINT.darkened(0.4))); inventory.add_child(tray)
+	tray.mouse_default_cursor_shape=Control.CURSOR_DRAG; tray.gui_input.connect(_tray_input)
+	var inside=UI.column(tray,5); inside.mouse_filter=Control.MOUSE_FILTER_PASS
+	tray_title=UI.label("▣  标准水箱",20,UI.MINT); inside.add_child(tray_title)
+	tray_label=UI.label("",14,UI.TEXT); inside.add_child(tray_label)
+	var hint=UI.column(inventory,6); hint.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	var choices=UI.row(hint,8)
+	for item in [["standard_water_crate","水箱"],["oxygen_station","供氧器"],["oxygen_cartridge","补给盒"]]:
+		choices.add_child(UI.button(item[1],_choose_recipe.bind(item[0])))
+	choices.add_child(UI.button("导热芯",_open_materials))
+	watershed_menu=OptionButton.new(); watershed_menu.custom_minimum_size=Vector2(185,44); choices.add_child(watershed_menu)
+	watershed_menu.add_item("更多工业成品…")
+	for id in state.planet.worlds.watershed.rules.trial_products.keys()+state.planet.worlds.village.rules.trial_products.keys()+state.planet.worlds.habitat.rules.trial_products.keys()+state.planet.worlds.industry.rules.trial_products.keys()+state.planet.worlds.modern.rules.trial_products.keys():
+		watershed_menu.add_item(str(state.planet.recipe(id).name)); watershed_menu.set_item_metadata(watershed_menu.item_count-1,id)
+	watershed_menu.item_selected.connect(func(index):
+		if index>0: _choose_recipe(str(watershed_menu.get_item_metadata(index))))
+	caption=UI.paragraph("",15,UI.MUTED); hint.add_child(caption)
+	var panel=UI.box(self,Rect2(1024,107,392,737))
+	var right=UI.column(panel,12)
+	var tabs=UI.row(right,8)
+	tabs.add_child(UI.button("生产工坊",func(): section="workshop"; _choose_recipe(selected_recipe)))
+	tabs.add_child(UI.button("观察 / 对照",func(): section="observe"; _choose_recipe(selected_recipe)))
+	tabs.add_child(UI.button("我的材料",_open_dossiers))
+	for b in tabs.get_children(): b.add_theme_font_size_override("font_size",14)
+	var scroll=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; right.add_child(scroll)
+	body=UI.column(scroll,12); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	status=UI.paragraph("",15,UI.GOLD); status.position=Vector2(32,859); status.size=Vector2(1370,36); add_child(status)
+	ghost=PanelContainer.new(); ghost.add_theme_stylebox_override("panel",UI.style(Color("345961"),12,UI.MINT)); ghost.mouse_filter=Control.MOUSE_FILTER_IGNORE; ghost.add_child(UI.label("▣  水箱 ×1",18,UI.MINT)); add_child(ghost); ghost.hide()
+	_redraw(); _live()
+
+func _fingerprint() -> String:
+	var batches=[]
+	for item in state.storage.batches: batches.append([item.id,item.quantity])
+	var p=state.planet; var w=p.worlds.get_world()
+	var research=[]
+	for item in state.campus.research_jobs: research.append([item.id,int(item.progress)/5])
+	return str([p.joined,p.qualified,p.extra_qualifications.keys(),p.reports.keys(),p.circuit_reports.keys(),p.materials.records.size(),p.materials.designs.size(),p.laminates.stock,p.laminates.feed,p.laminates.job.get("id",0),int(p.laminates.cooldown)/5,state.campus.unlocked_materials,research,p.feed,p.supplies,p.products.size(),p.job.get("id",0),w.id,w.paused,w.allowance,w.eco_allowance,w.zones,w.event_serial,int(w.seconds)/5,p.worlds.worlds.size(),batches])
+
+func _redraw() -> void:
+	if state==null: return
+	UI.clear(body); UI.clear(world_tabs); laminate_progress=null; progress=null; progress_text=null; eco_widgets={}; watershed_widgets={}; village_widgets={}; habitat_widgets={}; industry_widgets={}; modern_widgets={}
+	var p=state.planet
+	for w in p.worlds.worlds:
+		var button=UI.button(w.name,func(): _do("select",{"world_id":str(w.id)}),w.id==p.worlds.active_id)
+		button.custom_minimum_size.x=166; world_tabs.add_child(button)
+	if section=="dossiers": preload("res://scripts/player_material_panel.gd").build(self)
+	elif section=="materials": preload("res://scripts/material_lab_panel.gd").build(self)
+	elif section=="circuits": preload("res://scripts/planet_industry_panel.gd").circuit(self)
+	elif section=="workshop": _workshop()
+	elif view.display_mode=="watershed": preload("res://scripts/planet_watershed_panel.gd").build(self)
+	elif view.display_mode=="village": preload("res://scripts/planet_village_panel.gd").build(self)
+	elif view.display_mode=="modern": preload("res://scripts/planet_modern_panel.gd").build(self)
+	elif view.display_mode=="industry": preload("res://scripts/planet_industry_panel.gd").build(self)
+	elif view.display_mode=="habitat": preload("res://scripts/planet_habitat_panel.gd").build(self)
+	elif view.display_mode=="ecology": EcologyPanel.build(self)
+	else: _observations()
+	fingerprint=_fingerprint()
+	view.sync(display_snapshot())
+
+func _scene(mode: String,id: String="") -> void:
+	_cancel_gesture(); replay_index=-1; section="observe"
+	if not id.is_empty(): selected_recipe=id
+	view.set_mode(mode); view.reset_camera(); _redraw(); _live()
+
+func _open_materials() -> void:
+	material_return_mode=view.display_mode
+	if material_return_mode=="modern": material_mode="same_mass"
+	_cancel_gesture(); replay_index=-1; section="materials"
+	if not state.planet.worlds.get_world().paused: state.planet.command(state,"pause")
+	view.set_mode("materials"); view.reset_camera(); view.material_view.set_mode(material_mode)
+	_redraw(); _live()
+
+func _choose_recipe(id: String) -> void:
+	_cancel_gesture(); selected_recipe=id; replay_index=-1
+	if section in ["materials","circuits","dossiers"]: section="workshop"
+	var domain=str(state.planet.recipe(id).get("domain",""))
+	var use_watershed=domain=="watershed" or (domain.is_empty() and (view.display_mode=="watershed" or (view.display_mode=="materials" and material_return_mode=="watershed")))
+	var use_village=domain=="village" or (id=="standard_water_crate" and view.display_mode=="village")
+	var use_habitat=domain=="habitat" or (id=="standard_water_crate" and view.display_mode=="habitat")
+	view.set_mode("modern" if domain=="modern" else "industry" if domain=="industry" else "habitat" if use_habitat else ("village" if use_village else ("watershed" if use_watershed else ("water" if id=="standard_water_crate" else "ecology"))))
+	_redraw(); _live()
+
+func display_snapshot() -> Dictionary:
+	var world=state.planet.worlds.get_world()
+	if replay_index<0: return world
+	var copy=world.duplicate(); var history=_history()
+	var entry=history[clampi(replay_index,0,history.size()-1)]
+	copy.seconds=entry.at; copy.paused=true
+	if view.display_mode=="watershed":
+		copy.watershed=entry.state.duplicate(true); copy.watershed.history=history
+	elif view.display_mode=="village":
+		copy.village=entry.state.duplicate(true); copy.village.history=history
+	elif view.display_mode=="modern":
+		copy.modern=entry.state.duplicate(true); copy.modern.history=history
+	elif view.display_mode=="industry":
+		copy.industry=entry.state.duplicate(true); copy.industry.history=history
+	elif view.display_mode=="habitat":
+		copy.habitat=entry.state.duplicate(true); copy.habitat.history=history
+	else:
+		copy.ecology=world.ecology.duplicate(); copy.ecology.regions=entry.regions.duplicate(true)
+	return copy
+
+func _history() -> Array:
+	var w=state.planet.worlds.get_world()
+	if view.display_mode=="watershed": return w.watershed.history
+	if view.display_mode=="village": return w.village.history
+	if view.display_mode=="habitat": return w.habitat.history
+	if view.display_mode=="industry": return w.industry.history
+	if view.display_mode=="modern": return w.modern.history
+	return w.ecology.history
+
+func _replay() -> void:
+	_cancel_gesture()
+	if replay_index>=0: replay_index=-1
+	else:
+		var world=state.planet.worlds.get_world()
+		if not world.paused: state.planet.command(state,"pause")
+		replay_index=_history().size()-1
+	_redraw(); _live()
+
+func _text(text: String,size: int=16,color: Color=UI.MUTED) -> void:
+	body.add_child(UI.paragraph(text,size,color))
+
+func _button(text: String,callback: Callable,primary: bool=false,disabled: bool=false) -> Button:
+	var button=UI.button(text,callback,primary); button.disabled=disabled; body.add_child(button); return button
+
+func _workshop() -> void:
+	var p=state.planet; var rules=p.config.workshop
+	if p.materials.designs.get(selected_recipe,{}).get("basis")=="family_model": preload("res://scripts/laminate_panel.gd").workshop(self,selected_recipe); return
+	if selected_recipe.begins_with("custom:"):
+		_text(str(p.recipe(selected_recipe).name),23,UI.LILAC)
+		_text("这是已保存的假设方案，无需扣金币加工。复制一个实验副本后，把左侧构件拖到对应落点；安装占用有限实验配给。",17,UI.TEXT)
+		_button("查看材料档案",_open_dossiers)
+		_button("观察用途与建立副本",func(): section="observe"; _redraw(); _live())
+		return
+	var info=p.recipe(selected_recipe); var ref=str(info.reference)
+	if not p.joined:
+		_text("第一封星际来信",23,UI.MINT)
+		_text("把浮岛的结构样品变成有用途的成品，在星球上观察它们带来的变化。",17,UI.TEXT)
+		_text("合作方提供独立装罐台与%d份标准供料。不需要先招募院士。" % int(rules.starter_feed))
+		_button("领取合作与首次供料",func(): _do("join"),true)
+		return
+	_text(str(info.name),23,UI.MINT); _text(str(info.description),16,UI.TEXT)
+	_text("合作方工坊 · 标准速度" if p.production_mode=="partner" else "本岛车间 · 到岗效率 %.2f倍" % state.campus.industrial_rate(),16,UI.GOLD)
+	_button("改用本岛车间" if p.production_mode=="partner" else "交回合作方托管",func(): _do("production_mode",{"mode":"island" if p.production_mode=="partner" else "partner"}))
+	if p.production_mode=="island": _text("在浮岛建造并连通工艺车间，给工程师选择「车间生产」。行路和用餐不计入加工；调岗后不再参与反应炉施工。工资照常支付。",14)
+	if ref.begins_with("circuit:") and not p.qualified_for(ref):
+		_text("先在导线对照记录同截面或同重量的结果。",17,UI.GOLD)
+		_button("打开导线对照",func(): section="circuits"; _redraw(),true); return
+	if ref.begins_with("fixture:") and not p.qualified_for(ref):
+		_text("先到材料对照台选择约束，记录计算结果。",17,UI.GOLD)
+		_button("打开材料对照",_open_materials,true)
+		return
+	if not p.qualified_for(ref):
+		var sample_name="水样" if ref=="water" else "氧气 O₂ 样品"
+		_text("① 提交%s" % sample_name,21,UI.MINT)
+		_text("需要同一批次的%d份已收集样品。身份验证消耗样品；批量供料另计。" % int(rules.samples_required))
+		var candidates=p.sample_candidates(state,ref)
+		if candidates.is_empty(): _text("在浮岛建造%s反应炉并收获，或在沙盒正确搭出对应结构。" % ("水分子" if ref=="water" else "氧气 O₂"),16,UI.GOLD)
+		for batch in candidates:
+			_button("提交%s · 库存%d份" % [sample_name,int(batch.quantity)],func(): _do("qualify",{"batch_id":str(batch.id),"reference":ref}),true,int(batch.quantity)<int(rules.samples_required))
+	else:
+		_text("② 准备供料与制作",21,UI.MINT)
+		_text("1份供料 + %d金币 → 1件成品\n标准工时%d秒 · %s" % [int(info.fee),int(info.seconds),"合作方加工" if p.production_mode=="partner" else "由本岛到岗效率决定耗时"],17,UI.TEXT)
+		_text("供料 %d份  /  成品 %d件\n金币 %d" % [p.input_count(info.input),p.available_products(selected_recipe),int(state.coins)],18,UI.GOLD)
+		if p.job.is_empty():
+			_button(("开始装罐" if info.input=="feed" else "开始制作")+" · %d金币" % int(info.fee),func(): _do("pack",{"recipe":selected_recipe}),true)
+		else:
+			progress_text=UI.paragraph("",17,UI.MINT); body.add_child(progress_text)
+			progress=ProgressBar.new(); progress.custom_minimum_size.y=12; progress.show_percentage=false; body.add_child(progress)
+			_button("取消制作 · 退供料，费用不退",func(): _do("cancel_pack"))
+	var input_info={"name":"标准水供料","price":int(rules.feed_cost)} if info.input=="feed" else p.config.supplies[info.input]
+	_text("%s · 库存%d份" % [input_info.name,p.input_count(info.input)],16,UI.MINT)
+	_button("补充1份供料 · %d金币" % int(input_info.price),func(): _do("buy_feed",{"input":info.input}))
+	_text("工业构件采用295 K参考物性和已对照几何；供料包含对应预切件。它不是玩家分子的实测性能。" if ref.begins_with("fixture:") else "结构身份不等于宏观纯度。标准组件、气源与已充能模块由合作方供给。",14)
+	if ref.begins_with("fixture:"): _button("更换设计 · 材料对照",_open_materials)
+	if info.get("domain","") in ["watershed","village","habitat","industry","modern"]: _text("水样只用于合作入门资格；组件与供料规格由合作方提供，不由水分子几何推出。",14,UI.GOLD)
+	_text("③ 选择落点",21,UI.MINT)
+	if view.display_mode=="modern":
+		_text("光伏组件拖到屋顶或地面阵列，注意承重；电池放储能站，计算机组放算力中心，风冷与散热芯放冷却回路，回收设备和废构件放回收工坊。",16,UI.TEXT)
+	elif view.display_mode=="industry":
+		_text("机组与余热回收器投放动力站；燃料、备件和加工料投放运输仓库。导线接住宅、诊所、车间或通信站；诊所和通信站限制截面4 mm²。",16,UI.TEXT)
+		if ref.begins_with("circuit:"): _text("导线采用20°C标准铜/铝电阻率，恒温直流模型；不是玩家分子实测或线缆安全设计。",14)
+	elif view.display_mode=="habitat":
+		_text("水箱与遮荫棚放到栖地；连接桥放在金色过河标记。水源可耗尽，小动物需要真实走到水点。",16,UI.TEXT)
+	elif view.display_mode=="village":
+		_text("拖到河湾仓库。水箱进入农作用水，生活饮水桶单独入库；构件和工具由居民取用。",16,UI.TEXT)
+	elif view.display_mode=="watershed":
+		_text("拖到上游、湿地或河口。营养包只能投上游；过滤机先安装再加滤盒。上游/湿地限制截面1 cm²，河口限制材料54 g。",16,UI.TEXT)
+	else: _text("深槽集中蓄水，浅台水面更宽。\n主世界总容量3箱。" if ref=="water" else "先安装供氧器，再放补给或导热芯。\n厌氧池窄槽：截面≤1 cm²。\n鱼湾轻量：材料≤54 g。换件退旧件。",16,UI.TEXT)
+	_button("查看观察记录与实验副本",func(): section="observe"; _choose_recipe(selected_recipe))
+
+func _observations() -> void:
+	var p=state.planet; var w=p.worlds.get_world()
+	_text(str(w.name),24,UI.MINT)
+	_text("封闭盆地 · %s\n已交付 %d / 3箱" % ["主仓库供给" if w.mode=="career" else "独立配给，无法运回出售",int(p.worlds.total(w))],17,UI.TEXT)
+	_button("继续观察" if w.paused else "暂停观察",func(): _do("pause"),true)
+	_world_controls(w)
+	_text("只推进当前世界；离开星球就暂停。\n返回浮岛不影响装罐。\n实验先布置，再同步观察。",14)
+	_text("世界对照",21,UI.MINT)
+	for other in p.worlds.worlds:
+		_text("%s · %d秒\n深槽 %d箱 / 浅台 %d箱" % [other.name,int(other.seconds),int(other.zones[0].target),int(other.zones[1].target)],16,UI.TEXT)
+	_events(w)
+	if w.observation:
+		_text("观察卡 · 水的去向",21,UI.MINT)
+		_text("这一箱水改变的是局部封闭盆地。深槽和浅台的水面形状不同，水箱总量相同。",16,UI.TEXT)
+
+func _world_controls(w: Dictionary) -> void:
+	var p=state.planet
+	if w.mode=="experiment":
+		_button("重置本实验 · 回到起点",func(): _do("reset_trial"))
+		_button("换用初始生态与干燥盆地",func(): _do("reset_trial",{"fresh":true}))
+	if p.worlds.worlds.size()<3:
+		_button("从干燥盆地创建实验" if view.display_mode=="water" else "从初始生态创建实验",func(): _do("fork",{"dry":true}))
+		_button("复制当前状态为实验",func(): _do("fork",{"dry":false}))
+	else:
+		_button("两个实验同步推进10秒",func(): _do("step_pair"),false,not p.worlds.can_step_pair())
+	if p.worlds.worlds.size()==3 and not p.worlds.can_step_pair(): _text("实验起点或时刻不同，暂不能作为同条件对照。",14,UI.GOLD)
+
+func _events(w: Dictionary) -> void:
+	_text("观察记录",21,UI.MINT)
+	if w.events.is_empty(): _text("尚未干预，先放置成品或开始观察。")
+	for i in range(w.events.size()-1,maxi(-1,w.events.size()-9),-1):
+		var event=w.events[i]; _text("%ds · %s" % [int(event.at),event.message],15,UI.TEXT)
+
+func _do(action: String,data: Dictionary={}) -> void:
+	_cancel_gesture()
+	if action=="select": replay_index=-1
+	elif replay_index>=0: status.text="正在回看历史，请先回到当前时刻再操作"; return
+	var message=state.planet.command(state,action,data)
+	status.text=message; acted.emit(message); _redraw(); _live()
+
+func _live() -> void:
+	var p=state.planet; var w=p.worlds.get_world()
+	var count=p.available_in(w,selected_recipe)
+	tray_title.text="◇ 铜铝模型层芯" if p.materials.designs.get(selected_recipe,{}).get("basis")=="family_model" else "◇ 假设散热芯" if p.materials.designs.get(selected_recipe,{}).get("kind","")=="sink" else "◇ 假设导线" if selected_recipe.begins_with("custom:") else "▣  "+str(p.recipe(selected_recipe).name).replace("氧气动力补给盒","氧气补给盒")
+	tray_label.text="%s %d件 · 按住拖放" % ["主仓库" if w.mode=="career" else "实验配给",count]
+	caption.text="%s · %s\n拖动左侧成品到落点；点选后也可点击放置。" % [w.name,"历史回看" if replay_index>=0 else ("暂停中" if w.paused else "观察中")]
+	if section=="materials":
+		tray_title.text="◇  材料对照台"; tray_label.text="选约束 → 记录 → 制作"
+		caption.text="橙端296 K → 青端294 K · 一维稳态导热估算\n光点表示热流；同尺寸与同重量是两道不同的设计题。"
+	if section=="dossiers":
+		tray_title.text="◇  我的留样"; tray_label.text="结构身份 / 未知性质 / 假设"
+		caption.text="拖动模型可旋转 · 展示原始坐标，未自动优化\n参考数据不自动赋给玩家样品；保存方案后进入实验世界试用。"
+	if section=="circuits":
+		tray_title.text="◇  导线对照"; tray_label.text="选约束 → 记录 → 制作"
+		caption.text="20°C恒温直流参考 · 等截面与等重量的选择不同\n较低线损不代表任何安装槽都放得下。"
+	if is_instance_valid(laminate_progress) and not p.laminates.job.is_empty():
+		laminate_progress.text="本岛装配 · 余%.1f工秒\n当前工程师到岗速率 %.2f倍" % [p.laminates.job.left,state.campus.industrial_rate(state.campus_context())]
+	if is_instance_valid(progress) and not p.job.is_empty():
+		progress.value=100*(1-float(p.job.left)/float(p.job.duration))
+		progress_text.text="%s · 余%d秒标准工时" % [p.recipe(str(p.job.recipe)).name,ceili(float(p.job.left))]
+	view.sync(display_snapshot())
+	EcologyPanel.live(self)
+	preload("res://scripts/planet_watershed_panel.gd").live(self)
+	preload("res://scripts/planet_village_panel.gd").live(self)
+	preload("res://scripts/planet_habitat_panel.gd").live(self)
+	preload("res://scripts/planet_industry_panel.gd").live(self)
+	preload("res://scripts/planet_modern_panel.gd").live(self)
+
+func _begin_drag(at: Vector2) -> void:
+	var p=state.planet; var w=p.worlds.get_world()
+	if section in ["materials","circuits","dossiers"]: status.text="先在右侧记录对照，再选择制作构件"; return
+	if replay_index>=0: status.text="回看中的世界不可投放，请先回到当前时刻"; return
+	var count=p.available_in(w,selected_recipe)
+	if not p.joined or count<1:
+		status.text="先领取合作并完成装罐，或建立独立实验副本"; return
+	dragging=true; armed=false; rotating=false; pointer=at; start=at
+	token=p.shipment_serial; target_world=w.id; target_recipe=selected_recipe; ghost.show(); ghost.move_to_front()
+
+func _tray_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch and event.pressed:
+		touch_index=event.index; _begin_drag(tray.global_position+event.position); accept_event()
+	elif event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and event.pressed and touch_index<0:
+		_begin_drag(get_global_mouse_position()); accept_event()
+
+func _site_at(at: Vector2) -> String:
+	if not viewport_box.get_global_rect().has_point(at): return ""
+	return view.pick((at-viewport_box.global_position)*Vector2(viewport.size)/viewport_box.size)
+
+func _end_drag(at: Vector2) -> void:
+	var site=_site_at(at)
+	if not site.is_empty():
+		var data={"world_id":target_world,"site_id":site,"token":token,"recipe":target_recipe}
+		_do("deploy",data)
+	elif start.distance_to(at)<10 and tray.get_global_rect().has_point(at):
+		dragging=false; armed=true; status.text="已选中成品，点击落点放置；返回键取消"
+	else:
+		_cancel_gesture(); status.text="已取消投放，成品没有消耗"
+
+func _cancel_gesture() -> void:
+	dragging=false; armed=false; rotating=false; touch_index=-1
+	if is_instance_valid(ghost): ghost.hide()
+	if is_instance_valid(view): view.highlighted=""
+
+func _input(event: InputEvent) -> void:
+	if state==null or closing: return
+	var at=Vector2.ZERO; var press=false; var release=false; var motion=false
+	if event is InputEventScreenTouch:
+		at=event.position; press=event.pressed; release=not press
+		if press and viewport_box.get_global_rect().has_point(at): touch_index=event.index
+		elif event.index!=touch_index: return
+	elif event is InputEventScreenDrag:
+		if event.index!=touch_index: return
+		at=event.position; motion=true
+	elif event is InputEventMouseButton:
+		if touch_index>=0: return
+		at=event.position
+		if viewport_box.get_global_rect().has_point(at) and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN]:
+			view.zoom(-0.5 if event.button_index==MOUSE_BUTTON_WHEEL_UP else 0.5); get_viewport().set_input_as_handled(); return
+		if event.button_index!=MOUSE_BUTTON_LEFT: return
+		press=event.pressed; release=not press
+	elif event is InputEventMouseMotion:
+		if touch_index>=0: return
+		at=event.position; motion=true
+	else: return
+	if press and viewport_box.get_global_rect().has_point(at):
+		# Camera buttons are ordinary controls above the viewport.
+		if at.y>=660 and at.x<610 and not armed: return
+		if armed: dragging=true; armed=false
+		else: rotating=true
+		pointer=at; start=at; get_viewport().set_input_as_handled()
+	elif motion and (dragging or armed or rotating):
+		if rotating: view.rotate_view(at-pointer)
+		pointer=at
+		if dragging or armed: view.highlighted=_site_at(pointer)
+		get_viewport().set_input_as_handled()
+	elif release and dragging:
+		_end_drag(at); touch_index=-1; get_viewport().set_input_as_handled()
+	elif release and rotating:
+		rotating=false; touch_index=-1; get_viewport().set_input_as_handled()
+
+func _process(dt: float) -> void:
+	if state==null or closing: return
+	refresh+=dt
+	if refresh>=0.25:
+		refresh=0
+		if fingerprint!=_fingerprint(): _redraw()
+		_live()
+	for id in site_labels:
+		var badge: PanelContainer=site_labels[id]
+		badge.visible=view.site_visible(id)
+		badge.position=viewport_box.position+view.project_site(id)*viewport_box.size/Vector2(viewport.size)+Vector2(-badge.size.x*0.5,35 if id.begins_with("habitat_") or id.begins_with("industry_") or id.begins_with("modern_") else 85)
+	if dragging or armed:
+		ghost.position=pointer+Vector2(14,-40)
+		view.highlighted=_site_at(pointer)
+		view.highlight_valid=state.planet.worlds.can_deploy(target_world,view.highlighted,target_recipe)
+		ghost.get_child(0).text="落点不适用" if not view.highlighted.is_empty() and not view.highlight_valid else "▣  "+str(state.planet.recipe(target_recipe).name)
+
+func handle_back() -> bool:
+	if dragging or armed: _cancel_gesture()
+	else: _close()
+	return true
+
+func _close() -> void:
+	if closing: return
+	closing=true; _cancel_gesture(); state.planet.observing=false; dismissed.emit(); queue_free()
+
+func _exit_tree() -> void:
+	if state!=null and state.planet.observer_id==get_instance_id(): state.planet.observing=false
+
+func _open_dossiers() -> void:
+	_cancel_gesture(); replay_index=-1; section="dossiers"
+	state.planet.worlds.get_world().paused=true
+	view.set_mode("dossiers"); view.reset_camera(); _redraw(); _live()

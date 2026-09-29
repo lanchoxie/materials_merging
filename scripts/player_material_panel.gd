@@ -37,7 +37,7 @@ static func build(p) -> void:
 	p.view.player_view.hide_laminate()
 	p._text("建立一个有条件的方案",20,UI.LILAC)
 	var kind=menu(p.body)
-	for item in [["sink","现代城市 · 散热芯"],["wire","工业港 · 导线"]]: kind.add_item(item[1]); kind.set_item_metadata(kind.item_count-1,item[0])
+	for item in [["sink","散热芯计算"],["wire","导线计算"]]: kind.add_item(item[1]); kind.set_item_metadata(kind.item_count-1,item[0])
 	kind.select(0 if p.dossier_kind=="sink" else 1)
 	kind.item_selected.connect(func(i): p.dossier_kind=str(kind.get_item_metadata(i)); p._redraw())
 	var row=UI.row(p.body,6)
@@ -64,10 +64,9 @@ static func build(p) -> void:
 		if d.record_id!=p.dossier_id or d.basis!="player_hypothesis": continue
 		count+=1
 		p._text("假设密度 %.0f kg/m³；%s\n截面 %.3f mm² · 质量 %.2f g" % [d.properties.density_kg_m3,"导热率 %.2f W/(m·K) · 295 K" % d.properties.conductivity_W_mK if d.kind=="sink" else "电阻率 %.3f nΩ·m · 293.15 K" % (d.properties.resistivity_ohm_m*1e9),d.result.area_m2*1e6,d.result.mass_kg*1000],14)
-		p._button("试用%s · %s · %s" % ["散热芯" if d.kind=="sink" else "导线","等重" if d.mode=="same_mass" else "等尺寸",id.right(5)],func(): p.section="observe"; p._choose_recipe(id))
 	if count==0: p._text("尚无方案。填写所需性质后可保存。",14)
-	p._text("每个实验章节最多安装6次，替换也占一次；重置回到该副本起点。主世界禁止投放假设材料；不会出售或生成真实库存。",14)
-	p._text("铜/铝参考在「导热芯」和工业港「导线对照」中。毒性、比热、强度、带隙、寿命和误差仍未知，不能推断。",14)
+	p._text("假设方案只保存条件计算，不生成可出售库存，也不能当作已验证材料投放星球。",14)
+	p._text("铜/铝参考在「导热对照」和「导线对照」中。毒性、比热、强度、带隙、寿命和误差仍未知。",14)
 
 static func update_quote(p) -> void:
 	if not is_instance_valid(p.dossier_quote): return

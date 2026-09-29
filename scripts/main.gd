@@ -10,7 +10,8 @@ const BuildingDrag=preload("res://scripts/building_drag.gd")
 var building_drag=BuildingDrag.new()
 const CampusView = preload("res://scripts/campus_view.gd")
 const IslandPanel=preload("res://scripts/island_panel.gd")
-const PlanetPanel=preload("res://scripts/planet_panel.gd")
+const FactoryPanel=preload("res://scripts/factory_panel.gd")
+const PlanetV2Panel=preload("res://scripts/planet_v2_panel.gd")
 const OrderBubbles=preload("res://scripts/order_bubbles.gd")
 var order_bubbles
 const CampusPanel = preload("res://scripts/campus_panel.gd")
@@ -35,6 +36,7 @@ var save_label: Label
 var toast_panel: PanelContainer
 var toast_label: Label
 var modal: Control
+var editor_return_view: Control
 var refresh_clock: float = 0
 var save_clock: float = 0
 var toast_clock: float = 0
@@ -54,6 +56,10 @@ var shop_buttons: Dictionary = {}
 var purchase_confirm_button: Button
 var research_open: bool = false
 var move_source: int = -1
+var last_factory_recipe="standard_water_crate"
+var light_bridge
+var light_bridge_busy=false
+var miniature_view
 
 func _ready() -> void:
 	if OS.has_feature("web"):
@@ -79,6 +85,8 @@ func _ready() -> void:
 		_capture_demo.call_deferred()
 	if visual_test and "--release-ui-test" not in OS.get_cmdline_user_args():
 		_run_visual_test.call_deferred()
+	if "--river-preview" in OS.get_cmdline_user_args() and not visual_test and not snapshot_mode:
+		_show_planet_v2.call_deferred()
 
 func _build_ui() -> void:
 	var bg = ColorRect.new()
@@ -89,11 +97,11 @@ func _build_ui() -> void:
 	var h = UI.row(top, 24)
 	var brand = UI.column(h, 0)
 	brand.custom_minimum_size.x = 272
-	brand.add_child(UI.label("✧  原子工坊", 27, UI.MINT))
+	brand.add_child(UI.label("☆  原子工坊", 27, UI.MINT))
 	brand.add_child(UI.label("ATOM ATELIER   /   好奇心驱动的小岛", 11, UI.MUTED))
 	var gold = UI.column(h, 0)
 	gold.custom_minimum_size.x = 140
-	gold.add_child(UI.label("◈  金币", 12, UI.GOLD))
+	gold.add_child(UI.label("◇  金币", 12, UI.GOLD))
 	gold_label = UI.label("220", 25, UI.GOLD)
 	gold.add_child(gold_label)
 	var supplies = UI.column(h, 3)
@@ -130,7 +138,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.19 分层研发  ·  铜铝组分提案 → 方法研发 → 装配 → 星球与订单  ·  模型不等于实测", 11, UI.MUTED)
+	save_label = UI.label("v0.21 河湾与浮岛  ·  种树 · 改造地形 · 带回自己的作品", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -150,7 +158,9 @@ func _build_left() -> void:
 	UI.spacer(v, 8)
 	v.add_child(UI.label("你的发现", 13, UI.MUTED))
 	v.add_child(UI.button("▧   结构图鉴", _show_collection))
-	v.add_child(UI.button("✧   研究站", _show_research))
+	v.add_child(UI.button("☆   研究站", _show_research))
+	v.add_child(UI.button("走进浮岛",_show_island_walk))
+	v.add_child(UI.button("河湾作品",_show_miniatures))
 	v.add_child(UI.paragraph("元素与物品统一放在工具箱。\n公园在下方建造菜单。",13))
 	var help_button = UI.button("怎么玩  ?", _show_help)
 	v.add_child(help_button)
@@ -175,6 +185,9 @@ func _build_world() -> void:
 	world_viewport.add_child(world)
 	campus_view = CampusView.new()
 	campus_view.setup(state,world)
+	light_bridge=preload("res://scripts/island_light_bridge.gd").new()
+	light_bridge.setup(world,state)
+	miniature_view=preload("res://scripts/island_miniature_view.gd").new(); world.add_child(miniature_view); miniature_view.sync(state)
 	world.plot_clicked.connect(_select_plot)
 	world_box.gui_input.connect(_world_input)
 	var eyebrow = UI.label("YOUR LITTLE SCIENCE ISLAND", 11, UI.MINT)
@@ -192,7 +205,7 @@ func _build_world() -> void:
 	camera_controls.position = Vector2(746, 239)
 	camera_controls.add_theme_constant_override("separation", 10)
 	add_child(camera_controls)
-	for entry in [["↶ 左转", 0.28], ["右转 ↷", -0.28]]:
+	for entry in [["← 左转", 0.28], ["右转 →", -0.28]]:
 		var turn_button = UI.button(entry[0], func(): world.orbit(entry[1]))
 		turn_button.custom_minimum_size = Vector2(142, 44)
 		camera_controls.add_child(turn_button)
@@ -222,7 +235,7 @@ func _build_world() -> void:
 func _build_toolbar() -> void:
 	var panel = UI.box(self, Rect2(24,798,1392,78))
 	var h = UI.row(panel,12)
-	var click_b = UI.button("✧  注入微光   +2", func(): _action(state.click_energy()), true)
+	var click_b = UI.button("☆  注入微光   +2", func(): _action(state.click_energy()), true)
 	click_b.custom_minimum_size.x = 214
 	h.add_child(click_b)
 	var buttons = [
@@ -231,7 +244,7 @@ func _build_toolbar() -> void:
 		["◇  探索盲盒", _show_crate],
 		["科研小镇", _show_crew],
 		["工具箱", _show_toolbox],
-		["⌬  结构工坊", _show_sandbox]
+		["□  结构工坊", _show_sandbox]
 	]
 	for entry in buttons:
 		var b = UI.button(entry[0], entry[1])
@@ -239,6 +252,7 @@ func _build_toolbar() -> void:
 		h.add_child(b)
 
 func _world_input(event: InputEvent) -> void:
+	if light_bridge_busy: return
 	if (event is InputEventMouseButton or event is InputEventMouseMotion) and event.device == -1:
 		return
 	if event is InputEventMouseMotion and event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
@@ -265,7 +279,8 @@ func _world_input(event: InputEvent) -> void:
 		_move_world_pointer(event.position)
 
 func _begin_world_pointer(pos: Vector2) -> void:
-	building_drag.begin(pos)
+	if _on_light_bridge(pos): building_drag.cancel()
+	else: building_drag.begin(pos)
 	world_pointer_down = true
 	world_pointer_start = pos
 	world_pointer_last = pos
@@ -303,10 +318,26 @@ func _input(event: InputEvent) -> void:
 			building_drag.cancel()
 
 func _pick_world(local_position: Vector2) -> void:
+	if _on_light_bridge(local_position): _enter_light_bridge(); return
 	var screen_position = local_position * Vector2(world_viewport.size) / world_box.size
 	var plot_index: int = world.screen_pick(screen_position)
 	if plot_index >= 0:
 		_select_plot(plot_index)
+
+func _on_light_bridge(local_position: Vector2) -> bool:
+	return is_instance_valid(light_bridge) and light_bridge.hit(world.camera,local_position*Vector2(world_viewport.size)/world_box.size)
+
+func _enter_light_bridge() -> void:
+	if light_bridge_busy or is_instance_valid(modal): return
+	light_bridge_busy=true; light_bridge.activate(); building_drag.cancel()
+	var veil=ColorRect.new(); veil.color=Color(0.60,0.88,0.96,0)
+	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); veil.mouse_filter=Control.MOUSE_FILTER_STOP; add_child(veil)
+	var tween=create_tween(); tween.tween_property(veil,"color:a",1.0,0.3)
+	await tween.finished
+	_show_planet_v2(); modal._enter(); veil.move_to_front()
+	tween=create_tween(); tween.tween_property(veil,"color:a",0.0,0.35)
+	await tween.finished
+	veil.queue_free(); light_bridge_busy=false
 
 func _select_plot(index: int) -> void:
 	if index < 0 or index >= state.plots.size(): return
@@ -351,6 +382,10 @@ func _rebuild_sidebar() -> void:
 		var building=state.layout.building_info(p.kind)
 		side.add_child(UI.label("迎客广场" if p.kind=="plaza" else str(building.get("name",state.DECORATIONS.get(p.kind,{"name":"岛屿装饰"}).name)),24,UI.LILAC))
 		side.add_child(UI.paragraph("让实验与生活，在同一座小岛上发生。",15))
+		if p.kind=="workshop":
+			side.add_child(UI.button("制造材料与器件",_show_factory,true))
+			side.add_child(UI.paragraph("构件、光伏与生态设备都在这里加工。工程师到岗后推进，完工自动收入工具箱。",14))
+			side.add_child(UI.button("安排车间工程师",_show_campus.bind("people")))
 		if p.kind!="plaza": side.add_child(UI.button("搬迁到另一块空地",_show_relocation,true))
 		else:
 			side.add_child(UI.paragraph("收购商骑车或乘车来访。交付或送客后，等待下一班来客。",16))
@@ -377,6 +412,7 @@ func _rebuild_sidebar() -> void:
 		var edit_b = UI.button("进入原子工作台   →", _open_editor,true)
 		edit_b.disabled = float(r.build_left) > 0
 		side.add_child(edit_b)
+		side.add_child(UI.button("有机物 · 反应釜合成",_show_organic_synthesis.bind(selected_reactor)))
 		var h = UI.row(side,8)
 		var harvest = UI.button("收获",func(): _action(state.harvest(selected_reactor)))
 		harvest.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -457,6 +493,9 @@ func _update_labels() -> void:
 	if state.engineers > 1: step = 2
 	if state.reactors.size() > 1: step = 3
 	quest_label.text = steps[step]
+	if state.planet.joined:
+		var journey=preload("res://scripts/material_journey.gd").next(state)
+		quest_label.text="材料路线 %d/6 · %s · 邮箱查看下一步" % [journey.index,journey.title]
 	for entry in market_rows:
 		if is_instance_valid(entry.button):
 			var quote: Dictionary = state.delivery_quote(entry.index)
@@ -489,6 +528,8 @@ func _sync_world() -> void:
 		views.append(view)
 	world.sync(state.plots,views,state.templates,state.elements,state.engineers)
 	if is_instance_valid(campus_view): campus_view.sync()
+	if is_instance_valid(light_bridge): light_bridge.sync(state)
+	if is_instance_valid(miniature_view): miniature_view.sync(state)
 
 func _action(message: String) -> void:
 	_toast(message)
@@ -504,11 +545,14 @@ func _toast(message: String) -> void:
 	toast_clock = 4.0
 
 func _close_modal() -> void:
+	if is_instance_valid(world_viewport): world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
 	building_drag.cancel()
 	research_open = false
 	if is_instance_valid(modal):
 		modal.queue_free()
 	modal = null
+	if is_instance_valid(editor_return_view): editor_return_view.queue_free()
+	editor_return_view = null
 	market_rows.clear()
 	shop_buttons.clear()
 	purchase_confirm_button = null
@@ -540,7 +584,7 @@ func _dialog(title: String, subtitle: String, wide: bool = false) -> VBoxContain
 	return body
 
 func _show_templates(build: bool) -> void:
-	var body = _dialog("选择一个小小世界", "新炉包含初始元素。更换配方预付25金币，等待空闲博士装炉；旧批次保留。")
+	var body = _dialog("选择初始结构", "新炉包含初始元素，键长与角度需要自己调节。更换配方预付25金币，等待博士装炉；旧批次保留。")
 	for key in state.templates:
 		if state.templates[key].get("substitution_only",false) and key not in state.campus.unlocked_materials: continue
 		var tpl: Dictionary = state.templates[key]
@@ -550,7 +594,7 @@ func _show_templates(build: bool) -> void:
 		v.add_child(UI.label("%s   %s" % [tpl.formula,tpl.name],20,Color(tpl.color)))
 		var profile: Dictionary = state.economy.profile(tpl)
 		v.add_child(UI.paragraph("%s章节  ·  %d个可编辑原子\n复杂度 %.2f  ·  满匹配Lv.1产出 %.2f金币/秒" % [tpl.chapter,tpl.atoms.size(),profile.complexity,profile.base_rate],13))
-		v.add_child(UI.button("建造此反应炉  ·  100金币" if build else "装载结构  ·  25金币",_choose_template.bind(key,build)))
+		v.add_child(UI.button("建造此反应炉  ·  100金币" if build else "装载初始结构  ·  25金币",_choose_template.bind(key,build)))
 
 func _show_map(_frontier: bool=true) -> void:
 	# Expansion is performed on the island, never in a separate matrix.
@@ -592,10 +636,10 @@ func _show_income() -> void:
 
 func _show_sandbox() -> void:
 	var works: Array = state.list_sandbox_structures()
-	var body = _dialog("结构工坊", "SANDBOX STUDIO   /   从可靠基线开始，再自由增删原子和连接", true)
-	body.add_child(UI.paragraph("基础结构是可复用的教学起点；你可以保存自己的命名作品。应用到反应炉时预览费用；未知组合生产展示样品，等待创意收购商。",15,UI.TEXT))
+	var body = _dialog("结构工坊", "SANDBOX STUDIO   /   从初始结构开始，自由调整原子和连接", true)
+	body.add_child(UI.paragraph("配方提供元素与连接，初始坐标尚未调优。自己调整键长和角度，或解锁适用的科研方法来辅助优化；保存过的作品保留你的坐标。",15,UI.TEXT))
 	body.add_child(UI.button("＋ 新建空白探索作品", func(): _open_sandbox_editor(state.new_sandbox_structure("未命名探索")), true))
-	body.add_child(UI.label("可用基线  ·  %d 个" % state.baseline_ids().size(),20,UI.MINT))
+	body.add_child(UI.label("初始配方  ·  %d 个" % state.baseline_ids().size(),20,UI.MINT))
 	var grid = GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation",12)
@@ -609,23 +653,23 @@ func _show_sandbox() -> void:
 		v.add_child(UI.label("%s   %s" % [info.formula,info.name],18,UI.GOLD))
 		v.add_child(UI.paragraph("%s · %d个原子 · %d条连接" % [baseline_id,info.atoms.size(),info.bonds.size()],13))
 		var actions = UI.row(v, 8)
-		actions.add_child(UI.button("打开工作台", func(): _open_sandbox_editor(state.sandbox_from_baseline(baseline_id, "我的%s" % str(info.formula)))))
-		actions.add_child(UI.button("快速保存",_save_baseline_work.bind(baseline_id)))
+		actions.add_child(UI.button("开始调节", func(): _open_sandbox_editor(state.sandbox_from_baseline(baseline_id, "我的%s" % str(info.formula)))))
+		actions.add_child(UI.button("保存初始草稿",_save_baseline_work.bind(baseline_id)))
 	if works.size() > 0:
 		body.add_child(UI.label("我的作品库  ·  %d 件" % works.size(),20,UI.LILAC))
 		for work in works:
-			body.add_child(UI.button("✧ %s  ·  %s  ·  打开作品" % [work.name,work.formula],_open_sandbox_editor.bind(work)))
+			body.add_child(UI.button("☆ %s  ·  %s  ·  打开作品" % [work.name,work.formula],_open_sandbox_editor.bind(work)))
 	body.add_child(UI.paragraph("工作台支持增删原子、增加/移除连接、命名保存；晶胞和周期边界将在后续结构章节加入。",13,UI.MUTED))
 
 func _open_sandbox_editor(structure: Dictionary) -> void:
-	_close_modal()
 	var editor = SandboxEditor.new()
-	add_child(editor)
+	_begin_structure_editor(editor)
 	editor.setup(state,structure,selected_reactor)
-	modal=editor
+	if is_instance_valid(editor_return_view): editor.set_return_label("返回漫步")
 	editor.saved.connect(func(): _toast("作品已保存，可以继续编辑或装入炉子"))
-	editor.applied.connect(func(): _action("作品已应用，反应炉开始新一轮生产"))
-	editor.dismissed.connect(func(): modal=null; _show_sandbox())
+	editor.applied.connect(func(): _action("已提交博士装炉；旧炉继续生产，完成后切换新分子" if not state.reactors[editor.reactor_index].get("installation",{}).is_empty() else "坐标已保存，反应釜继续生产"))
+	editor.synthesis_requested.connect(func(): _show_organic_synthesis(editor.reactor_index))
+	editor.dismissed.connect(func(): _finish_structure_editor(editor,true))
 
 func _save_baseline_work(baseline_id: String) -> void:
 	var info: Dictionary = state.baseline_data(baseline_id)
@@ -647,16 +691,68 @@ func _show_island_panel(page: String, visitor: int=-1) -> void:
 	panel.acted.connect(_action)
 	panel.dismissed.connect(func(): if modal==panel: modal=null)
 	panel.arrange.connect(func(kind): _show_campus("build"); modal.prop_choice=kind; modal._show("build"))
-	panel.planet_requested.connect(_show_planet)
+	panel.factory_requested.connect(_show_factory)
+	panel.planet_v2_requested.connect(_show_planet_v2)
+	panel.material_navigation.connect(_navigate_materials)
 
-func _show_planet() -> void:
+func _navigate_materials(route: String) -> void:
+	match route:
+		"elements": _show_toolbox(); modal._tab("elements")
+		"sandbox": _show_sandbox()
+		"research": _show_campus("research")
+		"mail": _show_market()
+		"island": _close_modal()
+		"materials": _show_factory(); modal.dossier_family=true; modal._open_dossiers()
+		"workshop":
+			_show_factory()
+			for id in state.planet.materials.designs:
+				if state.planet.materials.designs[id].basis=="family_model": modal._choose_recipe(id); return
+			modal.dossier_family=true; modal._open_dossiers()
+		_: _show_factory()
+
+func _show_factory(recipe_id: String="") -> void:
 	_close_modal()
-	var panel=PlanetPanel.new(); add_child(panel); modal=panel
+	if not recipe_id.is_empty(): last_factory_recipe=recipe_id
+	var panel=FactoryPanel.new(); add_child(panel); modal=panel
+	panel.setup(state)
+	panel._choose_recipe(last_factory_recipe)
+	panel.acted.connect(_action)
+	panel.mail_requested.connect(_show_market)
+	panel.planet_requested.connect(func(): last_factory_recipe=panel.selected_recipe; _show_planet_v2())
+	panel.synthesis_requested.connect(func(): _show_organic_synthesis())
+	panel.campus_requested.connect(func(tab):
+		last_factory_recipe=panel.selected_recipe
+		if tab=="build":
+			for i in range(state.plots.size()):
+				if state.plots[i].kind=="workshop": _select_plot(i); _show_campus("build"); return
+			_show_build_menu()
+		else: _show_campus(tab))
+	panel.dismissed.connect(func():
+		last_factory_recipe=panel.selected_recipe
+		if modal==panel: modal=null
+		if not snapshot_mode and not visual_test: state.save_game())
+
+func _show_planet_v2() -> void:
+	_close_modal()
+	var panel=PlanetV2Panel.new(); add_child(panel); modal=panel
 	panel.setup(state)
 	panel.acted.connect(_action)
+	panel.workshop_requested.connect(_show_factory)
+	panel.synthesis_requested.connect(func(): _show_organic_synthesis())
 	panel.dismissed.connect(func():
 		if modal==panel: modal=null
 		if not snapshot_mode and not visual_test: state.save_game())
+
+func _show_organic_synthesis(index: int=-1) -> void:
+	var panel=preload("res://scripts/organic_reactor_panel.gd").new()
+	_begin_structure_editor(panel)
+	panel.setup(state,index)
+	if is_instance_valid(editor_return_view): panel.set_return_label("返回漫步")
+	panel.acted.connect(_action)
+	panel.dismissed.connect(func(): _finish_structure_editor(panel))
+	panel.campus_requested.connect(_show_campus)
+	panel.planet_requested.connect(_show_planet_v2)
+	panel.edit_requested.connect(func(i): _select_plot(int(state.reactors[i].plot)); _open_editor())
 
 func _deliver_market(index: int) -> void:
 	_action(state.deliver(index))
@@ -735,7 +831,7 @@ func _open_crate() -> void:
 	if state.crate_count == previous:
 		return
 	var body = _dialog("惊喜抵达！", "给每一次好奇，一个小小的奖励。")
-	var reward = UI.label("✧",96,UI.GOLD)
+	var reward = UI.label("☆",96,UI.GOLD)
 	reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	body.add_child(reward)
 	body.add_child(UI.paragraph(message,24,UI.MINT))
@@ -764,6 +860,7 @@ func _show_campus(tab: String="overview") -> void:
 	add_child(panel)
 	panel.setup(state,selected_plot)
 	panel.changed.connect(_action)
+	panel.factory_requested.connect(_show_factory)
 	panel.dismissed.connect(func(): modal=null)
 	panel._show(tab)
 
@@ -898,13 +995,35 @@ func _open_editor() -> void:
 	if state.reactors[selected_reactor].get("sandbox",false):
 		_open_sandbox_editor(state.reactor_work(state.reactors[selected_reactor]))
 		return
-	_close_modal()
 	var editor = Editor.new()
-	add_child(editor)
+	_begin_structure_editor(editor)
 	editor.setup(state,selected_reactor)
-	modal = editor
-	editor.applied.connect(func(): modal = null; _action("修改已提交；更换元素等待博士装炉，已有产物会保留。"))
-	editor.dismissed.connect(func(): modal = null)
+	if is_instance_valid(editor_return_view): editor.set_return_label("返回漫步")
+	editor.applied.connect(func(): _finish_structure_editor(editor); _action("修改已提交；更换元素等待博士装炉，已有产物会保留。"))
+	editor.dismissed.connect(func(): _finish_structure_editor(editor))
+	editor.synthesis_requested.connect(func(): _show_organic_synthesis(editor.reactor_index))
+
+func _begin_structure_editor(editor: Control) -> void:
+	# Keep the caller's camera and scene alive only for this editor visit.
+	var return_view: Control=modal if is_instance_valid(modal) and modal.has_method("set_editor_open") else editor_return_view
+	editor_return_view=null
+	if is_instance_valid(return_view):
+		return_view.set_editor_open(true)
+		if modal==return_view: modal=null
+	_close_modal()
+	editor_return_view=return_view
+	if is_instance_valid(return_view): world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
+	add_child(editor); modal=editor
+
+func _finish_structure_editor(editor: Control,return_to_library: bool=false) -> void:
+	if modal!=editor: return
+	editor.queue_free(); modal=null
+	if is_instance_valid(editor_return_view):
+		modal=editor_return_view; editor_return_view=null
+		modal.set_editor_open(false)
+		world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
+	elif return_to_library: _show_sandbox()
+	else: world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
@@ -926,6 +1045,7 @@ func _notification(what: int) -> void:
 		get_tree().quit()
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if light_bridge_busy: return
 	if event.is_action_pressed("ui_cancel"):
 		if is_instance_valid(modal) and modal.has_method("handle_back") and modal.handle_back(): return
 		_close_modal()
@@ -1168,3 +1288,41 @@ func _test_touch(pos: Vector2, down: bool) -> void:
 	event.pressed = down
 	Input.parse_input_event(event)
 	await get_tree().process_frame
+
+
+func _show_island_walk() -> void:
+	_close_modal()
+	var panel=preload("res://scripts/island_walk_panel.gd").new(); add_child(panel); modal=panel; panel.setup(state)
+	world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
+	panel.dismissed.connect(func():
+		if modal==panel: modal=null
+		world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS)
+	panel.requested.connect(func(kind: String,index: int):
+		if kind=="planet": _show_planet_v2(); modal._enter()
+		elif kind=="miniatures": _show_miniatures()
+		elif kind=="workshop": _show_factory()
+		elif kind=="reactor": _select_plot(index); _open_editor()
+		elif kind in ["engineer_house","doctor_dorm","professor_apartment","academician_villa","house"]:
+			if not panel.enter_residence(index): _close_modal(); _select_plot(index)
+		else: _close_modal(); _select_plot(index))
+
+func _show_miniatures() -> void:
+	var body=_dialog("河湾作品 · 把探索带回家", "星球上装备微缩器，瞄准自建作品装箱。作品会从原地搬走，材料不会复制。",true)
+	var boxes=state.planet.v2.construction.miniatures
+	if boxes.is_empty():
+		body.add_child(UI.paragraph("还没有带回来的作品。先用工艺车间做出的构件搭一座小屋、一段桥或雕塑，再用背包里的微缩器收纳。\n每件最多64块、8×8×8格；有作物的种植箱先收获。",18))
+		body.add_child(UI.button("走过光桥去河湾",_show_planet_v2,true)); return
+	body.add_child(UI.paragraph("每块地可以放一座展台，摆在地块角落。展品仍属于你：收回后可在河湾重新展开。",16,UI.MUTED))
+	for id in boxes:
+		var item=boxes[id]; var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(Color("213c45"),14)); body.add_child(card)
+		var row=UI.row(card,12); row.add_child(UI.label("%s · %d块" % [item.name,item.blocks.size()],19,UI.MINT))
+		var options=OptionButton.new(); options.custom_minimum_size=Vector2(380,48); row.add_child(options)
+		options.add_item("留在背包",0); options.set_item_metadata(0,-1)
+		for i in range(state.plots.size()):
+			var p=state.plots[i]
+			if not p.unlocked or p.kind=="plaza": continue
+			options.add_item("地块 (%d,%d) · %s" % [p.x,p.z,p.kind]); var at=options.item_count-1; options.set_item_metadata(at,i)
+			if item.plot==i: options.select(at)
+		row.add_child(UI.button("摆放 / 收回",func():
+			_action(state.planet.command(state,"v2_mini_exhibit",{"id":id,"plot":options.get_item_metadata(options.selected)})); _show_miniatures(),true))
+	body.add_child(UI.button("走近展台看看",_show_island_walk))
