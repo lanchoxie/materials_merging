@@ -64,6 +64,12 @@ static func paragraph(text: String, font_size: int = 14, color: Color = MUTED) -
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return l
 
+## Soft UI click through the Sfx autoload when it exists (it is absent in some tools).
+static func _click_sound() -> void:
+	var loop = Engine.get_main_loop()
+	var sfx = loop.root.get_node_or_null("Sfx") if loop is SceneTree else null
+	if sfx: sfx.play("ui")
+
 static func button(text: String, action: Callable, primary: bool = false) -> Button:
 	var b = Button.new()
 	# Native touch must bubble to an enclosing ScrollContainer. Its scroll-begin
@@ -73,6 +79,7 @@ static func button(text: String, action: Callable, primary: bool = false) -> But
 	b.custom_minimum_size.y = 44
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.pressed.connect(action)
+	b.pressed.connect(_click_sound)
 	if primary:
 		b.add_theme_stylebox_override("normal", style(MINT, 12, MINT))
 		b.add_theme_stylebox_override("hover", style(MINT.lightened(0.15), 12, MINT))
