@@ -350,7 +350,22 @@ func _tab(id: String) -> void:
 func _act(action: String,payload: Dictionary={}) -> void:
 	if _in_wilderness() and action in ["v2_plant","v2_harvest","v2_pen","v2_deploy_sample","v2_deploy_product"]:
 		message="远郊当前开放探索与野生采集。播种、设施和材料试验请返回起始河湾。"; _live(); return
-	message=state.planet.command(state,action,payload); acted.emit(message); _refresh_hotbar(); _redraw(); _sync()
+	message=state.planet.command(state,action,payload); _feel(action); acted.emit(message); _refresh_hotbar(); _redraw(); _sync()
+
+## Each tool gets its own sound; impacts nudge the first-person camera. Failures only buzz.
+const ACTION_SOUNDS={"v2_chop":["chop",1.0],"v2_dig":["dig",1.0],"v2_fill":["dig",0.8],"v2_strike":["hit",1.0],
+	"v2_build":["build",1.0],"v2_dismantle":["build",0.8],"v2_tree_plant":["pop",0.9],"v2_field_plant":["pop",1.0],"v2_plant":["pop",1.0],
+	"v2_field_collect":["pop",1.25],"v2_collect_wild":["pop",1.25],"v2_harvest":["harvest",1.0],"v2_field_water":["whoosh",1.2],
+	"v2_field_feed":["pop",1.1],"v2_mini_pack":["close",1.0],"v2_mini_unfold":["open",1.0],"v2_deploy_product":["build",1.1]}
+const KICK_ACTIONS={"v2_chop":1.0,"v2_dig":0.8,"v2_fill":0.6,"v2_strike":1.2,"v2_build":0.5,"v2_dismantle":0.5}
+
+func _feel(action: String) -> void:
+	var sfx=get_node_or_null("/root/Sfx")
+	if preload("res://scripts/island_feedback.gd").looks_like_failure(message):
+		if sfx: sfx.play("error")
+		return
+	if sfx and ACTION_SOUNDS.has(action): sfx.play(ACTION_SOUNDS[action][0],ACTION_SOUNDS[action][1])
+	if view and view.first_person and KICK_ACTIONS.has(action): view.kick(KICK_ACTIONS[action])
 
 func _card(title: String) -> VBoxContainer:
 	var p=PanelContainer.new(); body.add_child(p); var col=UI.column(p,7); col.add_child(UI.paragraph(title,19,UI.MINT)); return col

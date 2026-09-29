@@ -60,6 +60,11 @@ var last_factory_recipe="standard_water_crate"
 var light_bridge
 var light_bridge_busy=false
 var miniature_view
+const IslandFeedback=preload("res://scripts/island_feedback.gd")
+var feedback=IslandFeedback.new()
+var pointer_position: Vector2=Vector2(720,450)
+var shown_coins: float=-1.0
+var sound_button: Button
 
 func _ready() -> void:
 	if OS.has_feature("web"):
@@ -79,6 +84,8 @@ func _ready() -> void:
 	_sync_world()
 	_select_plot(4)
 	_update_labels()
+	feedback.capture(state)
+	if not snapshot_mode: _ambience("amb_island")
 	get_tree().auto_accept_quit = false
 	get_tree().quit_on_go_back = false
 	if snapshot_mode:
@@ -119,6 +126,10 @@ func _build_ui() -> void:
 	income.add_child(UI.label("预计总产出", 12, UI.MUTED))
 	income_label = UI.label("", 24, UI.MINT)
 	income.add_child(income_label)
+	sound_button = UI.button("♪ 开" if _sfx() == null or _sfx().enabled else "♪ 关", _toggle_sound)
+	sound_button.custom_minimum_size.x = 70
+	sound_button.tooltip_text = "声音开关"
+	h.add_child(sound_button)
 	var save = UI.button("保存", func(): _toast(state.save_game()))
 	save.custom_minimum_size.x = 66
 	h.add_child(save)
@@ -138,7 +149,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.21 河湾与浮岛  ·  种树 · 改造地形 · 带回自己的作品", 11, UI.MUTED)
+	save_label = UI.label("v0.22 手感更新  ·  音效 · 连击 · 完美契合 · 点炉收获", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -305,6 +316,7 @@ func _end_world_pointer(pos: Vector2) -> void:
 	world_pointer_down = false
 
 func _input(event: InputEvent) -> void:
+	if (event is InputEventMouseButton or event is InputEventScreenTouch) and event.pressed: pointer_position = event.position
 	if not is_instance_valid(world_box): return
 	# A release outside the viewport must not leave a captured drag behind.
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -323,6 +335,15 @@ func _pick_world(local_position: Vector2) -> void:
 	var plot_index: int = world.screen_pick(screen_position)
 	if plot_index >= 0:
 		_select_plot(plot_index)
+		_tap_harvest(plot_index)
+
+## Tapping a reactor that has something ready collects it right there in the world.
+func _tap_harvest(plot_index: int) -> void:
+	var p: Dictionary = state.plots[plot_index]
+	if p.kind != "reactor": return
+	var r: Dictionary = state.reactors[int(p.rid)]
+	if float(r.build_left) <= 0.0 and (int(r.get("pending", 0)) > 0 or float(r.stored_coins) >= 1.0):
+		_action(state.harvest(int(p.rid)))
 
 func _on_light_bridge(local_position: Vector2) -> bool:
 	return is_instance_valid(light_bridge) and light_bridge.hit(world.camera,local_position*Vector2(world_viewport.size)/world_box.size)
@@ -465,11 +486,34 @@ func _process(delta: float) -> void:
 		toast_clock -= delta
 		if toast_clock <= 0:
 			toast_panel.hide()
+	_roll_coins(delta)
+	feedback.capture(state)
+
+## The coin counter rolls toward the real value instead of jumping.
+func _roll_coins(delta: float) -> void:
+	if gold_label == null: return
+	if shown_coins < 0.0 or absf(state.coins - shown_coins) < 1.0: shown_coins = state.coins
+	else: shown_coins = lerpf(shown_coins, state.coins, clampf(delta * 9.0, 0.0, 1.0))
+	gold_label.text = "%d" % int(shown_coins)
+
+## Autoloads are looked up by path: scripts preloaded by --script tests compile before autoload globals exist.
+func _sfx() -> Node:
+	return get_node_or_null("/root/Sfx")
+
+func _ambience(sound: String) -> void:
+	if _sfx(): _sfx().ambience(sound)
+
+func _toggle_sound() -> void:
+	if _sfx() == null: return
+	var on: bool = _sfx().toggle()
+	sound_button.text = "♪ 开" if on else "♪ 关"
+	if on: _sfx().play("ui")
+	_toast("声音已开启" if on else "声音已关闭")
 
 func _update_labels() -> void:
 	if gold_label == null:
 		return
-	gold_label.text = "%s" % int(state.coins)
+	if shown_coins < 0.0: gold_label.text = "%s" % int(state.coins)
 	material_label.text = "星砂 %d   晶露 %d   合金 %d" % state.materials
 	people_label.text = "工程师 %d   科研 %d" % [state.engineers,state.campus.people.size()-state.engineers]
 	income_label.text = "%.1f / s" % state.total_income()
@@ -532,6 +576,7 @@ func _sync_world() -> void:
 	if is_instance_valid(miniature_view): miniature_view.sync(state)
 
 func _action(message: String) -> void:
+	feedback.react(self, message)
 	_toast(message)
 	_sync_world()
 	_rebuild_sidebar()
@@ -545,6 +590,7 @@ func _toast(message: String) -> void:
 	toast_clock = 4.0
 
 func _close_modal() -> void:
+	if not snapshot_mode: _ambience("amb_island")
 	if is_instance_valid(world_viewport): world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
 	building_drag.cancel()
 	research_open = false
@@ -739,8 +785,10 @@ func _show_planet_v2() -> void:
 	panel.acted.connect(_action)
 	panel.workshop_requested.connect(_show_factory)
 	panel.synthesis_requested.connect(func(): _show_organic_synthesis())
+	_ambience("amb_river")
 	panel.dismissed.connect(func():
 		if modal==panel: modal=null
+		_ambience("amb_island")
 		if not snapshot_mode and not visual_test: state.save_game())
 
 func _show_organic_synthesis(index: int=-1) -> void:

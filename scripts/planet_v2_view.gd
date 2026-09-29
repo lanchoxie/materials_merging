@@ -38,6 +38,8 @@ var render_keys={}
 var marker: MeshInstance3D
 var yaw=-0.35
 var zoom=1.0
+var kick_amount=0.0
+var stride=0.0
 
 func _ready() -> void:
 	mat=StandardMaterial3D.new(); mat.vertex_color_use_as_albedo=true; mat.roughness=0.92
@@ -251,7 +253,9 @@ func orbit(amount: float) -> void:
 
 func _camera(dt: float) -> void:
 	if first_person:
+		var before=walker.position
 		walker.step(dt); hands.moving=walker.movement.length(); camera.position=walker.eye(); camera.rotation=Vector3(walker.pitch,walker.yaw,0); marker.hide()
+		_feel(dt,walker.position.distance_to(before))
 		var id=terrain.region_at(walker.position)
 		if id!=selected: selected=id; region_selected.emit(id)
 		return
@@ -264,6 +268,21 @@ func _camera(dt: float) -> void:
 	camera.look_at(target)
 	marker.position=CENTERS[selected]+Vector3(0,0.3+_height(CENTERS[selected].x,CENTERS[selected].z),0)
 	marker.visible=not close_view
+
+## Tool impact: a short camera dip that settles within a few frames (never moves the walker).
+func kick(amount: float=1.0) -> void:
+	kick_amount=maxf(kick_amount,amount)
+
+func _feel(dt: float,walked: float) -> void:
+	if kick_amount>0.001:
+		camera.rotation.x-=0.035*kick_amount; camera.rotation.z+=0.012*kick_amount*sin(Time.get_ticks_msec()*0.04)
+		kick_amount=move_toward(kick_amount,0.0,dt*6.0)
+	if not walker.grounded or walked>1.5: stride=0.0; return
+	stride+=walked
+	if stride>=(2.1 if walker.running else 1.6):
+		stride=0.0
+		var sfx=get_node_or_null("/root/Sfx")
+		if sfx: sfx.play("step")
 
 func pick(at: Vector2) -> String:
 	if first_person: return selected

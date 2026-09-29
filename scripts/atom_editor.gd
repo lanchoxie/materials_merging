@@ -38,6 +38,13 @@ var palette: Control
 var replace_group: bool = false
 var palette_buttons: Dictionary = {}
 var return_button: Button
+# Feel: the match meter sings while you drag and celebrates a perfect fit.
+const PERFECT_FIT = 0.98
+const PREMIUM_FIT = 0.93
+const REARM_BELOW = 0.96
+var _perfect_armed: bool = true
+var _last_step: int = -1
+var _bar_fill: StyleBoxFlat
 
 func setup(model, index: int) -> void:
 	state = model
@@ -68,6 +75,7 @@ func setup(model, index: int) -> void:
 	_build_view()
 	_build_sidebar()
 	_render_molecule()
+	_perfect_armed = state.quality(draft) < PERFECT_FIT
 	_update_readout()
 
 func _build_view() -> void:
@@ -178,6 +186,8 @@ func _build_sidebar() -> void:
 	preview_bar = ProgressBar.new()
 	preview_bar.custom_minimum_size.y = 8
 	preview_bar.show_percentage = false
+	_bar_fill = UI.style(UI.MINT, 4)
+	preview_bar.add_theme_stylebox_override("fill", _bar_fill)
 	v.add_child(preview_bar)
 	bond_info = UI.paragraph("", 13)
 	v.add_child(bond_info)
@@ -347,6 +357,8 @@ func _begin_drag(screen_position: Vector2, pick_radius: float) -> void:
 			picked = i
 			dragging = true
 	if dragging:
+		var sfx = get_node_or_null("/root/Sfx")
+		if sfx: sfx.play("pop", 1.3)
 		var old = Vector3(points[picked][0], points[picked][1], points[picked][2])
 		var plane = Plane(camera.global_basis.z, old)
 		var hit = plane.intersects_ray(camera.project_ray_origin(screen_position), camera.project_ray_normal(screen_position))
@@ -403,7 +415,8 @@ func _update_readout() -> void:
 	var q: float = state.quality(draft)
 	rate_label.text = "%.2f  金币 / 秒" % state.income(draft)
 	preview_bar.value = q * 100.0
-	response_label.text = "几何匹配  %d%%   ·   %s" % [roundi(q*100), "平稳运转" if q > 0.8 else "继续探索"] if info.known else "探索样品 · 科学匹配度未知"
+	response_label.text = "几何匹配  %d%%   %s   ·   %s" % [roundi(q*100), stars_text(q), _fit_word(q)] if info.known else "探索样品 · 科学匹配度未知"
+	if info.known: _meter_feel(q)
 	bond_info.text = "彩球大小参考原子半径；圆柱表示\n模板中的连接关系，可旋转检查深度。"
 	if info.has("cell"):
 		bond_info.text = "细线为理想晶胞边界，粗线为配位示意。\n半径构造的教学晶胞，非真实基态。"
@@ -424,6 +437,55 @@ func _update_readout() -> void:
 		mat.emission_enabled = i == picked
 		mat.emission = mat.albedo_color
 		mat.emission_energy_multiplier = 0.35 if i == picked else 0.0
+
+static func stars(q: float) -> int:
+	return 3 if q >= PERFECT_FIT else 2 if q >= PREMIUM_FIT else 1 if q >= 0.8 else 0
+
+static func stars_text(q: float) -> String:
+	var n := stars(q)
+	return "★".repeat(n) + "☆".repeat(3 - n)
+
+func _fit_word(q: float) -> String:
+	return "完美契合" if q >= PERFECT_FIT else "精品级" if q >= PREMIUM_FIT else "平稳运转" if q > 0.8 else "继续探索"
+
+## Colour ramp, rising ticks while dragging, and a one-shot celebration at a perfect fit.
+func _meter_feel(q: float) -> void:
+	var cold := Color("ff8f7a")
+	var warm := UI.GOLD
+	var tint := cold.lerp(warm, clampf(q / 0.8, 0, 1)) if q < 0.8 else warm.lerp(UI.MINT, clampf((q - 0.8) / 0.18, 0, 1))
+	if _bar_fill: _bar_fill.bg_color = tint
+	response_label.add_theme_color_override("font_color", tint)
+	var sfx = get_node_or_null("/root/Sfx")
+	var step := int(q * 40.0)
+	if dragging and sfx and step != _last_step and _last_step >= 0:
+		sfx.play("tick", 0.6 + q * 1.1)
+	_last_step = step
+	if q < REARM_BELOW:
+		_perfect_armed = true
+	elif q >= PERFECT_FIT and _perfect_armed:
+		_perfect_armed = false
+		_celebrate(q)
+
+func _celebrate(q: float) -> void:
+	var sfx = get_node_or_null("/root/Sfx")
+	var fx = get_node_or_null("/root/Fx")
+	if sfx: sfx.play("perfect")
+	if fx:
+		# Along the top edge of the viewport, so the fixed structure stays visible under the celebration.
+		var center := Vector2(viewbox.get_global_rect().get_center().x, viewbox.get_global_rect().position.y + 90) if is_instance_valid(viewbox) else Vector2(509, 200)
+		fx.flash(UI.MINT, 0.18, 0.45)
+		fx.banner("完美契合！", "%s   几何匹配 %d%%" % [stars_text(q), roundi(q * 100)], UI.MINT, center)
+		fx.punch(preview_bar, 0.2)
+	for node in atom_nodes:
+		var mat: StandardMaterial3D = node.material_override
+		mat.emission_enabled = true
+		mat.emission = mat.albedo_color
+		var glow := create_tween()
+		glow.tween_property(mat, "emission_energy_multiplier", 1.4, 0.12)
+		glow.tween_property(mat, "emission_energy_multiplier", 0.0, 0.6)
+		var pop := create_tween()
+		pop.tween_property(node, "scale", Vector3.ONE * 1.25, 0.1)
+		pop.tween_property(node, "scale", Vector3.ONE, 0.35).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 
 func _jitter() -> void:
 	for i in range(points.size()):
