@@ -56,8 +56,11 @@ The user asked for island materials that reshape a planet's environment, huge wo
 (ice age → AI future) with era events and wars, natives who build and repair, and specimen/model collecting
 as a core pillar. Earth comes first. The full breakdown and release slicing is in **[06-planets.md](06-planets.md)**.
 
-- v0.26 "Earth": environment field (planet + region grid), emitters made from island products, biome shifts.
-  Stabilise the river touch tests first.
+- v0.26 "Bedrock": voxel ground (cube/slab/slope), dig/place any cell, real-mineral geology, scanner.
+  Stabilise the river touch tests first. See [07-world-blocks.md](07-world-blocks.md). *(proposed)*
+- v0.27 "Refinery": minerals → real processes → element inventory; air/brine collection. *(proposed)*
+- v0.28 "Earth": environment field (planet + region grid), emitters made from island products, biome shifts.
+- The rows below shift by two once the voxel plan is confirmed.
 - v0.27 "Specimens": extractor on creatures and native buildings, island museum, specimen codex.
 - v0.28 "Ice Age": timeline framework, mammoths and a tribe, time gate.
 - v0.29 "Settlers" · v0.30 "Bronze" (tech diffusion) · v0.31 "Clash" (event director, first wars).

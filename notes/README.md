@@ -12,6 +12,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [04-versioning.md](04-versioning.md) | Branches, tags, save compatibility, and how old versions are kept |
 | [05-tech.md](05-tech.md) | Engine/language choices, new architecture pieces, asset pipeline |
 | [06-planets.md](06-planets.md) | The big direction: environment field, specimens, timelines, natives, wars, more planets |
+| [07-world-blocks.md](07-world-blocks.md) | Voxel ground vs Minecraft, real-mineral geology, refinery loop |
 | [CHANGELOG.md](CHANGELOG.md) | Running log of what has actually been shipped on this track |
 
 Quick commands:

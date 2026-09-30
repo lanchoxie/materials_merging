@@ -106,7 +106,11 @@ It is big, but it breaks down into ~8 layers that stack. Every layer reuses code
 - **Humans as specimens.** Recommended: animals can be hunted or scanned. People of any era are collected
   **non-lethally**: 3D scan / portrait miniature / keepsake traded or given when they trust you. They can
   still be hurt in fights and wars. Reasons: tone (cozy-but-deep, the vision in 02-vision.md), the Android
-  store age rating, and it gives a reason to befriend natives. **Pending the user's choice.**
+  store age rating, and it gives a reason to befriend natives. **Confirmed by the user (2026-09-30).**
+- Timelines independent first, historical echoes later: **confirmed**.
+- Wrap-around map + floating origin, no true sphere: **confirmed**.
+- Ground becomes a voxel grid with our own real-mineral geology: see [07-world-blocks.md](07-world-blocks.md)
+  (it moves the release table below back by two: v0.26 Bedrock, v0.27 Refinery, v0.28 Earth).
 
 ## 3. Release slicing (each one playable, tagged, save-migrated)
 
