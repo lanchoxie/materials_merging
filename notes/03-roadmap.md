@@ -56,11 +56,14 @@ The user asked for island materials that reshape a planet's environment, huge wo
 (ice age → AI future) with era events and wars, natives who build and repair, and specimen/model collecting
 as a core pillar. Earth comes first. The full breakdown and release slicing is in **[06-planets.md](06-planets.md)**.
 
+- **Order (user OK'd v0.26 Bedrock first, 2026-09-30):** see [07-world-blocks.md](07-world-blocks.md) and [08-chemistry-loop.md](08-chemistry-loop.md).
 - v0.26 "Bedrock": voxel ground (cube/slab/slope), dig/place any cell, real-mineral geology, scanner.
-  Stabilise the river touch tests first. See [07-world-blocks.md](07-world-blocks.md). *(proposed)*
-- v0.27 "Refinery": minerals → real processes → element inventory; air/brine collection. *(proposed)*
-- v0.28 "Earth": environment field (planet + region grid), emitters made from island products, biome shifts.
-- The rows below shift by two once the voxel plan is confirmed.
+  Stabilise the river touch tests first.
+- v0.27 "Refinery": minerals → real processes → elements; island seawater/air trickle; **element shop removed**.
+- v0.28 "Index": offline chemistry index from Materials Project / COD / PubChem; real properties in the codex.
+- v0.29 "Fabricator": compounds → gear, machines, emitters; stats from real properties (closed loop).
+- v0.30 "Earth": environment field (planet + region grid), emitters, biome shifts.
+- The rows below shift accordingly (Specimens v0.31, Ice Age v0.32, …).
 - v0.27 "Specimens": extractor on creatures and native buildings, island museum, specimen codex.
 - v0.28 "Ice Age": timeline framework, mammoths and a tribe, time gate.
 - v0.29 "Settlers" · v0.30 "Bronze" (tech diffusion) · v0.31 "Clash" (event director, first wars).
