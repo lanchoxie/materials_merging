@@ -249,6 +249,8 @@ func _use_item(id: String,alternate: String="") -> void:
 			show_details=true; _exploration_layout(); _tab("organics"); _live()
 		elif target.has("entity") or target.get("kind") in ["trough","feeder"]:
 			show_details=true; _exploration_layout(); _tab("ranch"); message=preload("res://scripts/river_ranch_panel.gd").describe(state.planet.v2,target).split("\n")[0]; _live()
+		# Nothing aimed: the hand forages nearby ripe wild plants (the hotbar rework left E without this route).
+		elif target.is_empty() and view.first_person: _collect_wild()
 		else: _act("v2_field_collect")
 	elif type=="feed": _act("v2_field_feed",{"resource":action.resource})
 	if not target.is_empty(): view.field_view.feedback(target.point)

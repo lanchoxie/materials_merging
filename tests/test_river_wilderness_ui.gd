@@ -43,8 +43,10 @@ func _run() -> void:
 	var seeds=v.world.seeds; var stock=JSON.stringify(game.state.storage.batches)
 	panel._act("v2_plant",{"crop":"grain"})
 	check(v.world.seeds==seeds and panel.message.contains("起始河湾"),"far wilderness does not silently sow crops in old region")
-	panel._tab("bag")
-	check(JSON.stringify(game.state.storage.batches)==stock and panel.body.get_child_count()==1,"far bag directs to supported experiment instead of spending stock")
+	# The bag tab opens the grid backpack (backpack-10); opening it never spends stock.
+	panel._tab("bag"); await process_frame
+	check(JSON.stringify(game.state.storage.batches)==stock and is_instance_valid(panel.backpack),"far bag opens the backpack without spending stock")
+	panel._close_backpack()
 	panel._travel("home"); await process_frame; panel._tab("observe")
 	check(not panel._in_wilderness() and panel.widgets.has("environment"),"home return restores detailed ecology and material controls")
 	panel._travel("camp"); await process_frame
