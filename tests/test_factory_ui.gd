@@ -45,9 +45,16 @@ func _run() -> void:
 	await capture("v021-clean-factory")
 	await press("进入星球")
 	check(game.modal.get_script()==preload("res://scripts/planet_v2_panel.gd") and p.v2.active,"factory opens only the living river world")
-	game.modal._tab("bag"); await process_frame; await press("投放 标准水箱")
+	# The bag is the grid backpack (backpack-10): pick the crate, deploy it, then use its workshop button.
+	game.modal._tab("bag"); await process_frame
+	var bag=game.modal.backpack; var crate=null
+	for slot in bag.grid.get_children():
+		if slot.item.get("id")=="recipe:standard_water_crate": crate=slot
+	check(crate!=null,"backpack lists the workshop water crate")
+	if crate!=null: crate.pressed.emit(); await process_frame
+	await press("投放当前区域")
 	check(p.products.is_empty() and p.v2.world.receipts.size()==1,"new world consumes the actual workshop output")
-	await press("前往工艺车间")
+	await press("工艺\n车间")
 	check(not p.v2.active and game.modal.get_script()==preload("res://scripts/factory_panel.gd"),"return opens factory and stops river observation")
 	await press("导热对照"); await press("记录对照")
 	check(p.reports.has("same_size"),"reference research still records evidence without legacy world")
