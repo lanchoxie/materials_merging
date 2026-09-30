@@ -28,6 +28,7 @@ const StructureStart = preload("res://scripts/structure_start.gd")
 const SandboxReference = preload("res://scripts/sandbox_reference.gd")
 const SciencePipeline = preload("res://scripts/science_pipeline.gd")
 const Milestones = preload("res://scripts/milestones.gd")
+const Codex = preload("res://scripts/codex.gd")
 var economy = Economy.new()
 var sandbox: RefCounted
 var science: RefCounted
@@ -60,6 +61,9 @@ var crate_count: int = 0
 var milestones_claimed: Array = []
 ## Unix time of the last save; drives the capped offline catch-up.
 var saved_at: int = 0
+## v0.24 codex: best harvested geometry fit per reference structure, and gifts handed out.
+var best_fit: Dictionary = {}
+var star_rewards: int = 0
 var discovered: Array = []
 var plots: Array = []
 var reactors: Array = []
@@ -632,7 +636,7 @@ func upgrade_cost(r: Dictionary) -> int:
 	return 90 * int(r.level) * int(r.level)
 
 func _collect(r: Dictionary) -> Dictionary:
-	var result = {"coins": 0.0, "drops": 0, "units": 0}
+	var result = {"coins": 0.0, "drops": 0, "units": 0, "gifts": []}
 	if float(r.build_left) > 0.0 or (int(r.get("pending", 0)) == 0 and float(r.stored_coins) <= 0.0):
 		return result
 	if not storage.add_product(product_snapshot(r),int(r.pending)): return result
@@ -656,6 +660,7 @@ func _collect(r: Dictionary) -> Dictionary:
 	var ref_id: String = reference_id(r)
 	if units > 0 and not ref_id.is_empty() and not discovered.has(ref_id):
 		discovered.append(ref_id)
+	result.gifts = Codex.record(self, ref_id, quality(r)) if units > 0 and not ref_id.is_empty() else []
 	return result
 
 func harvest(index: int) -> String:
@@ -664,16 +669,21 @@ func harvest(index: int) -> String:
 	var result = _collect(reactors[index])
 	if result.coins <= 0.0 and result.units == 0:
 		return "反应炉正在准备，稍后再来收获"
-	return "收获 +%d 金币 · +%d 建材 · %d 份产物入库" % [int(result.coins), result.drops, result.units]
+	return "收获 +%d 金币 · +%d 建材 · %d 份产物入库" % [int(result.coins), result.drops, result.units] + _gift_text(result.gifts)
 
 func harvest_all() -> String:
 	var earned = 0.0
 	var drops = 0
+	var gifts: Array = []
 	for r in reactors:
 		var result = _collect(r)
 		earned += result.coins
 		drops += result.drops
-	return "全岛收获 +%d 金币 · +%d 建材" % [int(earned), drops]
+		gifts.append_array(result.gifts)
+	return "全岛收获 +%d 金币 · +%d 建材" % [int(earned), drops] + _gift_text(gifts)
+
+func _gift_text(gifts: Array) -> String:
+	return "" if gifts.is_empty() else " · 图鉴奖励 " + "、".join(gifts)
 
 func plot_at(x: int, z: int) -> int:
 	for i in range(plots.size()):
@@ -1042,7 +1052,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 22, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 23, "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1104,8 +1114,13 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 22, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 23, true):
 		return false
+	if int(data.version)>=23:
+		if not data.get("best_fit") is Dictionary or data.best_fit.size()>templates.size(): return false
+		for id in data.best_fit:
+			if not templates.has(id) or not _number_ok(data.best_fit[id],0,1): return false
+		if not _number_ok(data.get("star_rewards"),0,Codex.rewards().size(),true): return false
 	if int(data.version)>=22:
 		if not data.get("milestones_claimed") is Array or not _number_ok(data.get("saved_at"),0,4102444800,true): return false
 		for id in data.milestones_claimed:
@@ -1365,6 +1380,17 @@ func load_game(path: String = "") -> bool:
 		# Goals already reached before v0.23 are marked done without paying them out again.
 		saved_at=0
 		Milestones.settle_existing(self)
+	best_fit={}; star_rewards=0
+	if int(data.version)>=23:
+		for id in data.best_fit: best_fit[str(id)]=float(data.best_fit[id])
+		star_rewards=int(data.star_rewards)
+	else:
+		# Pre-codex saves: current samples of discovered structures seed the codex; star gifts
+		# already within reach are settled without payout.
+		for r in reactors:
+			var ref_id: String=reference_id(r)
+			if float(r.build_left)<=0.0 and ref_id in discovered: best_fit[ref_id]=maxf(float(best_fit.get(ref_id,0.0)),quality(r))
+		Codex.settle_existing(self)
 	return true
 
 

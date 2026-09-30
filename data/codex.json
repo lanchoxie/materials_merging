@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "note": "Structure codex (v0.24). Rarity is by atom count (max_atoms, first match wins). Star rewards are granted once, in order, when the codex star total (best harvested fit per structure, ★ 80% / ★★ 93% / ★★★ 98%) reaches `stars`; props are keys of campus_buildings.json props.",
+  "rarity": [
+    {"id": "common", "name": "常见", "max_atoms": 3, "color": "a5efd1"},
+    {"id": "rare", "name": "稀有", "max_atoms": 5, "color": "8fc4ff"},
+    {"id": "precious", "name": "珍贵", "max_atoms": 9, "color": "d2a8ff"},
+    {"id": "legendary", "name": "传说", "max_atoms": 999, "color": "ffd18c"}
+  ],
+  "star_rewards": [
+    {"stars": 3, "prop": "flower", "count": 2},
+    {"stars": 6, "prop": "bench", "count": 1},
+    {"stars": 10, "prop": "lamp", "count": 2},
+    {"stars": 15, "prop": "orbit_mobile", "count": 1},
+    {"stars": 21, "prop": "moon_lamp", "count": 1},
+    {"stars": 28, "prop": "crystal_fox", "count": 1},
+    {"stars": 36, "prop": "lamp", "count": 3},
+    {"stars": 45, "prop": "bench", "count": 2}
+  ]
+}

@@ -59,7 +59,7 @@ func _test_save_and_migration() -> void:
 	s.milestones_claimed = ["tune_80"]
 	check(s.save_game(path).begins_with("已保存"), "v22 save succeeds")
 	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
-	check(int(data.version) == 22 and data.milestones_claimed == ["tune_80"] and int(data.saved_at) > 1600000000, "save v22 stores claimed goals and save time")
+	check(int(data.version) >= 22 and data.milestones_claimed == ["tune_80"] and int(data.saved_at) > 1600000000, "save v22 stores claimed goals and save time")
 	var loaded = State.new()
 	check(loaded.load_game(path) and loaded.milestones_claimed == ["tune_80"] and loaded.saved_at == int(data.saved_at), "claimed goals and save time load back")
 	var bad = data.duplicate(true); bad.milestones_claimed = [3]
