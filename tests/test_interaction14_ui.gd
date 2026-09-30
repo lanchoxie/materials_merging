@@ -55,7 +55,8 @@ func _run() -> void:
 	v.construction.blocks.erase(barrier_key); v.construction.revision+=1
 	# Visitors and wild animals use a different renderer from residents.
 	v.settlement.people=[]
-	var site=v.population._site("interaction-test",Vector2(30,30),false,false)
+	# Sites are found through their grid key ("x:z" on the site spacing), so the fixture uses one.
+	var site=v.population._site("-1:-1",Vector2(30,30),false,false)
 	site.animals=[]; site.visitors=[{"id":901,"name":"阿舟","born":0,"state":"休息","x":0.0,"z":0.0}]
 	v.population.sites[site.id]=site; panel._sync(); await process_frame; await process_frame; panel._aim()
 	check(panel.encounter_hud.target.get("entity",{}).get("type")=="visitor","a visiting NPC is selected from its rendered body")
@@ -64,7 +65,7 @@ func _run() -> void:
 	site.visitors=[]; site.animals=[{"id":902,"species":"woodland_boar","health":1.0,"age":2.0,"x":0.0,"z":0.0}]
 	panel._sync(); await create_timer(0.5).timeout
 	point_at(panel,Vector3(30,t.ground(Vector2(30,30))+0.35,30)); await tap(panel.attack_button)
-	check(is_equal_approx(site.animals[0].health,0.76) and v.combat.records.get("wild:interaction-test:902",{}).get("mode")=="反击","wild boar receives mobile hit and enters retaliation")
+	check(is_equal_approx(site.animals[0].health,0.76) and v.combat.records.get("wild:-1:-1:902",{}).get("mode")=="反击","wild boar receives mobile hit and enters retaliation")
 	var player_hp=v.combat.player_health; v.world.paused=false; await create_timer(2.0).timeout
 	check(v.combat.player_health<player_hp,"unpaused wild boar approaches and hits the player")
 	v.world.paused=true; v.population.sites.erase(site.id); panel._sync()
