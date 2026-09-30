@@ -43,6 +43,7 @@ var toast_clock: float = 0
 var snapshot_mode: bool = false
 var visual_test: bool = false
 var help_panel: Control
+var live_badge: Label
 var land_label: Label
 var order_quote_label: Label
 var visitor_status_label: Label
@@ -67,6 +68,7 @@ var shown_coins: float=-1.0
 var sound_button: Button
 const Codex = preload("res://scripts/codex.gd")
 const Milestones=preload("res://scripts/milestones.gd")
+const DayCycle = preload("res://scripts/core/day_cycle.gd")
 var goal_button: Button
 var goal_bar: ProgressBar
 var welcome: Dictionary={}
@@ -157,7 +159,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.24 结构图鉴  ·  稀有度 · 最佳星级 · 图鉴奖励", 11, UI.MUTED)
+	save_label = UI.label("v0.25 海岛昼夜  ·  海浪 · 玻璃炉 · 摇曳树影", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -238,10 +240,13 @@ func _build_world() -> void:
 		map_controls.add_child(b)
 	land_label = UI.label("", 13, UI.GOLD)
 	land_label.position = Vector2(254, 654)
+	# Sits over the sea since v0.25: an outline keeps it readable in any light.
+	land_label.add_theme_color_override("font_outline_color", Color(0.03, 0.08, 0.1, 0.9))
+	land_label.add_theme_constant_override("outline_size", 5)
 	add_child(land_label)
-	var badge = UI.label("●  LIVE  /  生长中", 12, UI.MINT)
-	badge.position = Vector2(897,146)
-	add_child(badge)
+	live_badge = UI.label("●  LIVE  /  生长中", 12, UI.MINT)
+	live_badge.position = Vector2(897,146)
+	add_child(live_badge)
 	var quest = UI.box(self, Rect2(248,689,796,68),Color("192e39"))
 	quest.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var q = UI.row(quest,14)
@@ -613,6 +618,7 @@ func _update_labels() -> void:
 		return
 	if shown_coins < 0.0: gold_label.text = "%s" % int(state.coins)
 	material_label.text = "星砂 %d   晶露 %d   合金 %d" % state.materials
+	if live_badge != null and world != null: live_badge.text = "●  LIVE  /  %s" % DayCycle.label(world.day_phase)
 	people_label.text = "工程师 %d   科研 %d" % [state.engineers,state.campus.people.size()-state.engineers]
 	income_label.text = "%.1f / s" % state.total_income()
 	land_label.text = "已开拓 %d 块  /  沿边缘继续探索" % state.unlocked_plot_count()

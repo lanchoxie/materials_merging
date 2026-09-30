@@ -203,7 +203,15 @@ func _build_sidebar() -> void:
 	apply_button = UI.button("应用结构   ·   %d 金币" % fee, _apply, true)
 	apply_button.custom_minimum_size.y = 58
 	outer.add_child(apply_button)
-	outer.add_child(UI.paragraph("更换元素由博士装炉，坐标调整即时生效。\n旧批次保留；几何评分不等同真实能量。", 12))
+	# v0.25: the rules caveat folds behind an ⓘ toggle so the editor stays calm.
+	var caveat = UI.paragraph("更换元素由博士装炉，坐标调整即时生效。\n旧批次保留；几何评分不等同真实能量。", 12)
+	caveat.visible = false
+	var info = UI.button("ⓘ  规则说明", func(): caveat.visible = not caveat.visible)
+	info.name = "CaveatToggle"
+	info.flat = true
+	info.custom_minimum_size.y = 30
+	outer.add_child(info)
+	outer.add_child(caveat)
 
 func _element(symbol: String) -> Dictionary:
 	return state.elements.get(symbol, {"color": "a5efd1", "covalent_radius": 0.65})
