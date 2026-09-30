@@ -22,7 +22,7 @@ func installation_reference(state,r: Dictionary) -> String:
 
 func logistics(state,index: int) -> String:
 	var r=state.reactors[index]; var context=state.campus_context()
-	if int(r.plot) not in context.reachable_plots: return "反应釜未连通：用小路连接迎客广场"
+	if int(r.plot) not in context.reachable_plots: return "反应釜所在地块未开拓"
 	var doctors=0; var available=0
 	for person in state.campus.people:
 		if person.role!="doctor": continue

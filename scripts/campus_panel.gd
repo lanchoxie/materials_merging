@@ -52,15 +52,15 @@ func _card(heading: String) -> VBoxContainer:
 	var content=UI.column(panel,8); content.add_child(UI.paragraph(heading,22,UI.MINT)); return content
 
 func _overview() -> void:
-	body.add_child(UI.paragraph("工程师去工地施工、维护或送餐；教授在公寓、食堂和科研院所之间生活，博士按性格去公园休息，院士专注住宅与研究所。小路连通后，居民才能使用建筑。",18,UI.TEXT))
+	body.add_child(UI.paragraph("工程师去工地施工、维护或送餐；教授在公寓、食堂和科研院所之间生活，博士按性格去公园休息，院士专注住宅与研究所。已开拓的地块之间由小路自动连通。",18,UI.TEXT))
 	var context: Dictionary=state.campus_context()
 	var counts=[]
 	for role in state.campus.config.roles: counts.append("%s %d人" % [state.campus.role_data(role).name,state.campus.role_count(role)])
 	body.add_child(UI.label("  ·  ".join(counts),21,UI.GOLD))
 	var tasks=[
 		["1. 收获第一份产物",state.total_harvests>0,"选择反应炉收获，积累金币和建材。"],
-		["2. 给工程师一个家",not state.layout.buildings(state.plots).filter(func(b): return b.kind=="engineer_house").is_empty(),"点击空地，建工程师小窝并铺路。"],
-		["3. 建科研院所",not context.buildings.filter(func(b): return b.kind=="institute" and b.connected).is_empty(),"院所需要小路连接迎客广场。"],
+		["2. 给工程师一个家",not state.layout.buildings(state.plots).filter(func(b): return b.kind=="engineer_house").is_empty(),"点击空地，建一座工程师小窝。"],
+		["3. 建科研院所",not context.buildings.filter(func(b): return b.kind=="institute" and b.connected).is_empty(),"研究课题都在科研院所里进行。"],
 		["4. 招募博士",state.campus.role_count("doctor")>0,"先建博士公寓；住房和院所都要有空位。"],
 		["5. 开展第一个课题",not state.campus.unlocked_materials.is_empty(),"1名博士生可研究基础配方；进阶课题需要院士和2名博士生，教授可带队提效。"]]
 	for item in tasks:
@@ -83,7 +83,7 @@ func _people() -> void:
 		var button=UI.button("招募入住",_hire.bind(role)); button.disabled=not quote.ready; card.add_child(button)
 		live_quotes.append({"kind":"hire","id":role,"label":quote_label,"button":button})
 	for usage in state.campus.housing_usage(context):
-		body.add_child(UI.paragraph("%s · %s：%d / %d床位 · %s" % [state.plot_label(int(usage.plot)),state.campus.role_data(usage.role).name,usage.used,usage.capacity,"道路已连通" if usage.connected else "尚未连接广场"],15))
+		body.add_child(UI.paragraph("%s · %s：%d / %d床位" % [state.plot_label(int(usage.plot)),state.campus.role_data(usage.role).name,usage.used,usage.capacity],15))
 	for p in state.campus.people:
 		var card=_card("%s  ·  %s  ·  擅长%s" % [p.name,state.campus.role_data(p.role).name,p.specialty])
 		card.add_child(UI.paragraph("认真程度 %d%% · 休闲倾向 %d%% · 社交倾向 %d%%\n性格影响工作效率与日程；休息可以恢复心情。" % [roundi(float(p.traits.diligence)*100),roundi(float(p.traits.leisure)*100),roundi(float(p.traits.sociability)*100)],16))
@@ -111,10 +111,6 @@ func _buildings() -> void:
 	picker.item_selected.connect(func(index): selected_plot=picker.get_item_id(index); _show("build"))
 	if selected_plot<0: return
 	var plot: Dictionary=state.plots[selected_plot]
-	var connected=selected_plot in state.layout.reachable(state.plots)
-	body.add_child(UI.paragraph("道路已连接迎客广场" if connected else "此处还未连接迎客广场，请把相邻地块的小路连起来。",18,UI.MINT if connected else UI.GOLD))
-	var road=UI.button("铺设连通小路 · %d金币" % int(state.layout.config.roads.cost),_road)
-	road.disabled=bool(plot.get("road",false)); body.add_child(road)
 	var main_info: Dictionary=state.layout.building_info(plot.kind)
 	if not main_info.is_empty():
 		var level=int(plot.get("building_level",1))
@@ -199,7 +195,7 @@ func _update_live() -> void:
 				item.label.text="%s · 心情%d · 饥饿%d · 效率%.0f%%" % [activity,roundi(p.morale),roundi(p.hunger),state.campus.person_efficiency(item.id)*100]
 		else:
 			for job in state.campus.research_jobs:
-				if int(job.id)==item.id: item.label.text="%s · %.0f%% · %s" % [state.campus.config.projects[job.template_id].name,float(job.progress)/float(job.required)*100,{"working":"研发中","resting":"团队休息中","waiting_team":"等待补员","waiting_institute":"等待连通院所","complete":"配方已解锁"}.get(job.status,job.status)]
+				if int(job.id)==item.id: item.label.text="%s · %.0f%% · %s" % [state.campus.config.projects[job.template_id].name,float(job.progress)/float(job.required)*100,{"working":"研发中","resting":"团队休息中","waiting_team":"等待补员","waiting_institute":"等待科研院所","complete":"配方已解锁"}.get(job.status,job.status)]
 
 func _done(message: String) -> void:
 	changed.emit(message)
@@ -207,7 +203,6 @@ func _done(message: String) -> void:
 func _hire(role: String) -> void: _done(state.campus_hire(role))
 func _build(kind: String) -> void: _done(state.campus_build(selected_plot,kind))
 func _upgrade() -> void: _done(state.campus_upgrade(selected_plot))
-func _road() -> void: _done(state.campus_road(selected_plot))
 func _pick_prop(kind: String) -> void: prop_choice=kind; _show("build",true)
 func _prop(slot: int, empty: bool) -> void: _done(state.campus_prop(selected_plot,slot,prop_choice) if empty else state.campus_remove_prop(selected_plot,slot))
 func _resolve(id: int, choice: String) -> void: _done(state.campus_resolve_request(id,choice))

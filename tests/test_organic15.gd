@@ -23,9 +23,8 @@ func _initialize() -> void:
 	var worker=doctor(s)
 	flow.start(s,0,"urea"); var left=r.installation.remaining; advance(s,1)
 	check(r.installation.remaining==left,"doctor walking does not count as installation work")
-	s.store_road(4); left=r.installation.remaining; advance(s,12)
-	check(r.installation.remaining==left and flow.status(s,0,"urea").message.contains("未连通"),"disconnected reactor stalls real organic installation")
-	s.campus_road(4)
+	s.store_road(4)
+	check(4 in s.layout.reachable(s.plots),"reactor plots stay on the automatic path network")
 	for i in range(160):
 		if not r.has("installation"): break
 		advance(s,1)

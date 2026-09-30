@@ -23,7 +23,7 @@
       "max_level": 4,
       "upgrade_cost": 180,
       "role": "research",
-      "description": "团队研究的工作场所；需连通广场道路。"
+      "description": "团队研究的工作场所。"
     },
     "engineer_house": {
       "name": "工程师小窝",
@@ -93,7 +93,7 @@
       "max_level": 3,
       "upgrade_cost": 120,
       "role": "manufacturing",
-      "description": "工程师到岗后加工星球成品；与反应炉施工共享人手，需连通广场。"
+      "description": "工程师到岗后加工星球成品；与反应炉施工共享人手。"
     }
   },
   "props": {

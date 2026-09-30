@@ -12,6 +12,7 @@
 | v0.25.0 "Looks" | branch `claude/v0.25-looks`, tag **`v0.25.0`** (save v23, cosmetic only) |
 | v0.26.0 "Bedrock" | branch `claude/v0.26-bedrock`, tag **`v0.26.0`** (save v23 with nature v2 + hotbar v2; loads every older save, older builds cannot read its planet) |
 | v0.27.0 "Hometown" | branch `claude/v0.27-hometown`, tag **`v0.27.0`** (save v23 with plot `at`/`items` + `storage.decorations`; loads every older save, v0.26 cannot read a v0.27 town) |
+| v0.27.1 "Hometown tidy" | branch `claude/v0.27.1-tidy`, tag **`v0.27.1`** (same save format as v0.27.0) |
 | Old APKs / source zips | `builds/` (git-ignored, never overwritten — build script refuses to overwrite) |
 
 > The v0.20/v0.21 work had **never been committed** (the repo is owned by a different Windows

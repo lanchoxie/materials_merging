@@ -30,6 +30,21 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.27.1 "Hometown tidy": automatic paths, toy-scale first person
+The user found laying roads confusing and asked for it to be removed. They also asked for a first-person
+scale that matches the smaller v0.27 houses.
+- **Paths are automatic.** `campus_layout.road_links` links every opened plot.
+  - `campus_road`/`store_road` are free no-ops kept for old callers. New plots are saved with `road=true`.
+  - The road button, the 星砂小路 toolbox card and every "请铺路 / 未连通" hint are gone.
+  - Residents still walk plot to plot along the drawn edge paths.
+- **First-person island walk at toy scale** (`island_walk_surface.gd`, `island_walk_panel.gd`):
+  - eye 1.12 → 0.6 (villager eye level), body 0.68, radius 0.09
+  - walk/run/jump 1.5/2.4/2.6, step 0.32, gravity 12
+  - reach 1.9, near plane 0.02
+  - House interiors keep their own human scale.
+- `tests/capture_walk_scale.gd`: a screenshot helper, not a test.
+- Suite 63 passed, 0 failed. The APK version code is still 27 (no APK built).
+
 ## v0.27.0 "Hometown" (家园): many buildings per plot, a courtyard shop and pedestals
 The top-level save stays v23. Plots gain `at` (main building anchor) and `items` (uid-keyed courtyard
 list); storage gains `decorations`. Older saves pin their buildings once to a default anchor when they

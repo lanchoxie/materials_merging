@@ -757,7 +757,7 @@ func buy_plot(index: int) -> String:
 	for i in range(3):
 		materials[i] -= cost
 	plots[index].unlocked = true
-	plots[index].road=false
+	plots[index].road=true
 	layout.mark_changed()
 	_append_frontier()
 	if (unlocked_plot_count()-5)%int(island_rules.relics.every_plots)==0:
@@ -1474,7 +1474,7 @@ func campus_build(plot: int, kind: String) -> String:
 	var at: Vector2i = Town.default_anchor(plots[plot],kind) if plots[plot].kind=="empty" else Town.first_fit(plots[plot],kind)
 	if at.x<0 or not Town.fits(plots[plot],kind,at,0).is_empty(): return "这块地放不下%s了；试试另一块地" % info.name
 	var message=town_place(plot,kind,at.x,at.y)
-	if message.contains("落成"): return "%s已落成；请铺设小路连通广场" % info.name
+	if message.contains("落成"): return "%s已落成，小路自动连通" % info.name
 	return message
 
 func campus_upgrade(plot: int) -> String:
@@ -1491,17 +1491,13 @@ func campus_upgrade(plot: int) -> String:
 	layout.mark_changed()
 	return "%s升至%d层，容量%d人" % [info.name,level+1,layout.capacity(p)]
 
+## v0.27.1: every opened plot joins the path network by itself. Kept for old callers and saves.
 func campus_road(plot: int) -> String:
 	if plot<0 or plot>=plots.size() or not plots[plot].unlocked: return "先开拓这块地"
-	if plots[plot].get("road",false): return "这里已经铺好小路，相邻小路会自动接通"
-	var cost=int(layout.config.roads.cost)
-	if int(storage.decorations.get("road",0))>0: storage.decorations.road-=1
-	else:
-		if coins<cost: return "铺路需要%d金币" % cost
-		coins-=cost
-	plots[plot].road=true
-	layout.mark_changed()
-	return "小路铺好了，相邻已铺小路自动连接"
+	if not plots[plot].get("road",false):
+		plots[plot].road=true
+		layout.mark_changed()
+	return "小路会自动连通所有已开拓的地块"
 
 func campus_prop(plot: int, slot: int, kind: String) -> String:
 	if plot<0 or plot>=plots.size() or not plots[plot].unlocked or slot<0 or slot>7: return "请选择已开拓地块的有效小物件位置"
@@ -1624,11 +1620,8 @@ func collect_find(plot: int) -> String:
 	layout.mark_changed()
 	return "发现%s！已收入工具箱，可摆在任意庭院空位" % layout.config.props[kind].name
 
-func store_road(plot: int) -> String:
-	if plot<0 or plot>=plots.size() or plots[plot].kind=="plaza" or not plots[plot].get("road",false): return "这里没有可收纳的小路"
-	plots[plot].road=false; storage.decorations["road"]=int(storage.decorations.get("road",0))+1
-	layout.mark_changed()
-	return "小路已收入工具箱；断开的建筑会暂停人员通行"
+func store_road(_plot: int) -> String:
+	return "小路自动连通所有地块，不需要收纳"
 
 func visitor_candidates(id: int) -> Array:
 	var v=market.visitor(id)

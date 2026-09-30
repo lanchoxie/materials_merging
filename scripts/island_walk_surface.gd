@@ -6,11 +6,16 @@ var state
 var light_bridge
 var parcels={}
 var obstacles: Array=[]
+## Collision radius of the island visitor, used for parcel edges and obstacle padding.
+const BODY_RADIUS=0.09
 
 func setup(model,portal) -> void:
 	state=model; light_bridge=portal
-	rules.eye_height=1.12; rules.body_height=1.25; rules.player_radius=0.16
-	rules.walk_speed=2.4; rules.run_speed=4.0; rules.jump_speed=4.2
+	# v0.27.1: toy-town scale. Small houses render at 0.58x since v0.27, so the visitor's eye sits at a
+	# villager's eye level (0.56) instead of towering at twice their height.
+	rules.eye_height=0.6; rules.body_height=0.68; rules.player_radius=BODY_RADIUS
+	rules.walk_speed=1.5; rules.run_speed=2.4; rules.jump_speed=2.6
+	rules.step_height=0.32; rules.gravity=12.0
 	parcels.clear(); obstacles.clear()
 	for p in state.plots:
 		if not p.unlocked: continue
@@ -62,8 +67,9 @@ func height_at(p: Vector2) -> float: return ground(p)
 func river_x(_z: float) -> float: return 100000
 
 func blocked(p: Vector2,_barriers: Array=[]) -> bool:
-	for offset in [Vector2.ZERO,Vector2(0.17,0),Vector2(-0.17,0),Vector2(0,0.17),Vector2(0,-0.17)]:
+	var r=BODY_RADIUS
+	for offset in [Vector2.ZERO,Vector2(r,0),Vector2(-r,0),Vector2(0,r),Vector2(0,-r)]:
 		if not inside(p+offset): return true
 	for rect in obstacles:
-		if rect.grow(0.16).has_point(p): return true
+		if rect.grow(r).has_point(p): return true
 	return false

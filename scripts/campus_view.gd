@@ -98,7 +98,7 @@ func _rebuild_static() -> void:
 		var p: Dictionary=state.plots[i]
 		if not p.unlocked: continue
 		var base=Vector3(float(p.x)*3,0,float(p.z)*3)
-		if p.get("road",false):
+		if true:
 			# Road hubs sit at parcel corners, clear of building footprints.
 			var hub=state.layout.hub(state.plots,i)
 			if world._visible_plots.has(i): road_transforms.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.3,0.025,0.3)),hub))

@@ -78,7 +78,7 @@ func setup(model,index: int=-1) -> void:
 	help=UI.paragraph("",15,UI.MUTED); body.add_child(help)
 	var support=UI.row(body,8)
 	support.add_child(UI.button("博士与生产岗位",func(): campus_requested.emit("people")))
-	support.add_child(UI.button("小路与博士公寓",func(): campus_requested.emit("build")))
+	support.add_child(UI.button("博士公寓与岗位",func(): campus_requested.emit("build")))
 	body.add_child(UI.button("带背包产物前往河湾",func(): planet_requested.emit()))
 	feedback=UI.paragraph("",16,UI.GOLD); feedback.position=Vector2(32,845); feedback.size=Vector2(1370,45); add_child(feedback)
 	refresh()

@@ -12,7 +12,7 @@ static func status(state) -> Dictionary:
 	var rate=state.campus.industrial_rate(context)
 	var message="工程师已到岗" if rate>0 else "等待工程师到岗；行路、吃饭和休息不计工时"
 	if plots.is_empty(): message="先在浮岛空地建造工艺车间"
-	elif connected==0: message="先用小路把工艺车间连接迎客广场"
+	elif connected==0: message="先建造工艺车间"
 	elif assigned==0: message="先给至少一名工程师安排「车间生产」岗位"
 	return {"plots":plots,"connected":connected,"assigned":assigned,"rate":rate,"ready":connected>0 and assigned>0,"message":message}
 

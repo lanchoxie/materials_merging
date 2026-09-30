@@ -167,7 +167,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.27 家园  ·  一地多建筑 · 庭院商店 · 展台与外观升级", 11, UI.MUTED)
+	save_label = UI.label("v0.27.1 家园  ·  小路自动连通 · 漫步视角缩小", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -470,7 +470,7 @@ func _rebuild_sidebar() -> void:
 		UI.spacer(side,18)
 		side.add_child(UI.label("给小岛一点温度",15,UI.LILAC))
 		side.add_child(UI.button("住宅 · 院所 · 食堂 · 公园",_show_campus.bind("build"),true))
-		side.add_child(UI.paragraph("一块地是11×11格：可以并排盖好几栋建筑，再铺小路、围栅栏、摆展台。边缘一格留给连通小路。",13))
+		side.add_child(UI.paragraph("一块地是11×11格：可以并排盖好几栋建筑，再摆装饰、围栅栏、放展台。边缘一格是自动连通的小路。",13))
 	elif p.kind != "reactor":
 		var building=state.layout.building_info(p.kind)
 		side.add_child(UI.label("迎客广场" if p.kind=="plaza" else str(building.get("name",state.DECORATIONS.get(p.kind,{"name":"岛屿装饰"}).name)),24,UI.LILAC))
@@ -525,7 +525,7 @@ func _rebuild_sidebar() -> void:
 		if not find_kind.is_empty() and find_kind!="collected": side.add_child(UI.button("拾取 · "+str(state.layout.config.props[find_kind].name),func(): _action(state.collect_find(selected_plot)),true))
 		if p.kind=="doctor_dorm": side.add_child(UI.button("公寓补给 · 泡面 / 可乐",func(): _show_toolbox(); modal._tab("supplies"),true))
 		_town_sidebar(p)
-		side.add_child(UI.button("连通小路 · 建筑升级",_show_campus.bind("build")))
+		side.add_child(UI.button("建筑升级 · 小镇",_show_campus.bind("build")))
 	_update_labels()
 
 func _process(delta: float) -> void:
@@ -1230,7 +1230,7 @@ func _show_help() -> void:
 	for entry in [
 		["01  调整原子", "选择反应炉 → 原子工作台。拖动彩球，观察产率；确认修改时按炉等级扣费。旧批次保留；换元素需要博士装炉。"],
 		["02  收获与扩张", "点击注入微光赚金币。炉子持续产生待收金币和产物；收获时概率获得星砂、晶露、合金片。点击虚线地块开拓。"],
-		["03  带伙伴来", "先造住宅并铺路，再招募伙伴。工程师到岗后才施工；科研小镇可以查看性格、日薪和生活心愿。"],
+		["03  带伙伴来", "先造住宅，再招募伙伴。工程师到岗后才施工；科研小镇可以查看性格、日薪和生活心愿。"],
 		["04  接一张订单", "每次到访可交付一次，之后等待20秒。库存达到3份即可交付。种类相符且几何响应与目标相差≤5个百分点，获得精品催化晶，用来升级炉子。"],
 		["05  元素替换", "元素仓库购买原料 → 工作台选择位点 → 预览替换。应用时扣库存与一次编辑费；未识别的探索组合不参与精品订单。"],
 		["06  解锁新知识", "先造科研院所和博士公寓，再招募博士生开展基础课题。院士增加进阶课题名额，教授可选带队提效；研究站保留势函数和一维DFT教学任务。"]
@@ -1663,7 +1663,7 @@ func _town_item_actions(p: Dictionary) -> void:
 			shows.add_child(UI.button("收回",func(): _action(state.town_unexhibit(plot,uid))))
 
 func _show_town_shop() -> void:
-	var body = _dialog("庭院商店","选好后点地块上的空格摆放。绿色格子可以放，红色是被占用或靠近边缘小路。收起的装饰进入工具箱，再次摆放免费；出售退回一半金币。",true)
+	var body = _dialog("庭院商店","选好后点地块上的空格摆放。绿色格子可以放，红色是被占用或压到了边缘小路。收起的装饰进入工具箱，再次摆放免费；出售退回一半金币。",true)
 	var tabs = UI.row(body,8)
 	for category in Town.rules().categories:
 		var id = str(category.id)

@@ -80,14 +80,13 @@ func _initialize() -> void:
 	check(s.coins==wallet and s.element_inventory.O==atoms and s.reference_id(r)=="hydrogen_sulfide","cancel restores fee and elements without changing active product")
 	s.cancel_installation(0)
 	check(s.coins==wallet and s.element_inventory.O==atoms,"cancel cannot refund twice")
-	# Road removal interrupts actual work, restoring it resumes the queued job.
+	# v0.27.1: paths connect themselves; storing or laying a road changes nothing and costs nothing.
 	s.apply_structure_edit(0,r.positions,["O","H","H"])
-	s.store_road(4); remaining=r.installation.remaining; advance(s,15)
-	check(r.installation.remaining==remaining,"disconnected reactor cannot receive installations")
-	wallet=s.coins; s.campus_road(4)
-	check(s.coins==wallet and s.storage.decorations.road==0,"stored roads can be reused without paying")
-	advance(s,60)
-	check(s.reference_id(r)=="water","reconnected road resumes installation")
+	wallet=s.coins
+	s.store_road(4); s.campus_road(4)
+	check(s.coins==wallet and 4 in s.layout.reachable(s.plots),"roads are automatic and free")
+	advance(s,75)
+	check(s.reference_id(r)=="water","installation finishes without laying roads")
 	# Picking up an exploration reward and moving decorations keeps item identity.
 	s.collect_find(3); s.collect_find(3)
 	check(s.storage.decorations.crystal_fox==1 and "crystal_fox" in s.storage.unlocked,"3D discovery unlocks once, repeat click is harmless")

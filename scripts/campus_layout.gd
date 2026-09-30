@@ -76,7 +76,8 @@ func road_links(plots: Array) -> Dictionary:
 	var lookup={}
 	for i in range(plots.size()):
 		var p: Dictionary=plots[i]
-		if bool(p.unlocked) and bool(p.get("road",false)):
+		# v0.27.1: paths connect automatically; the saved road flag is legacy only.
+		if bool(p.unlocked):
 			lookup[Vector2i(int(p.x),int(p.z))]=i
 			_links[i]=[]
 	for coordinate in lookup:

@@ -61,7 +61,7 @@ func _redraw(reset_scroll: bool=false) -> void:
 	_live()
 
 func _elements() -> void:
-	body.add_child(UI.paragraph("新加或替换的元素从这里购买。提交更换后，由空闲博士沿小路将样品装入反应炉；原子坐标仍由你调整。",18))
+	body.add_child(UI.paragraph("新加或替换的元素从这里购买。提交更换后，由空闲博士走到反应炉将样品装入反应炉；原子坐标仍由你调整。",18))
 	for symbol in state.elements:
 		var q: Dictionary=state.purchase_quote(symbol,1)
 		if int(q.get("unit_price",0))<=0: continue
@@ -109,7 +109,7 @@ func _materials() -> void:
 		if id in ["fruit","grain"]:
 			gathered.add_child(UI.button("取1份送入星球粮仓",func(): _done(state.planet.command(state,"v2_field_pantry",{"resource":id}))))
 	gathered.add_child(UI.button("工艺车间 · 加工采集材料",func(): factory_requested.emit(),true))
-	body.add_child(UI.paragraph("建材用于向浮岛边缘开拓；催化晶用于反应炉升级。它们与摆件、小路和生活补给分别存放。",19))
+	body.add_child(UI.paragraph("建材用于向浮岛边缘开拓；催化晶用于反应炉升级。它们与摆件和生活补给分别存放。",19))
 	for i in range(3):
 		var card=_card(["星砂","晶露","合金片"][i]); card.add_child(UI.label("库存 %d" % int(state.materials[i]),24,UI.GOLD))
 	var card=_card("精品催化晶"); card.add_child(UI.label("库存 %d · 完成精品订单获得" % int(state.upgrades),21,UI.LILAC))
@@ -132,13 +132,10 @@ func _supplies() -> void:
 		for kind in state.island_rules.consumables:
 			var amount=int(state.storage.cupboard(i).get(kind,0))
 			row.add_child(UI.button("放入%s ×1（柜内%d）" % [state.island_rules.consumables[kind].name,amount],func(): _done(state.supply_dorm(i,kind,1))))
-	if not found: body.add_child(UI.paragraph("尚无博士公寓。在小岛空地建造公寓并铺路，再邀请博士入住。",19,UI.GOLD))
+	if not found: body.add_child(UI.paragraph("尚无博士公寓。在小岛空地建造博士公寓，再邀请博士入住。",19,UI.GOLD))
 
 func _decor() -> void:
-	body.add_child(UI.paragraph("在新土地上找到的3D小物件会解锁收藏。摆件与道路可收入工具箱，再免费布置；每块地有8个庭院位置。",18))
-	var road=_card("星砂小路 · 库存%d" % int(state.storage.decorations.get("road",0)))
-	road.add_child(UI.button("铺在当前地块（无库存时%d金币）" % int(state.layout.config.roads.cost),func(): _done(state.campus_road(selected_plot))))
-	road.add_child(UI.button("收纳当前地块的小路",func(): _done(state.store_road(selected_plot))))
+	body.add_child(UI.paragraph("在新土地上找到的3D小物件会解锁收藏。摆件可收入工具箱，再免费布置。",18))
 	for kind in state.layout.config.props:
 		var info: Dictionary=state.layout.config.props[kind]
 		var locked=bool(info.get("exploration",false)) and kind not in state.storage.unlocked
