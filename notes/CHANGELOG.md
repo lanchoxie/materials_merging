@@ -30,6 +30,24 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.26.0 "Bedrock" (in progress)
+v0.26 in progress: fixed tests. The full suite is now **60 passed, 0 failed** (it was 44 / 16):
+- **Headless input (11 tests).** Headless Godot has a 0×0 window. The root viewport is then 64×64 with
+  a ~0.044 `canvas_items` stretch transform, so scripted events given in 1440×900 canvas coordinates
+  missed every control. The new `scripts/core/test_input.gd` maps events forward through the root
+  transform. It is identity in a real window. Tests and main.gd's test helpers use it.
+- **Game fix: codex cards.** They used `MOUSE_FILTER_STOP`, so a finger swipe that started on a card could
+  not scroll the codex on phones (test_touch_scroll).
+- **Game fix: hand foraging.** Since the hotbar rework, E went through the selected slot, so wild foraging
+  was only reachable from a side-panel button. E with the hand and nothing aimed now forages nearby ripe
+  wild plants (test_river_wilderness_ui).
+- **Outdated expectations:**
+  - 17 templates instead of 14 (test_state);
+  - the world edge follows the 8192 m data radius (test_river_exploration);
+  - the residence walk-out waits on real time instead of 90 frames;
+  - the bag tab is the grid backpack (test_factory_ui, test_river_wilderness_ui);
+  - wild-site fixtures need grid keys (test_interaction14_ui).
+
 ## v0.25.0 "Looks": a world worth screenshotting
 Save format is unchanged (still v23). Everything here is cosmetic and never touches the economy.
 
