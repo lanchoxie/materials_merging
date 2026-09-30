@@ -19,6 +19,7 @@ const CampusView = preload("res://scripts/campus_view.gd")
 const IslandPanel=preload("res://scripts/island_panel.gd")
 const FactoryPanel=preload("res://scripts/factory_panel.gd")
 const PlanetV2Panel=preload("res://scripts/planet_v2_panel.gd")
+const IslandWalk=preload("res://scripts/island_walk_panel.gd")
 const OrderBubbles=preload("res://scripts/order_bubbles.gd")
 var order_bubbles
 const CampusPanel = preload("res://scripts/campus_panel.gd")
@@ -43,7 +44,12 @@ var save_label: Label
 var toast_panel: PanelContainer
 var toast_label: Label
 var modal: Control
-var editor_return_view: Control
+## v0.28 navigation: screens that stepped aside for the current one (island walk, planet). They keep
+## their camera, position and mode; closing the current screen resumes the top one.
+var return_stack: Array=[]
+## The screen the current one returns to (kept for older callers and tests).
+var editor_return_view: Control:
+	get: return _top_suspended()
 var refresh_clock: float = 0
 var save_clock: float = 0
 var toast_clock: float = 0
@@ -426,7 +432,7 @@ func _enter_light_bridge() -> void:
 	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); veil.mouse_filter=Control.MOUSE_FILTER_STOP; add_child(veil)
 	var tween=create_tween(); tween.tween_property(veil,"color:a",1.0,0.3)
 	await tween.finished
-	_show_planet_v2(); modal._enter(); veil.move_to_front()
+	_show_planet_v2(); modal.enter_first_person(); veil.move_to_front()
 	tween=create_tween(); tween.tween_property(veil,"color:a",0.0,0.35)
 	await tween.finished
 	veil.queue_free(); light_bridge_busy=false
@@ -721,23 +727,81 @@ func _toast(message: String) -> void:
 	toast_panel.move_to_front()
 	toast_clock = 4.0
 
+## Close the current screen and go back to whatever it covered: a suspended walk or planet, else the island.
 func _close_modal() -> void:
-	if not snapshot_mode: _ambience("amb_island")
-	if is_instance_valid(world_viewport): world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
+	_discard_modal()
+	_resume_suspended()
+
+## Leave every screen, suspended ones included, and show the island management view.
+func _close_all() -> void:
+	_discard_modal()
+	for view in return_stack:
+		if is_instance_valid(view): view.queue_free()
+	return_stack.clear()
+	_resume_suspended()
+
+## Make room for a new screen. A walk or planet steps aside instead of being destroyed.
+func _replace_modal() -> void:
+	if is_instance_valid(modal) and modal.has_method("set_editor_open") and not modal.is_queued_for_deletion() and not return_stack.has(modal):
+		modal.set_editor_open(true); return_stack.append(modal); modal=null
+	_discard_modal()
+
+func _discard_modal() -> void:
 	building_drag.cancel()
 	research_open = false
 	if is_instance_valid(modal):
 		modal.queue_free()
 	modal = null
-	if is_instance_valid(editor_return_view): editor_return_view.queue_free()
-	editor_return_view = null
 	market_rows.clear()
 	shop_buttons.clear()
 	purchase_confirm_button = null
 
+func _top_suspended() -> Control:
+	while not return_stack.is_empty() and (not is_instance_valid(return_stack.back()) or return_stack.back().is_queued_for_deletion()): return_stack.pop_back()
+	return null if return_stack.is_empty() else return_stack.back()
+
+func _resume_suspended() -> void:
+	var view: Control=_top_suspended()
+	if view==null:
+		if not snapshot_mode: _ambience("amb_island")
+		if is_instance_valid(world_viewport): world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
+		return
+	return_stack.pop_back(); modal=view
+	view.set_editor_open(false)
+	if not snapshot_mode: _ambience("amb_river" if view is PlanetV2Panel else "amb_island")
+
+## A full-screen panel closed itself: return to the screen underneath.
+func _screen_closed(panel: Control) -> void:
+	if modal!=panel: return
+	modal=null
+	_resume_suspended()
+
+## Label for a close button that returns to a suspended screen ("" = the island).
+func _return_label() -> String:
+	var view: Control=_top_suspended()
+	if view==null: return ""
+	return "返回河湾" if view is PlanetV2Panel else "返回漫步"
+
+func _label_return(panel: Control) -> void:
+	var text=_return_label()
+	if not text.is_empty() and panel.has_method("set_return_label"): panel.set_return_label(text)
+
+## Bring a suspended screen of this script back to the front, closing what is above it.
+func _resume_existing(script: Script) -> bool:
+	var index=-1
+	for i in range(return_stack.size()):
+		if is_instance_valid(return_stack[i]) and return_stack[i].get_script()==script: index=i
+	if index<0: return false
+	_discard_modal()
+	while return_stack.size()>index+1:
+		var above=return_stack.pop_back()
+		if is_instance_valid(above): above.queue_free()
+	_resume_suspended()
+	return true
+
 func _dialog(title: String, subtitle: String, wide: bool = false, height: int = 668) -> VBoxContainer:
 	town_build.cancel()
-	_close_modal()
+	_replace_modal()
 	modal = Control.new()
 	modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(modal)
@@ -844,7 +908,7 @@ func _open_sandbox_editor(structure: Dictionary) -> void:
 	var editor = SandboxEditor.new()
 	_begin_structure_editor(editor)
 	editor.setup(state,structure,selected_reactor)
-	if is_instance_valid(editor_return_view): editor.set_return_label("返回漫步")
+	_label_return(editor)
 	editor.saved.connect(func(): _toast("作品已保存，可以继续编辑或装入炉子"))
 	editor.applied.connect(func(): _action("已提交博士装炉；旧炉继续生产，完成后切换新分子" if not state.reactors[editor.reactor_index].get("installation",{}).is_empty() else "坐标已保存，反应釜继续生产"))
 	editor.synthesis_requested.connect(func(): _show_organic_synthesis(editor.reactor_index))
@@ -864,11 +928,12 @@ func _show_toolbox() -> void:
 	_show_island_panel("toolbox")
 
 func _show_island_panel(page: String, visitor: int=-1) -> void:
-	_close_modal()
+	_replace_modal()
 	var panel=IslandPanel.new(); add_child(panel); modal=panel
 	panel.setup(state,selected_plot,page,visitor)
+	_label_return(panel)
 	panel.acted.connect(_action)
-	panel.dismissed.connect(func(): if modal==panel: modal=null)
+	panel.dismissed.connect(_screen_closed.bind(panel))
 	panel.arrange.connect(func(kind): _show_campus("build"); modal.prop_choice=kind; modal._show("build"))
 	panel.factory_requested.connect(_show_factory)
 	panel.planet_v2_requested.connect(_show_planet_v2)
@@ -880,7 +945,7 @@ func _navigate_materials(route: String) -> void:
 		"sandbox": _show_sandbox()
 		"research": _show_campus("research")
 		"mail": _show_market()
-		"island": _close_modal()
+		"island": _close_all()
 		"materials": _show_factory(); modal.dossier_family=true; modal._open_dossiers()
 		"workshop":
 			_show_factory()
@@ -890,10 +955,11 @@ func _navigate_materials(route: String) -> void:
 		_: _show_factory()
 
 func _show_factory(recipe_id: String="") -> void:
-	_close_modal()
+	_replace_modal()
 	if not recipe_id.is_empty(): last_factory_recipe=recipe_id
 	var panel=FactoryPanel.new(); add_child(panel); modal=panel
 	panel.setup(state)
+	_label_return(panel)
 	panel._choose_recipe(last_factory_recipe)
 	panel.acted.connect(_action)
 	panel.mail_requested.connect(_show_market)
@@ -908,11 +974,13 @@ func _show_factory(recipe_id: String="") -> void:
 		else: _show_campus(tab))
 	panel.dismissed.connect(func():
 		last_factory_recipe=panel.selected_recipe
-		if modal==panel: modal=null
+		_screen_closed(panel)
 		if not snapshot_mode and not visual_test: state.save_game())
 
 func _show_planet_v2() -> void:
-	_close_modal()
+	# The planet you left for the workshop or reactor is still there, with your position and view.
+	if _resume_existing(PlanetV2Panel): return
+	_replace_modal()
 	var panel=PlanetV2Panel.new(); add_child(panel); modal=panel
 	panel.setup(state)
 	panel.acted.connect(_action)
@@ -920,15 +988,14 @@ func _show_planet_v2() -> void:
 	panel.synthesis_requested.connect(func(): _show_organic_synthesis())
 	_ambience("amb_river")
 	panel.dismissed.connect(func():
-		if modal==panel: modal=null
-		_ambience("amb_island")
+		_screen_closed(panel)
 		if not snapshot_mode and not visual_test: state.save_game())
 
 func _show_organic_synthesis(index: int=-1) -> void:
 	var panel=preload("res://scripts/organic_reactor_panel.gd").new()
 	_begin_structure_editor(panel)
 	panel.setup(state,index)
-	if is_instance_valid(editor_return_view): panel.set_return_label("返回漫步")
+	_label_return(panel)
 	panel.acted.connect(_action)
 	panel.dismissed.connect(func(): _finish_structure_editor(panel))
 	panel.campus_requested.connect(_show_campus)
@@ -1035,14 +1102,15 @@ func _show_build_menu() -> void:
 	_show_campus("build")
 
 func _show_campus(tab: String="overview") -> void:
-	_close_modal()
+	_replace_modal()
 	var panel=CampusPanel.new()
 	modal=panel
 	add_child(panel)
 	panel.setup(state,selected_plot)
+	_label_return(panel)
 	panel.changed.connect(_action)
 	panel.factory_requested.connect(_show_factory)
-	panel.dismissed.connect(func(): modal=null)
+	panel.dismissed.connect(_screen_closed.bind(panel))
 	panel._show(tab)
 
 func _show_research() -> void:
@@ -1248,32 +1316,21 @@ func _open_editor() -> void:
 	var editor = Editor.new()
 	_begin_structure_editor(editor)
 	editor.setup(state,selected_reactor)
-	if is_instance_valid(editor_return_view): editor.set_return_label("返回漫步")
+	_label_return(editor)
 	editor.applied.connect(func(): _finish_structure_editor(editor); _action("修改已提交；更换元素等待博士装炉，已有产物会保留。"))
 	editor.dismissed.connect(func(): _finish_structure_editor(editor))
 	editor.synthesis_requested.connect(func(): _show_organic_synthesis(editor.reactor_index))
 
 func _begin_structure_editor(editor: Control) -> void:
-	# Keep the caller's camera and scene alive only for this editor visit.
-	var return_view: Control=modal if is_instance_valid(modal) and modal.has_method("set_editor_open") else editor_return_view
-	editor_return_view=null
-	if is_instance_valid(return_view):
-		return_view.set_editor_open(true)
-		if modal==return_view: modal=null
-	_close_modal()
-	editor_return_view=return_view
-	if is_instance_valid(return_view): world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
+	# A walk or planet caller steps aside and comes back with its camera and position.
+	_replace_modal()
 	add_child(editor); modal=editor
 
 func _finish_structure_editor(editor: Control,return_to_library: bool=false) -> void:
 	if modal!=editor: return
 	editor.queue_free(); modal=null
-	if is_instance_valid(editor_return_view):
-		modal=editor_return_view; editor_return_view=null
-		modal.set_editor_open(false)
-		world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
-	elif return_to_library: _show_sandbox()
-	else: world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
+	if _top_suspended()==null and return_to_library: _show_sandbox()
+	else: _resume_suspended()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
@@ -1283,6 +1340,7 @@ func _notification(what: int) -> void:
 		if not snapshot_mode and not visual_test:
 			state.save_game()
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		if light_bridge_busy: return
 		if is_instance_valid(modal):
 			if modal.has_method("handle_back") and modal.handle_back(): return
 			_close_modal()
@@ -1544,14 +1602,13 @@ func _test_touch(pos: Vector2, down: bool) -> void:
 
 
 func _show_island_walk() -> void:
-	_close_modal()
-	var panel=preload("res://scripts/island_walk_panel.gd").new(); add_child(panel); modal=panel; panel.setup(state)
+	if _resume_existing(IslandWalk): return
+	_replace_modal()
+	var panel=IslandWalk.new(); add_child(panel); modal=panel; panel.setup(state)
 	world_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
-	panel.dismissed.connect(func():
-		if modal==panel: modal=null
-		world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS)
+	panel.dismissed.connect(func(): _screen_closed(panel))
 	panel.requested.connect(func(kind: String,index: int):
-		if kind=="planet": _show_planet_v2(); modal._enter()
+		if kind=="planet": _show_planet_v2(); modal.enter_first_person()
 		elif kind=="miniatures": _show_miniatures()
 		elif kind=="workshop": _show_factory()
 		elif kind=="reactor": _select_plot(index); _open_editor()

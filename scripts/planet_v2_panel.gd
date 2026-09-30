@@ -599,8 +599,29 @@ func _exit_tree() -> void:
 
 func handle_back() -> bool:
 	if is_instance_valid(backpack): _close_backpack(); return true
+	# Back closes an open side panel first, then leaves first person, and only then the planet.
+	if view.first_person and show_details: _toggle_details(); return true
 	if view.first_person: _enter(); return true
 	_close(); return true
+
+func enter_first_person() -> void:
+	if not view.first_person: _enter()
+
+## Step aside for the workshop or reactor and come back to the same spot and view (main.gd return stack).
+func set_editor_open(open: bool) -> void:
+	explore_input.clear_input()
+	visible=not open
+	process_mode=Node.PROCESS_MODE_DISABLED if open else Node.PROCESS_MODE_INHERIT
+	viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED if open else SubViewport.UPDATE_ALWAYS
+	state.planet.v2.active=not open
+	if open:
+		if is_instance_valid(backpack): _close_backpack()
+		explore_input.set_walking(false)
+		return
+	state.planet.v2.observer_id=get_instance_id()
+	explore_input.set_walking(view.first_person)
+	fingerprint=""; _refresh_hotbar(); _redraw(); _sync()
+	if view.first_person and not show_details: explore_input.grab_focus()
 
 func _close() -> void:
 	explore_input.clear_input()

@@ -68,8 +68,12 @@ func _run() -> void:
 	await key(KEY_S); await process_frame
 	check(island.walker.position!=position_before,"walking works again after repeated edit visits")
 	game._open_editor(); game._show_planet_v2(); await process_frame; await process_frame
-	check(not is_instance_valid(island) and game.editor_return_view==null and game.modal.has_method("_enter"),"leaving for another destination frees the suspended scene")
-	game._close_modal(); s.reactors[game.selected_reactor].erase("sandbox"); game._open_editor(); await process_frame
+	check(is_instance_valid(island) and game.editor_return_view==island and game.modal.has_method("_enter"),"the planet opens on top of the suspended walk")
+	game.modal.handle_back(); await process_frame
+	check(game.modal==island and island.input.walking,"leaving the planet returns to the same walk")
+	game._close_modal(); await process_frame
+	check(game.modal==null and game.return_stack.is_empty(),"closing the walk returns to the management view")
+	s.reactors[game.selected_reactor].erase("sandbox"); game._open_editor(); await process_frame
 	editor=game.modal; check(editor.return_button.text.contains("返回工坊") and game.editor_return_view==null,"management view keeps its own return label")
 	editor._cancel(); await process_frame
 	check(game.modal==null and game.world_viewport.render_target_update_mode==SubViewport.UPDATE_ALWAYS,"management editor closes to the management view")

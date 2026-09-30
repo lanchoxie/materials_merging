@@ -101,7 +101,9 @@ func _run() -> void:
 	check(panel.view.walker.yaw==yaw and input.look_touch==-1,"sidebar swipe never owns camera")
 	await capture("v021-first-person-details")
 	await key(KEY_ESCAPE,true); await key(KEY_ESCAPE,false); await process_frame
-	check(not panel.view.first_person and is_instance_valid(panel) and game.state.planet.v2.active,"first back returns to god view, not island")
+	check(panel.view.first_person and not panel.show_details,"first back closes the side panel and keeps walking")
+	await key(KEY_ESCAPE,true); await key(KEY_ESCAPE,false); await process_frame
+	check(not panel.view.first_person and is_instance_valid(panel) and game.state.planet.v2.active,"next back returns to god view, not island")
 	check(JSON.stringify(game.state.planet.v2.world)==world_before and JSON.stringify(game.state.storage.batches)==stock_before and game.state.coins==coins,"exploration and camera modes preserve ecosystem and inventory")
 	panel.view.stream.drain(100); await process_frame
 	var nodes=panel.view.terrain_root.get_child_count(); var chunks=panel.view.chunks.size()

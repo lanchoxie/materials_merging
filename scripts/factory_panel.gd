@@ -8,6 +8,7 @@ signal campus_requested(tab: String)
 const UI=preload("res://scripts/ui.gd")
 const WorkshopAccess=preload("res://scripts/workshop_access.gd")
 var state
+var close_button: Button
 var view
 var body: VBoxContainer
 var scroll: ScrollContainer
@@ -41,7 +42,7 @@ func setup(model) -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var title=UI.label("工艺车间 · 材料制造",30,UI.MINT); title.position=Vector2(28,24); add_child(title)
-	var close=UI.button("返回浮岛",_close); close.position=Vector2(1288,22); close.size=Vector2(124,48); add_child(close)
+	close_button=UI.button("返回浮岛",_close); var close=close_button; close.position=Vector2(1288,22); close.size=Vector2(124,48); add_child(close)
 	var nav=UI.row(self,10); nav.position=Vector2(28,98)
 	for item in [["workshop","生产车间"],["dossiers","我的材料"],["materials","导热对照"],["circuits","导线对照"]]:
 		nav.add_child(UI.button(item[1],_section.bind(item[0])))
@@ -150,6 +151,9 @@ func _process(dt: float) -> void:
 
 func handle_back() -> bool:
 	_close(); return true
+
+func set_return_label(text: String) -> void:
+	close_button.text=text
 
 func _close() -> void:
 	dismissed.emit(); queue_free()

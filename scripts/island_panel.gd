@@ -6,6 +6,7 @@ signal factory_requested
 signal planet_v2_requested
 signal material_navigation(route: String)
 const UI=preload("res://scripts/ui.gd")
+var close_button: Button
 var state
 var selected_plot=-1
 var section="products"
@@ -28,7 +29,7 @@ func setup(model, plot: int, page: String="toolbox", visitor: int=-1) -> void:
 	var content=UI.column(panel,16)
 	var heading=UI.row(content)
 	var title=UI.label("浮岛邮箱 · 来访订单" if mode=="mail" else "随身工具箱",30,UI.MINT); title.size_flags_horizontal=Control.SIZE_EXPAND_FILL; heading.add_child(title)
-	heading.add_child(UI.button("返回小岛",_close))
+	close_button=UI.button("返回小岛",_close); heading.add_child(close_button)
 	status=UI.label("",16,UI.GOLD); content.add_child(status)
 	if mode!="mail":
 		var tabs=UI.row(content,10)
@@ -216,3 +217,6 @@ func handle_back() -> bool:
 
 func _close() -> void:
 	dismissed.emit(); queue_free()
+
+func set_return_label(text: String) -> void:
+	close_button.text=text

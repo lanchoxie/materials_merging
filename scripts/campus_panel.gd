@@ -5,6 +5,7 @@ signal changed(message: String)
 signal dismissed
 signal factory_requested
 const UI=preload("res://scripts/ui.gd")
+var close_button: Button
 var state
 var selected_plot=-1
 var current_tab="overview"
@@ -26,7 +27,7 @@ func setup(model, plot: int=-1) -> void:
 	var outer=UI.column(panel,12)
 	var head=UI.row(outer)
 	title=UI.label("科研小镇 · 每个人都有自己的生活",26,UI.MINT); title.size_flags_horizontal=Control.SIZE_EXPAND_FILL; head.add_child(title)
-	head.add_child(UI.button("回到小岛",_close))
+	close_button=UI.button("回到小岛",_close); head.add_child(close_button)
 	head.add_child(UI.button("工艺车间",func(): factory_requested.emit()))
 	clock_label=UI.label("",15,UI.GOLD); outer.add_child(clock_label)
 	var tabs=UI.row(outer)
@@ -223,3 +224,6 @@ func handle_back() -> bool:
 	_close(); return true
 func _close() -> void:
 	dismissed.emit(); queue_free()
+
+func set_return_label(text: String) -> void:
+	close_button.text=text

@@ -76,8 +76,15 @@ func _run() -> void:
 	panel._tab("bag"); await process_frame
 	await press("工艺\n车间")
 	await process_frame
-	check(not p.v2.active,"switching to workshop stops river simulation")
-	game._show_planet_v2(); await process_frame; await press("返回浮岛"); await process_frame
+	check(not p.v2.active and game.return_stack.has(panel) and not panel.visible,"switching to workshop suspends the planet instead of destroying it")
+	check(game.modal.close_button.text=="返回河湾","workshop opened from the planet says where it returns")
+	game.modal.handle_back(); await process_frame
+	check(game.modal==panel and panel.visible and p.v2.active,"closing the workshop returns to the same planet scene")
+	check(not is_instance_valid(panel.backpack),"returning from the workshop closes the backpack that sent you there")
+	panel._tab("bag"); await process_frame; await press("工艺\n车间"); await process_frame
+	game._show_planet_v2(); await process_frame
+	check(game.modal==panel and game.return_stack.is_empty(),"going to the planet again resumes the suspended one")
+	await press("返回浮岛"); await process_frame
 	check(not p.v2.active and game.modal==null,"close clears observer")
 	game.queue_free(); await process_frame
 	print("PLANET_V2_UI: %d checks, %d failures" % [checks,failures.size()])
