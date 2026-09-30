@@ -59,6 +59,17 @@ static func steps(game, id: String) -> Array:
 				{"target": func(): return m.start_button, "title": "请博士装炉",
 					"text": "元素齐了点开始。博士会沿小路走来，元素小球先在炉口旋转，装完再落进腔体；化合物变了，腔里的固体、液体或气体也会跟着变。"},
 			]
+		"index":
+			return [
+				{"target": func(): return game.index_tabs, "title": "两个真实数据库",
+					"text": "分子来自 PubChem，晶体来自 Materials Project。这里的每一条都是真实存在或被计算预测过的物质。"},
+				{"target": func(): return game.index_chips, "title": "按元素筛选",
+					"text": "点几个元素，只看同时含有它们的物质。先挑精炼厂里已经有的元素，更容易做出来。"},
+				{"target": func(): return game.index_grid.get_child(0) if game.index_grid != null and game.index_grid.get_child_count() > 0 else null, "title": "做出来就收录",
+					"text": "点卡片看真实性质和会转的三维结构。在工作台换元素或在结构工坊画出同样的东西，收获一次就收录，第一次还有金币。"},
+				{"target": func(): return game.index_credits_button, "title": "有据可查",
+					"text": "每个数字都标了来源编号；数据库里没有的写「未测」。自己搭的新结构保持「假说」，不会编造性质。"},
+			]
 		"sandbox":
 			return [
 				{"target": func(): return find_button(m, "＋ 新建空白探索作品"), "title": "结构工坊",

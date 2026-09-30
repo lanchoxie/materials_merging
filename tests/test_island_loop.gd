@@ -35,7 +35,10 @@ func _initialize() -> void:
 	var wallet=s.coins
 	s.harvest(0)
 	check(r.pending==0 and r.stock==0 and s.storage.batches[0].quantity==cap,"collection transfers completed units into immutable bag batch")
-	check(is_equal_approx(s.coins,wallet+money),"collection pays exactly accumulated coins")
+	## v0.29: the first harvest of a structure also pays its one-time chemistry-index reward.
+	var gift: int=preload("res://scripts/chem_index.gd").reward(s.structure_data(r).index)
+	check(gift>0 and s.index_found.size()==1,"first water harvest records its index entry")
+	check(is_equal_approx(s.coins,wallet+money+gift),"collection pays exactly accumulated coins plus the one-time index reward")
 	wallet=s.coins; var drops=s.materials.duplicate(); s.harvest(0)
 	check(s.coins==wallet and s.materials==drops and s.storage.batches[0].quantity==cap,"repeated collection does not duplicate coins loot or products")
 	advance(s,24)

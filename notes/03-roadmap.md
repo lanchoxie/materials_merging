@@ -64,7 +64,8 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.28 "Refinery" (tag `v0.28.0`; see [10-refinery.md](10-refinery.md)): minerals → real processes → elements; seawater/air trickle
   on the island; **element shop removed**. Also reactor tiers (flask → kettle → autoclave → plasma), the visible doctor install,
   phase visuals, return-where-you-came-from navigation and first-time tours.
-- v0.29 "Index": offline chemistry index from Materials Project / COD / PubChem; real properties in the codex.
+- ✅ v0.29 "Index" (tag `v0.29.0`; see [11-index.md](11-index.md)): offline chemistry index from Materials Project and PubChem
+  (COD deferred); real properties, 3D structures and sources in the codex; substitution reaches real compounds.
 - v0.30 "Fabricator": compounds → gear, machines, emitters; stats from real properties (closed loop).
 - v0.31 "Earth": environment field (planet + region grid), emitters, biome shifts.
 - v0.31 "Specimens": extractor on creatures and native buildings, island museum, specimen codex.

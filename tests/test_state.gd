@@ -172,7 +172,7 @@ func _initialize():
 	valid_file.plots[0].rid = 0
 	check(not loaded._validate_save(valid_file), "save rejects inconsistent plot ownership")
 	var baseline = JSON.parse_string(FileAccess.get_file_as_string(save_path + ".bak"))
-	check(int(baseline.version) == 24 and baseline.refinery.level == 1, "new saves use version twenty-four with the refinery")
+	check(int(baseline.version) == 25 and baseline.refinery.level == 1 and baseline.index_found is Array, "new saves use version twenty-five with the refinery and the index")
 	valid_file = baseline.duplicate(true)
 	valid_file.plots[9].x = valid_file.plots[4].x
 	valid_file.plots[9].z = valid_file.plots[4].z

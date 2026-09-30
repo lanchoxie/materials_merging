@@ -30,6 +30,26 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.29.0 "Index": a real chemistry database inside the game
+The user supplied a Materials Project API key and asked for the planned index. Full notes: [11-index.md](11-index.md).
+- **Offline pipeline** `dev/chem_index/`:
+  - 1 090 Materials Project crystals: game elements only, ≤ 24 sites, E_hull ≤ 0.1 eV/atom; 496 experimentally observed.
+  - 106 curated PubChem molecules with bond graphs.
+  - Bundled as JSON with attribution. No key in the repo or the APK, and no network at runtime.
+- **Honest matching.**
+  - Molecules match by exact bond graph.
+  - Crystals match by reduced composition, and by prototype space group for rock-salt/perovskite templates.
+  - Same atoms but different bonds is only an isomer hint. Everything else stays "未收录 · 假说".
+- **Gameplay.**
+  - Element substitution now reaches real compounds (LiCl, HBr, thiourea…), which are named for what they are.
+  - They earn 2× the exploration stipend, and the first harvest pays a one-time index reward with a banner.
+  - Save v25 (`index_found`). v24 saves settle without a windfall.
+- **Browser.** The codex gains a 化学索引 browser: molecule/crystal tabs, element filters, pages and found cards.
+  - Entry pages have a turning 3D structure (conformer or unit cell), sourced properties ("未测" when missing) and how to make it.
+  - A 数据来源与致谢 screen, a reactor sidebar line with a link, the live index line in the structure workshop, and an `index` first-time tour.
+- Fix: the coach tour's screen check holds a weak reference, so closing a screen mid-tour no longer logs "Lambda capture … was freed".
+- Tests: new `test_chem_index` (35) and `test_chem_index_ui` (23); `test_state` expects save v25; `test_island_loop` counts the one-time index reward on the first water harvest. Suite 69/0.
+
 ## v0.28.0 "Refinery": elements from the ground, reactors that look their level, first-time tours
 The user asked for distinct looks for reactor tiers, a visible doctor install that shows the compound's state
 change, tidier navigation, and proper onboarding for synthesis. Full notes: [10-refinery.md](10-refinery.md).

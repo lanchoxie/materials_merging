@@ -52,7 +52,7 @@ func from_baseline(id: String, name: String = "") -> Dictionary:
 	var title: String = name if not name.is_empty() else str(baselines[id].get("name", id))
 	return new_structure(title, id)
 
-func formula(structure: Dictionary) -> String:
+static func formula(structure: Dictionary) -> String:
 	var atoms: Array = structure.get("atoms", [])
 	var counts: Dictionary = {}
 	for symbol in structure.get("atoms", []):
@@ -210,7 +210,7 @@ func _clean_name(value: String) -> String:
 		return "未命名样品"
 	return cleaned.left(MAX_NAME_LENGTH)
 
-func _subscript(value: int) -> String:
+static func _subscript(value: int) -> String:
 	var digits := ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
 	var text := str(value)
 	var result := ""

@@ -8,6 +8,7 @@ signal synthesis_requested
 
 const UI = preload("res://scripts/ui.gd")
 const MAX_ATOMS := 64
+const ChemIndex = preload("res://scripts/chem_index.gd")
 const LIMIT := 20.0
 var state
 var reactor_index := -1
@@ -544,6 +545,8 @@ func _update_readout() -> void:
 		reference_label.text = "配方参考：%s · 当前坐标可自由调节\n%s" % [str(info.get("formula", id)), str(info.get("description", "教学几何参考，不代表真实势能。"))]
 	else:
 		reference_label.text = "自由探索 · 应用时检查可用参考\n无适用参考的作品保留探索用途；半径与连线不能证明稳定性。"
+	if draft.mode != "art" and not draft.atoms.is_empty():
+		reference_label.text += "\n" + ChemIndex.summary(ChemIndex.identify(draft))
 	for symbol in element_buttons:
 		var button: Button = element_buttons[symbol]
 		button.add_theme_stylebox_override("normal", UI.style(Color("31574f") if symbol == element_choice else UI.INNER, 10, UI.MINT if symbol == element_choice else UI.LINE))

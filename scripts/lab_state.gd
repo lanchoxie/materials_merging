@@ -17,6 +17,11 @@ var phase_notice: Dictionary={}
 var coach_seen: Dictionary={}
 ## Off for script-driven runs (tests, screenshots) so they never touch the player's own save slot.
 var default_slot_enabled: bool=true
+## v0.29 chemistry index: entries the player has made (index key -> true); see chem_index.gd.
+const ChemIndex=preload("res://scripts/chem_index.gd")
+var index_found: Dictionary={}
+## Set on a harvest that adds a new index entry; main shows a banner.
+var index_notice: Dictionary={}
 ## v0.28: minerals → elements; replaces the coin element shop.
 var refinery=Refinery.new()
 var refinery_notice: String=""
@@ -267,7 +272,10 @@ func reactor_work(r: Dictionary) -> Dictionary:
 	return {"name":info.name,"atoms":atom_symbols(r).duplicate(),"positions":r.positions.duplicate(true),"bonds":info.get("bond_orders",[]).duplicate(true),"mode":"science","periodic":false,"cell":[6.0,6.0,6.0],"baseline_id":info.reference_id}
 
 func sandbox_reference(work: Dictionary) -> Dictionary:
-	return SandboxReference.describe(work,templates,elements)
+	var info := SandboxReference.describe(work,templates,elements)
+	info["index"] = ChemIndex.identify(work)
+	if not info.known and ChemIndex.is_find(info.index): info.formula = ChemIndex.formula(info.index.entry)
+	return info
 
 func sandbox_reactor_quote(index: int, work: Dictionary) -> Dictionary:
 	var q := {"ready":false,"changed":false,"fee":0,"required":{},"message":"请选择反应炉"}
@@ -463,13 +471,20 @@ func structure_data(r: Dictionary) -> Dictionary:
 		var custom_key := JSON.stringify([work.atoms,work.bonds,work.mode,work.periodic,work.name])
 		if not _structure_cache.has(custom_key):
 			if _structure_cache.size()>256: _structure_cache.clear()
-			_structure_cache[custom_key] = SandboxReference.describe(work,templates,elements)
+			_structure_cache[custom_key] = sandbox_reference(work)
 		return _structure_cache[custom_key]
 	var key: String = str(r.template) + ":" + ",".join(atoms)
 	if not _structure_cache.has(key):
 		# Bound the cache during long sandbox sessions.
 		if _structure_cache.size() > 256: _structure_cache.clear()
-		_structure_cache[key] = Specimen.describe(r.template,atoms,templates,elements)
+		var info := Specimen.describe(r.template,atoms,templates,elements)
+		var base: Dictionary = templates[r.template]
+		info["index"] = ChemIndex.identify({"atoms":atoms,"bonds":info.get("bond_orders",[]),"occupancies":base.get("occupancies",[]),"family":str(base.get("family","")),"chapter":str(base.get("chapter",""))})
+		if not info.known and ChemIndex.is_find(info.index):
+			# Still an exploration sample for the economy, but named for what it really is.
+			info.formula = ChemIndex.formula(info.index.entry)
+			info.name = "%s · 化学索引收录" % (str(info.index.entry.name) if info.index.kind == "molecule" else "%s 晶体" % str(info.index.entry.spacegroup))
+		_structure_cache[key] = info
 	return _structure_cache[key]
 
 func reference_id(r: Dictionary) -> String:
@@ -530,7 +545,9 @@ func income_breakdown(r: Dictionary) -> Dictionary:
 	var result: Dictionary = economy.breakdown(info, quality(r), int(r.level), float(r.get("build_left", 0.0)) > 0.0)
 	result.known = info.known
 	if not info.known:
-		result.rate = 0.0 if float(r.get("build_left",0.0)) > 0.0 else float(economy.rules.exploration_rate)
+		# A real compound from the index earns more than a hypothesis, still far below a tuned template.
+		result.index = ChemIndex.is_find(info.get("index",{}))
+		result.rate = 0.0 if float(r.get("build_left",0.0)) > 0.0 else float(economy.rules.exploration_rate) * (ChemIndex.INDEX_RATE_FACTOR if result.index else 1.0)
 	return result
 
 func total_income() -> float:
@@ -634,7 +651,7 @@ func upgrade_cost(r: Dictionary) -> int:
 	return 90 * int(r.level) * int(r.level)
 
 func _collect(r: Dictionary) -> Dictionary:
-	var result = {"coins": 0.0, "drops": 0, "units": 0, "gifts": []}
+	var result = {"coins": 0.0, "drops": 0, "units": 0, "gifts": [], "index": []}
 	if float(r.build_left) > 0.0 or (int(r.get("pending", 0)) == 0 and float(r.stored_coins) <= 0.0):
 		return result
 	if not storage.add_product(product_snapshot(r),int(r.pending)): return result
@@ -659,6 +676,11 @@ func _collect(r: Dictionary) -> Dictionary:
 	if units > 0 and not ref_id.is_empty() and not discovered.has(ref_id):
 		discovered.append(ref_id)
 	result.gifts = Codex.record(self, ref_id, quality(r)) if units > 0 and not ref_id.is_empty() else []
+	var found: Dictionary = structure_data(r).get("index",{})
+	var index_gift: String = ChemIndex.record(self, found)
+	if not index_gift.is_empty():
+		result.index.append(index_gift)
+		index_notice = {"formula":ChemIndex.formula(found.entry),"name":str(found.entry.get("name","")) if found.kind=="molecule" else str(found.entry.get("spacegroup","")),"kind":str(found.kind),"key":str(found.key)}
 	return result
 
 func harvest(index: int) -> String:
@@ -667,21 +689,26 @@ func harvest(index: int) -> String:
 	var result = _collect(reactors[index])
 	if result.coins <= 0.0 and result.units == 0:
 		return "反应炉正在准备，稍后再来收获"
-	return "收获 +%d 金币 · +%d 建材 · %d 份产物入库" % [int(result.coins), result.drops, result.units] + _gift_text(result.gifts)
+	return "收获 +%d 金币 · +%d 建材 · %d 份产物入库" % [int(result.coins), result.drops, result.units] + _gift_text(result.gifts) + _index_text(result.index)
 
 func harvest_all() -> String:
 	var earned = 0.0
 	var drops = 0
 	var gifts: Array = []
+	var index: Array = []
 	for r in reactors:
 		var result = _collect(r)
 		earned += result.coins
 		drops += result.drops
 		gifts.append_array(result.gifts)
-	return "全岛收获 +%d 金币 · +%d 建材" % [int(earned), drops] + _gift_text(gifts)
+		index.append_array(result.index)
+	return "全岛收获 +%d 金币 · +%d 建材" % [int(earned), drops] + _gift_text(gifts) + _index_text(index)
 
 func _gift_text(gifts: Array) -> String:
 	return "" if gifts.is_empty() else " · 图鉴奖励 " + "、".join(gifts)
+
+func _index_text(finds: Array) -> String:
+	return "" if finds.is_empty() else " · " + "、".join(finds)
 
 func plot_at(x: int, z: int) -> int:
 	for i in range(plots.size()):
@@ -1107,7 +1134,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 24, "refinery": refinery.serialize(), "coach": coach_seen.keys(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 25, "index_found": index_found.keys(), "refinery": refinery.serialize(), "coach": coach_seen.keys(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1169,8 +1196,9 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 24, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 25, true):
 		return false
+	if int(data.version)>=25 and (not data.get("index_found") is Array or data.index_found.size()>4096 or data.index_found.any(func(id): return not id is String or str(id).length()>40)): return false
 	if int(data.version)>=24 and not Refinery.new().restore(data.get("refinery"),elements): return false
 	if data.has("coach") and (not data.coach is Array or data.coach.size()>32 or data.coach.any(func(id): return not id is String or str(id).length()>32)): return false
 	if int(data.version)>=23:
@@ -1370,6 +1398,8 @@ func load_game(path: String = "") -> bool:
 	if int(data.version) >= 24: refinery.restore(data.refinery,elements)
 	coach_seen={}
 	for id in data.get("coach",[]): coach_seen[str(id)]=true
+	index_found={}
+	for id in data.get("index_found",[]): index_found[str(id)]=true
 	materials = [int(data.materials[0]), int(data.materials[1]), int(data.materials[2])]
 	upgrades = int(data.upgrades)
 	engineers = int(data.engineers)
@@ -1455,6 +1485,10 @@ func load_game(path: String = "") -> bool:
 			var ref_id: String=reference_id(r)
 			if float(r.build_left)<=0.0 and ref_id in discovered: best_fit[ref_id]=maxf(float(best_fit.get(ref_id,0.0)),quality(r))
 		Codex.settle_existing(self)
+	if int(data.version)<25:
+		# Pre-index saves: what the reactors already hold counts as found, without a windfall.
+		for r in reactors:
+			if float(r.build_left)<=0.0: ChemIndex.record(self,structure_data(r).get("index",{}),false)
 	return true
 
 

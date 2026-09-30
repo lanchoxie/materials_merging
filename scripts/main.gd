@@ -86,6 +86,20 @@ var pointer_position: Vector2=Vector2(720,450)
 var shown_coins: float=-1.0
 var sound_button: Button
 const Codex = preload("res://scripts/codex.gd")
+const ChemIndex = preload("res://scripts/chem_index.gd")
+const ChemIndexView = preload("res://scripts/chem_index_view.gd")
+const INDEX_PAGE = 16
+## v0.29 index browser: current tab, element filter, found-only toggle and page.
+var index_kind: String = "molecule"
+var index_filter: Array = []
+var index_found_only: bool = false
+var index_page: int = 0
+var index_tabs: HBoxContainer
+var index_chips: HFlowContainer
+var index_grid: GridContainer
+var index_count: Label
+var index_pager: HBoxContainer
+var index_credits_button: Button
 const Milestones=preload("res://scripts/milestones.gd")
 const DayCycle = preload("res://scripts/core/day_cycle.gd")
 var goal_button: Button
@@ -184,7 +198,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.28.0 精炼  ·  矿物炼元素 · 反应釜分级外观 · 新手指引", 11, UI.MUTED)
+	save_label = UI.label("v0.29.0 化学索引  ·  真实数据库 · 三维结构 · 数据来源", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -519,6 +533,11 @@ func _rebuild_sidebar() -> void:
 		badge.create_tween().tween_property(badge,"scale",Vector2.ONE,0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		side.add_child(UI.paragraph(tpl.name,16,UI.TEXT))
 		side.add_child(UI.paragraph(badge.tooltip_text,12,UI.MUTED))
+		var found: Dictionary = tpl.get("index",{})
+		var index_line = UI.paragraph(ChemIndex.summary(found),12,UI.GOLD if ChemIndex.is_find(found) else UI.MUTED)
+		index_line.name = "IndexLine"
+		side.add_child(index_line)
+		if ChemIndex.is_find(found): side.add_child(UI.button("查看真实数据  →",_show_index_entry.bind(str(found.key))))
 		UI.spacer(side,3)
 		rate_label = UI.label("",26,UI.GOLD)
 		side.add_child(rate_label)
@@ -581,6 +600,10 @@ func _process(delta: float) -> void:
 	if not state.phase_notice.is_empty():
 		_announce_phase(state.phase_notice)
 		state.phase_notice={}
+	if not state.index_notice.is_empty():
+		var fx = get_node_or_null("/root/Fx")
+		if fx: fx.banner("化学索引新收录", "%s  %s" % [state.index_notice.formula, state.index_notice.name], UI.GOLD)
+		state.index_notice={}
 	if not state.science_notice.is_empty():
 		_toast(state.science_notice)
 		state.science_notice = ""
@@ -1245,6 +1268,7 @@ func _show_collection() -> void:
 		bar.add_theme_stylebox_override("fill", fill); bar.add_theme_stylebox_override("background", track)
 		g.add_child(bar)
 		g.add_child(UI.paragraph("奖励的摆件直接放进工具箱，可在「装饰」里免费布置。每种结构最多 ★★★（几何匹配 98%）。", 12))
+	body.add_child(UI.button("化学索引 · 真实数据库   已收录 %d / %d   →" % [state.index_found.size(), ChemIndex.size()], _show_index, true))
 	var grid = GridContainer.new()
 	grid.columns = 4
 	grid.add_theme_constant_override("h_separation", 10)
@@ -1304,9 +1328,112 @@ func _show_codex_entry(key: String) -> void:
 		for r in state.reactors:
 			if state.reference_id(r) == key:
 				body.add_child(UI.label("我的样品   %s  ·  %s  ·  当前 %d%%" % [r.id, state.signature(r), roundi(state.quality(r) * 100.0)], 13, UI.MINT))
+		var found: Dictionary = state.structure_data({"template":key,"atoms":tpl.atoms}).get("index",{})
+		if ChemIndex.is_find(found): body.add_child(UI.button("化学索引：%s   查看真实数据  →" % ChemIndex.formula(found.entry), _show_index_entry.bind(str(found.key))))
 	else:
 		body.add_child(UI.paragraph("通过元素替换得到此组成，再收获第一份产物，即可解锁。" if tpl.get("substitution_only", false) else "建造或换装这个结构，并收获第一份产物，即可解锁科普卡。", 16, UI.TEXT))
 	body.add_child(UI.button("返回图鉴", _show_collection, true))
+
+## v0.29 chemistry index browser: PubChem molecules and Materials Project crystals, bundled offline.
+func _show_index() -> void:
+	var body = _dialog("化学索引", "真实数据库  ·  分子 %d / %d（PubChem）  ·  晶体 %d / %d（Materials Project）  ·  做出来并收获一次即收录" % [ChemIndex.found_count(state,"molecule"), ChemIndex.molecules().size(), ChemIndex.found_count(state,"crystal"), ChemIndex.crystals().size()], true)
+	index_tabs = UI.row(body, 8)
+	index_chips = HFlowContainer.new()
+	index_chips.add_theme_constant_override("h_separation", 6)
+	index_chips.add_theme_constant_override("v_separation", 6)
+	body.add_child(index_chips)
+	index_count = UI.label("", 14, UI.MUTED)
+	body.add_child(index_count)
+	index_grid = GridContainer.new()
+	index_grid.columns = 4
+	index_grid.add_theme_constant_override("h_separation", 10)
+	index_grid.add_theme_constant_override("v_separation", 10)
+	body.add_child(index_grid)
+	index_pager = UI.row(body, 10)
+	_refresh_index()
+	_coach("index")
+
+## Tabs, filters and pages refill the same dialog, so a running tour keeps its targets.
+func _refresh_index() -> void:
+	if not is_instance_valid(index_grid): return
+	for box in [index_tabs, index_chips, index_grid, index_pager]:
+		for child in box.get_children():
+			box.remove_child(child); child.queue_free()
+	for tab in [["molecule","分子  %d" % ChemIndex.molecules().size()], ["crystal","晶体  %d" % ChemIndex.crystals().size()]]:
+		index_tabs.add_child(UI.button(tab[1], func(): index_kind = tab[0]; index_page = 0; _refresh_index(), index_kind == tab[0]))
+	index_tabs.add_child(UI.button("✓ 只看已收录" if index_found_only else "只看已收录", func(): index_found_only = not index_found_only; index_page = 0; _refresh_index(), index_found_only))
+	var gap = Control.new(); gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL; index_tabs.add_child(gap)
+	index_credits_button = UI.button("数据来源与致谢", _show_index_credits)
+	index_tabs.add_child(index_credits_button)
+	index_tabs.add_child(UI.button("返回图鉴", _show_collection))
+	for symbol in state.elements.keys():
+		var chip = UI.button(str(symbol), _toggle_index_element.bind(str(symbol)), str(symbol) in index_filter)
+		chip.custom_minimum_size = Vector2(56, 40)
+		index_chips.add_child(chip)
+	if not index_filter.is_empty(): index_chips.add_child(UI.button("清除筛选", func(): index_filter.clear(); index_page = 0; _refresh_index()))
+	var list: Array = ChemIndex.filtered(index_kind, index_filter, index_found_only, state)
+	var pages := maxi(1, ceili(float(list.size()) / INDEX_PAGE))
+	index_page = clampi(index_page, 0, pages - 1)
+	index_count.text = "共 %d 条%s  ·  第 %d / %d 页" % [list.size(), "（含 %s）" % "、".join(index_filter) if not index_filter.is_empty() else "", index_page + 1, pages]
+	if list.is_empty():
+		index_count.text += "  ·  " + ("还没有收录这一类。做出一个真实存在的物质，收获一次就会出现在这里。" if index_found_only else "没有同时含这些元素的条目，少选一个元素试试。")
+	for i in range(index_page * INDEX_PAGE, mini(list.size(), (index_page + 1) * INDEX_PAGE)):
+		var e: Dictionary = list[i]
+		index_grid.add_child(ChemIndexView.card(e, state.index_found.has(str(e.key)), _show_index_entry.bind(str(e.key))))
+	var prev = UI.button("上一页", func(): index_page -= 1; _refresh_index())
+	prev.disabled = index_page <= 0
+	index_pager.add_child(prev)
+	var next = UI.button("下一页", func(): index_page += 1; _refresh_index())
+	next.disabled = index_page >= pages - 1
+	index_pager.add_child(next)
+
+func _toggle_index_element(symbol: String) -> void:
+	if symbol in index_filter: index_filter.erase(symbol)
+	else: index_filter.append(symbol)
+	index_page = 0
+	_refresh_index()
+
+func _show_index_entry(key: String) -> void:
+	var e: Dictionary = ChemIndex.entry_by_key(key)
+	if e.is_empty(): return
+	var molecule: bool = e.has("cid")
+	var found: bool = state.index_found.has(key)
+	var body = _dialog("%s   %s" % [ChemIndex.formula(e), str(e.name) if molecule else str(e.spacegroup)], ("%s · PubChem CID %d" % [str(e.group), int(e.cid)]) if molecule else ("%s晶系 · %s · %s" % [ChemIndex.CRYSTAL_SYSTEMS.get(str(e.crystal_system), ""), str(e.id), ChemIndex.stability(e).name]), true)
+	var top = UI.row(body, 16)
+	var frame = PanelContainer.new()
+	frame.add_theme_stylebox_override("panel", UI.style(Color("0f1e26"), 14, UI.LINE))
+	top.add_child(frame)
+	frame.add_child(ChemIndexView.preview(e, state.elements))
+	var facts = UI.column(top, 4)
+	facts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	facts.add_child(UI.label("✓ 你已经做出过它" if found else "尚未收录 · 做出来并收获一次", 16, UI.GOLD if found else UI.MUTED))
+	for row in ChemIndex.properties(e):
+		var line = UI.row(facts, 8)
+		var name_label = UI.label(str(row[0]), 14, UI.MUTED)
+		name_label.custom_minimum_size = Vector2(118, 0)
+		line.add_child(name_label)
+		var value = UI.label(str(row[1]), 14, UI.TEXT)
+		value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		line.add_child(value)
+	if molecule and not str(e.get("name_en", "")).is_empty(): facts.add_child(UI.paragraph(str(e.name_en), 12))
+	body.add_child(UI.paragraph(ChemIndex.how_to_build(e), 15, UI.TEXT))
+	if not molecule: body.add_child(UI.paragraph("图中金色线是晶胞边界，球的大小只是示意。性质来自密度泛函理论（DFT）计算，与实验值可能有偏差。", 12))
+	body.add_child(UI.paragraph(ChemIndex.source_line(e), 12, UI.MINT))
+	var buttons = UI.row(body, 10)
+	buttons.add_child(UI.button("返回化学索引", _show_index, true))
+	buttons.add_child(UI.button("数据来源与致谢", _show_index_credits))
+
+func _show_index_credits() -> void:
+	var body = _dialog("数据来源与致谢", "化学索引在开发时离线整理并随游戏打包：游戏里没有密钥，也不联网。没有来源的数值一律写「未测」，不会编造。", true)
+	for s in ChemIndex.sources():
+		body.add_child(UI.label(str(s.name_zh), 20, UI.GOLD))
+		body.add_child(UI.paragraph("%s  ·  许可：%s" % [str(s.url), str(s.licence)], 14, UI.TEXT))
+		body.add_child(UI.paragraph(str(s.scope_zh), 14))
+		body.add_child(UI.paragraph(str(s.changes_zh), 13))
+		body.add_child(UI.paragraph("引用：" + str(s.citation), 12, UI.MINT))
+	body.add_child(UI.paragraph("Materials Project 数据库版本 %s。物态、熔点和沸点仍来自各条目标注的文献（见反应釜侧栏）。" % ChemIndex.db_version(), 13))
+	body.add_child(UI.button("返回化学索引", _show_index, true))
 
 ## Shows a screen's first-time tour once the screen has laid itself out.
 func _coach(id: String) -> void:
@@ -1318,7 +1445,9 @@ func _start_coach(id: String) -> void:
 	coach.stop_if_stale()
 	if coach.active(): return
 	var owner: Control = modal
-	var alive: Callable = (func(): return modal == null) if id == "island" else (func(): return is_instance_valid(owner) and modal == owner and owner.is_visible_in_tree())
+	# A weak reference: the tour may outlive its screen for a frame, and a freed capture logs an error.
+	var screen: WeakRef = weakref(owner)
+	var alive: Callable = (func(): return modal == null) if id == "island" else (func(): var o = screen.get_ref(); return o != null and modal == o and o.is_visible_in_tree())
 	if not alive.call(): return
 	coach.start(id, CoachTours.steps(self, id), alive)
 
@@ -1341,11 +1470,13 @@ func _show_help() -> void:
 		["03  带伙伴来", "先造住宅，再招募伙伴。工程师到岗后才施工；科研小镇可以查看性格、日薪和生活心愿。"],
 		["04  接一张订单", "每次到访可交付一次，之后等待20秒。库存达到3份即可交付。种类相符且几何响应与目标相差≤5个百分点，获得精品催化晶，用来升级炉子。"],
 		["05  元素从哪里来", "海水、空气和水在精炼厂自动产出 H、C、N、O、Na、Cl、Br；铜、铝、铅、硫、氟、锂、铯要去星球地下采矿，再到精炼厂提炼。工作台选择位点 → 预览替换，应用时扣库存与一次编辑费。"],
-		["06  解锁新知识", "先造科研院所和博士公寓，再招募博士生开展基础课题。院士增加进阶课题名额，教授可选带队提效；研究站保留势函数和一维DFT教学任务。"]
+		["06  解锁新知识", "先造科研院所和博士公寓，再招募博士生开展基础课题。院士增加进阶课题名额，教授可选带队提效；研究站保留势函数和一维DFT教学任务。"],
+		["07  化学索引", "图鉴里的「化学索引」收了一千多种真实物质：分子来自 PubChem，晶体来自 Materials Project。做出其中任何一种并收获一次，就会收录并得到金币；没收录的结构保持「假说」，不编造性质。"]
 	]:
 		body.add_child(UI.label(entry[0],20,UI.GOLD))
 		body.add_child(UI.paragraph(entry[1],16))
 	body.add_child(UI.button("重新播放新手指引",_replay_coach))
+	body.add_child(UI.button("数据来源与致谢",_show_index_credits))
 	body.add_child(UI.button("开始我的小岛",_close_modal,true))
 
 func _open_editor() -> void:

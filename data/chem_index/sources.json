@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "note": "Attribution for the bundled chemistry index (v0.29). Built offline by dev/chem_index/*.py; the game ships no API key and never goes online for it.",
+  "sources": [
+    {
+      "id": "materials_project",
+      "name": "Materials Project",
+      "name_zh": "Materials Project 材料计划（劳伦斯伯克利国家实验室）",
+      "url": "https://materialsproject.org",
+      "entry_url": "https://next-gen.materialsproject.org/materials/%s",
+      "licence": "CC BY 4.0",
+      "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+      "citation": "A. Jain et al., Commentary: The Materials Project: A materials genome approach to accelerating materials innovation, APL Materials 1, 011002 (2013). https://doi.org/10.1063/1.4812323",
+      "scope_zh": "晶体：只含游戏中 14 种元素、晶胞不超过 24 个原子、距凸包能不超过 0.1 eV/原子的条目。性质为 DFT 计算值（GGA/GGA+U/r²SCAN 混合方案），与实验值可能有偏差；带隙通常被低估。",
+      "changes_zh": "游戏只保留了部分字段并做了四舍五入；未修改数值含义。"
+    },
+    {
+      "id": "pubchem",
+      "name": "PubChem",
+      "name_zh": "PubChem 化学数据库（美国国家生物技术信息中心 NCBI）",
+      "url": "https://pubchem.ncbi.nlm.nih.gov",
+      "entry_url": "https://pubchem.ncbi.nlm.nih.gov/compound/%s",
+      "licence": "NCBI data policy (public domain for most records)",
+      "licence_url": "https://www.ncbi.nlm.nih.gov/home/about/policies/",
+      "citation": "S. Kim et al., PubChem 2025 update, Nucleic Acids Research 53, D1516–D1525 (2025). https://doi.org/10.1093/nar/gkae1059",
+      "scope_zh": "分子：一份手选的 100 余种真实中性小分子（只含游戏元素、不超过 20 个原子），保留 CID、分子式、分子量、IUPAC 名称和成键图（含氢，Kekulé 键级）。",
+      "changes_zh": "形式电荷与自由基只做标注，游戏不模拟它们；二维记录的坐标仅用于展示。"
+    }
+  ]
+}
