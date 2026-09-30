@@ -61,8 +61,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   Stabilise the river touch tests first.
 - ✅ v0.27 "Hometown" (tag `v0.27.0`), inserted at the user's request (2026-10-01; see [09-island-town.md](09-island-town.md)):
   a tile grid with several buildings per plot, build mode, a coin courtyard shop, pedestals, tier looks and a 400-plot cap.
-- v0.28 "Refinery": minerals → real processes → elements; seawater/air trickle on the island; **element shop removed**.
-  Also reactor tiers (flask → kettle → autoclave → plasma), the visible doctor install and phase visuals.
+- ✅ v0.28 "Refinery" (tag `v0.28.0`; see [10-refinery.md](10-refinery.md)): minerals → real processes → elements; seawater/air trickle
+  on the island; **element shop removed**. Also reactor tiers (flask → kettle → autoclave → plasma), the visible doctor install,
+  phase visuals, return-where-you-came-from navigation and first-time tours.
 - v0.29 "Index": offline chemistry index from Materials Project / COD / PubChem; real properties in the codex.
 - v0.30 "Fabricator": compounds → gear, machines, emitters; stats from real properties (closed loop).
 - v0.31 "Earth": environment field (planet + region grid), emitters, biome shifts.

@@ -14,6 +14,8 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [06-planets.md](06-planets.md) | The big direction: environment field, specimens, timelines, natives, wars, more planets |
 | [07-world-blocks.md](07-world-blocks.md) | Voxel ground vs Minecraft, real-mineral geology, refinery loop |
 | [08-chemistry-loop.md](08-chemistry-loop.md) | Element shop removal, MP/COD/PubChem chemistry index, compound → gear loop |
+| [09-island-town.md](09-island-town.md) | v0.27 island town: tile placement, decorations, pedestals, tier looks |
+| [10-refinery.md](10-refinery.md) | v0.28: navigation stack, refinery, reactor tiers and phases, first-time tours |
 | [CHANGELOG.md](CHANGELOG.md) | Running log of what has actually been shipped on this track |
 
 Quick commands:

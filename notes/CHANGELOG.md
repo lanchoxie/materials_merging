@@ -30,6 +30,30 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.28.0 "Refinery": elements from the ground, reactors that look their level, first-time tours
+The user asked for distinct looks for reactor tiers, a visible doctor install that shows the compound's state
+change, tidier navigation, and proper onboarding for synthesis. Full notes: [10-refinery.md](10-refinery.md).
+- **Navigation.** Screens opened from the planet or a walk return there, with camera and position intact. They never drop you on the island.
+  - Close buttons name their destination.
+  - ESC closes details → first person → planet, in that order.
+- **Refinery replaces the element shop.**
+  - Mined minerals are refined by real processes (Downs cell, malachite smelting, fluorite → HF → F …).
+  - Seawater, air and water trickle H, C, N, O, Na, Cl, Br.
+  - Every missing element says where to get it.
+  - Save v24 (`refinery`). Older saves load with a fresh refinery.
+- **Reactor tiers.** Lv.1 glass flask, Lv.5 jacketed kettle, Lv.10 autoclave (live gauge), Lv.15 plasma chamber (orbiting rings).
+  - A banner shows on each new look, and the sidebar shows the next unlock.
+- **Phases.** Sourced room-temperature phases fill the chamber: crystals, liquid with bubbles, or a gas cloud.
+  - The sidebar has a phase badge.
+  - An install that changes the phase shows a "物态变化" banner.
+- **Visible doctor install.** CPK-coloured element orbs circle the crown and sink in as the doctor works, with no geometry rebuilds.
+- **First-time tours.** Coach marks cover the island, atom workbench, refinery, organic reactor and structure workshop.
+  - Tours are skippable, saved and replayable from 怎么玩？.
+- **Safety.** Script-driven runs (tests, screenshot helpers) never load or write the player's save slot.
+  - During development, a direct run of the new coach test (without `--release-ui-test`) wrote to `saves/save.json` once before this guard existed. See the release report.
+- Tests: new `test_navigation_ui`, `test_refinery`, `test_reactor_looks`, `test_coach_ui`. Updated shop-based tests now refine instead of buying.
+- Known and unchanged: the legacy `main.gd --visual-test` smoke run stops at "Editor must charge on confirmed change". It fails the same way on v0.27.1 and is not part of `dev/run_tests.sh`.
+
 ## v0.27.1 "Hometown tidy": automatic paths, toy-scale first person
 The user found laying roads confusing and asked for it to be removed. They also asked for a first-person
 scale that matches the smaller v0.27 houses.
