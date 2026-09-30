@@ -21,6 +21,9 @@ const FactoryPanel=preload("res://scripts/factory_panel.gd")
 const PlanetV2Panel=preload("res://scripts/planet_v2_panel.gd")
 const IslandWalk=preload("res://scripts/island_walk_panel.gd")
 const RefineryPanel=preload("res://scripts/refinery_panel.gd")
+const ReactorLook=preload("res://scripts/reactor_look.gd")
+const Coach=preload("res://scripts/coach.gd")
+const CoachTours=preload("res://scripts/coach_tours.gd")
 const OrderBubbles=preload("res://scripts/order_bubbles.gd")
 var order_bubbles
 const CampusPanel = preload("res://scripts/campus_panel.gd")
@@ -56,6 +59,9 @@ var save_clock: float = 0
 var toast_clock: float = 0
 var snapshot_mode: bool = false
 var visual_test: bool = false
+var coach: CanvasLayer
+## Tours start by themselves in the real game; script-driven runs (tests, captures) opt in.
+var coach_autostart: bool = Engine.get_main_loop() != null and Engine.get_main_loop().get_script() == null
 var help_panel: Control
 var live_badge: Label
 var land_label: Label
@@ -87,6 +93,7 @@ var goal_bar: ProgressBar
 var welcome: Dictionary={}
 
 func _ready() -> void:
+	if Engine.get_main_loop().get_script() != null: state.default_slot_enabled = false
 	if OS.has_feature("web"):
 		state.layout.config.performance.visible_people=int(state.layout.config.performance.web_visible_people)
 		state.layout.config.performance.visible_buildings=int(state.layout.config.performance.web_visible_buildings)
@@ -107,6 +114,10 @@ func _ready() -> void:
 	_update_labels()
 	feedback.capture(state)
 	if not snapshot_mode: _ambience("amb_island")
+	coach = Coach.new(); add_child(coach)
+	coach.finished.connect(_coach_finished)
+	if snapshot_mode or visual_test: coach_autostart = false
+	_coach("island")
 	get_tree().auto_accept_quit = false
 	get_tree().quit_on_go_back = false
 	if snapshot_mode:
@@ -493,9 +504,21 @@ func _rebuild_sidebar() -> void:
 	else:
 		var r: Dictionary = state.reactors[selected_reactor]
 		var tpl: Dictionary = state.structure_data(r)
-		side.add_child(UI.label("%s   Lv.%d" % [r.id,r.level],14,UI.MUTED))
-		side.add_child(UI.label(tpl.formula,32,UI.MINT))
+		var look: Dictionary = ReactorLook.tier_info(int(r.level))
+		side.add_child(UI.label("%s   Lv.%d · %s" % [r.id,r.level,look.name],14,Color(str(look.accent))))
+		var formula_row = UI.row(side,10)
+		formula_row.add_child(UI.label(tpl.formula,32,UI.MINT))
+		var phase_id: String = state.reactor_phase(r)
+		var badge := PanelContainer.new(); badge.name = "PhaseBadge"
+		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		badge.add_theme_stylebox_override("panel",UI.style(Color(str(ReactorLook.PHASE_COLORS.get(phase_id,"5b6f73"))).darkened(0.55),10,Color(str(ReactorLook.PHASE_COLORS.get(phase_id,"8aa0a4")))))
+		badge.add_child(UI.label(ReactorLook.PHASE_NAMES.get(phase_id,"未鉴定"),15,Color(str(ReactorLook.PHASE_COLORS.get(phase_id,"c8d4d6")))))
+		badge.tooltip_text = ReactorLook.phase_text(str(tpl.get("reference_id",""))) if not phase_id.is_empty() else "结构未收录，物态未鉴定"
+		formula_row.add_child(badge)
+		badge.pivot_offset = Vector2(24,14); badge.scale = Vector2(0.6,0.6)
+		badge.create_tween().tween_property(badge,"scale",Vector2.ONE,0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		side.add_child(UI.paragraph(tpl.name,16,UI.TEXT))
+		side.add_child(UI.paragraph(badge.tooltip_text,12,UI.MUTED))
 		UI.spacer(side,3)
 		rate_label = UI.label("",26,UI.GOLD)
 		side.add_child(rate_label)
@@ -519,11 +542,16 @@ func _rebuild_sidebar() -> void:
 		h.add_child(harvest)
 		var switch_b = UI.button("更换配方",func(): _show_templates(false))
 		h.add_child(switch_b)
-		side.add_child(UI.button("升级   %d 金币 + 1 催化晶" % state.upgrade_cost(r),func(): _action(state.upgrade_reactor(selected_reactor))))
+		side.add_child(UI.button("升级   %d 金币 + 1 催化晶" % state.upgrade_cost(r),_upgrade_reactor))
+		var next_look: int = ReactorLook.next_tier_level(int(r.level))
+		if next_look > 0: side.add_child(UI.paragraph("Lv.%d 解锁新外观「%s」" % [next_look,ReactorLook.tier_info(next_look).name],12,UI.MUTED))
 		side.add_child(UI.paragraph("本等级编辑固定 %d 金币 / 次\n样品指纹  %s" % [state.edit_cost(r),state.signature(r).substr(0,10)],12))
 		UI.spacer(side,4)
 		if not r.get("installation",{}).is_empty():
-			side.add_child(UI.paragraph("新样品等待博士装炉 · 旧炉继续运转",14,UI.GOLD))
+			var job: Dictionary = r.installation
+			var parts: Array = []
+			for symbol in job.elements: parts.append("%s×%d" % [symbol,int(job.elements[symbol])])
+			side.add_child(UI.paragraph("博士装炉中：%s 悬在炉口，装完才落进腔体 · 旧炉继续运转" % "、".join(parts) if float(job.remaining)<float(state.island_rules.logistics.installation_seconds) else "新样品（%s）等待博士装炉 · 旧炉继续运转" % "、".join(parts),14,UI.GOLD))
 			side.add_child(UI.button("取消装炉并退款",func(): _action(state.cancel_installation(selected_reactor))))
 		side.add_child(UI.paragraph("收获后产物收入工具箱。订单请到广场邮箱查看，或点击来客头顶气泡。",14))
 
@@ -550,6 +578,9 @@ func _process(delta: float) -> void:
 	if not state.refinery_notice.is_empty():
 		_toast(state.refinery_notice)
 		state.refinery_notice=""
+	if not state.phase_notice.is_empty():
+		_announce_phase(state.phase_notice)
+		state.phase_notice={}
 	if not state.science_notice.is_empty():
 		_toast(state.science_notice)
 		state.science_notice = ""
@@ -701,17 +732,28 @@ func _update_labels() -> void:
 	if is_instance_valid(visitor_status_label):
 		visitor_status_label.text = state.visitor_countdown_text()
 
+func _upgrade_reactor() -> void:
+	var before: int = ReactorLook.tier(int(state.reactors[selected_reactor].level))
+	var message: String = state.upgrade_reactor(selected_reactor)
+	var level: int = int(state.reactors[selected_reactor].level)
+	if ReactorLook.tier(level) != before:
+		var look: Dictionary = ReactorLook.tier_info(level)
+		var fx = get_node_or_null("/root/Fx")
+		if fx: fx.banner(look.name, "Lv.%d · %s" % [level,look.blurb], Color(str(look.accent)))
+	_action(message)
+
+## A doctor's installation changed what the chamber holds: say so loudly, in words and colour.
+func _announce_phase(notice: Dictionary) -> void:
+	var names: Dictionary = ReactorLook.PHASE_NAMES
+	var before: String = names.get(str(notice.from),"未鉴定")
+	var after: String = names.get(str(notice.to),"未鉴定")
+	var color: Color = Color(str(ReactorLook.PHASE_COLORS.get(str(notice.to),"f9c868")))
+	var fx = get_node_or_null("/root/Fx")
+	if fx: fx.banner("物态变化", "%s  %s → %s" % [notice.formula,before,after], color)
+	_update_labels()
+
 func _sync_world() -> void:
-	var views: Array = []
-	for r in state.reactors:
-		var info: Dictionary = state.structure_data(r)
-		var view: Dictionary = r.duplicate(false)
-		view.atoms = info.atoms
-		view.atom_contexts = info.atom_contexts
-		view.bonds = info.bonds
-		if info.known: view.template = info.reference_id
-		views.append(view)
-	world.sync(state.plots,views,state.templates,state.elements,state.engineers)
+	world.sync(state.plots,state.reactor_views(),state.templates,state.elements,state.engineers)
 	if is_instance_valid(campus_view): campus_view.sync()
 	if is_instance_valid(light_bridge): light_bridge.sync(state)
 	if is_instance_valid(miniature_view): miniature_view.sync(state)
@@ -768,6 +810,7 @@ func _resume_suspended() -> void:
 	if view==null:
 		if not snapshot_mode: _ambience("amb_island")
 		if is_instance_valid(world_viewport): world_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
+		_coach("island")
 		return
 	return_stack.pop_back(); modal=view
 	view.set_editor_open(false)
@@ -907,6 +950,7 @@ func _show_sandbox() -> void:
 		for work in works:
 			body.add_child(UI.button("☆ %s  ·  %s  ·  打开作品" % [work.name,work.formula],_open_sandbox_editor.bind(work)))
 	body.add_child(UI.paragraph("工作台支持增删原子、增加/移除连接、命名保存；晶胞和周期边界将在后续结构章节加入。",13,UI.MUTED))
+	_coach("sandbox")
 
 func _open_sandbox_editor(structure: Dictionary) -> void:
 	var editor = SandboxEditor.new()
@@ -1006,6 +1050,7 @@ func _show_organic_synthesis(index: int=-1) -> void:
 	panel.planet_requested.connect(_show_planet_v2)
 	panel.refinery_requested.connect(_show_refinery)
 	panel.edit_requested.connect(func(i): _select_plot(int(state.reactors[i].plot)); _open_editor())
+	_coach("organic")
 
 func _deliver_market(index: int) -> void:
 	_action(state.deliver(index))
@@ -1020,6 +1065,7 @@ func _show_refinery(symbol: String="") -> void:
 	panel.acted.connect(_action)
 	panel.dismissed.connect(_screen_closed.bind(panel))
 	panel.planet_requested.connect(_show_planet_v2)
+	_coach("refinery")
 
 func _choose_template(key: String, build: bool) -> void:
 	if not build and selected_reactor < 0:
@@ -1262,6 +1308,31 @@ func _show_codex_entry(key: String) -> void:
 		body.add_child(UI.paragraph("通过元素替换得到此组成，再收获第一份产物，即可解锁。" if tpl.get("substitution_only", false) else "建造或换装这个结构，并收获第一份产物，即可解锁科普卡。", 16, UI.TEXT))
 	body.add_child(UI.button("返回图鉴", _show_collection, true))
 
+## Shows a screen's first-time tour once the screen has laid itself out.
+func _coach(id: String) -> void:
+	if coach_autostart and is_instance_valid(coach) and not state.coach_seen.has(id): _start_coach.call_deferred(id)
+
+func _start_coach(id: String) -> void:
+	await get_tree().process_frame
+	if state.coach_seen.has(id): return
+	coach.stop_if_stale()
+	if coach.active(): return
+	var owner: Control = modal
+	var alive: Callable = (func(): return modal == null) if id == "island" else (func(): return is_instance_valid(owner) and modal == owner and owner.is_visible_in_tree())
+	if not alive.call(): return
+	coach.start(id, CoachTours.steps(self, id), alive)
+
+func _coach_finished(id: String, skipped: bool) -> void:
+	state.coach_seen[id] = true
+	if skipped: _toast("已跳过指引。「怎么玩？」里可以重新播放。")
+	if not snapshot_mode and not visual_test: state.save_game()
+
+func _replay_coach() -> void:
+	state.coach_seen.clear()
+	_close_all()
+	coach_autostart = true
+	_coach("island")
+
 func _show_help() -> void:
 	var body = _dialog("欢迎来到原子工坊", "一座可以经营、收集和自由摆放的科学小岛。")
 	for entry in [
@@ -1274,6 +1345,7 @@ func _show_help() -> void:
 	]:
 		body.add_child(UI.label(entry[0],20,UI.GOLD))
 		body.add_child(UI.paragraph(entry[1],16))
+	body.add_child(UI.button("重新播放新手指引",_replay_coach))
 	body.add_child(UI.button("开始我的小岛",_close_modal,true))
 
 func _open_editor() -> void:
@@ -1289,6 +1361,7 @@ func _open_editor() -> void:
 	editor.applied.connect(func(): _finish_structure_editor(editor); _action("修改已提交；更换元素等待博士装炉，已有产物会保留。"))
 	editor.dismissed.connect(func(): _finish_structure_editor(editor))
 	editor.synthesis_requested.connect(func(): _show_organic_synthesis(editor.reactor_index))
+	_coach("editor")
 
 func _begin_structure_editor(editor: Control) -> void:
 	# A walk or planet caller steps aside and comes back with its camera and position.

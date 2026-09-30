@@ -1,6 +1,7 @@
 extends Node3D
 const StaticGeometry=preload("res://scripts/static_geometry.gd")
 const DayCycle = preload("res://scripts/core/day_cycle.gd")
+const ReactorLook = preload("res://scripts/reactor_look.gd")
 const SEA_SHADER = preload("res://assets/shaders/sea.gdshader")
 const GLASS_SHADER = preload("res://assets/shaders/glass.gdshader")
 const FOLIAGE_SHADER = preload("res://assets/shaders/foliage.gdshader")
@@ -33,6 +34,9 @@ var _signature: String = ""
 var _content: Node3D
 var _selection: Node3D
 var _molecules: Array = []
+## Live reactor effects (phase contents, install orbs, plasma rings) that are never baked.
+var _reactor_fx: Array = []
+var _install_progress: Dictionary = {}
 var _workers: Array = []
 var _motes: Array = []
 var _materials: Dictionary = {}
@@ -97,7 +101,8 @@ func setup(model) -> void:
 	_model = model
 	var template_data = _property(model, "templates", {})
 	var element_data = _property(model, "elements", {})
-	sync(_property(model, "plots", []), _property(model, "reactors", []), template_data, element_data, int(_property(model, "engineers", 2)))
+	var reactor_data = model.reactor_views() if model is Object and model.has_method("reactor_views") else _property(model, "reactors", [])
+	sync(_property(model, "plots", []), reactor_data, template_data, element_data, int(_property(model, "engineers", 2)))
 
 
 func _property(object, name: String, fallback):
@@ -114,6 +119,9 @@ func _property(object, name: String, fallback):
 func sync(plots_data: Array, reactors_data: Array, templates: Dictionary, element_data: Dictionary, worker_count: int) -> void:
 	_plots = plots_data
 	_reactors = reactors_data
+	_install_progress.clear()
+	for reactor in reactors_data:
+		if reactor.has("install_progress"): _install_progress[str(reactor.get("id", ""))] = float(reactor.install_progress)
 	_templates = templates
 	_elements = element_data
 	_worker_count = worker_count
@@ -131,7 +139,7 @@ func _make_signature() -> String:
 		var plot: Dictionary = _plot_data(index)
 		items.append([_plot_coord(index), plot.get("unlocked", false), plot.get("kind", "empty"), plot.get("reactor_index", plot.get("rid", -1)), (plot.get("items", []) as Array).is_empty()])
 	for reactor in _reactors:
-		items.append([reactor.get("plot", -1), reactor.get("level", 1), reactor.get("template", "water"), reactor.get("positions", []), reactor.get("atoms", []), reactor.get("bonds", []), float(reactor.get("build_left", 0.0)) > 0.0])
+		items.append([reactor.get("plot", -1), reactor.get("level", 1), reactor.get("template", "water"), reactor.get("positions", []), reactor.get("atoms", []), reactor.get("bonds", []), float(reactor.get("build_left", 0.0)) > 0.0, reactor.get("phase", ""), reactor.get("install_elements", [])])
 	return JSON.stringify(items)
 
 
@@ -200,6 +208,7 @@ func rebuild() -> void:
 	_content.name = "ProceduralIsland"
 	add_child(_content)
 	_molecules.clear()
+	_reactor_fx.clear()
 	_workers.clear()
 	_motes.clear()
 	_selection_markers.clear()
@@ -417,7 +426,9 @@ func _build_reactor(parent: Node3D, reactor: Dictionary) -> void:
 	var building: bool = float(reactor.get("build_left", 0.0)) > 0.0
 	var metal: StandardMaterial3D = _mat(CREAM)
 	var dark: StandardMaterial3D = _mat(TEAL)
-	var mint: StandardMaterial3D = _mat(MINT)
+	var tier: int = ReactorLook.tier(level)
+	var accent: Color = Color(str(ReactorLook.tier_info(level).accent))
+	var mint: StandardMaterial3D = _mat(MINT if tier == 0 else accent)
 	_cylinder(parent, 1.07, 1.12, 0.12, Vector3(0, 0.15, 0), _mat(Color("9bb4a0")), 48)
 	_cylinder(parent, 1.03, 1.03, 0.24, Vector3(0, 0.31, 0), metal, 48)
 	_cylinder(parent, 0.98, 0.98, 0.095, Vector3(0, 0.43, 0), dark, 48)
@@ -455,14 +466,159 @@ func _build_reactor(parent: Node3D, reactor: Dictionary) -> void:
 	_cylinder(parent, 0.19, 0.19, 0.53, Vector3(-0.96, 0.40, 0.43), dark, 20)
 	_cylinder(parent, 0.20, 0.20, 0.065, Vector3(-0.96, 0.68, 0.43), metal, 20)
 	_cylinder(parent, 0.08, 0.08, 0.12, Vector3(-0.96, 0.76, 0.43), _mat(GOLD), 16)
-	for step in range(mini(level, 5)):
+	for step in range(mini(ReactorLook.tier_step(level), 5)):
 		_sphere(parent, 0.032, Vector3(-0.20 + step * 0.105, 0.33, 1.038), _mat(GOLD, 0.32))
+	_build_reactor_tier(parent, tier, accent)
+	_build_phase_contents(parent, str(reactor.get("phase", "")))
+	_build_install_orbs(parent, reactor)
 	_build_molecule(parent, reactor)
 	if building:
 		for x in [-1.09, 1.09]:
 			_cylinder(parent, 0.055, 0.055, 1.00, Vector3(x, 0.58, 1.02), _mat(GOLD), 8)
 			_box(parent, Vector3(0.13, 0.13, 0.13), Vector3(x, 1.10, 1.02), _mat(Color("fff2b8"), 0.3))
 		_box(parent, Vector3(2.23, 0.16, 0.08), Vector3(0, 0.75, 1.05), _mat(GOLD))
+
+
+## Each tier adds its own hardware around the same glass chamber, so the molecule stays visible.
+func _build_reactor_tier(parent: Node3D, tier: int, accent: Color) -> void:
+	var metal: StandardMaterial3D = _mat(accent)
+	match tier:
+		1:
+			# Jacketed kettle: copper cooling bands and a feed pipe with a hand wheel.
+			for y in [0.82, 1.22, 1.62]:
+				_torus(parent, 0.885, 0.95, Vector3(0, y, 0), metal)
+			_cylinder(parent, 0.05, 0.05, 1.55, Vector3(-0.98, 1.10, -0.40), metal, 12)
+			_box(parent, Vector3(0.30, 0.05, 0.05), Vector3(-0.85, 1.86, -0.34), metal)
+			_torus(parent, 0.09, 0.12, Vector3(-0.98, 1.92, -0.40), _mat(Color("c0392b")))
+		2:
+			# Autoclave: steel ribs, a bolted lid flange and a live pressure gauge.
+			for index in range(8):
+				var angle: float = TAU * float(index) / 8.0 + 0.2
+				var rib := _box(parent, Vector3(0.07, 1.36, 0.07), Vector3(cos(angle) * 0.93, 1.20, sin(angle) * 0.93), metal)
+				rib.rotation.y = -angle
+			for index in range(12):
+				var angle: float = TAU * float(index) / 12.0
+				_sphere(parent, 0.035, Vector3(cos(angle) * 0.99, 1.93, sin(angle) * 0.99), _mat(Color("5d6d75")), Vector3.ONE, 8)
+			var gauge := Node3D.new()
+			gauge.name = "Gauge"
+			gauge.set_meta("dynamic_geometry", true)
+			parent.add_child(gauge)
+			gauge.position = Vector3(-0.42, 1.05, 0.93)
+			var face := _cylinder(gauge, 0.15, 0.15, 0.04, Vector3.ZERO, _mat(CREAM), 20)
+			face.rotation.x = PI / 2
+			var rim := _torus(gauge, 0.14, 0.17, Vector3.ZERO, metal)
+			rim.rotation.x = PI / 2
+			var needle := Node3D.new()
+			gauge.add_child(needle)
+			needle.position = Vector3(0, 0, 0.03)
+			_box(needle, Vector3(0.018, 0.12, 0.01), Vector3(0, 0.05, 0), _mat(Color("c0392b")))
+			_reactor_fx.append({"kind": "needle", "node": needle, "phase": randf() * TAU})
+		3:
+			# Plasma chamber: two tilted magnetic rings orbit the glass, antennae glow on the crown.
+			var rings := Node3D.new()
+			rings.name = "PlasmaRings"
+			rings.set_meta("dynamic_geometry", true)
+			parent.add_child(rings)
+			rings.position = Vector3(0, 1.22, 0)
+			for tilt in [0.35, -0.35]:
+				var ring := _torus(rings, 1.00, 1.06, Vector3.ZERO, _mat(accent, 1.1))
+				ring.rotation = Vector3(tilt, 0, tilt * 0.6)
+			_reactor_fx.append({"kind": "rings", "node": rings})
+			for angle in [90.0, 210.0, 330.0]:
+				var radians: float = deg_to_rad(angle)
+				var point := Vector3(cos(radians) * 0.60, 2.35, sin(radians) * 0.60)
+				_cylinder(parent, 0.022, 0.022, 0.42, point, _mat(Color("5d6d75")), 8)
+				_sphere(parent, 0.06, point + Vector3(0, 0.25, 0), _mat(accent, 1.4), Vector3.ONE, 12)
+
+
+## What fills the chamber follows the compound's real room-temperature phase.
+func _build_phase_contents(parent: Node3D, phase: String) -> void:
+	if phase.is_empty(): return
+	var color: Color = Color(str(ReactorLook.PHASE_COLORS.get(phase, "ffffff")))
+	match phase:
+		"solid":
+			for index in range(7):
+				var angle: float = TAU * float(index) / 7.0 + 0.4
+				var size: float = 0.13 + 0.05 * float(index % 3)
+				var crystal := _box(parent, Vector3(size, size * 1.6, size), Vector3(cos(angle) * 0.52, 0.56 + size * 0.7, sin(angle) * 0.52), _mat(color.darkened(0.06 * float(index % 3)), 0.12))
+				crystal.rotation = Vector3(0.25 * float(index % 2), angle, 0.2)
+		"liquid":
+			var body := _cylinder(parent, 0.84, 0.84, 0.30, Vector3(0, 0.71, 0), _mat(Color(color, 0.46)), 40)
+			body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			var surface := Node3D.new()
+			surface.name = "LiquidSurface"
+			surface.set_meta("dynamic_geometry", true)
+			parent.add_child(surface)
+			surface.position = Vector3(0, 0.86, 0)
+			_cylinder(surface, 0.84, 0.84, 0.012, Vector3.ZERO, _mat(Color(color.lightened(0.3), 0.55), 0.2), 40)
+			var bubbles: Array = []
+			for index in range(5):
+				bubbles.append(_sphere(surface, 0.028, Vector3(cos(index * 1.3) * 0.5, -0.2, sin(index * 1.3) * 0.5), _mat(Color(1, 1, 1, 0.6)), Vector3.ONE, 8))
+			_reactor_fx.append({"kind": "liquid", "node": surface, "bubbles": bubbles, "phase": randf() * TAU})
+		"gas":
+			var cloud := Node3D.new()
+			cloud.name = "GasCloud"
+			cloud.set_meta("dynamic_geometry", true)
+			parent.add_child(cloud)
+			cloud.position = Vector3(0, 1.20, 0)
+			var puffs: Array = []
+			for index in range(9):
+				var base := Vector3(cos(index * 2.4) * 0.5, -0.45 + float(index) * 0.11, sin(index * 2.4) * 0.5)
+				var puff := _sphere(cloud, 0.13 + 0.03 * float(index % 3), base, _mat(Color(color, 0.28)), Vector3.ONE, 12)
+				puff.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				puffs.append({"node": puff, "base": base, "phase": float(index) * 0.9})
+			_reactor_fx.append({"kind": "gas", "node": cloud, "puffs": puffs})
+
+
+## Elements a doctor is about to load hover over the crown in their CPK colours, then spiral in.
+func _build_install_orbs(parent: Node3D, reactor: Dictionary) -> void:
+	var symbols: Array = reactor.get("install_elements", [])
+	if symbols.is_empty(): return
+	var orbs := Node3D.new()
+	orbs.name = "InstallOrbs"
+	orbs.set_meta("dynamic_geometry", true)
+	parent.add_child(orbs)
+	var nodes: Array = []
+	for symbol in symbols:
+		var color: Color = _atom_color(str(symbol))
+		var info: Dictionary = _elements.get(str(symbol), {})
+		if info.get("color", null) is String: color = Color(str(info.color))
+		var orb := _sphere(orbs, 0.085, Vector3.ZERO, _mat(color, 0.9), Vector3.ONE, 16)
+		orb.name = "Orb_%s" % symbol
+		nodes.append(orb)
+	var id: String = str(reactor.get("id", ""))
+	_reactor_fx.append({"kind": "orbs", "node": orbs, "orbs": nodes, "id": id, "shown": float(_install_progress.get(id, 0.0))})
+
+
+func _animate_reactor_fx(delta: float) -> void:
+	for item in _reactor_fx:
+		var node: Node3D = item.node
+		if not is_instance_valid(node): continue
+		match str(item.kind):
+			"needle":
+				node.rotation.z = -0.5 + sin(_time * 1.7 + float(item.phase)) * 0.18 + sin(_time * 7.3) * 0.03
+			"rings":
+				node.rotation.y += delta * 0.9
+			"liquid":
+				node.position.y = 0.86 + sin(_time * 1.4 + float(item.phase)) * 0.01
+				for index in range(item.bubbles.size()):
+					var rise: float = fposmod(_time * 0.22 + float(index) * 0.21, 1.0)
+					item.bubbles[index].position.y = -0.28 + rise * 0.28
+			"gas":
+				for puff in item.puffs:
+					var phase: float = float(puff.phase)
+					puff.node.position = puff.base + Vector3(sin(_time * 0.5 + phase) * 0.12, sin(_time * 0.7 + phase) * 0.10, cos(_time * 0.4 + phase) * 0.12)
+			"orbs":
+				var target: float = float(_install_progress.get(str(item.id), item.shown))
+				item.shown = lerpf(float(item.shown), target, minf(1.0, delta * 3.0))
+				var progress: float = float(item.shown)
+				var count: int = item.orbs.size()
+				for index in range(count):
+					var angle: float = _time * (1.2 + progress * 2.4) + TAU * float(index) / float(count)
+					var radius: float = lerpf(0.62, 0.16, progress)
+					var height: float = lerpf(2.55, 1.35, progress) + sin(_time * 2.6 + float(index)) * 0.05
+					item.orbs[index].position = Vector3(cos(angle) * radius, height, sin(angle) * radius)
+					item.orbs[index].scale = Vector3.ONE * (1.0 + 0.18 * sin(_time * 5.0 + float(index)))
 
 
 func _build_molecule(parent: Node3D, reactor: Dictionary) -> void:
@@ -1131,6 +1287,7 @@ func _process(delta: float) -> void:
 		_day_refresh = 0.5
 		_apply_day()
 	_animate_visitor(delta)
+	_animate_reactor_fx(delta)
 	for item in _molecules:
 		var node: Node3D = item.node
 		node.rotation.y += delta * 0.24

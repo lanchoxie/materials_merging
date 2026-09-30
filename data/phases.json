@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "conditions": "25 °C, 1 atm",
+  "note": "Phase at room temperature from melting/boiling points. Values in °C; 'sublimes' marks a solid that turns straight into gas at 1 atm.",
+  "phases": {
+    "water": {"phase": "liquid", "mp": 0.0, "bp": 100.0, "source": "https://en.wikipedia.org/wiki/Properties_of_water"},
+    "hydrogen": {"phase": "gas", "mp": -259.16, "bp": -252.88, "source": "https://en.wikipedia.org/wiki/Hydrogen"},
+    "methane": {"phase": "gas", "mp": -182.5, "bp": -161.5, "source": "https://en.wikipedia.org/wiki/Methane"},
+    "perovskite": {"phase": "solid", "mp": 567.0, "bp": null, "approximate": true, "source": "https://en.wikipedia.org/wiki/Caesium_lead_bromide"},
+    "hydrogen_sulfide": {"phase": "gas", "mp": -85.5, "bp": -59.55, "source": "https://en.wikipedia.org/wiki/Hydrogen_sulfide"},
+    "hydrogen_chloride": {"phase": "gas", "mp": -114.22, "bp": -85.05, "source": "https://en.wikipedia.org/wiki/Hydrogen_chloride"},
+    "perovskite_chloride": {"phase": "solid", "mp": 615.0, "bp": null, "approximate": true, "source": "https://en.wikipedia.org/wiki/Perovskite_(structure)", "note": "Ionic perovskite crystal, solid far above room temperature; reported melting points vary (about 600 °C)."},
+    "oxygen": {"phase": "gas", "mp": -218.79, "bp": -182.96, "source": "https://en.wikipedia.org/wiki/Oxygen"},
+    "nitrogen": {"phase": "gas", "mp": -210.0, "bp": -195.8, "source": "https://en.wikipedia.org/wiki/Nitrogen"},
+    "carbon_dioxide": {"phase": "gas", "mp": null, "bp": -78.46, "sublimes": true, "source": "https://en.wikipedia.org/wiki/Carbon_dioxide"},
+    "ammonia": {"phase": "gas", "mp": -77.73, "bp": -33.34, "source": "https://en.wikipedia.org/wiki/Ammonia"},
+    "hydrogen_fluoride": {"phase": "gas", "mp": -83.6, "bp": 19.5, "source": "https://en.wikipedia.org/wiki/Hydrogen_fluoride"},
+    "lithium_fluoride": {"phase": "solid", "mp": 845.0, "bp": 1676.0, "source": "https://en.wikipedia.org/wiki/Lithium_fluoride"},
+    "sodium_chloride": {"phase": "solid", "mp": 800.7, "bp": 1465.0, "source": "https://en.wikipedia.org/wiki/Sodium_chloride"},
+    "urea": {"phase": "solid", "mp": 133.0, "bp": null, "decomposes": true, "source": "https://en.wikipedia.org/wiki/Urea"},
+    "ethanol": {"phase": "liquid", "mp": -114.14, "bp": 78.24, "source": "https://en.wikipedia.org/wiki/Ethanol"},
+    "glycerol": {"phase": "liquid", "mp": 17.8, "bp": 290.0, "source": "https://en.wikipedia.org/wiki/Glycerol"}
+  }
+}

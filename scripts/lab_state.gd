@@ -10,6 +10,13 @@ var logistics=IslandLogistics.new()
 var market=IslandMarket.new()
 var contracts=preload("res://scripts/material_contracts.gd").new()
 const Refinery=preload("res://scripts/refinery.gd")
+const ReactorLook=preload("res://scripts/reactor_look.gd")
+## Set when a doctor's installation changes a reactor's room-temperature phase; main shows a banner.
+var phase_notice: Dictionary={}
+## First-time tours already shown (tour id -> true).
+var coach_seen: Dictionary={}
+## Off for script-driven runs (tests, screenshots) so they never touch the player's own save slot.
+var default_slot_enabled: bool=true
 ## v0.28: minerals → elements; replaces the coin element shop.
 var refinery=Refinery.new()
 var refinery_notice: String=""
@@ -868,7 +875,46 @@ func upgrade_reactor(index: int) -> String:
 	coins -= cost
 	upgrades -= 1
 	r.level += 1
+	if ReactorLook.tier_step(int(r.level))==1:
+		return "反应炉升至Lv.%d · 外观升级为「%s」：%s" % [r.level, ReactorLook.tier_info(int(r.level)).name, ReactorLook.tier_info(int(r.level)).blurb]
 	return "反应炉升至Lv.%d · 生产加快；本级每次编辑固定%d金币" % [r.level, edit_cost(r)]
+
+## What the 3D views draw: the identified structure, its phase and live installation progress.
+func reactor_views() -> Array:
+	var views: Array = []
+	for r in reactors:
+		var info: Dictionary = structure_data(r)
+		var view: Dictionary = r.duplicate(false)
+		view.atoms = info.atoms
+		view.atom_contexts = info.atom_contexts
+		view.bonds = info.bonds
+		if info.known: view.template = info.reference_id
+		view.phase = str(ReactorLook.phase(str(info.reference_id)).get("phase","")) if info.known else ""
+		var job: Dictionary = r.get("installation",{})
+		if not job.is_empty():
+			view.install_elements = _install_symbols(job)
+			view.install_progress = clampf(1.0-float(job.remaining)/maxf(1.0,float(island_rules.logistics.installation_seconds)),0.0,1.0)
+		views.append(view)
+	return views
+
+## Elements a doctor carries in: the reserved ones, else the incoming structure's own atoms.
+func _install_symbols(job: Dictionary) -> Array:
+	var symbols: Array = job.get("elements",{}).keys()
+	if not symbols.is_empty(): return symbols
+	var payload: Dictionary = job.get("payload",{})
+	var atoms: Array = []
+	match str(payload.get("kind","")):
+		"template": atoms = templates.get(str(payload.get("template","")),{}).get("atoms",[])
+		"structure": atoms = payload.get("atoms",[])
+		"sandbox": atoms = payload.get("work",{}).get("atoms",[])
+	for atom in atoms:
+		var symbol: String = str(atom.get("element",atom.get("symbol",""))) if atom is Dictionary else str(atom)
+		if not symbol.is_empty() and symbol not in symbols: symbols.append(symbol)
+	return symbols
+
+func reactor_phase(r: Dictionary) -> String:
+	var info: Dictionary = structure_data(r)
+	return str(ReactorLook.phase(str(info.reference_id)).get("phase","")) if info.known else ""
 
 func _update_order():
 	order = economy.make_order(deliveries+visitor_skips, templates)
@@ -1055,12 +1101,13 @@ func _save_path_allowed(path: String) -> bool:
 func save_game(path: String = "") -> String:
 	var root = save_root_for_platform(OS.get_name())
 	if path.is_empty():
+		if not default_slot_enabled: return "测试运行不写入玩家存档"
 		path = root + "/save.json"
 	if not _save_path_allowed(path):
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 24, "refinery": refinery.serialize(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 24, "refinery": refinery.serialize(), "coach": coach_seen.keys(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1125,6 +1172,7 @@ func _validate_save(data) -> bool:
 	if not data is Dictionary or not _number_ok(data.get("version"), 1, 24, true):
 		return false
 	if int(data.version)>=24 and not Refinery.new().restore(data.get("refinery"),elements): return false
+	if data.has("coach") and (not data.coach is Array or data.coach.size()>32 or data.coach.any(func(id): return not id is String or str(id).length()>32)): return false
 	if int(data.version)>=23:
 		if not data.get("best_fit") is Dictionary or data.best_fit.size()>templates.size(): return false
 		for id in data.best_fit:
@@ -1288,6 +1336,7 @@ func _validate_save(data) -> bool:
 	return open_count <= MAX_UNLOCKED_PLOTS+1
 
 func load_game(path: String = "") -> bool:
+	if path.is_empty() and not default_slot_enabled: return false
 	if path.is_empty():
 		path = save_root_for_platform(OS.get_name()) + "/save.json"
 	if not _save_path_allowed(path):
@@ -1319,6 +1368,8 @@ func load_game(path: String = "") -> bool:
 		for symbol in elements: element_inventory[symbol] = int(data.element_inventory.get(symbol, 0))
 	refinery=Refinery.new()
 	if int(data.version) >= 24: refinery.restore(data.refinery,elements)
+	coach_seen={}
+	for id in data.get("coach",[]): coach_seen[str(id)]=true
 	materials = [int(data.materials[0]), int(data.materials[1]), int(data.materials[2])]
 	upgrades = int(data.upgrades)
 	engineers = int(data.engineers)
@@ -1563,6 +1614,7 @@ func _finish_logistics(events: Array) -> void:
 			job.remaining=maxf(0,float(job.remaining)-campus.person_efficiency(int(event.person)))
 			if float(job.remaining)>0 or not storage.can_add(signature(r),int(r.pending)): continue
 			_collect(r)
+			var phase_before: String=reactor_phase(r)
 			var payload: Dictionary=job.payload
 			match str(payload.kind):
 				"sandbox": _install_sandbox(r,payload.work)
@@ -1574,6 +1626,9 @@ func _finish_logistics(events: Array) -> void:
 					r.atoms=payload.atoms.duplicate(); r.positions=payload.positions.duplicate(true); _reset_product(r)
 			r.erase("installation"); _structure_cache.clear()
 			campus_notice="博士完成装炉：%s。旧批次已保留，新的结构开始生产。" % structure_data(r).formula
+			var phase_after: String=reactor_phase(r)
+			if phase_after!=phase_before:
+				phase_notice={"reactor":str(r.id),"formula":str(structure_data(r).formula),"from":phase_before,"to":phase_after}
 
 func _valid_installation(r: Dictionary) -> bool:
 	var job=r.get("installation",{})
