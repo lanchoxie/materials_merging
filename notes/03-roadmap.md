@@ -63,11 +63,10 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - v0.28 "Index": offline chemistry index from Materials Project / COD / PubChem; real properties in the codex.
 - v0.29 "Fabricator": compounds → gear, machines, emitters; stats from real properties (closed loop).
 - v0.30 "Earth": environment field (planet + region grid), emitters, biome shifts.
-- The rows below shift accordingly (Specimens v0.31, Ice Age v0.32, …).
-- v0.27 "Specimens": extractor on creatures and native buildings, island museum, specimen codex.
-- v0.28 "Ice Age": timeline framework, mammoths and a tribe, time gate.
-- v0.29 "Settlers" · v0.30 "Bronze" (tech diffusion) · v0.31 "Clash" (event director, first wars).
-- v0.32–0.34 more eras · v0.35 wrap-around big world · v0.36+ star map and a second planet.
+- v0.31 "Specimens": extractor on creatures and native buildings, island museum, specimen codex.
+- v0.32 "Ice Age": timeline framework, mammoths and a tribe, time gate.
+- v0.33 "Settlers" · v0.34 "Bronze" (tech diffusion) · v0.35 "Clash" (event director, first wars).
+- v0.36–0.38 more eras · v0.39 wrap-around big world · v0.40+ star map and a second planet.
 - The old v0.26 "Frontier with purpose" items fold in: landmarks → era events, element deposits → L1/L5,
   village orders → L4, light-bridge warp → time gate.
 
