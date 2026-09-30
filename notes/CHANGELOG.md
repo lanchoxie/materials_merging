@@ -30,6 +30,41 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.25.0 "Looks": a world worth screenshotting
+Save format is unchanged (still v23). Everything here is cosmetic and never touches the economy.
+
+**Day and night** (`scripts/core/day_cycle.gd`)
+- A 16-minute cycle driven by the wall clock: dawn, a long day, lilac dusk, a mild blue night.
+  About 70 % of it is daylight. It is never saved; `world.day_phase_override` pins it for tests and screenshots.
+- Sun pitch, yaw (shadows sweep across the island), colour and energy, ambient light and sky blend
+  between keyframes with smoothstep.
+- At night lamps, reactors and other glowing materials get up to 3.2× brighter, and the reactor glass rim lights up.
+- The LIVE badge shows 清晨 / 白天 / 黄昏 / 夜晚 / 黎明.
+
+**Sea** (`assets/shaders/sea.gdshader`)
+- The island now floats on a stylized sea instead of the matte studio floor.
+- Shallows, animated foam bands hugging the shore and a foam edge come from a small distance-to-island
+  mask baked on the CPU (`_update_shore`). It is only re-baked when the set of parcels changes, so it follows every expansion.
+- Soft ripple glints; the sea glows faintly at night.
+
+**Materials**
+- Reactor chambers: unshaded fresnel glass with a rising shimmer (`glass.gdshader`).
+- Trees and bushes sway in a breeze, weighted by height (`foliage.gdshader`). Leaf materials are marked so
+  `StaticGeometry` still merges them into batches.
+- The frontier label over the sea gets a dark outline so it stays readable in any light.
+
+**UI**
+- The atom editor's rules caveat is folded behind an "ⓘ 规则说明" toggle.
+
+**Tests**
+- New `tests/test_looks.gd` (37 checks): keyframes ordered, complete and wrapping, labels, mostly daylight,
+  sea shader present, studio floor gone, shore mask bright at the shore and dark in open sea, no re-bake for
+  an unchanged island but a re-bake after expansion, night dims the sun and brightens glow and glass,
+  leaves batch, the LIVE badge label, and the ⓘ toggle.
+- `dev/capture_looks.gd` screenshots day, dusk, night, dawn and a close-up into `artifacts/looks/`.
+
+**Deferred:** river water shader, fullscreen river HUD and river perf (later); limbed animals (v0.26).
+
 ## v0.24.0 "Discovery": every structure is a card worth polishing
 Save format **v23** (adds `best_fit` and `star_rewards`). v1–v22 saves still load. The codex is seeded from
 the island's current samples of discovered structures; star gifts already within reach are marked handed out

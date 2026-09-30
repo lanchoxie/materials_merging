@@ -9,6 +9,7 @@
 | v0.22.0 "Juice" | branch `claude/v0.22-fun-pass`, tag **`v0.22.0`** (save v21) |
 | v0.23.0 "Goals" | branch `claude/v0.23-goals`, tag **`v0.23.0`** (save v22) |
 | v0.24.0 "Discovery" | branch `claude/v0.24-discovery`, tag **`v0.24.0`** (save v23) |
+| v0.25.0 "Looks" | branch `claude/v0.25-looks`, tag **`v0.25.0`** (save v23, cosmetic only) |
 | Old APKs / source zips | `builds/` (git-ignored, never overwritten — build script refuses to overwrite) |
 
 > The v0.20/v0.21 work had **never been committed** (the repo is owned by a different Windows

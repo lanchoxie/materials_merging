@@ -40,13 +40,16 @@ Goal: same systems, 10× the feel. Lowest risk, highest payoff.
 - ✅ Save v23 + migration (codex seeded from current samples, reachable gifts settle without payout).
 - ⏭ Element sticker book / element deposits in frontier biomes → v0.26 "Frontier with purpose".
 
-## v0.25.0 "Looks" — a world worth screenshotting  ⬜
-- Procedural sky + slower day/night (10–20 min), sun direction follows time, fog tinted to sky.
-- Water shader strip for the river & island sea; glass/fresnel shader for reactors.
-- Tree sway vertex shader; limbed animals/villagers with walk swing.
-- Fullscreen 3D + overlay HUD for the river; touch tap-to-interact.
-- Collapse science caveats in the HUD into ⓘ tooltips (moved from v0.23).
-- River perf: per-chunk tree cache, remesh only dirty chunk, incremental island LOD.
+## v0.25.0 "Looks" — a world worth screenshotting  ✅
+- ✅ Slow cosmetic day/night on the island (16 min, ~70 % daylight, wall-clock based, never saved):
+  sun pitch/yaw/colour, ambient and sky follow keyframes. Glow materials and reactor glass brighten at night.
+- ✅ Stylized island sea (replaces the studio floor): shore foam and shallows come from a baked
+  distance mask that follows every expansion. Glass/fresnel shader for reactor chambers.
+- ✅ Tree/bush sway shader that still merges into static batches.
+- ✅ Time of day in the LIVE badge; editor rules caveat folded behind ⓘ.
+- ⏭ River: sea/water shader, fullscreen 3D + overlay HUD, tap-to-interact, per-chunk caches → later
+  (the river scene is large and has its own pre-existing touch-test failures to fix first).
+- ⏭ Limbed animals/villagers with walk swing → v0.26 (fits the frontier villagers).
 
 ## v0.26.0 "Frontier with purpose"  ⬜
 - Unique landmarks instead of repeated sites; boars guard rich deposits; villagers non-lethal.
