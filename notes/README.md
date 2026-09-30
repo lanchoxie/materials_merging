@@ -11,6 +11,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [03-roadmap.md](03-roadmap.md) | Release-by-release rollout plan (v0.22 → v0.26) with concrete tasks |
 | [04-versioning.md](04-versioning.md) | Branches, tags, save compatibility, and how old versions are kept |
 | [05-tech.md](05-tech.md) | Engine/language choices, new architecture pieces, asset pipeline |
+| [06-planets.md](06-planets.md) | The big direction: environment field, specimens, timelines, natives, wars, more planets |
 | [CHANGELOG.md](CHANGELOG.md) | Running log of what has actually been shipped on this track |
 
 Quick commands:

@@ -51,11 +51,19 @@ Goal: same systems, 10× the feel. Lowest risk, highest payoff.
   (the river scene is large and has its own pre-existing touch-test failures to fix first).
 - ⏭ Limbed animals/villagers with walk swing → v0.26 (fits the frontier villagers).
 
-## v0.26.0 "Frontier with purpose"  ⬜
-- Unique landmarks instead of repeated sites; boars guard rich deposits; villagers non-lethal.
-- Village orders (reuse island buyer system) → coins/catalysts flow back to the island.
-- Walkable light-bridge warp; miniaturizer shrink-ray effect.
-- Element deposits in frontier biomes feeding island reactors; element sticker book (moved from v0.24).
+## v0.26 → v0.36: Earth, timelines, specimens, more planets  (new direction, 2026-09-30)
+The user asked for island materials that reshape a planet's environment, huge worlds, per-planet timelines
+(ice age → AI future) with era events and wars, natives who build and repair, and specimen/model collecting
+as a core pillar. Earth comes first. The full breakdown and release slicing is in **[06-planets.md](06-planets.md)**.
+
+- v0.26 "Earth": environment field (planet + region grid), emitters made from island products, biome shifts.
+  Stabilise the river touch tests first.
+- v0.27 "Specimens": extractor on creatures and native buildings, island museum, specimen codex.
+- v0.28 "Ice Age": timeline framework, mammoths and a tribe, time gate.
+- v0.29 "Settlers" · v0.30 "Bronze" (tech diffusion) · v0.31 "Clash" (event director, first wars).
+- v0.32–0.34 more eras · v0.35 wrap-around big world · v0.36+ star map and a second planet.
+- The old v0.26 "Frontier with purpose" items fold in: landmarks → era events, element deposits → L1/L5,
+  village orders → L4, light-bridge warp → time gate.
 
 ## Later / ideas parking lot
 - Shareable miniature codes (export a build as a short string/QR).
