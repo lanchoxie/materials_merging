@@ -65,6 +65,7 @@ var feedback=IslandFeedback.new()
 var pointer_position: Vector2=Vector2(720,450)
 var shown_coins: float=-1.0
 var sound_button: Button
+const Codex = preload("res://scripts/codex.gd")
 const Milestones=preload("res://scripts/milestones.gd")
 var goal_button: Button
 var goal_bar: ProgressBar
@@ -156,7 +157,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.23 小岛目标  ·  20 个目标 · 离线收益 · 炉仓 12 份", 11, UI.MUTED)
+	save_label = UI.label("v0.24 结构图鉴  ·  稀有度 · 最佳星级 · 图鉴奖励", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -1098,20 +1099,87 @@ func _run_science(method_id: String) -> void:
 	_show_research()
 
 func _show_collection() -> void:
-	var body = _dialog("收藏的，是发现的瞬间", "FIELD NOTES   /   %d / %d 张结构卡片" % [state.discovered.size(),state.templates.size()],true)
+	var total := Codex.total_stars(state)
+	var body = _dialog("结构图鉴", "已发现 %d / %d   ·   图鉴星 %d / %d   ·   收获时记录每种结构的最佳几何匹配" % [state.discovered.size(), state.templates.size(), total, Codex.max_stars(state)], true)
+	var next: Dictionary = Codex.next_reward(state)
+	var goal = PanelContainer.new()
+	goal.add_theme_stylebox_override("panel", UI.style(Color("1d3a45"), 12))
+	body.add_child(goal)
+	var g = UI.column(goal, 6)
+	if next.is_empty():
+		g.add_child(UI.label("图鉴奖励已全部领取 · 感谢你认真调好每一个结构", 16, UI.MINT))
+	else:
+		g.add_child(UI.label("下一份图鉴奖励：%s   ·   %d / %d ★" % [Codex.reward_text(state, next), total, int(next.stars)], 16, UI.GOLD))
+		var bar = ProgressBar.new()
+		bar.show_percentage = false
+		bar.custom_minimum_size = Vector2(0, 6)
+		bar.max_value = float(next.stars)
+		bar.value = float(total)
+		var fill = StyleBoxFlat.new(); fill.bg_color = UI.GOLD; fill.set_corner_radius_all(3)
+		var track = StyleBoxFlat.new(); track.bg_color = Color("0f1e26"); track.set_corner_radius_all(3)
+		bar.add_theme_stylebox_override("fill", fill); bar.add_theme_stylebox_override("background", track)
+		g.add_child(bar)
+		g.add_child(UI.paragraph("奖励的摆件直接放进工具箱，可在「装饰」里免费布置。每种结构最多 ★★★（几何匹配 98%）。", 12))
+	var grid = GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	body.add_child(grid)
 	for key in state.templates:
-		var tpl: Dictionary = state.templates[key]
-		var panel = PanelContainer.new()
-		body.add_child(panel)
-		var v = UI.column(panel,9)
-		var unlocked: bool = state.discovered.has(key)
-		v.add_child(UI.label("%s   %s   %s" % [tpl.formula,tpl.name,"已发现" if unlocked else "待收集"],23,Color(tpl.color) if unlocked else UI.MUTED))
-		v.add_child(UI.paragraph(tpl.description if unlocked else ("通过元素替换得到此组成，再收获第一份产物，即可解锁。" if tpl.get("substitution_only",false) else "建造或换装这个结构，并收获第一份产物，即可解锁科普卡。"),15))
-		if unlocked:
-			v.add_child(UI.paragraph("参考来源："+tpl.source,11))
-			for r in state.reactors:
-				if state.reference_id(r) == key:
-					v.add_child(UI.label("我的样品   %s  ·  %s" % [r.id,state.signature(r)],12,UI.MINT))
+		grid.add_child(_codex_card(str(key)))
+
+func _codex_card(key: String) -> Control:
+	var tpl: Dictionary = state.templates[key]
+	var tier: Dictionary = Codex.rarity(tpl)
+	var tint := Color(str(tier.color))
+	var unlocked: bool = state.discovered.has(key)
+	var card = Button.new()
+	card.custom_minimum_size = Vector2(206, 150)
+	card.focus_mode = Control.FOCUS_NONE
+	var face := UI.style(Color("1b2f3a") if unlocked else Color("121f27"), 14, tint if unlocked else Color(tint, 0.25))
+	face.set_border_width_all(2 if unlocked else 1)
+	var hover := face.duplicate(); hover.bg_color = face.bg_color.lightened(0.08)
+	card.add_theme_stylebox_override("normal", face)
+	card.add_theme_stylebox_override("hover", hover)
+	card.add_theme_stylebox_override("pressed", hover)
+	card.pressed.connect(_show_codex_entry.bind(key))
+	var v = VBoxContainer.new()
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	v.offset_left = 14; v.offset_right = -14; v.offset_top = 10; v.offset_bottom = -10
+	v.add_theme_constant_override("separation", 2)
+	card.add_child(v)
+	var stars := Codex.best_stars(state, key)
+	for line in [
+		["%s · %d 原子" % [tier.name, tpl.atoms.size()], 12, tint if unlocked else UI.MUTED],
+		[str(tpl.formula) if unlocked else "？？？", 26, Color(tpl.color) if unlocked else Color(UI.MUTED, 0.55)],
+		[str(tpl.name) if unlocked else ("元素替换可得" if tpl.get("substitution_only", false) else "建造并收获即可解锁"), 13, UI.TEXT if unlocked else UI.MUTED],
+		[Codex.stars_text(stars) if unlocked else "", 18, UI.GOLD],
+		["最佳 %d%%" % roundi(float(state.best_fit.get(key, 0.0)) * 100.0) if unlocked else "", 11, UI.MUTED]]:
+		if str(line[0]).is_empty(): continue
+		var l = UI.label(line[0], line[1], line[2])
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		l.clip_text = true
+		v.add_child(l)
+	return card
+
+func _show_codex_entry(key: String) -> void:
+	var tpl: Dictionary = state.templates[key]
+	var tier: Dictionary = Codex.rarity(tpl)
+	var unlocked: bool = state.discovered.has(key)
+	var body = _dialog("%s   %s" % [tpl.formula, tpl.name] if unlocked else "未发现的结构", "%s · %d 个原子 · %s章节" % [tier.name, tpl.atoms.size(), tpl.chapter], false, 500)
+	if unlocked:
+		var best := float(state.best_fit.get(key, 0.0))
+		body.add_child(UI.label("图鉴最佳  %s   几何匹配 %d%%" % [Codex.stars_text(Codex.stars(best)), roundi(best * 100.0)], 18, UI.GOLD))
+		if Codex.stars(best) < 3: body.add_child(UI.paragraph("把这个结构调到 %d%% 以上再收获一批，即可点亮下一颗星。" % roundi([Codex.GOOD_FIT, Codex.PREMIUM_FIT, Codex.PERFECT_FIT][Codex.stars(best)] * 100.0), 14))
+		body.add_child(UI.paragraph(tpl.description, 16, UI.TEXT))
+		body.add_child(UI.paragraph("参考来源：" + tpl.source, 11))
+		for r in state.reactors:
+			if state.reference_id(r) == key:
+				body.add_child(UI.label("我的样品   %s  ·  %s  ·  当前 %d%%" % [r.id, state.signature(r), roundi(state.quality(r) * 100.0)], 13, UI.MINT))
+	else:
+		body.add_child(UI.paragraph("通过元素替换得到此组成，再收获第一份产物，即可解锁。" if tpl.get("substitution_only", false) else "建造或换装这个结构，并收获第一份产物，即可解锁科普卡。", 16, UI.TEXT))
+	body.add_child(UI.button("返回图鉴", _show_collection, true))
 
 func _show_help() -> void:
 	var body = _dialog("欢迎来到原子工坊", "一座可以经营、收集和自由摆放的科学小岛。")

@@ -31,10 +31,14 @@ Goal: same systems, 10× the feel. Lowest risk, highest payoff.
 - ⏭ Collapse science caveats in the HUD into ⓘ tooltips → moved to v0.25 "Looks".
 - ✅ Save v22 + migration test (reached goals settle without payout).
 
-## v0.24.0 "Discovery" — collect the periodic table  ⬜
-- Molecule Codex with cards (rarity by complexity), first-synthesis reveal animation + fanfare.
-- 1–3 stars per molecule (best match remembered), star totals gate cosmetic rewards.
-- Element sticker book; element deposits placed in frontier biomes feeding island reactors.
+## v0.24.0 "Discovery" — collect the periodic table  ✅
+- ✅ Structure codex: 4-column card grid, rarity by atom count (常见/稀有/珍贵/传说), locked "？？？" cards
+  with unlock hints, tap a card for its entry.
+- ✅ First-synthesis card-flip reveal (face down → flip to rarity/formula/stars, sparkles + tinted flash).
+- ✅ 1–3 stars per structure from the best *harvested* batch fit; the editor shows the codex best.
+- ✅ Star total hands out 8 decoration gifts (into the toolbox; exploration props unlock).
+- ✅ Save v23 + migration (codex seeded from current samples, reachable gifts settle without payout).
+- ⏭ Element sticker book / element deposits in frontier biomes → v0.26 "Frontier with purpose".
 
 ## v0.25.0 "Looks" — a world worth screenshotting  ⬜
 - Procedural sky + slower day/night (10–20 min), sun direction follows time, fog tinted to sky.
@@ -48,6 +52,7 @@ Goal: same systems, 10× the feel. Lowest risk, highest payoff.
 - Unique landmarks instead of repeated sites; boars guard rich deposits; villagers non-lethal.
 - Village orders (reuse island buyer system) → coins/catalysts flow back to the island.
 - Walkable light-bridge warp; miniaturizer shrink-ray effect.
+- Element deposits in frontier biomes feeding island reactors; element sticker book (moved from v0.24).
 
 ## Later / ideas parking lot
 - Shareable miniature codes (export a build as a short string/QR).

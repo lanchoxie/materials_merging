@@ -30,6 +30,39 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.24.0 "Discovery": every structure is a card worth polishing
+Save format **v23** (adds `best_fit` and `star_rewards`). v1–v22 saves still load. The codex is seeded from
+the island's current samples of discovered structures; star gifts already within reach are marked handed out
+**without** paying them (same no-windfall rule as the v0.23 goals).
+
+**Codex** (`data/codex.json` and `scripts/codex.gd`)
+- 「结构图鉴」 is now a 4-column card grid. Card border and label show rarity by atom count:
+  2–3 常见, 4–5 稀有, 8–9 珍贵, 14–15 传说. Undiscovered cards show "？？？" and how to unlock them.
+- Tap a card for its entry: best stars and fit, how to earn the next star, the science text and source,
+  and your current samples with their live fit.
+- **Stars**: each structure remembers the best geometry fit of a batch you actually *harvested*
+  (★ 80 %, ★★ 93 %, ★★★ 98 %, the same thresholds as the editor), so up to 51 stars.
+  The atom editor shows "最佳 ★★☆" next to the live match.
+- **Star gifts**: at 3/6/10/15/21/28/36/45 stars the codex hands out decorations (flowers, bench, lamps,
+  原子风铃, 月亮夜灯, 晶晶小狐狸…). They go straight into the toolbox; exploration props are unlocked.
+  The harvest toast says "图鉴奖励 …" and a lilac popup floats under the coin counter.
+
+**First-synthesis reveal**
+- The first harvest of a new structure no longer shows a text banner. A card slides in face down,
+  flips to show rarity, formula, name and stars, then sparkles, flashes in the rarity colour and floats away (`Fx.card_reveal`).
+
+**Tests**
+- New `tests/test_codex.gd` (53 checks): rarity tiers, star thresholds shared with the editor, gift table
+  sanity, best-fit only rises, undiscovered structures don't count, gifts are ordered and paid once, the harvest
+  path records the fit and announces gifts, the reveal card, v23 round-trip, validation, v22 migration
+  without payout, and the codex dialogs.
+- `test_state` expects save v23. `test_goals` accepts ≥ v22.
+
+**Test run:** 43 pass / 16 fail. Every failure has the same error lines as the baseline (diffed per test).
+- `dev/capture_codex.gd` screenshots the grid, an entry, both faces of the reveal, and the editor.
+
+**Moved:** element sticker book and frontier element deposits → v0.26, where the frontier gets its purpose.
+
 ## v0.23.0 "Goals": always know what's next
 Save format **v22** (adds `milestones_claimed` and `saved_at`). v1–v21 saves still load; goals the player has
 already reached are marked done **without** paying out again, so old islands don't get a windfall.

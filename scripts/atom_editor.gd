@@ -39,8 +39,9 @@ var replace_group: bool = false
 var palette_buttons: Dictionary = {}
 var return_button: Button
 # Feel: the match meter sings while you drag and celebrates a perfect fit.
-const PERFECT_FIT = 0.98
-const PREMIUM_FIT = 0.93
+const Codex = preload("res://scripts/codex.gd")
+const PERFECT_FIT = Codex.PERFECT_FIT
+const PREMIUM_FIT = Codex.PREMIUM_FIT
 const REARM_BELOW = 0.96
 var _perfect_armed: bool = true
 var _last_step: int = -1
@@ -416,6 +417,8 @@ func _update_readout() -> void:
 	rate_label.text = "%.2f  金币 / 秒" % state.income(draft)
 	preview_bar.value = q * 100.0
 	response_label.text = "几何匹配  %d%%   %s   ·   %s" % [roundi(q*100), stars_text(q), _fit_word(q)] if info.known else "探索样品 · 科学匹配度未知"
+	if info.known and state.best_fit.has(str(info.reference_id)):
+		response_label.text += "   ·   最佳 %s" % Codex.stars_text(Codex.stars(float(state.best_fit[str(info.reference_id)])))
 	if info.known: _meter_feel(q)
 	bond_info.text = "彩球大小参考原子半径；圆柱表示\n模板中的连接关系，可旋转检查深度。"
 	if info.has("cell"):
@@ -439,7 +442,7 @@ func _update_readout() -> void:
 		mat.emission_energy_multiplier = 0.35 if i == picked else 0.0
 
 static func stars(q: float) -> int:
-	return 3 if q >= PERFECT_FIT else 2 if q >= PREMIUM_FIT else 1 if q >= 0.8 else 0
+	return Codex.stars(q)
 
 static func stars_text(q: float) -> String:
 	var n := stars(q)

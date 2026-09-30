@@ -171,3 +171,61 @@ func banner(title: String, subtitle: String = "", color: Color = GOLD, center: V
 	t.tween_property(box, "modulate:a", 0.0, 0.35)
 	t.parallel().tween_property(box, "position:y", box.position.y - 30, 0.35)
 	t.tween_callback(box.queue_free)
+
+## First-synthesis reveal: a card slides in face down, flips to show the new structure and
+## its rarity, holds, then floats away. `card` keys: title, name, rarity, color, stars, caption.
+func card_reveal(card: Dictionary, center: Vector2 = Vector2(-1, -1)) -> void:
+	if center.x < 0: center = get_viewport().get_visible_rect().size / 2 + Vector2(0, -40)
+	var tint: Color = card.get("color", GOLD)
+	var panel = PanelContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.custom_minimum_size = Vector2(280, 360)
+	var face = StyleBoxFlat.new()
+	face.bg_color = Color("1b2f3a")
+	face.border_color = LILAC
+	face.set_border_width_all(4)
+	face.set_corner_radius_all(22)
+	face.shadow_color = Color(0, 0, 0, 0.45)
+	face.shadow_size = 18
+	panel.add_theme_stylebox_override("panel", face)
+	var box = VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_theme_constant_override("separation", 10)
+	panel.add_child(box)
+	var back = _label("?", 120, LILAC)
+	back.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(back)
+	var back_caption = _label("新结构", 22, Color("eaf2ed"))
+	back_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(back_caption)
+	var front: Array = []
+	for line in [[str(card.get("rarity", "")), 20, tint], [str(card.get("title", "")), 48, Color("eaf2ed")],
+			[str(card.get("name", "")), 22, tint], [str(card.get("stars", "")), 30, GOLD], [str(card.get("caption", "")), 15, Color("94abb0")]]:
+		if str(line[0]).is_empty(): continue
+		var l = _label(line[0], line[1], line[2])
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.visible = false
+		box.add_child(l)
+		front.append(l)
+	add_child(panel)
+	panel.reset_size()
+	panel.pivot_offset = panel.size / 2
+	panel.position = center - panel.size / 2 + Vector2(0, 60)
+	panel.modulate.a = 0.0
+	var t = create_tween()
+	t.tween_property(panel, "modulate:a", 1.0, 0.15)
+	t.parallel().tween_property(panel, "position:y", center.y - panel.size.y / 2, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_interval(0.25)
+	t.tween_property(panel, "scale:x", 0.0, 0.16).set_ease(Tween.EASE_IN)
+	t.tween_callback(func():
+		back.visible = false; back_caption.visible = false
+		for l in front: l.visible = true
+		face.border_color = tint
+		face.bg_color = Color("20343e"))
+	t.tween_property(panel, "scale:x", 1.0, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_callback(func(): sparkle(center, tint, 24, 220.0); flash(tint, 0.18, 0.4))
+	t.tween_interval(1.9)
+	t.tween_property(panel, "modulate:a", 0.0, 0.4)
+	t.parallel().tween_property(panel, "position:y", center.y - panel.size.y / 2 - 40, 0.4)
+	t.tween_callback(panel.queue_free)

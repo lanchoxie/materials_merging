@@ -5,6 +5,7 @@ extends RefCounted
 
 # Colours come from the script, not the "Fx" global: tests preload game scripts before autoloads exist.
 const Fx = preload("res://scripts/core/fx.gd")
+const Codex = preload("res://scripts/codex.gd")
 const MATERIAL_NAMES = ["星砂", "晶露", "合金片"]
 const MATERIAL_COLORS = [Color("ffe3a3"), Color("9fe7ff"), Color("d7c6ff")]
 const COMBO_WINDOW = 0.85
@@ -22,7 +23,7 @@ static func snapshot(state) -> Dictionary:
 		"coins": float(state.coins), "m0": int(state.materials[0]), "m1": int(state.materials[1]), "m2": int(state.materials[2]),
 		"catalysts": int(state.upgrades), "harvests": int(state.total_harvests), "reactors": state.reactors.size(), "levels": levels,
 		"plots": state.unlocked_plot_count(), "people": state.campus.people.size(), "deliveries": int(state.deliveries),
-		"discovered": state.discovered.size(), "crates": int(state.crate_count),
+		"discovered": state.discovered.size(), "crates": int(state.crate_count), "gifts": int(state.star_rewards),
 	}
 
 func capture(state) -> void:
@@ -135,10 +136,19 @@ func react(game, message: String) -> String:
 	if after.discovered > before.discovered:
 		sfx.play("discovery")
 		var newest = game.state.discovered[game.state.discovered.size() - 1]
-		var info: Dictionary = game.state.templates.get(newest, {})
-		fx.banner("新发现！", "%s  %s 已收入结构图鉴" % [info.get("formula", newest), info.get("name", "")], Fx.MINT)
+		fx.card_reveal(reveal_card(game.state, newest))
+	if after.gifts > before.gifts:
+		var rewards: Array = Codex.rewards().slice(before.gifts, after.gifts)
+		for i in range(rewards.size()):
+			fx.pop_text(coin_target + Vector2(0, 70 + i * 34), "图鉴奖励  %s" % Codex.reward_text(game.state, rewards[i]), Fx.LILAC, 22, 50.0, 0.6 + i * 0.25)
 	before = after
 	return kind
+
+static func reveal_card(state, id: String) -> Dictionary:
+	var info: Dictionary = state.templates.get(id, {})
+	var tier: Dictionary = Codex.rarity(info)
+	return {"title": info.get("formula", id), "name": info.get("name", ""), "rarity": "%s · 新发现" % tier.get("name", ""),
+		"color": Color(tier.get("color", "ffd18c")), "stars": Codex.stars_text(Codex.best_stars(state, id)), "caption": "已收入结构图鉴"}
 
 func _coins_to_counter(game, fx, sfx, origin: Vector2, target: Vector2, amount: int) -> void:
 	if amount <= 0: return
