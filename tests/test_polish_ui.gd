@@ -1,4 +1,5 @@
 extends SceneTree
+const TestInput = preload("res://scripts/core/test_input.gd")
 const Main=preload("res://scripts/main.gd")
 var game
 var failures=[]
@@ -13,7 +14,7 @@ func point(index: int) -> Vector2:
 	return game.world_box.global_position+game.world.camera.unproject_position(Vector3(p.x*3.0,0.08,p.z*3.0))*game.world_box.size/Vector2(game.world_viewport.size)
 func move_touch(at: Vector2,from: Vector2) -> void:
 	var event=InputEventScreenDrag.new(); event.index=0; event.position=at; event.relative=at-from
-	Input.parse_input_event(event); await process_frame
+	TestInput.send(event); await process_frame
 func capture(label: String) -> void:
 	await process_frame; await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("res://artifacts/"+label+"-v010.png")

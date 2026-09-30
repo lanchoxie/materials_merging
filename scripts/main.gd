@@ -1,4 +1,5 @@
 extends Control
+const TestInput = preload("res://scripts/core/test_input.gd")
 
 const UI = preload("res://scripts/ui.gd")
 const Model = preload("res://scripts/lab_state.gd")
@@ -1311,7 +1312,7 @@ func _run_visual_test() -> void:
 	motion.global_position = motion.position
 	motion.relative = Vector2(20,10)
 	motion.button_mask = MOUSE_BUTTON_MASK_LEFT
-	Input.parse_input_event(motion)
+	TestInput.send(motion)
 	await get_tree().process_frame
 	await _test_pointer(motion.position,false)
 	assert(editor.points[1] != old_point,"Dragging a visible atom must change its coordinates")
@@ -1323,7 +1324,7 @@ func _run_visual_test() -> void:
 	touch_drag.index = 0
 	touch_drag.position = atom_global + Vector2(22, 14)
 	touch_drag.relative = Vector2(22, 14)
-	Input.parse_input_event(touch_drag)
+	TestInput.send(touch_drag)
 	await get_tree().process_frame
 	await _test_touch(touch_drag.position, false)
 	assert(editor.points[1] != before_touch,"Native touch drag must move an atom")
@@ -1393,7 +1394,7 @@ func _run_visual_test() -> void:
 	map_drag.index = 0
 	map_drag.position = Vector2(540,490)
 	map_drag.relative = Vector2(-90,0)
-	Input.parse_input_event(map_drag)
+	TestInput.send(map_drag)
 	await get_tree().process_frame
 	await _test_touch(map_drag.position,false)
 	assert(not world.camera.position.is_equal_approx(before_pan) and selected_plot == before_selection,"Map swipes move the camera without purchasing or selecting a plot")
@@ -1490,7 +1491,7 @@ func _test_pointer(pos: Vector2, down: bool) -> void:
 	event.button_index = MOUSE_BUTTON_LEFT
 	event.pressed = down
 	event.button_mask = MOUSE_BUTTON_MASK_LEFT if down else 0
-	Input.parse_input_event(event)
+	TestInput.send(event)
 	await get_tree().process_frame
 
 func _test_touch(pos: Vector2, down: bool) -> void:
@@ -1498,7 +1499,7 @@ func _test_touch(pos: Vector2, down: bool) -> void:
 	event.position = pos
 	event.index = 0
 	event.pressed = down
-	Input.parse_input_event(event)
+	TestInput.send(event)
 	await get_tree().process_frame
 
 

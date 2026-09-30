@@ -1,4 +1,5 @@
 extends SceneTree
+const TestInput = preload("res://scripts/core/test_input.gd")
 const Main=preload("res://scripts/main.gd")
 var game
 var panel
@@ -12,9 +13,9 @@ func _initialize() -> void:
 	root.size=Vector2i(1440,900); _run.call_deferred()
 	create_timer(60).timeout.connect(func(): push_error("wilderness UI timeout"); quit(2))
 func key(code: int) -> void:
-	var event=InputEventKey.new(); event.keycode=code; event.physical_keycode=code; event.pressed=true; Input.parse_input_event(event)
+	var event=InputEventKey.new(); event.keycode=code; event.physical_keycode=code; event.pressed=true; TestInput.send(event)
 	await process_frame
-	event.pressed=false; Input.parse_input_event(event); await process_frame
+	event.pressed=false; TestInput.send(event); await process_frame
 func capture(name: String) -> void:
 	if DisplayServer.get_name()=="headless": return
 	while not panel.view.stream.pending.is_empty(): await process_frame

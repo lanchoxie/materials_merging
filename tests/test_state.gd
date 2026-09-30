@@ -26,7 +26,7 @@ func _initialize():
 	check(state.plot_cost(0) == 2 and state.plot_cost(state.plot_at(2, 0)) == 3, "outer rings require progressively more materials")
 	check(not state.can_expand(-1) and not state.can_expand(4) and state.plot_at(128, 128) == -1, "invalid and already open plots cannot expand")
 	check(state.plot_label(4) == "地块 (0, 0)", "plot labels use stable coordinates")
-	check(state.templates.size() == 14, "seven science templates including substitution discoveries")
+	check(state.templates.size() == 17, "seventeen science templates including substitution and organic discoveries")
 	check(State.save_root_for_platform("Android") == "user://saves", "Android saves use writable app storage")
 	check(State.save_root_for_platform("Windows") == "res://saves", "desktop preserves project-local save directory")
 	check(State.save_path_allowed_for_platform("user://saves/save.json", "Android"), "Android app save path accepted")

@@ -1,4 +1,5 @@
 extends SceneTree
+const TestInput = preload("res://scripts/core/test_input.gd")
 const Main=preload("res://scripts/main.gd")
 var game
 var checks=0
@@ -58,7 +59,7 @@ func _run() -> void:
 	var start=button(panel,"播谷物").get_global_rect().get_center()
 	await game._test_touch(start,true)
 	for i in range(1,7):
-		var e=InputEventScreenDrag.new(); e.index=0; e.position=start+Vector2(0,-140)*i/6.0; e.relative=Vector2(0,-140)/6.0; Input.parse_input_event(e); await process_frame
+		var e=InputEventScreenDrag.new(); e.index=0; e.position=start+Vector2(0,-140)*i/6.0; e.relative=Vector2(0,-140)/6.0; TestInput.send(e); await process_frame
 	await game._test_touch(start+Vector2(0,-140),false)
 	check(panel.scroll.scroll_vertical>60 and seed_count==p.v2.world.seeds,"native swipe scrolls without planting")
 	await create_timer(0.8).timeout; panel.scroll.scroll_vertical=0

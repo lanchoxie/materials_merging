@@ -1,4 +1,5 @@
 extends SceneTree
+const TestInput = preload("res://scripts/core/test_input.gd")
 const Main=preload("res://scripts/main.gd")
 var game
 var checks=0
@@ -10,8 +11,8 @@ func _initialize() -> void:
 	if "--release-ui-test" not in OS.get_cmdline_user_args(): quit(2); return
 	root.size=Vector2i(1440,900); _run.call_deferred(); create_timer(90).timeout.connect(func(): quit(2))
 func key(code: int) -> void:
-	var e=InputEventKey.new(); e.physical_keycode=code; e.pressed=true; Input.parse_input_event(e); await process_frame
-	e=InputEventKey.new(); e.physical_keycode=code; e.pressed=false; Input.parse_input_event(e); await process_frame
+	var e=InputEventKey.new(); e.physical_keycode=code; e.pressed=true; TestInput.send(e); await process_frame
+	e=InputEventKey.new(); e.physical_keycode=code; e.pressed=false; TestInput.send(e); await process_frame
 func button(node: Node,text: String):
 	if node is Button and node.text.contains(text): return node
 	for child in node.get_children():

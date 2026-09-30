@@ -1,4 +1,5 @@
 extends SceneTree
+const TestInput = preload("res://scripts/core/test_input.gd")
 const Main=preload("res://scripts/main.gd")
 var game
 var checks=0
@@ -50,7 +51,7 @@ func _run() -> void:
 	game.building_drag.tick(1)
 	check(not game.building_drag.active and not game.building_drag.armed,"holding the light bridge cannot pick up a building behind it")
 	var motion=InputEventMouseMotion.new(); motion.position=deck+Vector2(45,0); motion.relative=Vector2(45,0); motion.button_mask=MOUSE_BUTTON_MASK_LEFT
-	Input.parse_input_event(motion); await process_frame; await game._test_pointer(motion.position,false)
+	TestInput.send(motion); await process_frame; await game._test_pointer(motion.position,false)
 	check(game.modal==null and not game.light_bridge_busy,"map dragging over the bridge does not teleport")
 	game.world.reset_view(); await settle(); ring=point(bridge.gate.global_position)
 	await game._test_pointer(ring,true); await game._test_pointer(ring,false)

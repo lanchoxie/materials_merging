@@ -57,10 +57,10 @@ func _run() -> void:
 		check(panel.walker.resting==type,"touch anchors observer on "+type)
 		check(panel.walker.position.distance_to(Vector2(item.at.x,item.at.z))<0.7,"resting position is furniture, not interaction origin")
 		var rest_position=panel.walker.position
-		var press=InputEventKey.new(); press.physical_keycode=KEY_W; press.pressed=true; Input.parse_input_event(press)
+		var press=InputEventKey.new(); press.physical_keycode=KEY_W; press.pressed=true; TestInput.send(press)
 		await create_timer(0.4).timeout
 		check(panel.walker.position==rest_position,"held movement cannot slide resting observer")
-		press=InputEventKey.new(); press.physical_keycode=KEY_W; Input.parse_input_event(press)
+		press=InputEventKey.new(); press.physical_keycode=KEY_W; TestInput.send(press)
 		await capture("residence-rest-"+type)
 		await key(KEY_SPACE)
 		check(panel.walker.resting.is_empty() and panel.walker.position==old and not panel.terrain.blocked(old),"keyboard jump stands beside furniture safely")
@@ -71,11 +71,13 @@ func _run() -> void:
 	await touch_action("互动 E"); await create_timer(0.45).timeout
 	check(panel.interior.door_open and is_equal_approx(panel.interior_surface.door_angle,PI/2),"mobile E opens physical door without duplicate click")
 	await capture("residence-open-door")
-	var e=InputEventKey.new(); e.physical_keycode=KEY_W; e.pressed=true; Input.parse_input_event(e)
-	for frame in range(90):
+	var e=InputEventKey.new(); e.physical_keycode=KEY_W; e.pressed=true; TestInput.send(e)
+	# Walk for up to 3 s of real time; headless frames are far shorter than 1/60 s.
+	var walk_start=Time.get_ticks_msec()
+	while Time.get_ticks_msec()-walk_start<3000:
 		await process_frame
 		if not panel.interior_mode: break
-	e=InputEventKey.new(); e.physical_keycode=KEY_W; Input.parse_input_event(e)
+	e=InputEventKey.new(); e.physical_keycode=KEY_W; TestInput.send(e)
 	assert_return()
 	# Upgrade via the existing paid campus command. The next visit derives its layout from this same plot.
 	s.campus_upgrade(3); s.campus_upgrade(3); await enter_from_street()

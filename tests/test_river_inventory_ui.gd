@@ -1,4 +1,5 @@
 extends SceneTree
+const TestInput = preload("res://scripts/core/test_input.gd")
 const Main=preload("res://scripts/main.gd")
 var checks=0
 var failures=[]
@@ -10,8 +11,8 @@ func _initialize() -> void:
 	if "--release-ui-test" not in OS.get_cmdline_user_args(): quit(2); return
 	root.size=Vector2i(1440,900); _run.call_deferred(); create_timer(50).timeout.connect(func(): quit(2))
 func key(code: int) -> void:
-	var e=InputEventKey.new(); e.physical_keycode=code; e.pressed=true; Input.parse_input_event(e); await process_frame
-	e=InputEventKey.new(); e.physical_keycode=code; e.pressed=false; Input.parse_input_event(e); await process_frame
+	var e=InputEventKey.new(); e.physical_keycode=code; e.pressed=true; TestInput.send(e); await process_frame
+	e=InputEventKey.new(); e.physical_keycode=code; e.pressed=false; TestInput.send(e); await process_frame
 func click(control, touch: bool=false) -> void:
 	var at=control.get_global_rect().get_center()
 	if touch: await game._test_touch(at,true); await game._test_touch(at,false)
@@ -57,7 +58,7 @@ func _run() -> void:
 	await game._test_pointer(drag_start,true)
 	for i in range(1,7):
 		var move=InputEventMouseMotion.new(); move.position=drag_start+(drag_end-drag_start)*i/6.0; move.relative=(drag_end-drag_start)/6.0; move.button_mask=MOUSE_BUTTON_MASK_LEFT
-		Input.parse_input_event(move); await process_frame
+		TestInput.send(move); await process_frame
 	await game._test_pointer(drag_end,false); await process_frame
 	check(bag.slots[7]=="recipe:frame_bundle" and bag.slots[4]=="","dragging a quick reference moves it to the target slot")
 	check(s.coins==wallet and p.products==products,"touch and drag rearrangements do not consume or duplicate products")
@@ -90,7 +91,7 @@ func _run() -> void:
 	var start=inv.scroll.global_position+Vector2(130,230); var seed_before=v.world.seeds
 	await game._test_touch(start,true)
 	for i in range(1,7):
-		var drag=InputEventScreenDrag.new(); drag.index=0; drag.position=start+Vector2(0,-180)*i/6.0; drag.relative=Vector2(0,-30); Input.parse_input_event(drag); await process_frame
+		var drag=InputEventScreenDrag.new(); drag.index=0; drag.position=start+Vector2(0,-180)*i/6.0; drag.relative=Vector2(0,-30); TestInput.send(drag); await process_frame
 	await game._test_touch(start+Vector2(0,-180),false); await process_frame
 	check(inv.scroll.scroll_vertical>60 and inv.selected_id=="" and v.world.seeds==seed_before,"native finger swipe scrolls inventory without selecting or using an item")
 	var scroll_pos=inv.scroll.scroll_vertical; inv.refresh(); await process_frame; await process_frame; await process_frame

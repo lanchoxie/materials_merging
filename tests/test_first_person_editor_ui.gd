@@ -17,9 +17,9 @@ func interact() -> void:
 
 func escape() -> void:
 	var e=InputEventKey.new(); e.keycode=KEY_ESCAPE; e.physical_keycode=KEY_ESCAPE; e.pressed=true
-	Input.parse_input_event(e); await process_frame
+	TestInput.send(e); await process_frame
 	e=InputEventKey.new(); e.keycode=KEY_ESCAPE; e.physical_keycode=KEY_ESCAPE; e.pressed=false
-	Input.parse_input_event(e); await process_frame
+	TestInput.send(e); await process_frame
 
 func _run() -> void:
 	game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); game.set_process(false)

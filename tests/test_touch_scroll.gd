@@ -1,4 +1,5 @@
 extends SceneTree
+const TestInput = preload("res://scripts/core/test_input.gd")
 const Main=preload("res://scripts/main.gd")
 const UI=preload("res://scripts/ui.gd")
 var game
@@ -28,7 +29,7 @@ func button(n: Node,area: Rect2):
 func swipe(at: Vector2,delta: Vector2) -> void:
 	await game._test_touch(at,true)
 	for i in range(1,7):
-		var e=InputEventScreenDrag.new(); e.index=0; e.position=at+delta*i/6.0; e.relative=delta/6.0; Input.parse_input_event(e); await process_frame
+		var e=InputEventScreenDrag.new(); e.index=0; e.position=at+delta*i/6.0; e.relative=delta/6.0; TestInput.send(e); await process_frame
 	await game._test_touch(at+delta,false); await process_frame
 func run() -> void:
 	game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -71,7 +72,7 @@ func run() -> void:
 	b=button(scroll,scroll.get_global_rect()); var at=b.get_global_rect().get_center()
 	await game._test_touch(at,true); await game._test_touch(at,false)
 	check(clicks==1,"stationary tap still activates once")
-	var old=scroll.scroll_vertical; var wheel=InputEventMouseButton.new(); wheel.button_index=MOUSE_BUTTON_WHEEL_DOWN; wheel.pressed=true; wheel.position=scroll.get_global_rect().get_center(); Input.parse_input_event(wheel); await process_frame
+	var old=scroll.scroll_vertical; var wheel=InputEventMouseButton.new(); wheel.button_index=MOUSE_BUTTON_WHEEL_DOWN; wheel.pressed=true; wheel.position=scroll.get_global_rect().get_center(); TestInput.send(wheel); await process_frame
 	check(scroll.scroll_vertical>old,"desktop mouse wheel still works")
 	game._close_modal()
 	body=game._dialog("横向滑动","原子选项带使用相同按钮")

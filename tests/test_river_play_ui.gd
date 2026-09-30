@@ -1,4 +1,5 @@
 extends SceneTree
+const TestInput = preload("res://scripts/core/test_input.gd")
 const Main=preload("res://scripts/main.gd")
 var checks:=0
 var failures=[]
@@ -75,7 +76,7 @@ func _construction_inputs(panel) -> void:
 	var blocks=c.blocks.size(); var heading=panel.view.walker.yaw
 	await game._test_pointer(target,true)
 	var motion=InputEventMouseMotion.new(); motion.position=target+Vector2(80,0); motion.relative=Vector2(80,0); motion.button_mask=MOUSE_BUTTON_MASK_LEFT
-	Input.parse_input_event(motion); await process_frame
+	TestInput.send(motion); await process_frame
 	await game._test_pointer(motion.position,false)
 	check(c.blocks.size()==blocks and panel.view.walker.yaw!=heading and panel.view.walker.position.is_equal_approx(pos),"left drag turns camera without placing or teleporting")
 	await game._test_pointer(target,true); await game._test_pointer(Vector2(1435,890),false)

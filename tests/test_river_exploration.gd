@@ -1,4 +1,5 @@
 extends SceneTree
+const TestInput = preload("res://scripts/core/test_input.gd")
 const Main=preload("res://scripts/main.gd")
 const Terrain=preload("res://scripts/river_terrain.gd")
 const Walker=preload("res://scripts/river_walker.gd")
@@ -14,11 +15,11 @@ func _initialize() -> void:
 	root.size=Vector2i(1440,900); _run.call_deferred()
 	create_timer(60).timeout.connect(func(): push_error("exploration timeout"); quit(2))
 func key(code: int,down: bool) -> void:
-	var e=InputEventKey.new(); e.physical_keycode=code; e.keycode=code; e.pressed=down; Input.parse_input_event(e); await process_frame
+	var e=InputEventKey.new(); e.physical_keycode=code; e.keycode=code; e.pressed=down; TestInput.send(e); await process_frame
 func touch(index: int,at: Vector2,down: bool) -> void:
-	var e=InputEventScreenTouch.new(); e.index=index; e.position=at; e.pressed=down; Input.parse_input_event(e); await process_frame
+	var e=InputEventScreenTouch.new(); e.index=index; e.position=at; e.pressed=down; TestInput.send(e); await process_frame
 func drag(index: int,at: Vector2,delta: Vector2) -> void:
-	var e=InputEventScreenDrag.new(); e.index=index; e.position=at; e.relative=delta; Input.parse_input_event(e); await process_frame
+	var e=InputEventScreenDrag.new(); e.index=index; e.position=at; e.relative=delta; TestInput.send(e); await process_frame
 func capture(name: String) -> void:
 	if DisplayServer.get_name()=="headless": return
 	game.toast_panel.hide()
@@ -35,9 +36,11 @@ func _run() -> void:
 	check(absf(w.position.distance_to(before)-3.2)<0.01,"walking uses metres and frame time")
 	check(is_equal_approx(w.eye().y,t.ground(w.position)+1.62),"eye stays above shared terrain surface")
 	w.look(Vector2(0,100000),0.003); check(w.pitch>=-1.25,"look cannot flip camera")
-	w.position=Vector2(510,0); w.yaw=0; w.movement=Vector2.RIGHT
+	# The edge follows the data radius (8192 m since FRONTIER-17), not the old 512 m map.
+	var edge=float(t.rules.radius)
+	w.position=Vector2(edge-2,0); w.yaw=0; w.movement=Vector2.RIGHT
 	for i in range(120): w.step(0.1)
-	check(w.position.x<=511.1 and w.position.x>510,"walking stops before expanded world edge")
+	check(w.position.x<=edge-0.9+0.01 and w.position.x>edge-2,"walking stops before expanded world edge")
 	w.position=Vector2(0,5); w.barriers=[Rect2(0.8,4,0.1,2)]; w.movement=Vector2.RIGHT
 	for i in range(30): w.step(0.1)
 	check(w.position.x<0.6,"thin obstacles prevent tunnelling")
@@ -64,11 +67,11 @@ func _run() -> void:
 	check(panel.view.walker.position.distance_to(pos)>0.5,"W actually walks while ecosystem is paused")
 	var stop=panel.view.walker.position; await create_timer(0.1).timeout
 	check(panel.view.walker.position.distance_to(stop)<0.001,"key release stops movement")
-	var mouse=InputEventMouseButton.new(); mouse.position=Vector2(740,450); mouse.button_index=MOUSE_BUTTON_RIGHT; mouse.pressed=true; Input.parse_input_event(mouse); await process_frame
+	var mouse=InputEventMouseButton.new(); mouse.position=Vector2(740,450); mouse.button_index=MOUSE_BUTTON_RIGHT; mouse.pressed=true; TestInput.send(mouse); await process_frame
 	var mouse_yaw=panel.view.walker.yaw
-	var motion=InputEventMouseMotion.new(); motion.position=Vector2(790,450); motion.relative=Vector2(50,0); Input.parse_input_event(motion); await process_frame
+	var motion=InputEventMouseMotion.new(); motion.position=Vector2(790,450); motion.relative=Vector2(50,0); TestInput.send(motion); await process_frame
 	check(panel.view.walker.yaw!=mouse_yaw,"mouse drag rotates first-person camera")
-	mouse.pressed=false; mouse.position=Vector2(1430,890); Input.parse_input_event(mouse); await process_frame
+	mouse.pressed=false; mouse.position=Vector2(1430,890); TestInput.send(mouse); await process_frame
 	check(not panel.explore_input.mouse_look,"mouse release outside map ends look")
 	await capture("v021-first-person-meadow")
 	var input=panel.explore_input; var origin=input.global_position

@@ -35,7 +35,7 @@ func run() -> void:
 	var scroll=game.modal.scroll; var at=scroll.global_position+Vector2(340,370)
 	await game._test_touch(at,true)
 	for i in range(6):
-		var e=InputEventScreenDrag.new(); e.index=0; e.position=at+Vector2(0,-28*(i+1)); e.relative=Vector2(0,-28); Input.parse_input_event(e); await process_frame
+		var e=InputEventScreenDrag.new(); e.index=0; e.position=at+Vector2(0,-28*(i+1)); e.relative=Vector2(0,-28); TestInput.send(e); await process_frame
 	await game._test_touch(at+Vector2(0,-168),false); await process_frame
 	check(scroll.scroll_vertical>80 and s.coins==before,"property quote cards scroll by touch without spending money")
 	await button("查看我的模型方案")
