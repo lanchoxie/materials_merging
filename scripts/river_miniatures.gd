@@ -30,7 +30,7 @@ static func pack(c,target: Dictionary) -> String:
 static func unfold(c,id: String,actor: Dictionary) -> String:
 	if not c.miniatures.has(id): return "背包中没有这件作品"
 	var item=c.miniatures[id]
-	if item.plot>=0: return "先从浮岛展台收回作品"
+	if item.plot!=-1: return "先从浮岛展台收回作品"
 	if actor.is_empty(): return "进入星球第一人称后再展开"
 	var hit=c.trace(actor.eye,actor.direction)
 	if hit.is_empty() or not hit.has("target"): return "瞄准附近的空地"
@@ -49,6 +49,8 @@ static func unfold(c,id: String,actor: Dictionary) -> String:
 
 static func exhibit(c,id: String,plot: int,plots: Array) -> String:
 	if not c.miniatures.has(id): return "找不到这件作品"
+	# -2: on a v0.27 courtyard pedestal, which owns the take-back.
+	if int(c.miniatures[id].plot)==-2: return "这件作品在庭院展台上，请在浮岛地块的物品列表里收回"
 	if plot<0: c.miniatures[id].plot=-1; c.revision+=1; return "作品已从展台收回背包"
 	if plot>=plots.size() or not plots[plot].unlocked or plots[plot].kind=="plaza": return "选择已开拓的浮岛地块，迎客广场保持通行"
 	for other in c.miniatures.values():

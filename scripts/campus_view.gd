@@ -2,6 +2,17 @@ extends Node3D
 const Architecture=preload("res://scripts/campus_architecture.gd")
 const StaticGeometry=preload("res://scripts/static_geometry.gd")
 const IslandGuest=preload("res://scripts/island_guest.gd")
+const Town=preload("res://scripts/island_town.gd")
+const TownDecor=preload("res://scripts/town_decor.gd")
+const Geology=preload("res://scripts/planet_geology.gd")
+const RiverComponents=preload("res://scripts/river_component_geometry.gd")
+## Native building meshes are about 2.15 m wide; v0.27 scales them into their tile footprint.
+const NATIVE_WIDTH=2.15
+var spinners: Array=[]
+## Level of every building/item at the last rebuild: new keys pop in, higher levels celebrate.
+var _levels: Dictionary={}
+var _glass: StandardMaterial3D
+var effects_played=0
 var guests: Dictionary={}
 var output_markers: Dictionary={}
 ## Presentation only. Logical people keep updating when their meshes are hidden.
@@ -77,6 +88,10 @@ func _rebuild_static() -> void:
 	static_rebuilds+=1
 	if is_instance_valid(scenery): scenery.queue_free()
 	scenery=Node3D.new(); add_child(scenery)
+	spinners.clear()
+	var previous: Dictionary=_levels
+	_levels=_town_levels()
+	var joins: Dictionary=_join_map()
 	var links: Dictionary=state.layout.road_links(state.plots)
 	var road_transforms: Array=[]
 	for i in range(state.plots.size()):
@@ -98,8 +113,10 @@ func _rebuild_static() -> void:
 		if p.kind=="plaza": _plaza(node)
 		elif not state.layout.building_info(p.kind).is_empty():
 			var building=Node3D.new(); building.name="Building"; node.add_child(building)
-			_building(building,p,detail)
+			_place_building(building,str(p.kind),int(p.get("building_level",1)),Town.primary_anchor(p),detail)
 			StaticGeometry.bake(building)
+			_celebrate(building,"p%d" % i,previous)
+		for item in p.get("items",[]): _item(node,p,item,joins,detail,previous)
 		if detail:
 			var find_kind=str(state.storage.finds.get(str(i),""))
 			if not find_kind.is_empty() and find_kind!="collected":
@@ -145,6 +162,154 @@ func _plaza(parent: Node3D) -> void:
 
 func _building(parent: Node3D, p: Dictionary, detail: bool) -> void:
 	Architecture.build(self,parent,p,detail)
+
+func glass() -> StandardMaterial3D:
+	if _glass==null:
+		_glass=StandardMaterial3D.new(); _glass.albedo_color=Color(0.75,0.92,0.96,0.28); _glass.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA; _glass.roughness=0.1
+	return _glass
+
+## A building scaled into its footprint; the model keeps its silhouette and its tier look.
+func _place_building(node: Node3D, kind: String, level: int, at: Vector2i, detail: bool) -> void:
+	var footprint: Vector2i=Town.size(kind)
+	node.position=Town.center(at,footprint)
+	var s=footprint.x*Town.tile()/NATIVE_WIDTH
+	node.scale=Vector3(s,s,s)
+	node.set_meta("base_scale",s)
+	var tier=Town.tier(level,int(state.layout.building_info(kind).get("max_level",1)))
+	_building(node,{"kind":kind,"building_level":level,"tier":tier},detail)
+
+func _town_levels() -> Dictionary:
+	var levels={}
+	for i in range(state.plots.size()):
+		var p: Dictionary=state.plots[i]
+		if not p.unlocked: continue
+		if not state.layout.building_info(p.kind).is_empty(): levels["p%d" % i]=int(p.get("building_level",1))
+		for item in p.get("items",[]): levels["u%d" % int(item.uid)]=int(item.get("level",1))
+	return levels
+
+## Global tile -> join group for fences, walls and hedges, so they link across plot edges too.
+func _join_map() -> Dictionary:
+	var map={}
+	var grid=int(Town.rules().grid)
+	for p in state.plots:
+		if not p.unlocked: continue
+		for item in p.get("items",[]):
+			var group=str(Town.info(str(item.kind)).get("join",""))
+			if not group.is_empty(): map[Vector2i(int(p.x)*grid+int(item.x),int(p.z)*grid+int(item.z))]=group
+	return map
+
+## A world-axis side seen from an item turned by rot quarter turns.
+static func _local_side(side: Vector2i, rot: int) -> Vector2i:
+	match posmod(rot,4):
+		1: return Vector2i(side.y,-side.x)
+		2: return -side
+		3: return Vector2i(-side.y,side.x)
+	return side
+
+func _item(node: Node3D, p: Dictionary, item: Dictionary, joins: Dictionary, detail: bool, previous: Dictionary) -> void:
+	var kind=str(item.kind)
+	var key="u%d" % int(item.uid)
+	var holder=Node3D.new(); holder.name="Item_%d" % int(item.uid); node.add_child(holder)
+	if Town.is_building(kind):
+		holder.set_meta("dynamic_geometry",true)
+		_place_building(holder,kind,int(item.get("level",1)),Vector2i(int(item.x),int(item.z)),detail)
+		StaticGeometry.bake(holder)
+		_celebrate(holder,key,previous)
+		return
+	var rot=int(item.get("rot",0))
+	holder.position=Town.center(Vector2i(int(item.x),int(item.z)),Town.size(kind,rot))
+	holder.rotation.y=-rot*PI/2
+	var links: Array=[]
+	var group=str(Town.info(kind).get("join",""))
+	if not group.is_empty():
+		var grid=int(Town.rules().grid)
+		var here=Vector2i(int(p.x)*grid+int(item.x),int(p.z)*grid+int(item.z))
+		for side in [Vector2i(1,0),Vector2i(-1,0),Vector2i(0,1),Vector2i(0,-1)]:
+			if str(joins.get(here+side,""))==group: links.append(_local_side(side,rot))
+	TownDecor.build(self,holder,kind,links,detail)
+	var show: Dictionary=item.get("show",{})
+	if not show.is_empty(): _exhibit(holder,kind,show,detail)
+	if not previous.is_empty() and not previous.has(key):
+		holder.set_meta("dynamic_geometry",true)
+		StaticGeometry.bake(holder)
+		_pop(holder)
+
+func _exhibit(holder: Node3D, kind: String, show: Dictionary, detail: bool) -> void:
+	var top=TownDecor.display_top(kind)
+	var stage: Node3D=holder.get_node_or_null("Spin")
+	var lift=0.02
+	if stage==null:
+		stage=Node3D.new(); holder.add_child(stage); stage.position=Vector3(0,top,0); lift=0.0
+	var caption=""
+	if show.type=="mineral":
+		var spec: Dictionary=Geology.info(str(show.id))
+		var color=Color(str(spec.get("color","aaaaaa")))
+		for i in range(3):
+			var shard=box(stage,Vector3(0.07,0.12+i*0.04,0.07),Vector3((i-1)*0.06,lift+0.07+i*0.02,(i%2)*0.04-0.02),color.lightened(i*0.1))
+			shard.rotation=Vector3(0.18*(i-1),0.6*i,0.22*(1-i))
+		caption=str(spec.get("name",show.id))
+		if str(spec.get("formula",""))!="": caption+="  "+str(spec.formula)
+	else:
+		var c: Dictionary=state.planet.v2.construction
+		var mini: Dictionary=c.miniatures.get(show.id,{})
+		if not mini.is_empty():
+			var mat=StandardMaterial3D.new(); mat.vertex_color_use_as_albedo=true; mat.roughness=0.8
+			var st=SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES); st.set_material(mat)
+			var size=Vector3.ONE
+			for b in mini.blocks: size=size.max(Vector3(b.x+1,b.y+1,b.z+1))
+			for b in mini.blocks: RiverComponents.draw(st,Vector3(b.x,b.y+0.5,b.z)-Vector3((size.x-1)/2,0,(size.z-1)/2),b.kind,Color(c.rules.kinds[b.kind].color))
+			var model=MeshInstance3D.new(); model.mesh=st.commit(); model.position.y=lift
+			model.scale=Vector3.ONE*(0.34/maxf(size.x,maxf(size.z,size.y))); stage.add_child(model)
+			caption=str(mini.get("name","河湾作品"))
+	if detail and not caption.is_empty():
+		var label=Label3D.new(); label.text=caption; label.font=preload("res://assets/fonts/NotoSansCJKsc-Regular.otf"); label.font_size=34; label.pixel_size=0.0045
+		label.modulate=Color("fff6dc"); label.outline_size=8; label.outline_modulate=Color("2a3b40"); label.billboard=BaseMaterial3D.BILLBOARD_ENABLED
+		label.position=Vector3(0,top+0.52,0); label.name="Caption"; holder.add_child(label)
+
+func _pop(node: Node3D) -> void:
+	effects_played+=1
+	var s=float(node.get_meta("base_scale",1.0))
+	node.scale=Vector3.ONE*s*0.2
+	var tween=node.create_tween()
+	tween.tween_property(node,"scale",Vector3.ONE*s*1.12,0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(node,"scale",Vector3.ONE*s,0.12)
+	_dust(node.get_parent(),node.position,0.35)
+
+## New buildings pop in; upgraded ones squash, stretch and shed a scaffold, dust and a level star.
+func _celebrate(node: Node3D, key: String, previous: Dictionary) -> void:
+	if previous.is_empty(): return
+	if not previous.has(key): _pop(node); return
+	if int(_levels.get(key,1))<=int(previous[key]): return
+	effects_played+=1
+	var s=float(node.get_meta("base_scale",1.0))
+	var tween=node.create_tween()
+	tween.tween_property(node,"scale",Vector3(s*1.12,s*0.72,s*1.12),0.12)
+	tween.tween_property(node,"scale",Vector3(s*0.94,s*1.18,s*0.94),0.14)
+	tween.tween_property(node,"scale",Vector3.ONE*s,0.18).set_trans(Tween.TRANS_BACK)
+	var parent: Node3D=node.get_parent()
+	var frame=Node3D.new(); frame.position=node.position; frame.set_meta("dynamic_geometry",true); parent.add_child(frame)
+	var half=s*NATIVE_WIDTH*0.52
+	var height=s*2.4
+	for x in [-half,half]:
+		for z in [-half,half]: box(frame,Vector3(0.035,height,0.035),Vector3(x,height*0.5+0.1,z),Color("d9b173"))
+	for h in [0.4,0.8]: box(frame,Vector3(half*2,0.03,0.05),Vector3(0,height*h+0.1,half),Color("c79a6b"))
+	var fade=frame.create_tween(); fade.tween_interval(0.7); fade.tween_property(frame,"scale",Vector3(1,0.01,1),0.35); fade.tween_callback(frame.queue_free)
+	_dust(parent,node.position,half*1.6)
+	var star=Label3D.new(); star.text="★ Lv%d" % int(_levels[key]); star.font=preload("res://assets/fonts/NotoSansCJKsc-Regular.otf"); star.font_size=56; star.pixel_size=0.006
+	star.modulate=Color("ffd98a"); star.outline_size=10; star.outline_modulate=Color("5b3d1c"); star.billboard=BaseMaterial3D.BILLBOARD_ENABLED
+	star.position=node.position+Vector3(0,height+0.4,0); star.set_meta("dynamic_geometry",true); parent.add_child(star)
+	var rise=star.create_tween(); rise.tween_property(star,"position:y",star.position.y+0.7,1.1); rise.parallel().tween_property(star,"modulate:a",0.0,1.1).set_delay(0.4); rise.tween_callback(star.queue_free)
+
+func _dust(parent: Node3D, at: Vector3, radius: float) -> void:
+	var puff=StandardMaterial3D.new(); puff.albedo_color=Color(0.95,0.91,0.82,0.8); puff.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA; puff.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	var shape=SphereMesh.new(); shape.radius=0.06; shape.height=0.12; shape.radial_segments=8; shape.rings=4
+	for i in range(8):
+		var angle=i*TAU/8.0
+		var cloud=MeshInstance3D.new(); cloud.mesh=shape; cloud.material_override=puff; cloud.position=at+Vector3(0,0.15,0); cloud.set_meta("dynamic_geometry",true); parent.add_child(cloud)
+		var tween=cloud.create_tween()
+		tween.tween_property(cloud,"position",at+Vector3(cos(angle)*radius,0.25+0.1*(i%3),sin(angle)*radius),0.5).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(cloud,"scale",Vector3.ONE*2.2,0.5)
+		tween.tween_callback(cloud.queue_free)
 
 
 func _prop(parent: Node3D, kind: String, slot: int) -> void:
@@ -288,6 +453,8 @@ func _animate_actor(actor: Dictionary, moving: bool, phase: float) -> void:
 func _process(delta: float) -> void:
 	if state==null: return
 	time+=delta
+	for spinner in spinners:
+		if is_instance_valid(spinner): spinner.rotation+=Vector3(spinner.get_meta("spin",Vector3.ZERO))*delta
 	for id in actors:
 		var actor: Dictionary=actors[id]
 		var node: Node3D=actor.node

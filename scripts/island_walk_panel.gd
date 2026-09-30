@@ -79,14 +79,23 @@ func _aim() -> Dictionary:
 	for i in range(state.plots.size()):
 		var p=state.plots[i]
 		if not p.unlocked: continue
-		var area=AABB(Vector3(p.x*3-0.97,0.12,p.z*3-0.97),Vector3(1.94,2.8,1.94))
-		if p.kind in ["empty","road","plaza","park","garden","fence","sculpture"]: continue
-		var hit=area.intersects_ray(eye,dir)
-		if hit==null or eye.distance_to(hit)>=distance: continue
-		distance=eye.distance_to(hit); best={"kind":p.kind,"index":i}
+		var areas: Array=[]
+		if p.kind=="reactor": areas.append([p.kind,AABB(Vector3(p.x*3-0.97,0.12,p.z*3-0.97),Vector3(1.94,2.8,1.94))])
+		elif preload("res://scripts/island_town.gd").is_building(str(p.kind)) and p.kind not in ["park","garden"]:
+			areas.append([p.kind,_footprint_box(p,preload("res://scripts/island_town.gd").primary_rect(p))])
+		for item in p.get("items",[]):
+			if item.has("level") and str(item.kind)!="park": areas.append([str(item.kind),_footprint_box(p,preload("res://scripts/island_town.gd").item_rect(item))])
+		for entry in areas:
+			var hit=entry[1].intersects_ray(eye,dir)
+			if hit==null or eye.distance_to(hit)>=distance: continue
+			distance=eye.distance_to(hit); best={"kind":entry[0],"index":i}
 	var gate=portal.plaza+portal.tip+Vector3(0,0.8,0)
 	if eye.distance_to(gate)<2.3 and dir.dot((gate-eye).normalized())>0.5: best={"kind":"planet","index":-1}
 	return best
+
+func _footprint_box(p: Dictionary, r: Rect2i) -> AABB:
+	var rect=preload("res://scripts/island_walk_surface.gd").tile_rect(Vector2(p.x*3,p.z*3),r)
+	return AABB(Vector3(rect.position.x,0.12,rect.position.y),Vector3(rect.size.x,maxf(1.4,rect.size.x*1.3),rect.size.y))
 
 func _aim_interior() -> Dictionary:
 	return interior.query(interior_camera.position,-interior_camera.transform.basis.z)

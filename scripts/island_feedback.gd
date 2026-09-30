@@ -19,7 +19,21 @@ var _last_tap: float = -10.0
 static func snapshot(state) -> Dictionary:
 	var levels := 0
 	for r in state.reactors: levels += int(r.level)
+	# 0.27 courtyard: buildings (main + extra), their levels, placed items and filled pedestals.
+	var houses := 0
+	var floors := 0
+	var items := 0
+	var exhibits := 0
+	for p in state.plots:
+		if not p.unlocked: continue
+		if not state.layout.building_info(str(p.kind)).is_empty():
+			houses += 1; floors += int(p.get("building_level", 1))
+		for item in p.get("items", []):
+			items += 1
+			if item.has("level"): houses += 1; floors += int(item.level)
+			if not item.get("show", {}).is_empty(): exhibits += 1
 	return {
+		"houses": houses, "floors": floors, "items": items, "exhibits": exhibits,
 		"coins": float(state.coins), "m0": int(state.materials[0]), "m1": int(state.materials[1]), "m2": int(state.materials[2]),
 		"catalysts": int(state.upgrades), "harvests": int(state.total_harvests), "reactors": state.reactors.size(), "levels": levels,
 		"plots": state.unlocked_plot_count(), "people": state.campus.people.size(), "deliveries": int(state.deliveries),
@@ -40,6 +54,10 @@ static func classify(a: Dictionary, b: Dictionary, message: String) -> String:
 	if message.begins_with("目标达成"): return "goal"
 	if b.levels > a.levels: return "upgrade"
 	if b.reactors > a.reactors: return "build"
+	if b.get("houses", 0) > a.get("houses", 0): return "raise"
+	if b.get("floors", 0) > a.get("floors", 0): return "upgrade"
+	if b.get("exhibits", 0) > a.get("exhibits", 0): return "exhibit"
+	if b.get("items", 0) > a.get("items", 0): return "decorate"
 	if b.deliveries > a.deliveries: return "sell"
 	if b.harvests > a.harvests: return "harvest"
 	if message.begins_with("收获") or message.begins_with("全岛收获"): return "harvest" if b.coins > a.coins + 0.5 else "empty"
@@ -109,6 +127,20 @@ func react(game, message: String) -> String:
 			sfx.play("build")
 			fx.sparkle(origin, Fx.MINT, 16, 90.0)
 			fx.pop_text(origin + Vector2(0, -30), "新反应炉！", Fx.MINT, 26)
+		"raise":
+			sfx.play("build")
+			sfx.play("pop", 0.9)
+			fx.sparkle(origin, Fx.MINT, 18, 100.0)
+			fx.pop_text(origin + Vector2(0, -30), "新建筑落成！", Fx.MINT, 26)
+			if gained < 0: fx.pop_text(coin_target + Vector2(0, 30), "%d" % gained, Color("ff9f8c"), 20, 40.0)
+		"exhibit":
+			sfx.play("discovery")
+			fx.sparkle(origin, Fx.LILAC, 20, 110.0)
+			fx.pop_text(origin + Vector2(0, -30), "展品就位", Fx.LILAC, 26)
+		"decorate":
+			sfx.play("pop", 1.0 + randf_range(-0.08, 0.12))
+			fx.sparkle(origin, Fx.GOLD, 8, 45.0)
+			if gained < 0: fx.pop_text(coin_target + Vector2(0, 30), "%d" % gained, Color("ff9f8c"), 18, 36.0)
 		"expand":
 			sfx.play("build")
 			sfx.play("whoosh")

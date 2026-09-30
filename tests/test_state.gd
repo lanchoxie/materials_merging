@@ -240,14 +240,24 @@ func _initialize():
 	check(restored_frontier.load_game(expanded_path), "expanded island reloads")
 	check(restored_frontier.plot_at(10, 0) == distant_plot and restored_frontier.plots[distant_plot].rid == 1 and restored_frontier.reactors[1].plot == distant_plot, "expanded save preserves distant reactor links")
 	check(restored_frontier.plots == frontier.plots and restored_frontier.materials == frontier.materials and restored_frontier.reactors[1].stock == frontier.reactors[1].stock, "expanded round trip preserves frontier, resources and production")
-	for x in range(13, 125):
-		frontier.buy_plot(frontier.plot_at(x, 0))
-	check(frontier.unlocked_plot_count() == 128 and frontier.plots.size() <= 1024, "island reaches supported expansion capacity with sparse frontier")
+	# 0.27: the island grows to 400 plots, wider than one coordinate line can hold.
+	var cap_plot = -1
+	while frontier.unlocked_plot_count() < 400:
+		var bought = false
+		for index in range(frontier.plots.size()):
+			if frontier.can_expand(index):
+				frontier.buy_plot(index); bought = true; break
+		if not bought: break
+	for index in range(frontier.plots.size()):
+		if not frontier.plots[index].unlocked and cap_plot < 0:
+			for direction in [Vector2i(1,0),Vector2i(-1,0),Vector2i(0,1),Vector2i(0,-1)]:
+				var n = frontier.plot_at(int(frontier.plots[index].x)+direction.x, int(frontier.plots[index].z)+direction.y)
+				if n >= 0 and frontier.plots[n].unlocked: cap_plot = index
+	check(frontier.unlocked_plot_count() == 400 and frontier.plots.size() <= 2048, "island reaches supported expansion capacity with sparse frontier")
 	var cap_materials = frontier.materials.duplicate()
-	var cap_plot = frontier.plot_at(125, 0)
 	var cap_message = frontier.buy_plot(cap_plot)
-	check(cap_message.contains("128") and frontier.materials == cap_materials and not frontier.can_expand(cap_plot), "capacity limit explains itself and never consumes resources")
-	check(frontier.save_game(expanded_path).begins_with("已保存") and restored_frontier.load_game(expanded_path) and restored_frontier.unlocked_plot_count() == 128, "maximum supported island survives save round trip")
+	check(cap_message.contains("400") and frontier.materials == cap_materials and not frontier.can_expand(cap_plot), "capacity limit explains itself and never consumes resources")
+	check(frontier.save_game(expanded_path).begins_with("已保存") and restored_frontier.load_game(expanded_path) and restored_frontier.unlocked_plot_count() == 400, "maximum supported island survives save round trip")
 	for path in test_paths:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))

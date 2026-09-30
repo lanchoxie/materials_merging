@@ -59,10 +59,13 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - **Order (user OK'd v0.26 Bedrock first, 2026-09-30):** see [07-world-blocks.md](07-world-blocks.md) and [08-chemistry-loop.md](08-chemistry-loop.md).
 - ✅ v0.26 "Bedrock" (tag `v0.26.0`): voxel ground (cube/slab), dig/place any cell, real-mineral geology, analyser, mineral codex. Slopes deferred.
   Stabilise the river touch tests first.
-- v0.27 "Refinery": minerals → real processes → elements; island seawater/air trickle; **element shop removed**.
-- v0.28 "Index": offline chemistry index from Materials Project / COD / PubChem; real properties in the codex.
-- v0.29 "Fabricator": compounds → gear, machines, emitters; stats from real properties (closed loop).
-- v0.30 "Earth": environment field (planet + region grid), emitters, biome shifts.
+- ✅ v0.27 "Hometown" (tag `v0.27.0`), inserted at the user's request (2026-10-01; see [09-island-town.md](09-island-town.md)):
+  a tile grid with several buildings per plot, build mode, a coin courtyard shop, pedestals, tier looks and a 400-plot cap.
+- v0.28 "Refinery": minerals → real processes → elements; seawater/air trickle on the island; **element shop removed**.
+  Also reactor tiers (flask → kettle → autoclave → plasma), the visible doctor install and phase visuals.
+- v0.29 "Index": offline chemistry index from Materials Project / COD / PubChem; real properties in the codex.
+- v0.30 "Fabricator": compounds → gear, machines, emitters; stats from real properties (closed loop).
+- v0.31 "Earth": environment field (planet + region grid), emitters, biome shifts.
 - v0.31 "Specimens": extractor on creatures and native buildings, island museum, specimen codex.
 - v0.32 "Ice Age": timeline framework, mammoths and a tribe, time gate.
 - v0.33 "Settlers" · v0.34 "Bronze" (tech diffusion) · v0.35 "Clash" (event director, first wars).

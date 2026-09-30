@@ -9,6 +9,12 @@ const ScienceChart = preload("res://scripts/science_chart.gd")
 const SandboxEditor = preload("res://scripts/sandbox_editor.gd")
 const BuildingDrag=preload("res://scripts/building_drag.gd")
 var building_drag=BuildingDrag.new()
+const TownBuild=preload("res://scripts/town_build_mode.gd")
+const Town=preload("res://scripts/island_town.gd")
+var town_build=TownBuild.new()
+## Courtyard item picked in the world or sidebar: its uid, 0 for the main building, -1 for none.
+var selected_item: int=-1
+var town_shop_category="building"
 const CampusView = preload("res://scripts/campus_view.gd")
 const IslandPanel=preload("res://scripts/island_panel.gd")
 const FactoryPanel=preload("res://scripts/factory_panel.gd")
@@ -89,6 +95,7 @@ func _ready() -> void:
 	theme = UI.make_theme()
 	_build_ui()
 	building_drag.setup(self)
+	town_build.setup(self)
 	_sync_world()
 	_select_plot(4)
 	_update_labels()
@@ -160,7 +167,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.26 基岩  ·  方块地层 · 真实矿物 · 采掘与分析仪", 11, UI.MUTED)
+	save_label = UI.label("v0.27 家园  ·  一地多建筑 · 庭院商店 · 展台与外观升级", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -308,6 +315,8 @@ func _world_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
 		world.orbit(-event.relative.x * 0.008)
 		return
+	if event is InputEventMouseMotion and town_build.active and not world_pointer_down:
+		town_build.hover(event.position)
 	if event is InputEventScreenTouch:
 		if event.pressed and world_touch_index == -1:
 			world_touch_index = event.index
@@ -329,7 +338,9 @@ func _world_input(event: InputEvent) -> void:
 		_move_world_pointer(event.position)
 
 func _begin_world_pointer(pos: Vector2) -> void:
-	if _on_light_bridge(pos): building_drag.cancel()
+	if town_build.active:
+		building_drag.cancel(); town_build.press(pos)
+	elif _on_light_bridge(pos): building_drag.cancel()
 	else: building_drag.begin(pos)
 	world_pointer_down = true
 	world_pointer_start = pos
@@ -338,6 +349,11 @@ func _begin_world_pointer(pos: Vector2) -> void:
 
 func _move_world_pointer(pos: Vector2) -> void:
 	if not world_pointer_down: return
+	if town_build.active:
+		if pos.distance_to(world_pointer_start) > 10.0: world_pointer_dragged = true
+		town_build.hover(pos)
+		world_pointer_last = pos
+		return
 	if building_drag.move(pos):
 		world_pointer_last=pos
 		return
@@ -347,6 +363,10 @@ func _move_world_pointer(pos: Vector2) -> void:
 	world_pointer_last = pos
 
 func _end_world_pointer(pos: Vector2) -> void:
+	if town_build.active:
+		if world_pointer_down: town_build.release(pos, world_pointer_dragged)
+		world_pointer_down = false
+		return
 	if building_drag.release(pos):
 		world_pointer_down=false
 		return
@@ -361,6 +381,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if not world_box.get_global_rect().has_point(event.position):
 			world_pointer_down = false
+			town_build.painting = false
 			building_drag.cancel()
 	if event is InputEventScreenTouch and not event.pressed and event.index == world_touch_index:
 		if not world_box.get_global_rect().has_point(event.position):
@@ -373,8 +394,19 @@ func _pick_world(local_position: Vector2) -> void:
 	var screen_position = local_position * Vector2(world_viewport.size) / world_box.size
 	var plot_index: int = world.screen_pick(screen_position)
 	if plot_index >= 0:
-		_select_plot(plot_index)
+		var item=_item_under(screen_position, plot_index)
+		_select_plot(plot_index, item)
 		_tap_harvest(plot_index)
+
+## Courtyard item under a tap: uid, 0 for the main building, -1 for open ground.
+func _item_under(screen_position: Vector2, plot_index: int) -> int:
+	var p: Dictionary = state.plots[plot_index]
+	var point = world.screen_point(screen_position)
+	if point == null or not p.unlocked or p.kind == "plaza" or p.kind in Town.LEGACY_WHOLE: return -1
+	var owner = Town.occupancy(p).get(Town.tile_at(point - Vector3(float(p.x) * 3, 0, float(p.z) * 3)), null)
+	if owner is int: return owner
+	if owner == "p" and Town.is_building(str(p.kind)): return 0
+	return -1
 
 ## Tapping a reactor that has something ready collects it right there in the world.
 func _tap_harvest(plot_index: int) -> void:
@@ -399,9 +431,10 @@ func _enter_light_bridge() -> void:
 	await tween.finished
 	veil.queue_free(); light_bridge_busy=false
 
-func _select_plot(index: int) -> void:
+func _select_plot(index: int, item: int=-1) -> void:
 	if index < 0 or index >= state.plots.size(): return
 	selected_plot = index
+	selected_item = item
 	selected_reactor = int(state.plots[index].rid) if state.plots[index].kind == "reactor" else -1
 	world.select_plot(index)
 	_rebuild_sidebar()
@@ -437,7 +470,7 @@ func _rebuild_sidebar() -> void:
 		UI.spacer(side,18)
 		side.add_child(UI.label("给小岛一点温度",15,UI.LILAC))
 		side.add_child(UI.button("住宅 · 院所 · 食堂 · 公园",_show_campus.bind("build"),true))
-		side.add_child(UI.paragraph("每块地可放一栋主建筑和8件庭院小物。小路沿地块边缘自动衔接。",13))
+		side.add_child(UI.paragraph("一块地是11×11格：可以并排盖好几栋建筑，再铺小路、围栅栏、摆展台。边缘一格留给连通小路。",13))
 	elif p.kind != "reactor":
 		var building=state.layout.building_info(p.kind)
 		side.add_child(UI.label("迎客广场" if p.kind=="plaza" else str(building.get("name",state.DECORATIONS.get(p.kind,{"name":"岛屿装饰"}).name)),24,UI.LILAC))
@@ -491,7 +524,8 @@ func _rebuild_sidebar() -> void:
 		var find_kind=str(state.storage.finds.get(str(selected_plot),""))
 		if not find_kind.is_empty() and find_kind!="collected": side.add_child(UI.button("拾取 · "+str(state.layout.config.props[find_kind].name),func(): _action(state.collect_find(selected_plot)),true))
 		if p.kind=="doctor_dorm": side.add_child(UI.button("公寓补给 · 泡面 / 可乐",func(): _show_toolbox(); modal._tab("supplies"),true))
-		side.add_child(UI.button("小路 · 庭院 · 建筑升级",_show_campus.bind("build")))
+		_town_sidebar(p)
+		side.add_child(UI.button("连通小路 · 建筑升级",_show_campus.bind("build")))
 	_update_labels()
 
 func _process(delta: float) -> void:
@@ -702,6 +736,7 @@ func _close_modal() -> void:
 	purchase_confirm_button = null
 
 func _dialog(title: String, subtitle: String, wide: bool = false, height: int = 668) -> VBoxContainer:
+	town_build.cancel()
 	_close_modal()
 	modal = Control.new()
 	modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1261,6 +1296,9 @@ func _notification(what: int) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if light_bridge_busy: return
+	if town_build.active and not is_instance_valid(modal):
+		if event.is_action_pressed("ui_cancel"): town_build.finish(); return
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R and town_build.rotatable(): town_build.rotate(); return
 	if event.is_action_pressed("ui_cancel"):
 		if is_instance_valid(modal) and modal.has_method("handle_back") and modal.handle_back(): return
 		_close_modal()
@@ -1527,10 +1565,11 @@ func _show_miniatures() -> void:
 	if boxes.is_empty():
 		body.add_child(UI.paragraph("还没有带回来的作品。先用工艺车间做出的构件搭一座小屋、一段桥或雕塑，再用背包里的微缩器收纳。\n每件最多64块、8×8×8格；有作物的种植箱先收获。",18))
 		body.add_child(UI.button("走过光桥去河湾",_show_planet_v2,true)); return
-	body.add_child(UI.paragraph("每块地可以放一座展台，摆在地块角落。展品仍属于你：收回后可在河湾重新展开。",16,UI.MUTED))
+	body.add_child(UI.paragraph("每块地可以放一座角落展台；也可以在“布置庭院”里买石展台、旋转展台或玻璃展柜，一块地摆很多件。展品仍属于你：收回后可在河湾重新展开。",16,UI.MUTED))
 	for id in boxes:
 		var item=boxes[id]; var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(Color("213c45"),14)); body.add_child(card)
 		var row=UI.row(card,12); row.add_child(UI.label("%s · %d块" % [item.name,item.blocks.size()],19,UI.MINT))
+		if int(item.plot)==-2: row.add_child(UI.label("摆在庭院展台上 · 在地块物品列表收回",16,UI.GOLD)); continue
 		var options=OptionButton.new(); options.custom_minimum_size=Vector2(380,48); row.add_child(options)
 		options.add_item("留在背包",0); options.set_item_metadata(0,-1)
 		for i in range(state.plots.size()):
@@ -1541,3 +1580,136 @@ func _show_miniatures() -> void:
 		row.add_child(UI.button("摆放 / 收回",func():
 			_action(state.planet.command(state,"v2_mini_exhibit",{"id":id,"plot":options.get_item_metadata(options.selected)})); _show_miniatures(),true))
 	body.add_child(UI.button("走近展台看看",_show_island_walk))
+
+
+# --- 0.27 Hometown: courtyard list, item actions and the coin shop ---------------------------
+func _town_sidebar(p: Dictionary) -> void:
+	if p.kind == "plaza" or p.kind in Town.LEGACY_WHOLE: return
+	UI.spacer(side,6)
+	var items: Array = p.get("items",[])
+	side.add_child(UI.label("庭院 · %d件" % items.size(),15,UI.LILAC))
+	side.add_child(UI.button("布置庭院 · 商店",_show_town_shop,true))
+	if selected_item >= 0: _town_item_actions(p)
+	var buildings: Array = []
+	var decor: Dictionary = {}
+	for item in items:
+		if Town.is_building(str(item.kind)) or bool(Town.info(str(item.kind)).get("display",false)): buildings.append(item)
+		else: decor[item.kind] = int(decor.get(item.kind,0)) + 1
+	if Town.is_building(str(p.kind)) and selected_item != 0:
+		side.add_child(UI.button("主建筑 · %s  Lv%d" % [state.town_name(str(p.kind)),int(p.get("building_level",1))],_pick_item.bind(0)))
+	for item in buildings:
+		if int(item.uid) == selected_item: continue
+		var text = state.town_name(str(item.kind))
+		if item.has("level"): text += "  Lv%d" % int(item.level)
+		var show: Dictionary = item.get("show",{})
+		if bool(Town.info(str(item.kind)).get("display",false)): text += "  · " + (_exhibit_name(show) if not show.is_empty() else "空展台")
+		side.add_child(UI.button(text,_pick_item.bind(int(item.uid))))
+	if not decor.is_empty():
+		var names: Array = []
+		for kind in decor: names.append("%s×%d" % [state.town_name(str(kind)),int(decor[kind])])
+		side.add_child(UI.paragraph("、".join(names) + "\n点世界里的装饰可单独挪动、收起或出售。",12))
+
+func _pick_item(uid: int) -> void:
+	selected_item = uid
+	_rebuild_sidebar()
+
+func _exhibit_name(show: Dictionary) -> String:
+	if show.get("type") == "mineral": return str(preload("res://scripts/planet_geology.gd").info(str(show.id)).get("name",show.id))
+	var mini: Dictionary = state.planet.v2.construction.miniatures.get(str(show.get("id","")),{})
+	return str(mini.get("name","河湾作品"))
+
+func _town_item_actions(p: Dictionary) -> void:
+	var plot = selected_plot
+	var uid = selected_item
+	var card = UI.box(side,Rect2(),Color("2b4a4f"))
+	var v = UI.column(card,6)
+	if uid == 0:
+		if not Town.is_building(str(p.kind)): selected_item = -1; card.queue_free(); return
+		var info: Dictionary = state.layout.building_info(str(p.kind))
+		var level = int(p.get("building_level",1))
+		v.add_child(UI.label("主建筑 · %s" % info.name,17,UI.MINT))
+		v.add_child(UI.paragraph("%d层 · %s · 占地%d×%d格" % [level,state.TIER_NAMES[Town.tier(level,int(info.max_level))-1],Town.size(str(p.kind)).x,Town.size(str(p.kind)).y],12))
+		var row = UI.row(v,6)
+		row.add_child(UI.button("挪动位置",func(): town_build.start_move(plot,0)))
+		var up = UI.button("升级 %d金币" % (int(info.upgrade_cost)*level),func(): _action(state.town_upgrade(plot,0)))
+		up.disabled = level >= int(info.max_level)
+		row.add_child(up)
+		return
+	var item: Dictionary = state.town_item(plot,uid)
+	if item.is_empty(): selected_item = -1; card.queue_free(); return
+	var kind = str(item.kind)
+	v.add_child(UI.label(state.town_name(kind),17,UI.MINT))
+	var row = UI.row(v,6)
+	row.add_child(UI.button("挪动",func(): town_build.start_move(plot,uid)))
+	if Town.is_building(kind):
+		var info: Dictionary = state.layout.building_info(kind)
+		var level = int(item.level)
+		v.add_child(UI.paragraph("%d层 · %s · 与同地块的同类建筑共用容量" % [level,state.TIER_NAMES[Town.tier(level,int(info.max_level))-1]],12))
+		var up = UI.button("升级 %d" % (int(info.upgrade_cost)*level),func(): _action(state.town_upgrade(plot,uid)))
+		up.disabled = level >= int(info.max_level)
+		row.add_child(up)
+	else:
+		row.add_child(UI.button("收起",func(): selected_item = -1; _action(state.town_store(plot,uid))))
+	row.add_child(UI.button("出售",func(): selected_item = -1; _action(state.town_sell(plot,uid))))
+	if bool(Town.info(kind).get("display",false)):
+		var show: Dictionary = item.get("show",{})
+		if show.is_empty():
+			v.add_child(UI.paragraph("展台空着：放上星球采掘的矿物标本，或微缩的河湾作品。",12))
+			v.add_child(UI.button("选择展品",_show_exhibit_picker.bind(plot,uid),true))
+		else:
+			v.add_child(UI.paragraph("展出：" + _exhibit_name(show),13,UI.GOLD))
+			var shows = UI.row(v,6)
+			shows.add_child(UI.button("更换展品",_show_exhibit_picker.bind(plot,uid)))
+			shows.add_child(UI.button("收回",func(): _action(state.town_unexhibit(plot,uid))))
+
+func _show_town_shop() -> void:
+	var body = _dialog("庭院商店","选好后点地块上的空格摆放。绿色格子可以放，红色是被占用或靠近边缘小路。收起的装饰进入工具箱，再次摆放免费；出售退回一半金币。",true)
+	var tabs = UI.row(body,8)
+	for category in Town.rules().categories:
+		var id = str(category.id)
+		tabs.add_child(UI.button(str(category.name),func(): town_shop_category = id; _show_town_shop(),id == town_shop_category))
+	var grid = GridContainer.new(); grid.columns = 3
+	grid.add_theme_constant_override("h_separation",12); grid.add_theme_constant_override("v_separation",12)
+	body.add_child(grid)
+	var kinds: Array = []
+	if town_shop_category == "building": kinds = state.layout.building_kinds()
+	else:
+		for kind in Town.rules().items:
+			if str(Town.info(kind).category) == town_shop_category: kinds.append(kind)
+	for kind in kinds:
+		var card = UI.box(grid,Rect2(),Color("22403f"))
+		card.custom_minimum_size = Vector2(282,0)
+		var v = UI.column(card,6)
+		v.add_child(UI.label(state.town_name(kind),18,UI.MINT))
+		var footprint: Vector2i = Town.size(kind)
+		var stored = int(state.storage.decorations.get(kind,0))
+		var price_text = "工具箱里有%d件 · 免费" % stored if stored > 0 else "%d 金币" % state.town_price(kind)
+		v.add_child(UI.label(price_text,15,UI.GOLD))
+		var note = "占地%d×%d格" % [footprint.x,footprint.y]
+		if Town.is_building(kind): note += " · 容量%d人 · 5级分三种外观" % int(state.layout.building_info(kind).capacity)
+		elif bool(Town.info(kind).get("paint",false)): note += " · 可拖动连续铺设"
+		elif bool(Town.info(kind).get("display",false)): note += " · 可展出矿物或河湾作品"
+		v.add_child(UI.paragraph(note,12))
+		var locked = state.town_locked(kind) if stored <= 0 and not Town.is_building(kind) else ""
+		var place = UI.button(locked if not locked.is_empty() else "摆放",func(): town_build.start_place(kind),locked.is_empty())
+		place.disabled = not locked.is_empty() or (stored <= 0 and state.coins < state.town_price(kind))
+		v.add_child(place)
+
+func _show_exhibit_picker(plot: int, uid: int) -> void:
+	var body = _dialog("选择展品","矿物标本来自星球地下采掘的背包库存；河湾作品需要先在星球上用微缩器装盒。展出的东西随时可以收回。",false)
+	var any = false
+	body.add_child(UI.label("矿物标本",18,UI.GOLD))
+	var Geology = preload("res://scripts/planet_geology.gd")
+	for id in state.planet.v2.nature.minerals:
+		if int(state.planet.v2.nature.minerals[id]) <= 0 or id in ["topsoil","bedrock"]: continue
+		var spec: Dictionary = Geology.info(str(id))
+		if spec.is_empty(): continue
+		any = true
+		body.add_child(UI.button("%s  %s  ·  背包%d" % [spec.name,spec.get("formula",""),int(state.planet.v2.nature.minerals[id])],func(): _close_modal(); _action(state.town_exhibit(plot,uid,{"type":"mineral","id":str(id)}))))
+	body.add_child(UI.label("河湾作品",18,UI.LILAC))
+	for id in state.planet.v2.construction.miniatures:
+		var mini: Dictionary = state.planet.v2.construction.miniatures[id]
+		if int(mini.plot) != -1: continue
+		any = true
+		body.add_child(UI.button("%s · %d块" % [mini.name,mini.blocks.size()],func(): _close_modal(); _action(state.town_exhibit(plot,uid,{"type":"mini","id":str(id)}))))
+	if not any: body.add_child(UI.paragraph("背包里还没有可展出的东西。去星球挖一块石灰岩、黏土或矿石，或把自己搭的作品装进微缩盒吧。",15))

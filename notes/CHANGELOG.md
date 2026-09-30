@@ -30,6 +30,58 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.27.0 "Hometown" (家园): many buildings per plot, a courtyard shop and pedestals
+The top-level save stays v23. Plots gain `at` (main building anchor) and `items` (uid-keyed courtyard
+list); storage gains `decorations`. Older saves pin their buildings once to a default anchor when they
+load. A v0.27 save does not load in v0.26. Plan and rationale: [09-island-town.md](09-island-town.md).
+
+**Tile grid** (`scripts/island_town.gd`, `data/town_items.json`)
+- Each 3 m plot is a 12×12 grid of 0.25 m tiles. The last row and column stay clear for the edge road.
+- Footprints: small buildings 5×5, institute/villa 8×8, reactor keeps the central 8×8.
+- Placement is atomic. Bounds, overlap, the plaza, reactor centres and locks are checked before any
+  coin is spent. Saved plots are re-validated on load (duplicate uids, overlaps, orphan exhibits).
+- Island cap raised from 128 to 400 unlocked plots. There is no far-plot culling yet (not needed at
+  current sizes). An infinite island stays out of scope: the planet is the infinite frontier.
+
+**Several buildings per plot** (`lab_state.gd` town API, `campus_layout.gd`, `campus_panel.gd`)
+- `town_place / town_move / town_store / town_sell / town_upgrade`. The first building on an empty plot
+  becomes the main building. Later buildings are extra items with their own level.
+- Buildings of one kind on one plot pool their beds and posts and are listed once with a count.
+- Buildings move only inside their plot, so residents keep their address. Decorations move anywhere.
+- Selling refunds 50 % of build + upgrade spending.
+
+**Courtyard shop** (`scripts/town_decor.gd`, `main.gd` `_show_town_shop`)
+- 25 coin items in six tabs: buildings, paths (stone/boardwalk/crystal), fences (wood, picket,
+  stone wall, hedge, gate), plants, small items (bench, lamp, signpost, flag, swing, pond, fountain,
+  windmill) and pedestals. Premium items name their unlock condition.
+- Fences, hedges and paths auto-join with their neighbours. Paths, fences and small plants paint by
+  dragging.
+- Stored items wait in the toolbox and come back for free.
+
+**Build mode** (`scripts/town_build_mode.gd`)
+- The camera zooms onto the plot. A tile grid appears, and a ghost follows the pointer tile by tile
+  with a green or red footprint. The HUD shows name, price, count placed, the error, ↻ rotate (R)
+  and 完成 (Esc).
+- Tapping in the world selects single items with move, upgrade, store and sell actions. The main
+  building gets a 挪动位置 action.
+
+**Pedestals** (stone, plinth, turntable, glass case)
+- They show a mined v0.26 mineral (it leaves the backpack) or a river miniature. The miniature is marked
+  `plot = -2`, so it cannot also be unfolded on the planet.
+- A floating card shows the name and formula. Selling or clearing a pedestal returns the exhibit.
+- The visitor-appeal bonus from the plan is deferred to the Specimens release.
+
+**Tier looks and effects** (`campus_view.gd`, `campus_architecture.gd`)
+- Every building has three looks across its levels: wood, brick and glass/solar. The name of the look
+  is in the upgrade message.
+- New items pop in with a squash-and-stretch and a dust puff. Upgrades add a scaffold, a pop and stars.
+- Island walk collisions follow real footprints and items. Paths, parks and gardens stay walkable.
+
+**Known trade-off:** small buildings render at 5/8.6 of their old size, so several fit on one plot.
+
+Tests: new `test_hometown` (48 model checks) and `test_hometown_ui` (21 UI checks).
+`test_state` fills 400 plots. Full suite: see the v0.27 tag message.
+
 ## v0.26.0 "Bedrock": the planet ground becomes blocks with real geology
 Top-level save stays v23. Inside it, planet nature goes to version 2 (sparse voxels, mined minerals,
 codex) and the hotbar to version 2. Every older save loads; a v0.26 save does not load in v0.25.

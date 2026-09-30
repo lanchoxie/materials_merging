@@ -94,15 +94,16 @@ func _buildings(context: Dictionary, kinds: Array, connected_only: bool = true) 
 		if str(b.get("kind","")) in kinds and (not connected_only or bool(b.get("connected",false))): result.append(b)
 	return result
 
-func _residents(plot: int, ignore_id: int = -1) -> int:
+## v0.27: one plot can hold several homes; each housing kind belongs to one role, so count by role.
+func _residents(plot: int, ignore_id: int = -1, role: String = "") -> int:
 	var n = 0
 	for p in people:
-		if int(p.id) != ignore_id and int(p.home_plot) == plot: n += 1
+		if int(p.id) != ignore_id and int(p.home_plot) == plot and (role.is_empty() or p.role == role): n += 1
 	return n
 
 func _free_home(role: String, context: Dictionary, excluded_plot: int = -999) -> int:
 	for b in _buildings(context, config.roles[role].housing):
-		if int(b.plot) != excluded_plot and _residents(int(b.plot)) < int(b.get("capacity",0)): return int(b.plot)
+		if int(b.plot) != excluded_plot and _residents(int(b.plot),-1,role) < int(b.get("capacity",0)): return int(b.plot)
 	return -1
 
 func _wallet_allows(context: Dictionary, cost: int) -> bool:
@@ -244,14 +245,16 @@ func _step(dt: float, context: Dictionary):
 func _house_temporary_residents(context: Dictionary):
 	var occupancy: Dictionary = {}
 	var housing: Dictionary = {}
-	for p in people: occupancy[int(p.home_plot)] = int(occupancy.get(int(p.home_plot),0))+1
+	for p in people:
+		var key = "%d:%s" % [int(p.home_plot),p.role]
+		occupancy[key] = int(occupancy.get(key,0))+1
 	for role in config.roles: housing[role] = _buildings(context,config.roles[role].housing)
 	for p in people:
 		if not bool(p.legacy_home): continue
 		for building in housing[p.role]:
-			var home = int(building.plot)
-			if int(occupancy.get(home,0)) >= int(building.get("capacity",0)): continue
-			p.home_plot = home; p.legacy_home = false; occupancy[home] = int(occupancy.get(home,0))+1
+			var home = int(building.plot); var key = "%d:%s" % [home,p.role]
+			if int(occupancy.get(key,0)) >= int(building.get("capacity",0)): continue
+			p.home_plot = home; p.legacy_home = false; occupancy[key] = int(occupancy.get(key,0))+1
 			_notifications.append(p.name + "已从临时住处搬进新住宅"); break
 
 func _assign_workplaces(context: Dictionary) -> Dictionary:
@@ -379,7 +382,7 @@ func housing_usage(context: Dictionary) -> Array:
 	var result: Array = []
 	for role in config.roles:
 		for building in _buildings(context,config.roles[role].housing,false):
-			result.append({"plot":int(building.plot),"role":role,"used":_residents(int(building.plot)),"capacity":int(building.get("capacity",0)),"connected":bool(building.get("connected",false))})
+			result.append({"plot":int(building.plot),"role":role,"used":_residents(int(building.plot),-1,role),"capacity":int(building.get("capacity",0)),"connected":bool(building.get("connected",false))})
 	return result
 
 func person_efficiency(id: int) -> float:

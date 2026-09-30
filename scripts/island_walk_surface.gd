@@ -1,4 +1,5 @@
 extends RefCounted
+const Town=preload("res://scripts/island_town.gd")
 ## Island scale differs from the planet; share locomotion, not world coordinates.
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_exploration.json"))
 var state
@@ -14,9 +15,20 @@ func setup(model,portal) -> void:
 	for p in state.plots:
 		if not p.unlocked: continue
 		parcels[Vector2i(p.x,p.z)]=true
+		var base=Vector2(p.x*3,p.z*3)
+		# 0.27: courtyard items and extra buildings block by their real tile footprint; paths do not.
+		for item in p.get("items",[]):
+			if str(Town.info(str(item.kind)).get("category",""))=="path" or str(item.kind) in ["park","garden"]: continue
+			obstacles.append(tile_rect(base,Town.item_rect(item)))
 		if p.kind in ["empty","road","plaza","garden","park","fence","sculpture"]: continue
-		var half=Vector2(0.86,0.86) if p.kind=="reactor" else Vector2(0.94,0.95)
-		obstacles.append(Rect2(Vector2(p.x*3,p.z*3)-half,half*2))
+		if p.kind=="reactor": obstacles.append(Rect2(base-Vector2(0.86,0.86),Vector2(1.72,1.72)))
+		elif Town.is_building(str(p.kind)): obstacles.append(tile_rect(base,Town.primary_rect(p)))
+		else: obstacles.append(Rect2(base-Vector2(0.94,0.95),Vector2(1.88,1.9)))
+
+## A tile rectangle of a plot as a world-space XZ rectangle, a hair smaller than the tiles.
+static func tile_rect(base: Vector2, r: Rect2i) -> Rect2:
+	var t=Town.tile()
+	return Rect2(base+Vector2(-1.5,-1.5)+Vector2(r.position)*t+Vector2(0.02,0.02),Vector2(r.size)*t-Vector2(0.04,0.04))
 
 func spawn(_region: String) -> Vector2:
 	for p in state.plots:

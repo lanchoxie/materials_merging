@@ -129,7 +129,7 @@ func _make_signature() -> String:
 	var items: Array = [mini(_worker_count, 10)]
 	for index in range(_plots.size()):
 		var plot: Dictionary = _plot_data(index)
-		items.append([_plot_coord(index), plot.get("unlocked", false), plot.get("kind", "empty"), plot.get("reactor_index", plot.get("rid", -1))])
+		items.append([_plot_coord(index), plot.get("unlocked", false), plot.get("kind", "empty"), plot.get("reactor_index", plot.get("rid", -1)), (plot.get("items", []) as Array).is_empty()])
 	for reactor in _reactors:
 		items.append([reactor.get("plot", -1), reactor.get("level", 1), reactor.get("template", "water"), reactor.get("positions", []), reactor.get("atoms", []), reactor.get("bonds", []), float(reactor.get("build_left", 0.0)) > 0.0])
 	return JSON.stringify(items)
@@ -311,6 +311,7 @@ func _build_plot_raw(index: int) -> void:
 		return
 	var kind: String = str(data.get("kind", "empty"))
 	if campus_life_enabled and kind in ["plaza","institute","engineer_house","doctor_dorm","professor_apartment","academician_villa","canteen","park","garden","house"]: return
+	if kind == "empty" and not (data.get("items", []) as Array).is_empty(): return
 	var reactor: Dictionary = _reactor_on_plot(index, data)
 	if not _detailed_plots.has(index):
 		_build_simple_plot(plot_root, kind, not reactor.is_empty())
@@ -1074,6 +1075,25 @@ func _commit_camera_details() -> void:
 	var next_signature: String = _visible_detail_signature()
 	if next_signature != _detail_signature:
 		rebuild()
+
+
+## Point on the island's walking plane under a screen position, or null.
+func screen_point(screen_pos: Vector2):
+	if not is_instance_valid(camera):
+		return null
+	var origin: Vector3 = camera.project_ray_origin(screen_pos)
+	var direction: Vector3 = camera.project_ray_normal(screen_pos)
+	if absf(direction.y) < 0.00001:
+		return null
+	var distance: float = (0.08 - origin.y) / direction.y
+	if distance < 0:
+		return null
+	return origin + direction * distance
+
+
+## Plot index containing a world point, or -1.
+func plot_at_point(point: Vector3) -> int:
+	return int(_coord_lookup.get(Vector2i(floori((point.x + PITCH * 0.5) / PITCH), floori((point.z + PITCH * 0.5) / PITCH)), -1))
 
 
 func screen_pick(screen_pos: Vector2) -> int:

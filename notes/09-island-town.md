@@ -25,7 +25,7 @@ User request (2026-09-30), summarised:
 - **Pedestals:** river miniatures can be exhibited on a plot (`river_miniatures.exhibit`). There is one static cream pedestal per plot and no labels.
 
 ## Proposal
-### v0.27 家园 Hometown — layout freedom
+### v0.27 家园 Hometown — layout freedom  (✅ shipped as `v0.27.0`, see CHANGELOG; the grid ended up 12×12 at 0.25 m; pedestal appeal bonus and far-plot culling deferred)
 1. **Tile grid inside plots.** Each 3 m plot becomes a 6×6 grid of 0.5 m tiles.
    - Every building, reactor and decoration gets a footprint from data, for example a hut 2×2, a reactor 3×3, the institute 5×5 and a lamp 1×1.
    - A plot holds anything whose footprints fit.

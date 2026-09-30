@@ -1,4 +1,5 @@
 extends Control
+const Town=preload("res://scripts/island_town.gd")
 ## Campus UI delegates all transactions to the model facade.
 signal changed(message: String)
 signal dismissed
@@ -114,21 +115,24 @@ func _buildings() -> void:
 	body.add_child(UI.paragraph("道路已连接迎客广场" if connected else "此处还未连接迎客广场，请把相邻地块的小路连起来。",18,UI.MINT if connected else UI.GOLD))
 	var road=UI.button("铺设连通小路 · %d金币" % int(state.layout.config.roads.cost),_road)
 	road.disabled=bool(plot.get("road",false)); body.add_child(road)
-	if plot.kind=="empty":
+	var main_info: Dictionary=state.layout.building_info(plot.kind)
+	if not main_info.is_empty():
+		var level=int(plot.get("building_level",1))
+		body.add_child(UI.label("%s · %d层 · 容量%d人" % [main_info.name,level,state.layout.capacity(plot)],22,UI.MINT))
+		var upgrade=UI.button("改造至下一层 · %d金币" % (int(main_info.upgrade_cost)*level),_upgrade)
+		upgrade.disabled=level>=int(main_info.max_level); body.add_child(upgrade)
+		if plot.kind=="workshop": body.add_child(UI.button("进入工艺车间 · 制造材料",func(): factory_requested.emit(),true))
+	if plot.kind=="empty" or not main_info.is_empty():
+		if not main_info.is_empty(): body.add_child(UI.label("在同一块地上再建一栋 · 同类建筑共用床位",20,UI.LILAC))
 		var building_choices: Array=state.layout.building_kinds()
 		building_choices.erase("park"); building_choices.push_front("park")
 		for kind in building_choices:
 			var info: Dictionary=state.layout.building_info(kind)
-			var card=_card("%s · %d金币 · 初始容量%d人" % [info.name,info.cost,info.capacity])
-			card.add_child(UI.paragraph(info.description,15)); card.add_child(UI.button("在所选地块建造",_build.bind(kind)))
-	else:
-		var info: Dictionary=state.layout.building_info(plot.kind)
-		if not info.is_empty():
-			var level=int(plot.get("building_level",1))
-			body.add_child(UI.label("%s · %d层 · 容量%d人" % [info.name,level,state.layout.capacity(plot)],22,UI.MINT))
-			var upgrade=UI.button("改造至下一层 · %d金币" % (int(info.upgrade_cost)*level),_upgrade)
-			upgrade.disabled=level>=int(info.max_level); body.add_child(upgrade)
-			if plot.kind=="workshop": body.add_child(UI.button("进入工艺车间 · 制造材料",func(): factory_requested.emit(),true))
+			var card=_card("%s · %d金币 · 初始容量%d人 · 占地%d×%d格" % [info.name,info.cost,info.capacity,Town.size(kind).x,Town.size(kind).y])
+			var room=plot.kind=="empty" or Town.first_fit(plot,kind).x>=0
+			card.add_child(UI.paragraph(info.description if room else "这块地剩余空间放不下它；可在庭院商店里挪开装饰后再建。",15))
+			var build=UI.button("在所选地块建造",_build.bind(kind)); build.disabled=not room; card.add_child(build)
+		body.add_child(UI.paragraph("想自己决定位置？在右侧面板打开「布置庭院 · 商店」，建筑、小路、围栏、展台都可以逐格摆放。",15,UI.GOLD))
 	if plot.kind=="plaza":
 		body.add_child(UI.paragraph("公共交通入口保留通行空间；可在广场外的地块布置道路、护栏与庭院。",18)); return
 	body.add_child(UI.label("庭院小物件 · 与主建筑共用地块",23,UI.LILAC))

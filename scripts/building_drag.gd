@@ -12,6 +12,8 @@ var origin: Vector2
 var ghost: Node3D
 var original: Node3D
 var marker: MeshInstance3D
+## The main building sits at its tile anchor inside the plot; the ghost keeps that offset.
+var offset=Vector3.ZERO
 
 func setup(owner_game) -> void: game=owner_game
 
@@ -37,6 +39,7 @@ func tick(dt: float) -> void:
 	game.world.add_child(ghost)
 	ghost.global_transform=original.global_transform
 	original.hide()
+	offset=original.position if original.name=="Building" else Vector3.ZERO
 	ghost.position.y+=0.48
 	marker=MeshInstance3D.new()
 	var shape=BoxMesh.new(); shape.size=Vector3(2.77,0.05,2.77); marker.mesh=shape
@@ -59,7 +62,7 @@ func move(pos: Vector2) -> bool:
 	target=pick(pos)
 	if target>=0:
 		var p: Dictionary=game.state.plots[target]
-		ghost.position=Vector3(float(p.x)*3,0.48,float(p.z)*3)
+		ghost.position=Vector3(float(p.x)*3+offset.x,0.48,float(p.z)*3+offset.z)
 		marker.position=Vector3(float(p.x)*3,0.13,float(p.z)*3)
 	marker.material_override.albedo_color=Color("84dcc2") if valid_target(target) else Color("e98888")
 	return true
