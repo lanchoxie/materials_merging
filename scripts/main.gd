@@ -1143,6 +1143,8 @@ func _codex_card(key: String) -> Control:
 	var card = Button.new()
 	card.custom_minimum_size = Vector2(206, 150)
 	card.focus_mode = Control.FOCUS_NONE
+	# Like UI.button: let a finger swipe that starts on a card scroll the codex.
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	var face := UI.style(Color("1b2f3a") if unlocked else Color("121f27"), 14, tint if unlocked else Color(tint, 0.25))
 	face.set_border_width_all(2 if unlocked else 1)
 	var hover := face.duplicate(); hover.bg_color = face.bg_color.lightened(0.08)
