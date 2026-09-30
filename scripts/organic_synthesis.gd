@@ -39,7 +39,7 @@ func logistics(state,index: int) -> String:
 	return "等待博士完成当前行程，再到炉旁装入新分子"
 
 func status(state,index: int,reference: String) -> Dictionary:
-	var result={"valid":false,"phase":"choose","message":"请选择一台反应釜","reference":reference,"stock":stock(state,reference),"missing":{},"element_cost":0,"can_buy":false,"start_ready":false,"pending":0,"progress":0.0,"eta":0,"fee":0,"required":{},"quality":0.0}
+	var result={"valid":false,"phase":"choose","message":"请选择一台反应釜","reference":reference,"stock":stock(state,reference),"missing":{},"sources":{},"start_ready":false,"pending":0,"progress":0.0,"eta":0,"fee":0,"required":{},"quality":0.0}
 	if not rules.references.has(reference) or index<0 or index>=state.reactors.size(): return result
 	var r=state.reactors[index]; result.valid=true; result.fee=state.edit_cost(r)
 	if float(r.build_left)>0:
@@ -60,22 +60,12 @@ func status(state,index: int,reference: String) -> Dictionary:
 	result.phase="prepare"
 	var quote=state.sandbox_reactor_quote(index,draft(state,reference))
 	result.required=quote.required; result.start_ready=quote.ready; result.message=quote.message
-	var can_buy=true
+	# v0.28: elements come from the refinery, never from coins. Each missing one says where to get it.
 	for symbol in quote.required:
+		result.sources[symbol]=state.refinery.how_to_get(symbol)
 		var count=maxi(0,int(quote.required[symbol])-int(state.element_inventory.get(symbol,0)))
-		if count<=0: continue
-		result.missing[symbol]=count
-		var purchase=state.purchase_quote(symbol,count)
-		result.element_cost+=int(purchase.total); can_buy=can_buy and purchase.ready
-	result.can_buy=can_buy and not result.missing.is_empty() and state.coins>=result.element_cost
+		if count>0: result.missing[symbol]=count
 	return result
-
-func buy_missing(state,index: int,reference: String) -> String:
-	var q=status(state,index,reference)
-	if q.phase!="prepare" or not q.can_buy: return "无需购入，或金币不足；请检查所选反应釜"
-	# All prices/capacity checks precede any debit; buying only fills element stock.
-	for symbol in q.missing: state.buy_elements(symbol,int(q.missing[symbol]))
-	return "缺少元素已入库；还没有合成分子，请提交装炉"
 
 func start(state,index: int,reference: String) -> String:
 	var q=status(state,index,reference)

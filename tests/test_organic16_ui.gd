@@ -11,7 +11,9 @@ func _run() -> void:
 		panel.reference_menu.select(i); panel.reference_menu.item_selected.emit(i); await process_frame
 		var ref=panel.reference; var name=panel.flow.rules.references[ref].name
 		check(panel.molecule_title.text.contains(name) and panel.molecule_description.text.contains("互溶"),"selection updates formula and sourced use description")
-		panel.buy_button.pressed.emit(); await process_frame
+		var missing=panel.flow.status(s,0,ref).missing
+		for symbol in missing: s.element_inventory[symbol]=int(s.element_inventory.get(symbol,0))+int(missing[symbol])
+		panel.refresh(); await process_frame
 		var at=panel.start_button.get_global_rect().get_center(); await game._test_touch(at,true); await game._test_touch(at,false); await process_frame
 		check(s.reactors[0].has("installation"),"touch starts paid doctor installation of selected organic")
 		for tick in range(180):

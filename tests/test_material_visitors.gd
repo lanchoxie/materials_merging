@@ -13,8 +13,11 @@ func _initialize() -> void:
 	create_timer(45).timeout.connect(func(): push_error("Material visitor timeout"); quit(2))
 	var s=State.new(); var p=s.planet; var c=s.contracts; var f=p.laminates
 	check(Journey.next(s).index==0 and c.offers(s).is_empty(),"new player begins at cooperation and does not receive inaccessible material orders")
-	Fixtures.act(s,"join"); check(Journey.next(s).route=="elements","research path points to missing elements")
-	s.buy_elements("Cu",2); s.buy_elements("Al",1); check(Journey.next(s).route=="sandbox","owning both elements points to actual structure creation")
+	Fixtures.act(s,"join"); check(Journey.next(s).route=="refinery","research path points to the refinery for missing elements")
+	s.planet.v2.nature.minerals.merge({"malachite":1,"gibbsite":1,"coal":2},true)
+	s.refinery.start(s,"malachite_smelting"); s.refinery.start(s,"gibbsite_aluminium"); s.refinery.tick(s,80)
+	check(s.element_inventory.Cu>=2 and s.element_inventory.Al>=1 and s.planet.v2.nature.minerals.coal==0,"mined malachite, gibbsite and coal refine into copper and aluminium")
+	check(Journey.next(s).route=="sandbox","owning both elements points to actual structure creation")
 	var rid=Fixtures.specimen(s); check(Journey.next(s).route=="research","archived molar proposal points to real researcher requirements")
 	Fixtures.campus(s); check(Fixtures.research(s),"actual campus completes method project for visitor tests")
 	check(Journey.next(s).index==3,"completed method requires a saved design rather than silently granting a product")

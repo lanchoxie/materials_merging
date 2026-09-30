@@ -12,9 +12,15 @@ func _run() -> void:
 	var panel=game.modal
 	check(panel.get_script().resource_path.ends_with("organic_reactor_panel.gd") and not s.planet.v2.active,"route opens reactor production and releases river observer")
 	check(panel.contents.text.contains("H₂O") and panel.preview.atoms.get_child_count()>0,"preview renders actual old water structure before installation")
-	check(panel.buy_button.visible and panel.start_button.disabled,"preparation shows missing elements and blocks premature synthesis")
-	panel.buy_button.pressed.emit(); await process_frame
-	check(s.storage.batches.is_empty() and not panel.start_button.disabled,"buying elements does not create organic product")
+	check(panel.refinery_button.visible and panel.start_button.disabled and panel.requirements.text.contains("来源"),"preparation lists missing elements with their sources and blocks premature synthesis")
+	panel.refinery_button.pressed.emit(); await process_frame
+	var refinery=game.modal
+	check(refinery.get_script().resource_path.ends_with("refinery_panel.gd") and refinery.close_button.text=="返回反应釜" and refinery.status.text.contains("来源"),"missing-element button opens the refinery explaining the first missing element")
+	s.planet.v2.nature.minerals["coal"]=1; s.refinery.start(s,"coal_coking"); s.refinery.tick(s,120)
+	refinery.close_button.pressed.emit(); await process_frame
+	check(game.modal==panel and panel.visible,"closing the refinery returns to the same reactor panel")
+	panel.refresh()
+	check(s.storage.batches.is_empty() and not panel.start_button.disabled,"refining elements does not create organic product")
 	var before=s.coins; var at=panel.start_button.get_global_rect().get_center()
 	await game._test_touch(at,true); await game._test_touch(at,false); await process_frame
 	check(s.reactors[0].has("installation") and s.coins==before-12,"native touch submits one real reactor installation at fixed level fee")

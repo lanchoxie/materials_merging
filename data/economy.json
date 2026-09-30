@@ -15,32 +15,9 @@
   "geometry_floor": 0.15,
   "geometry_weight": 0.85,
   "level_increment": 0.45,
-  "element_shop": {
-    "prices": {
-      "H": 2,
-      "C": 6,
-      "O": 5,
-      "S": 9,
-      "Cl": 8,
-      "Cs": 18,
-      "Pb": 20,
-      "Br": 12,
-      "N": 7,
-      "F": 10,
-      "Li": 7,
-      "Na": 8,
-      "Cu": 14,
-      "Al": 10
-    },
-    "starter": {
-      "H": 2,
-      "O": 1,
-      "S": 1,
-      "Cl": 2
-    },
-    "exploration_rate": 0.15,
-    "note": "库存单位为替换一个显示位点的一份原料，不代表晶胞实际化学计量。拆下的元素不返还；按最终修改一次性结算。"
-  },
+  "starter_elements": {"H": 2, "O": 1, "S": 1, "Cl": 2},
+  "exploration_rate": 0.15,
+  "elements_note": "库存单位为替换一个显示位点的一份原料，不代表晶胞实际化学计量。拆下的元素不返还；按最终修改一次性结算。v0.28 起元素不再用金币购买，由精炼厂从矿物提炼或自动提取（data/refinery.json）。",
   "orders": {
     "visitor_cooldown_seconds": 20,
     "visitor_arrival_animation_seconds": 1.2,

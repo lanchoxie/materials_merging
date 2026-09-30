@@ -62,14 +62,11 @@ func _redraw(reset_scroll: bool=false) -> void:
 	_live()
 
 func _elements() -> void:
-	body.add_child(UI.paragraph("新加或替换的元素从这里购买。提交更换后，由空闲博士走到反应炉将样品装入反应炉；原子坐标仍由你调整。",18))
+	body.add_child(UI.paragraph("元素不再用金币购买：海水、空气和水在精炼厂自动产出常见元素；金属和稀有元素要去星球采矿，再到精炼厂提炼。提交更换后，由空闲博士把样品装入反应炉。",18))
+	body.add_child(UI.button("打开精炼厂",func(): material_navigation.emit("refinery"),true))
 	for symbol in state.elements:
-		var q: Dictionary=state.purchase_quote(symbol,1)
-		if int(q.get("unit_price",0))<=0: continue
-		var row=UI.row(body); var label=UI.label("%s · %s    库存 %d" % [symbol,state.elements[symbol].get("name",symbol),int(state.element_inventory.get(symbol,0))],20); label.size_flags_horizontal=Control.SIZE_EXPAND_FILL; row.add_child(label)
-		for n in [1,10]:
-			var quote: Dictionary=state.purchase_quote(symbol,n)
-			var b=UI.button("买%d · %d金币" % [n,int(quote.get("total",0))],func(): _done(state.buy_elements(symbol,n))); b.disabled=not quote.get("ready",false); row.add_child(b)
+		var row=UI.row(body); var label=UI.label("%s · %s    库存 %d" % [symbol,state.elements[symbol].get("name",symbol),int(state.element_inventory.get(symbol,0))],20); label.custom_minimum_size.x=260; row.add_child(label)
+		var source=UI.paragraph(state.refinery.how_to_get(symbol),14); source.size_flags_horizontal=Control.SIZE_EXPAND_FILL; row.add_child(source)
 
 func _products() -> void:
 	body.add_child(UI.paragraph("只有收集后的产物才会进入这里。每个批次保留生产时的结构和几何评分，改炉不会覆盖旧货。出售请前往广场邮箱。",18))

@@ -11,7 +11,7 @@ func _initialize() -> void:
 		check(work.positions!=s.sandbox.baseline(reference).positions,reference+" starter is not perfect")
 		var fake=work.duplicate(true); fake.bonds[0][2]=2
 		check(s.sandbox_reference(fake).get("reference_id")!=reference,reference+" wrong bond graph cannot gain identity")
-		flow.buy_missing(s,0,reference); var coins=s.coins; flow.start(s,0,reference); advance(s,1)
+		refine_missing(s,0,reference); var coins=s.coins; flow.start(s,0,reference); advance(s,1)
 		check(r.has("installation") and s.coins==coins-12 and flow.stock(s,reference)==0,reference+" consumes only installation fee, no free products")
 		for i in range(180):
 			if not r.has("installation"): break

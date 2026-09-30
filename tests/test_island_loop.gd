@@ -8,6 +8,10 @@ func check(ok: bool, message: String) -> void:
 	if not ok: failures.append(message); push_error(message)
 func advance(s, seconds: int) -> void:
 	for i in range(seconds): s.tick(1)
+## v0.28: elements come from the refinery; tests that are not about refining just stock what is missing.
+func refine_missing(s, index: int, reference: String) -> void:
+	var q=preload("res://scripts/organic_synthesis.gd").new().status(s,index,reference)
+	for symbol in q.missing: s.element_inventory[symbol]=int(s.element_inventory.get(symbol,0))+int(q.missing[symbol])
 func doctor(s) -> Dictionary:
 	s.coins=10000
 	s.campus_build(5,"institute"); s.campus_road(5)
@@ -74,7 +78,7 @@ func _initialize() -> void:
 	s.harvest(0)
 	check(r.pending==0 and s.total_harvests==units+5,"manual collection stays available with empty supplies")
 	# Cancelling before completion restores reservations exactly once.
-	s.buy_elements("O",1); wallet=s.coins; var atoms=s.element_inventory.O
+	s.element_inventory.O+=1; wallet=s.coins; var atoms=s.element_inventory.O
 	s.apply_structure_edit(0,r.positions,["O","H","H"])
 	s.cancel_installation(0)
 	check(s.coins==wallet and s.element_inventory.O==atoms and s.reference_id(r)=="hydrogen_sulfide","cancel restores fee and elements without changing active product")

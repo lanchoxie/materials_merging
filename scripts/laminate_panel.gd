@@ -19,7 +19,7 @@ static func build(p,record: Dictionary) -> void:
 	if c.is_empty():
 		p.view.player_view.hide_laminate()
 		p._text("当前结构不适用：只接受同时含Cu、Al且没有其他元素的投料提案。",17,UI.GOLD)
-		p._text("铜和铝已加入元素商店。去结构工坊搭一个铜铝作品，装炉、收集，再回到这里留档。其他作品仍可用假设实验。",15); return
+		p._text("铜和铝可以在精炼厂从孔雀石、铝土矿炼出。去结构工坊搭一个铜铝作品，装炉、收集，再回到这里留档。其他作品仍可用假设实验。",15); return
 	p._text("投料摩尔比 Cu : Al = %d : %d" % [c.Cu,c.Al],16,UI.MINT)
 	var row=UI.row(p.body,6)
 	for item in [["parallel","顺着层片"],["series","横穿层片"]]: row.add_child(UI.button(item[1],func(): p.laminate_orientation=item[0]; p._redraw(),p.laminate_orientation==item[0]))

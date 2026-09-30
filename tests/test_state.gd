@@ -172,7 +172,7 @@ func _initialize():
 	valid_file.plots[0].rid = 0
 	check(not loaded._validate_save(valid_file), "save rejects inconsistent plot ownership")
 	var baseline = JSON.parse_string(FileAccess.get_file_as_string(save_path + ".bak"))
-	check(int(baseline.version) == 23, "new saves use version twenty-three")
+	check(int(baseline.version) == 24 and baseline.refinery.level == 1, "new saves use version twenty-four with the refinery")
 	valid_file = baseline.duplicate(true)
 	valid_file.plots[9].x = valid_file.plots[4].x
 	valid_file.plots[9].z = valid_file.plots[4].z
@@ -321,20 +321,21 @@ func _test_element_workflow() -> void:
 	check(s.element_inventory.S == 1 and s.element_inventory.Cl == 2, "starter supplies enable molecule substitutions")
 	var wallet: float = s.coins
 	var inventory: Dictionary = s.element_inventory.duplicate(true)
-	for request in [["H",0],["H",-1],["Cl",100],["Unknown",1]]:
-		s.buy_elements(request[0],request[1])
-	check(s.coins == wallet and s.element_inventory == inventory, "invalid purchases do not mutate wallet or supplies")
-	s.coins = 0
-	s.buy_elements("Cl",1)
-	check(s.coins == 0 and s.element_inventory == inventory, "insufficient coins cannot purchase elements")
-	s.coins = wallet
-	s.element_inventory.H = 9999
-	s.buy_elements("H",1)
-	check(s.coins == wallet and s.element_inventory.H == 9999, "warehouse capacity cannot overflow")
+	check(not s.has_method("buy_elements") and not s.economy.rules.has("element_shop"), "v0.28 has no coin element shop")
+	for id in ["", "Unknown", "halite_electrolysis"]:
+		s.refinery.start(s,id)
+	check(s.coins == wallet and s.element_inventory == inventory and s.refinery.jobs.is_empty(), "unknown processes or missing minerals do not mutate wallet, stock or queue")
+	s.planet.v2.nature.minerals["halite"] = 1
+	s.element_inventory.Na = 9999
+	check(not s.refinery.quote(s,"halite_electrolysis").ready and s.refinery.start(s,"halite_electrolysis").contains("满"), "element stock cannot overflow")
 	s.element_inventory = inventory.duplicate(true)
-	var purchase: Dictionary = s.purchase_quote("Cl",5)
-	s.buy_elements("Cl",5)
-	check(s.coins == wallet - purchase.total and s.element_inventory.Cl == 7, "purchase charges exactly the preview price")
+	s.refinery.start(s,"halite_electrolysis")
+	check(s.planet.v2.nature.minerals.halite == 0 and s.refinery.jobs.size() == 1 and s.coins == wallet, "refining reserves the mineral up front and costs no coins")
+	s.refinery.tick(s,19.0)
+	check(s.element_inventory.Cl == inventory.Cl, "nothing arrives before the batch finishes")
+	s.refinery.tick(s,1.0)
+	check(s.element_inventory.Cl == inventory.Cl+2 and s.element_inventory.Na == inventory.Na+2 and s.refinery.jobs.is_empty(), "one halite block gives exactly Na×2 and Cl×2")
+	s.element_inventory = inventory.duplicate(true)
 	var r: Dictionary = s.reactors[0]
 	var old_positions: Array = r.positions.duplicate(true)
 	var old_signature: String = s.signature(r)

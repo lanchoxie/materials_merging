@@ -89,7 +89,7 @@ func _test_save_and_migration() -> void:
 	s.star_rewards = 1
 	check(s.save_game(path).begins_with("已保存"), "v23 save succeeds")
 	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
-	check(int(data.version) == 23 and is_equal_approx(float(data.best_fit.water), 0.95) and int(data.star_rewards) == 1, "save v23 stores the codex")
+	check(int(data.version) >= 23 and is_equal_approx(float(data.best_fit.water), 0.95) and int(data.star_rewards) == 1, "save v23 stores the codex")
 	var loaded = State.new()
 	check(loaded.load_game(path) and is_equal_approx(float(loaded.best_fit.water), 0.95) and loaded.star_rewards == 1, "codex loads back")
 	for bad_case in [["best_fit", {"nope": 0.5}], ["best_fit", {"water": 1.5}], ["best_fit", []], ["star_rewards", 99], ["star_rewards", 1.5]]:

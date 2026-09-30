@@ -9,6 +9,10 @@ var storage=IslandStorage.new()
 var logistics=IslandLogistics.new()
 var market=IslandMarket.new()
 var contracts=preload("res://scripts/material_contracts.gd").new()
+const Refinery=preload("res://scripts/refinery.gd")
+## v0.28: minerals → elements; replaces the coin element shop.
+var refinery=Refinery.new()
+var refinery_notice: String=""
 var island_rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/island_balance.json"))
 
 const CampusSim = preload("res://scripts/campus_sim.gd")
@@ -467,24 +471,7 @@ func reference_id(r: Dictionary) -> String:
 func _reset_element_inventory() -> void:
 	element_inventory.clear()
 	for symbol in elements:
-		element_inventory[symbol] = int(economy.rules.element_shop.starter.get(symbol,0))
-
-func purchase_quote(symbol: String, quantity: int) -> Dictionary:
-	var q = {"ready":false,"unit_price":0,"total":0,"message":"请选择有效的元素与数量"}
-	if not elements.has(symbol) or quantity < 1 or quantity > 99: return q
-	q.unit_price = int(economy.rules.element_shop.prices.get(symbol,0))
-	if q.unit_price <= 0: return q
-	q.total = q.unit_price * quantity
-	q.ready = coins >= q.total and int(element_inventory.get(symbol,0)) + quantity <= 9999
-	q.message = "库存已满或金币不足" if not q.ready else "购买%d份%s需要%d金币" % [quantity,symbol,q.total]
-	return q
-
-func buy_elements(symbol: String, quantity: int) -> String:
-	var q: Dictionary = purchase_quote(symbol,quantity)
-	if not q.ready: return q.message
-	coins -= int(q.total)
-	element_inventory[symbol] = int(element_inventory.get(symbol,0)) + quantity
-	return "元素入库：%s × %d · -%d 金币" % [symbol,quantity,q.total]
+		element_inventory[symbol] = int(economy.rules.starter_elements.get(symbol,0))
 
 func quality(r: Dictionary) -> float:
 	if not templates.has(r.get("template", "")):
@@ -536,7 +523,7 @@ func income_breakdown(r: Dictionary) -> Dictionary:
 	var result: Dictionary = economy.breakdown(info, quality(r), int(r.level), float(r.get("build_left", 0.0)) > 0.0)
 	result.known = info.known
 	if not info.known:
-		result.rate = 0.0 if float(r.get("build_left",0.0)) > 0.0 else float(economy.rules.element_shop.exploration_rate)
+		result.rate = 0.0 if float(r.get("build_left",0.0)) > 0.0 else float(economy.rules.exploration_rate)
 	return result
 
 func total_income() -> float:
@@ -574,6 +561,8 @@ func tick(delta: float):
 	delta=_production_clock
 	_production_clock=0.0
 	market.tick(delta,economy,templates,island_rules.visitors,contracts.offers(self))
+	var refined: Array=refinery.tick(self,delta)
+	if not refined.is_empty(): refinery_notice="；".join(refined)
 	visitor_cooldown = maxf(0.0, visitor_cooldown - delta)
 	_produce(delta)
 
@@ -611,7 +600,7 @@ const OFFLINE_MAX_SECONDS = 7200
 const OFFLINE_RATE = 0.5
 const OFFLINE_MIN_SECONDS = 60
 
-## Capped offline progress: reactors (only) run for half the time away, up to two hours.
+## Capped offline progress: reactors and the refinery (only) run for half the time away, up to two hours.
 ## Payroll, campus life and the planet stay paused, matching "离线不计薪".
 func offline_catch_up(now: int) -> Dictionary:
 	if saved_at <= 0 or now - saved_at < OFFLINE_MIN_SECONDS: return {}
@@ -621,7 +610,7 @@ func offline_catch_up(now: int) -> Dictionary:
 	for r in reactors: units_before += int(r.pending); coins_before += float(r.stored_coins)
 	var left := simulated
 	while left > 0.0:
-		_produce(minf(left, 10.0)); left -= 10.0
+		_produce(minf(left, 10.0)); refinery.tick(self, minf(left, 10.0)); left -= 10.0
 	saved_at = now
 	var units := 0; var stored := 0.0
 	for r in reactors: units += int(r.pending); stored += float(r.stored_coins)
@@ -1071,7 +1060,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 23, "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 24, "refinery": refinery.serialize(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1133,8 +1122,9 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 23, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 24, true):
 		return false
+	if int(data.version)>=24 and not Refinery.new().restore(data.get("refinery"),elements): return false
 	if int(data.version)>=23:
 		if not data.get("best_fit") is Dictionary or data.best_fit.size()>templates.size(): return false
 		for id in data.best_fit:
@@ -1327,6 +1317,8 @@ func load_game(path: String = "") -> bool:
 	_reset_element_inventory()
 	if int(data.version) >= 3:
 		for symbol in elements: element_inventory[symbol] = int(data.element_inventory.get(symbol, 0))
+	refinery=Refinery.new()
+	if int(data.version) >= 24: refinery.restore(data.refinery,elements)
 	materials = [int(data.materials[0]), int(data.materials[1]), int(data.materials[2])]
 	upgrades = int(data.upgrades)
 	engineers = int(data.engineers)

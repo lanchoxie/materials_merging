@@ -4,6 +4,7 @@ signal acted(message: String)
 signal edit_requested(index: int)
 signal campus_requested(tab: String)
 signal planet_requested
+signal refinery_requested(symbol: String)
 const UI=preload("res://scripts/ui.gd")
 const Flow=preload("res://scripts/organic_synthesis.gd")
 var flow=Flow.new()
@@ -25,7 +26,8 @@ var feedback: Label
 var progress: ProgressBar
 var progress_caption: Label
 var start_button: Button
-var buy_button: Button
+var refinery_button: Button
+var preview_viewport: SubViewport
 var harvest_button: Button
 var edit_button: Button
 var cancel_button: Button
@@ -44,7 +46,7 @@ func setup(model,index: int=-1) -> void:
 	theme=UI.make_theme()
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	heading=UI.label("反应釜 · 有机合成",30,UI.MINT); heading.position=Vector2(36,25); add_child(heading)
-	var sub=UI.paragraph("元素入库 → 博士装炉 → 反应釜合成 → 收获到背包 → 河湾配料",17); sub.position=Vector2(38,73); sub.size=Vector2(1150,32); add_child(sub)
+	var sub=UI.paragraph("精炼厂备齐元素 → 博士装炉 → 反应釜合成 → 收获到背包 → 河湾配料",17); sub.position=Vector2(38,73); sub.size=Vector2(1150,32); add_child(sub)
 	return_button=UI.button("返回浮岛  ×",func(): dismissed.emit()); return_button.position=Vector2(1220,25); return_button.size=Vector2(184,48); add_child(return_button)
 	var left=UI.box(self,Rect2(28,118,700,708)); var col=UI.column(left,14)
 	reference_menu=OptionButton.new(); reference_menu.custom_minimum_size.y=44; col.add_child(reference_menu)
@@ -54,7 +56,7 @@ func setup(model,index: int=-1) -> void:
 	molecule_description=UI.paragraph("",16); col.add_child(molecule_description)
 	contents=UI.paragraph("",16,UI.LILAC); col.add_child(contents)
 	var box=SubViewportContainer.new(); box.custom_minimum_size=Vector2(650,235); box.stretch=true; col.add_child(box)
-	var viewport=SubViewport.new(); viewport.size=Vector2i(650,235); viewport.own_world_3d=true; viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; box.add_child(viewport)
+	var viewport=SubViewport.new(); viewport.size=Vector2i(650,235); viewport.own_world_3d=true; viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; box.add_child(viewport); preview_viewport=viewport
 	preview=preload("res://scripts/organic_reactor_view.gd").new(); viewport.add_child(preview)
 	stocks=UI.paragraph("",19,UI.GOLD); col.add_child(stocks)
 	col.add_child(UI.paragraph("反应釜完成的分子先留在炉内；收获后才成为可用样品。每罐选一种有机物加水，分装后仍保留物质身份。",16))
@@ -70,7 +72,7 @@ func setup(model,index: int=-1) -> void:
 	progress_caption=UI.paragraph("",14,UI.MUTED); body.add_child(progress_caption)
 	progress=ProgressBar.new(); progress.custom_minimum_size.y=18; body.add_child(progress)
 	requirements=UI.paragraph("",17,UI.GOLD); body.add_child(requirements)
-	buy_button=UI.button("购齐缺少元素",func(): _act("buy")); body.add_child(buy_button)
+	refinery_button=UI.button("去精炼厂补齐元素",_go_refine); body.add_child(refinery_button)
 	start_button=UI.button("提交分子装炉",func(): _act("start"),true); body.add_child(start_button)
 	harvest_button=UI.button("收获尿素到背包",func(): _act("harvest"),true); body.add_child(harvest_button)
 	edit_button=UI.button("进入原子工作台 · 调节结构",func(): edit_requested.emit(reactor_index)); body.add_child(edit_button)
@@ -90,7 +92,6 @@ func select_reference(id: String) -> void:
 
 func _act(action: String) -> void:
 	match action:
-		"buy": feedback.text=flow.buy_missing(state,reactor_index,reference)
 		"start": feedback.text=flow.start(state,reactor_index,reference)
 		"harvest": feedback.text=flow.harvest(state,reactor_index,reference)
 		"cancel": feedback.text=state.cancel_installation(reactor_index)
@@ -112,11 +113,15 @@ func refresh() -> void:
 	progress.visible=q.phase in ["installing","producing","ready"]; progress.value=float(q.progress)*100
 	progress_caption.visible=progress.visible
 	progress_caption.text="博士装炉进度" if q.phase=="installing" else "下一份合成进度 · 已完成%d份待收" % q.pending
+	# Recipe card: every new element with need / have, and where to get the missing ones.
 	var needs=[]
-	for symbol in q.required: needs.append("%s ×%d（库存%d）" % [symbol,q.required[symbol],state.element_inventory.get(symbol,0)])
-	requirements.text="需新增："+("\n".join(needs) if not needs.is_empty() else "现有炉中元素可复用")
+	for symbol in q.required:
+		var have=int(state.element_inventory.get(symbol,0)); var ok=have>=int(q.required[symbol])
+		needs.append("%s %s  需%d · 有%d%s" % ["✓" if ok else "✗",symbol,q.required[symbol],have,"" if ok else "\n    来源："+str(q.sources.get(symbol,""))])
+	requirements.text="装炉需要新增的元素：\n"+("\n".join(needs) if not needs.is_empty() else "现有炉中元素可复用，不需要新元素")
 	requirements.visible=q.phase=="prepare"
-	buy_button.visible=q.phase=="prepare" and not q.missing.is_empty(); buy_button.disabled=not q.can_buy; buy_button.text="购齐缺少元素 · %d金币" % q.element_cost
+	refinery_button.visible=q.phase=="prepare" and not q.missing.is_empty()
+	if refinery_button.visible: refinery_button.text="去精炼厂补齐 "+"、".join(q.missing.keys())
 	start_button.visible=q.phase=="prepare"; start_button.disabled=not q.start_ready; start_button.text="提交分子装炉 · %d金币" % q.fee
 	harvest_button.visible=q.phase in ["producing","ready"]; harvest_button.disabled=q.pending<=0; harvest_button.text="收获%s到背包 · %d份" % [spec.name,q.pending]
 	edit_button.visible=q.phase in ["producing","ready"]; cancel_button.visible=q.phase in ["installing","busy"]
@@ -131,6 +136,20 @@ func refresh() -> void:
 
 func set_return_label(text: String) -> void:
 	return_button.text=text+"  ×"
+
+func _go_refine() -> void:
+	var q=flow.status(state,reactor_index,reference)
+	refinery_requested.emit(str(q.missing.keys()[0]) if not q.missing.is_empty() else "")
+
+## Step aside while the refinery, campus or atom editor is open (main.gd return stack).
+func set_editor_open(open: bool) -> void:
+	visible=not open
+	process_mode=Node.PROCESS_MODE_DISABLED if open else Node.PROCESS_MODE_INHERIT
+	preview_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED if open else SubViewport.UPDATE_ALWAYS
+	if not open: refresh()
+
+func return_title() -> String:
+	return "反应釜"
 
 func _process(dt: float) -> void:
 	clock+=dt

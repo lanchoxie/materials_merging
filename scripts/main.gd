@@ -20,6 +20,7 @@ const IslandPanel=preload("res://scripts/island_panel.gd")
 const FactoryPanel=preload("res://scripts/factory_panel.gd")
 const PlanetV2Panel=preload("res://scripts/planet_v2_panel.gd")
 const IslandWalk=preload("res://scripts/island_walk_panel.gd")
+const RefineryPanel=preload("res://scripts/refinery_panel.gd")
 const OrderBubbles=preload("res://scripts/order_bubbles.gd")
 var order_bubbles
 const CampusPanel = preload("res://scripts/campus_panel.gd")
@@ -67,7 +68,6 @@ var world_pointer_last: Vector2
 var world_pointer_dragged: bool = false
 var world_touch_index: int = -1
 var shop_buttons: Dictionary = {}
-var purchase_confirm_button: Button
 var research_open: bool = false
 var move_source: int = -1
 var last_factory_recipe="standard_water_crate"
@@ -307,6 +307,7 @@ func _build_toolbar() -> void:
 		["◇  探索盲盒", _show_crate],
 		["科研小镇", _show_crew],
 		["工具箱", _show_toolbox],
+		["精炼厂", _show_refinery],
 		["□  结构工坊", _show_sandbox]
 	]
 	for entry in buttons:
@@ -546,6 +547,9 @@ func _process(delta: float) -> void:
 	if not state.campus_notice.is_empty():
 		_toast(state.campus_notice)
 		state.campus_notice=""
+	if not state.refinery_notice.is_empty():
+		_toast(state.refinery_notice)
+		state.refinery_notice=""
 	if not state.science_notice.is_empty():
 		_toast(state.science_notice)
 		state.science_notice = ""
@@ -754,7 +758,6 @@ func _discard_modal() -> void:
 	modal = null
 	market_rows.clear()
 	shop_buttons.clear()
-	purchase_confirm_button = null
 
 func _top_suspended() -> Control:
 	while not return_stack.is_empty() and (not is_instance_valid(return_stack.back()) or return_stack.back().is_queued_for_deletion()): return_stack.pop_back()
@@ -780,6 +783,7 @@ func _screen_closed(panel: Control) -> void:
 func _return_label() -> String:
 	var view: Control=_top_suspended()
 	if view==null: return ""
+	if view.has_method("return_title"): return "返回"+view.return_title()
 	return "返回河湾" if view is PlanetV2Panel else "返回漫步"
 
 func _label_return(panel: Control) -> void:
@@ -941,7 +945,7 @@ func _show_island_panel(page: String, visitor: int=-1) -> void:
 
 func _navigate_materials(route: String) -> void:
 	match route:
-		"elements": _show_toolbox(); modal._tab("elements")
+		"elements", "refinery": _show_refinery()
 		"sandbox": _show_sandbox()
 		"research": _show_campus("research")
 		"mail": _show_market()
@@ -1000,57 +1004,22 @@ func _show_organic_synthesis(index: int=-1) -> void:
 	panel.dismissed.connect(func(): _finish_structure_editor(panel))
 	panel.campus_requested.connect(_show_campus)
 	panel.planet_requested.connect(_show_planet_v2)
+	panel.refinery_requested.connect(_show_refinery)
 	panel.edit_requested.connect(func(i): _select_plot(int(state.reactors[i].plot)); _open_editor())
 
 func _deliver_market(index: int) -> void:
 	_action(state.deliver(index))
 	_show_market()
 
-func _show_elements() -> void:
-	var body = _dialog("元素仓库", "ELEMENT DEPOT   /   %d 种元素  /  钱包 %d 金币" % [state.elements.size(),int(state.coins)],true)
-	body.add_child(UI.paragraph("一份原料可以替换一个显示位点。先买入仓库，再到原子工作台预览替换；应用时才消耗。",16,UI.TEXT))
-	body.add_child(UI.paragraph("入门补给：H×2、O×1、S×1、Cl×2，新开局或从旧版升级时发放一次。试试把水分子的O换成S。",14,UI.LILAC))
-	var grid = GridContainer.new()
-	grid.columns = 2
-	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	grid.add_theme_constant_override("h_separation",14)
-	grid.add_theme_constant_override("v_separation",14)
-	body.add_child(grid)
-	for symbol in state.elements:
-		var item: Dictionary = state.elements[symbol]
-		var card = PanelContainer.new()
-		card.custom_minimum_size.x = 438
-		grid.add_child(card)
-		var v = UI.column(card,8)
-		v.add_child(UI.label("%s   %s     库存 %d" % [symbol,item.name,state.element_inventory.get(symbol,0)],24,Color(item.color)))
-		v.add_child(UI.paragraph("参考半径 %.2f Å · %s" % [item.radius,item.radius_type],14))
-		var price: int = int(state.economy.rules.element_shop.prices[symbol])
-		var actions = UI.row(v,10)
-		for quantity in [1,5]:
-			var b = UI.button("买%d份 · %d金币" % [quantity,quantity*price],_confirm_element_purchase.bind(symbol,quantity))
-			b.custom_minimum_size.y = 48
-			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			actions.add_child(b)
-			shop_buttons[symbol+str(quantity)] = b
-	body.add_child(UI.paragraph("金币价格是游戏设定。半径要连同价态和配位环境使用，工作台会按当前体系显示。所有元素均为虚拟游戏道具。",14))
-
-func _confirm_element_purchase(symbol: String, quantity: int) -> void:
-	var quote: Dictionary = state.purchase_quote(symbol,quantity)
-	var item: Dictionary = state.elements[symbol]
-	var body = _dialog("准备入库", "%s  /  %s" % [symbol,item.name])
-	body.add_child(UI.label(symbol,90,Color(item.color)))
-	body.add_child(UI.label("%d 份原料  ·  %d 金币" % [quantity,quote.total],28,UI.GOLD))
-	body.add_child(UI.paragraph("仓库现有 %d 份 → 购买后 %d 份\n钱包现有 %d 金币" % [state.element_inventory.get(symbol,0),state.element_inventory.get(symbol,0)+quantity,int(state.coins)],19,UI.TEXT))
-	body.add_child(UI.paragraph("购买只放入仓库，不会立即修改反应炉。你可以在工作台选择替换位点并预览消耗。",16))
-	purchase_confirm_button = UI.button("确认购买 · %d 金币" % quote.total,_buy_element.bind(symbol,quantity),true)
-	purchase_confirm_button.disabled = not quote.ready
-	body.add_child(purchase_confirm_button)
-	if not quote.ready: body.add_child(UI.paragraph(quote.message,16,UI.GOLD))
-	body.add_child(UI.button("取消，返回仓库",_show_elements))
-
-func _buy_element(symbol: String, quantity: int) -> void:
-	_action(state.buy_elements(symbol,quantity))
-	_show_elements()
+## v0.28: elements are refined from planet minerals or extracted on the island (no coin shop).
+func _show_refinery(symbol: String="") -> void:
+	_replace_modal()
+	var panel=RefineryPanel.new(); add_child(panel); modal=panel
+	panel.setup(state,symbol)
+	_label_return(panel)
+	panel.acted.connect(_action)
+	panel.dismissed.connect(_screen_closed.bind(panel))
+	panel.planet_requested.connect(_show_planet_v2)
 
 func _choose_template(key: String, build: bool) -> void:
 	if not build and selected_reactor < 0:
@@ -1300,7 +1269,7 @@ func _show_help() -> void:
 		["02  收获与扩张", "点击注入微光赚金币。炉子持续产生待收金币和产物；收获时概率获得星砂、晶露、合金片。点击虚线地块开拓。"],
 		["03  带伙伴来", "先造住宅，再招募伙伴。工程师到岗后才施工；科研小镇可以查看性格、日薪和生活心愿。"],
 		["04  接一张订单", "每次到访可交付一次，之后等待20秒。库存达到3份即可交付。种类相符且几何响应与目标相差≤5个百分点，获得精品催化晶，用来升级炉子。"],
-		["05  元素替换", "元素仓库购买原料 → 工作台选择位点 → 预览替换。应用时扣库存与一次编辑费；未识别的探索组合不参与精品订单。"],
+		["05  元素从哪里来", "海水、空气和水在精炼厂自动产出 H、C、N、O、Na、Cl、Br；铜、铝、铅、硫、氟、锂、铯要去星球地下采矿，再到精炼厂提炼。工作台选择位点 → 预览替换，应用时扣库存与一次编辑费。"],
 		["06  解锁新知识", "先造科研院所和博士公寓，再招募博士生开展基础课题。院士增加进阶课题名额，教授可选带队提效；研究站保留势函数和一维DFT教学任务。"]
 	]:
 		body.add_child(UI.label(entry[0],20,UI.GOLD))
@@ -1513,18 +1482,23 @@ func _run_visual_test() -> void:
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png("res://artifacts/map-v02.png")
 	_close_modal()
-	_show_elements()
+	state.planet.v2.nature.minerals["halite"]=int(state.planet.v2.nature.minerals.get("halite",0))+3
+	_show_refinery("Cl")
 	await get_tree().process_frame
 	await RenderingServer.frame_post_draw
-	get_viewport().get_texture().get_image().save_png("res://artifacts/warehouse-v03.png")
-	_confirm_element_purchase("Cl",5)
-	await get_tree().process_frame
+	get_viewport().get_texture().get_image().save_png("res://artifacts/refinery-v028.png")
 	var old_chlorine: int = state.element_inventory.Cl
 	var old_wallet: float = state.coins
-	var purchase_position: Vector2 = purchase_confirm_button.get_global_rect().get_center()
-	await _test_pointer(purchase_position,true)
-	await _test_pointer(purchase_position,false)
-	assert(state.element_inventory.Cl == old_chlorine+5 and state.coins == old_wallet-40,"Purchase confirmation charges coins and adds exactly five Cl")
+	var refine_button: Button = null
+	for b in modal.processes.find_children("*","Button",true,false):
+		if b.text=="开始精炼" and b.get_parent().get_child(0).text.begins_with("岩盐熔融电解"): refine_button=b
+	var refine_position: Vector2 = refine_button.get_global_rect().get_center()
+	await _test_pointer(refine_position,true)
+	await _test_pointer(refine_position,false)
+	for i in range(2): state.refinery.start(state,"halite_electrolysis")
+	state.refinery.tick(state,3.0*float(state.refinery.process("halite_electrolysis").seconds))
+	assert(state.element_inventory.Cl >= old_chlorine+6 and state.coins == old_wallet,"Refining three halite adds chlorine without spending coins")
+	old_chlorine = state.element_inventory.Cl
 	_close_modal()
 	_select_plot(4)
 	_open_editor()
@@ -1577,9 +1551,9 @@ func _run_visual_test() -> void:
 	get_viewport().get_texture().get_image().save_png("res://artifacts/chloride-v03.png")
 	crystal_editor._cancel()
 	await get_tree().process_frame
-	assert(state.element_inventory.Cl == old_chlorine+5,"Canceling grouped substitution spends no elements")
+	assert(state.element_inventory.Cl == old_chlorine,"Canceling grouped substitution spends no elements")
 	_close_modal()
-	print("UI SMOKE PASS: existing island/market/touch flows, warehouse purchase, element palette, free preview, substitution commit, unknown labeling, undo, Android back, grouped halide preview and cancel")
+	print("UI SMOKE PASS: existing island/market/touch flows, refinery electrolysis, element palette, free preview, substitution commit, unknown labeling, undo, Android back, grouped halide preview and cancel")
 	get_tree().quit()
 
 func _test_pointer(pos: Vector2, down: bool) -> void:

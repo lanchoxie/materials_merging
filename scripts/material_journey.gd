@@ -12,7 +12,7 @@ static func next(state) -> Dictionary:
 		for reactor in state.reactors:
 			if not f.model.counts(state.reactor_work(reactor)).is_empty(): return step(1,"收集反应炉样品","等待生产完成后收集。炉子里的待收集产物还不能用于订单或档案。","island","回岛收集")
 		if state.element_inventory.get("Cu",0)>0 and state.element_inventory.get("Al",0)>0: return step(1,"搭建铜铝投料提案","在工作台加入铜与铝，保存并装炉；博士负责搬运，坐标由你决定。","sandbox","打开结构工坊")
-		return step(1,"准备铜与铝","购买两种元素，再搭一个铜铝作品。可以先试2份铜、1份铝。","elements","前往元素商店")
+		return step(1,"准备铜与铝","去星球地下挖孔雀石、铝土矿和煤，在精炼厂炼出铜和铝，再搭一个铜铝作品。可以先试2份铜、1份铝。","refinery","前往精炼厂")
 	if not f.unlocked(state): return step(2,"学习热阻网络方法","教授1人指导博士2人，在连通的科研院所开展分层构件方法课题。这里只解锁有范围的计算方法。","research","查看科研团队")
 	var design=""
 	for id in p.materials.designs:
