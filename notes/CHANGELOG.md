@@ -30,6 +30,19 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.30.0 "Fabricator": real properties become gear
+The user asked for the next version after the v0.29 APK. Full notes: [12-fabricator.md](12-fabricator.md).
+- **制造台 (Fabricator).** Stored crystals the index recognises become gear, with numbers from their real data.
+  - **Pick heads**: Vickers hardness from MP elastic moduli (Chen et al. 2011). Ductile metals, alkali/halide compounds and inconsistent elastic data are refused with the reason.
+  - **Solar panels**: Shockley–Queisser limit at the MP band gap; up to 3 on the refinery roof speed refining.
+  - A rock table shows the hits each rock needs with the current pick. There is a sources overlay, a 5-step tour, and help entry 08.
+- **Digging.** Rock hardness from Mohs via measured Vickers values of the Mohs minerals (Broz et al. 2006).
+  - The starter pick (5.43 GPa, a game value) is slower in granite, basalt, cassiterite, spodumene and pollucite (up to ×3), never blocked.
+- **Iron and tin.** New elements Fe and Sn, with blast-furnace (hematite) and cassiterite smelting in the refinery.
+  - The MP index was rebuilt for 16 elements: 1 835 crystals.
+- New batches remember their index key. Save **v26** (`fabricator`); older saves load with the starter pick.
+- Tests: new `test_fabricator` (40) and `test_fabricator_ui` (20); `test_state` expects save v26.
+
 ## v0.29.0 "Index": a real chemistry database inside the game
 The user supplied a Materials Project API key and asked for the planned index. Full notes: [11-index.md](11-index.md).
 - **Offline pipeline** `dev/chem_index/`:

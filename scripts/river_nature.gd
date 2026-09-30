@@ -2,12 +2,15 @@ extends RefCounted
 ## Sparse, persistent changes over deterministic terrain. Inventory commits are atomic.
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/river_nature.json"))
 const Geology=preload("res://scripts/planet_geology.gd")
+const Fabricator=preload("res://scripts/fabricator.gd")
 const SOIL_ONLY="树苗需要种在表土或黏土上"
 var voxels={}      # Vector3i -> material id; "" means dug out
 var columns={}     # Vector2i -> {y: true}: index of edited cells per column
 var minerals={}    # mined stock by material id (表土 goes to the field's soil stock)
 var discovered={}  # material id -> true (矿物图鉴)
 var mining={}      # transient hit progress on one cell
+var pick_hv=-1.0   # v0.30: equipped pick hardness (GPa), set by LabState.sync_gear; <0 = starter pick
+var pick_name=""
 var trees={}
 var seeds={"oak":0,"birch":0,"pine":0}
 var revision=0
@@ -144,7 +147,10 @@ func dig(aim: Dictionary,v) -> String:
 	if not soil and int(minerals.get(id,0))>=int(rules.max_mineral_stock): return "%s已装满，先放置或带回一些" % spec.name
 	if mining.get("cell")!=c: mining={"cell":c,"hits":0}
 	mining.hits+=1
-	if mining.hits<int(spec.hits): return "%s · 采掘 %d/%d" % [spec.name,mining.hits,int(spec.hits)]
+	# v0.30: a pick softer than the rock needs more hits (hardness compared on the Vickers scale).
+	var hv: float=pick_hv if pick_hv>0.0 else float(Fabricator.rules().starter_pick.hv)
+	var need: int=Fabricator.dig_hits(id,int(spec.hits),hv)
+	if mining.hits<need: return "%s · 采掘 %d/%d%s" % [spec.name,mining.hits,need,"（%s比岩石软，挖得慢）" % (pick_name if pick_name!="" else "镐头") if need>int(spec.hits) else ""]
 	mining={}
 	set_voxel(c,"",t); touch(p,t)
 	var found=_discover(id)

@@ -22,6 +22,9 @@ const ChemIndex=preload("res://scripts/chem_index.gd")
 var index_found: Dictionary={}
 ## Set on a harvest that adds a new index entry; main shows a banner.
 var index_notice: Dictionary={}
+## v0.30: stored compounds → gear (pick heads, solar panels); see fabricator.gd.
+const Fabricator=preload("res://scripts/fabricator.gd")
+var fabricator=Fabricator.new()
 ## v0.28: minerals → elements; replaces the coin element shop.
 var refinery=Refinery.new()
 var refinery_notice: String=""
@@ -585,6 +588,7 @@ func tick(delta: float):
 	delta=_production_clock
 	_production_clock=0.0
 	market.tick(delta,economy,templates,island_rules.visitors,contracts.offers(self))
+	sync_gear()
 	var refined: Array=refinery.tick(self,delta)
 	if not refined.is_empty(): refinery_notice="；".join(refined)
 	visitor_cooldown = maxf(0.0, visitor_cooldown - delta)
@@ -633,6 +637,7 @@ func offline_catch_up(now: int) -> Dictionary:
 	var units_before := 0; var coins_before := 0.0
 	for r in reactors: units_before += int(r.pending); coins_before += float(r.stored_coins)
 	var left := simulated
+	sync_gear()
 	while left > 0.0:
 		_produce(minf(left, 10.0)); refinery.tick(self, minf(left, 10.0)); left -= 10.0
 	saved_at = now
@@ -1134,7 +1139,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 25, "index_found": index_found.keys(), "refinery": refinery.serialize(), "coach": coach_seen.keys(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 26, "fabricator": fabricator.serialize(), "index_found": index_found.keys(), "refinery": refinery.serialize(), "coach": coach_seen.keys(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1196,8 +1201,9 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 25, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 26, true):
 		return false
+	if int(data.version)>=26 and not Fabricator.new().restore(data.get("fabricator")): return false
 	if int(data.version)>=25 and (not data.get("index_found") is Array or data.index_found.size()>4096 or data.index_found.any(func(id): return not id is String or str(id).length()>40)): return false
 	if int(data.version)>=24 and not Refinery.new().restore(data.get("refinery"),elements): return false
 	if data.has("coach") and (not data.coach is Array or data.coach.size()>32 or data.coach.any(func(id): return not id is String or str(id).length()>32)): return false
@@ -1400,6 +1406,8 @@ func load_game(path: String = "") -> bool:
 	for id in data.get("coach",[]): coach_seen[str(id)]=true
 	index_found={}
 	for id in data.get("index_found",[]): index_found[str(id)]=true
+	fabricator=Fabricator.new()
+	if int(data.version) >= 26: fabricator.restore(data.fabricator)
 	materials = [int(data.materials[0]), int(data.materials[1]), int(data.materials[2])]
 	upgrades = int(data.upgrades)
 	engineers = int(data.engineers)
@@ -1489,6 +1497,7 @@ func load_game(path: String = "") -> bool:
 		# Pre-index saves: what the reactors already hold counts as found, without a windfall.
 		for r in reactors:
 			if float(r.build_left)<=0.0: ChemIndex.record(self,structure_data(r).get("index",{}),false)
+	sync_gear()
 	return true
 
 
@@ -1616,7 +1625,29 @@ func product_snapshot(r: Dictionary) -> Dictionary:
 	var info=structure_data(r)
 	var work=reactor_work(r)
 	if info.has("cell"): work.periodic=true
-	return {"id":signature(r),"name":str(info.name),"formula":str(info.formula),"reference":reference_id(r),"quality":quality(r),"work":work}
+	var found: Dictionary=info.get("index",{})
+	var snapshot={"id":signature(r),"name":str(info.name),"formula":str(info.formula),"reference":reference_id(r),"quality":quality(r),"work":work}
+	# v0.30: the batch remembers what the chemistry index says it is, so the fabricator can read real properties.
+	if ChemIndex.is_find(found): snapshot["index"]=str(found.key); snapshot["index_match"]=str(found.match)
+	return snapshot
+
+## v0.30: the chemistry-index identity of a stored batch. Older batches are identified from their work.
+func batch_index(batch: Dictionary) -> Dictionary:
+	var key=str(batch.get("index",""))
+	if key!="":
+		var entry: Dictionary=ChemIndex.entry_by_key(key)
+		if not entry.is_empty(): return {"kind":"molecule" if entry.has("cid") else "crystal","match":str(batch.get("index_match","composition")),"entry":entry,"key":key,"polymorphs":0}
+	var work: Dictionary=batch.get("work",{}).duplicate()
+	var base: Dictionary=templates.get(str(work.get("baseline_id","")),{})
+	if not base.is_empty():
+		work["occupancies"]=base.get("occupancies",[]); work["family"]=str(base.get("family","")); work["chapter"]=str(base.get("chapter",""))
+	return ChemIndex.identify(work)
+
+## v0.30: gear acts through the digging rule and the refinery speed; both read plain numbers set here.
+func sync_gear() -> void:
+	planet.v2.nature.pick_hv=fabricator.pick_hv()
+	planet.v2.nature.pick_name=fabricator.pick_name()
+	refinery.power_gain=fabricator.refinery_gain()
 
 func _queue_install(r: Dictionary, payload: Dictionary, quote: Dictionary) -> String:
 	r["installation"]={"payload":payload.duplicate(true),"remaining":float(island_rules.logistics.installation_seconds),"fee":int(quote.fee),"elements":quote.required.duplicate()}

@@ -19,6 +19,16 @@
       "name": "RSC Periodic Table: aluminium",
       "url": "https://periodic-table.rsc.org/element/13/aluminium",
       "scope": "Al covalent radius 1.24 Angstrom, display only; reviewed 2026-09-19"
+    },
+    {
+      "name": "RSC Periodic Table: iron",
+      "url": "https://periodic-table.rsc.org/element/26/iron",
+      "scope": "Fe covalent radius 1.24 Angstrom, display only; reviewed 2026-10-01"
+    },
+    {
+      "name": "RSC Periodic Table: tin",
+      "url": "https://periodic-table.rsc.org/element/50/tin",
+      "scope": "Sn covalent radius 1.40 Angstrom, display only; reviewed 2026-10-01"
     }
   ],
   "note": "元素是种类；半径属于具体成键环境。radius 为展示默认值，结构中的 atom_contexts 优先。分子共价半径的 oxidation_state=null 表示本展示未指派形式氧化态，并非零价。未知数据不能自动当作零能量或精品。",
@@ -180,6 +190,26 @@
       "oxidation_state": null,
       "coordination": null,
       "source": "https://periodic-table.rsc.org/element/13/aluminium ; display only, not metallic nearest-neighbor distance"
+    },
+    "Fe": {
+      "name": "铁",
+      "radius": 1.24,
+      "radius_type": "共价半径（RSC展示参考）",
+      "color": "e06633",
+      "atomic_number": 26,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "https://periodic-table.rsc.org/element/26/iron ; display only, not metallic nearest-neighbor distance"
+    },
+    "Sn": {
+      "name": "锡",
+      "radius": 1.4,
+      "radius_type": "共价半径（RSC展示参考）",
+      "color": "668080",
+      "atomic_number": 50,
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "https://periodic-table.rsc.org/element/50/tin ; display only, not metallic nearest-neighbor distance"
     }
   }
 }

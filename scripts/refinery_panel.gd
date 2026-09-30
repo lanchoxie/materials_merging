@@ -58,7 +58,7 @@ func _fingerprint() -> String:
 func _redraw() -> void:
 	fingerprint=_fingerprint()
 	var r=state.refinery
-	level_label.text="Lv.%d · 速度×%.2f · 自动上限%d · 队列%d" % [r.level,r.speed(),r.extractor_cap(),r.queue_limit()]
+	level_label.text="Lv.%d · 速度×%.2f%s · 自动上限%d · 队列%d" % [r.level,r.speed(),"（含太阳能 +%d%%）" % roundi(100.0*float(r.power_gain)) if float(r.power_gain)>0.0 else "",r.extractor_cap(),r.queue_limit()]
 	var cost=r.upgrade_cost()
 	upgrade_button.text="精炼厂已满级" if cost<0 else "升级到 Lv.%d · %d金币\n速度+25%%，自动上限+6，队列+1" % [r.level+1,cost]
 	upgrade_button.disabled=cost<0 or state.coins<cost

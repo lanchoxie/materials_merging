@@ -59,6 +59,19 @@ static func steps(game, id: String) -> Array:
 				{"target": func(): return m.start_button, "title": "请博士装炉",
 					"text": "元素齐了点开始。博士会沿小路走来，元素小球先在炉口旋转，装完再落进腔体；化合物变了，腔里的固体、液体或气体也会跟着变。"},
 			]
+		"fabricator":
+			return [
+				{"target": func(): return m.materials, "title": "真实性质做装备",
+					"text": "仓库里化学索引认得的晶体会列在这里，每种都算好了能做什么：镐头看硬度，太阳能板看带隙。"},
+				{"target": func(): return m.picks, "title": "镐头的硬度",
+					"text": "硬度由 Materials Project 的弹性模量估算。镐头比岩石软会打滑，要多敲几下；比岩石硬就能正常开采。"},
+				{"target": func(): return m.rocks, "title": "岩石对照",
+					"text": "花岗岩里的锂辉石、锡石都很硬。换一把更硬的镐，这里的敲击次数就会变少。"},
+				{"target": func(): return m.panels_box, "title": "精炼厂屋顶",
+					"text": "带隙在 1.3 eV 左右的半导体效率上限最高。装上的板越好，精炼越快。"},
+				{"target": func(): return m.sources_button, "title": "规则都有出处",
+					"text": "模型、测量数据和游戏简化分开写清楚；数据不够时显示「不适用」或「未测」。"},
+			]
 		"index":
 			return [
 				{"target": func(): return game.index_tabs, "title": "两个真实数据库",

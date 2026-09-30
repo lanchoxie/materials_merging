@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Equations and process names follow standard industrial chemistry (sources below). Seconds, yields, caps and coin prices are game values. One mined block counts as two formula units of its mineral; only elements that exist as game atoms are recovered, everything else (Si, Ca, Fe…) leaves as slag.",
+  "note": "Equations and process names follow standard industrial chemistry (sources below). Seconds, yields, caps and coin prices are game values. One mined block counts as two formula units of its mineral; only elements that exist as game atoms are recovered, everything else (Si, Ca, K…) leaves as slag.",
   "sources": [
     {"name": "Greenwood & Earnshaw, Chemistry of the Elements, 2nd ed. (1997) — production chapters for each element"},
     {"name": "Wikipedia: Downs cell", "url": "https://en.wikipedia.org/wiki/Downs_cell"},
@@ -10,7 +10,9 @@
     {"name": "Wikipedia: Air separation", "url": "https://en.wikipedia.org/wiki/Air_separation"},
     {"name": "Wikipedia: Bromine — production", "url": "https://en.wikipedia.org/wiki/Bromine"},
     {"name": "Wikipedia: Lithium — production", "url": "https://en.wikipedia.org/wiki/Lithium"},
-    {"name": "Wikipedia: Caesium — production", "url": "https://en.wikipedia.org/wiki/Caesium"}
+    {"name": "Wikipedia: Caesium — production", "url": "https://en.wikipedia.org/wiki/Caesium"},
+    {"name": "Wikipedia: Blast furnace", "url": "https://en.wikipedia.org/wiki/Blast_furnace"},
+    {"name": "Wikipedia: Cassiterite — tin smelting", "url": "https://en.wikipedia.org/wiki/Cassiterite"}
   ],
   "max_level": 5,
   "upgrade_costs": [300, 800, 2000, 4500],
@@ -50,6 +52,10 @@
     "spodumene_lithium": {"name": "锂辉石提锂", "method": "硫酸焙烧 + LiCl 熔盐电解", "inputs": {"spodumene": 1, "sulfur": 1}, "outputs": {"Li": 2}, "seconds": 50,
       "equation": "锂辉石 → Li₂SO₄ → Li₂CO₃ → LiCl；2LiCl → 2Li + Cl₂", "detail": "先在约1050 °C 把锂辉石转成易反应的 β 型，再用硫酸焙烧浸出锂。"},
     "pollucite_cesium": {"name": "铯榴石提铯", "method": "酸浸 + 金属钙真空还原", "inputs": {"pollucite": 1, "limestone": 1}, "outputs": {"Cs": 4}, "seconds": 60,
-      "equation": "2CsCl + Ca → 2Cs + CaCl₂（真空，约750 °C）", "detail": "铯榴石几乎是铯唯一的工业矿物；还原用的钙由石灰石提供（简化）。"}
+      "equation": "2CsCl + Ca → 2Cs + CaCl₂（真空，约750 °C）", "detail": "铯榴石几乎是铯唯一的工业矿物；还原用的钙由石灰石提供（简化）。"},
+    "hematite_iron": {"name": "赤铁矿炼铁", "method": "高炉 · 焦炭还原", "inputs": {"hematite": 1, "coal": 1}, "outputs": {"Fe": 4}, "seconds": 35,
+      "equation": "2C + O₂ → 2CO；Fe₂O₃ + 3CO → 2Fe + 3CO₂", "detail": "焦炭燃烧生成一氧化碳，把氧化铁还原成铁水；石灰石助熔带走脉石（这里省略）。"},
+    "cassiterite_tin": {"name": "锡石炼锡", "method": "碳还原 · 约1200 °C", "inputs": {"cassiterite": 1, "coal": 1}, "outputs": {"Sn": 2}, "seconds": 30,
+      "equation": "SnO₂ + C → Sn + CO₂", "detail": "锡石几乎是锡唯一的工业矿物。青铜时代的人把锡加进铜里，得到比纯铜更硬的青铜。"}
   }
 }

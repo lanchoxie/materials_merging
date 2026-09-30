@@ -66,7 +66,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   phase visuals, return-where-you-came-from navigation and first-time tours.
 - ✅ v0.29 "Index" (tag `v0.29.0`; see [11-index.md](11-index.md)): offline chemistry index from Materials Project and PubChem
   (COD deferred); real properties, 3D structures and sources in the codex; substitution reaches real compounds.
-- v0.30 "Fabricator": compounds → gear, machines, emitters; stats from real properties (closed loop).
+- ✅ v0.30 "Fabricator" (tag `v0.30.0`; see [12-fabricator.md](12-fabricator.md)): crystals → pick heads (hardness from
+  MP elastic moduli, Chen 2011) and refinery solar panels (Shockley–Queisser at the MP gap); rocks slow a soft pick;
+  Fe and Sn smelting. Machines and emitters move to v0.31.
 - v0.31 "Earth": environment field (planet + region grid), emitters, biome shifts.
 - v0.31 "Specimens": extractor on creatures and native buildings, island museum, specimen codex.
 - v0.32 "Ice Age": timeline framework, mammoths and a tribe, time gate.

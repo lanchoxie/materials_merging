@@ -21,6 +21,7 @@ const FactoryPanel=preload("res://scripts/factory_panel.gd")
 const PlanetV2Panel=preload("res://scripts/planet_v2_panel.gd")
 const IslandWalk=preload("res://scripts/island_walk_panel.gd")
 const RefineryPanel=preload("res://scripts/refinery_panel.gd")
+const FabricatorPanel=preload("res://scripts/fabricator_panel.gd")
 const ReactorLook=preload("res://scripts/reactor_look.gd")
 const Coach=preload("res://scripts/coach.gd")
 const CoachTours=preload("res://scripts/coach_tours.gd")
@@ -198,7 +199,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.29.0 化学索引  ·  真实数据库 · 三维结构 · 数据来源", 11, UI.MUTED)
+	save_label = UI.label("v0.30.0 制造台  ·  真实硬度做镐头 · 带隙做太阳能板 · 铁与锡", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -333,6 +334,7 @@ func _build_toolbar() -> void:
 		["科研小镇", _show_crew],
 		["工具箱", _show_toolbox],
 		["精炼厂", _show_refinery],
+		["制造台", _show_fabricator],
 		["□  结构工坊", _show_sandbox]
 	]
 	for entry in buttons:
@@ -1013,6 +1015,7 @@ func _show_island_panel(page: String, visitor: int=-1) -> void:
 func _navigate_materials(route: String) -> void:
 	match route:
 		"elements", "refinery": _show_refinery()
+		"fabricator": _show_fabricator()
 		"sandbox": _show_sandbox()
 		"research": _show_campus("research")
 		"mail": _show_market()
@@ -1089,6 +1092,17 @@ func _show_refinery(symbol: String="") -> void:
 	panel.dismissed.connect(_screen_closed.bind(panel))
 	panel.planet_requested.connect(_show_planet_v2)
 	_coach("refinery")
+
+## v0.30: stored crystals → pick heads (hardness) and solar panels (band gap) with real properties.
+func _show_fabricator() -> void:
+	_replace_modal()
+	var panel=FabricatorPanel.new(); add_child(panel); modal=panel
+	panel.setup(state)
+	_label_return(panel)
+	panel.acted.connect(_action)
+	panel.dismissed.connect(_screen_closed.bind(panel))
+	panel.refinery_requested.connect(_show_refinery)
+	_coach("fabricator")
 
 func _choose_template(key: String, build: bool) -> void:
 	if not build and selected_reactor < 0:
@@ -1469,9 +1483,10 @@ func _show_help() -> void:
 		["02  收获与扩张", "点击注入微光赚金币。炉子持续产生待收金币和产物；收获时概率获得星砂、晶露、合金片。点击虚线地块开拓。"],
 		["03  带伙伴来", "先造住宅，再招募伙伴。工程师到岗后才施工；科研小镇可以查看性格、日薪和生活心愿。"],
 		["04  接一张订单", "每次到访可交付一次，之后等待20秒。库存达到3份即可交付。种类相符且几何响应与目标相差≤5个百分点，获得精品催化晶，用来升级炉子。"],
-		["05  元素从哪里来", "海水、空气和水在精炼厂自动产出 H、C、N、O、Na、Cl、Br；铜、铝、铅、硫、氟、锂、铯要去星球地下采矿，再到精炼厂提炼。工作台选择位点 → 预览替换，应用时扣库存与一次编辑费。"],
+		["05  元素从哪里来", "海水、空气和水在精炼厂自动产出 H、C、N、O、Na、Cl、Br；铜、铝、铅、铁、锡、硫、氟、锂、铯要去星球地下采矿，再到精炼厂提炼。工作台选择位点 → 预览替换，应用时扣库存与一次编辑费。"],
 		["06  解锁新知识", "先造科研院所和博士公寓，再招募博士生开展基础课题。院士增加进阶课题名额，教授可选带队提效；研究站保留势函数和一维DFT教学任务。"],
-		["07  化学索引", "图鉴里的「化学索引」收了一千多种真实物质：分子来自 PubChem，晶体来自 Materials Project。做出其中任何一种并收获一次，就会收录并得到金币；没收录的结构保持「假说」，不编造性质。"]
+		["07  化学索引", "图鉴里的「化学索引」收了一千多种真实物质：分子来自 PubChem，晶体来自 Materials Project。做出其中任何一种并收获一次，就会收录并得到金币；没收录的结构保持「假说」，不编造性质。"],
+		["08  制造台", "化学索引认得的晶体可以在制造台做成装备：硬度高的做镐头，深层硬岩挖得更快；有合适带隙的做太阳能板，装到精炼厂屋顶加快精炼。数值都来自真实性质。"]
 	]:
 		body.add_child(UI.label(entry[0],20,UI.GOLD))
 		body.add_child(UI.paragraph(entry[1],16))

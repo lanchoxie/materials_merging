@@ -17,6 +17,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [09-island-town.md](09-island-town.md) | v0.27 island town: tile placement, decorations, pedestals, tier looks |
 | [10-refinery.md](10-refinery.md) | v0.28: navigation stack, refinery, reactor tiers and phases, first-time tours |
 | [11-index.md](11-index.md) | v0.29: offline MP/PubChem chemistry index, honest matching, index browser, credits |
+| [12-fabricator.md](12-fabricator.md) | v0.30: crystals → pick heads (Chen hardness) and solar panels (Shockley–Queisser); Fe/Sn smelting |
 | [CHANGELOG.md](CHANGELOG.md) | Running log of what has actually been shipped on this track |
 
 Quick commands:

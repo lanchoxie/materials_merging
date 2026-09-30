@@ -8,6 +8,7 @@ var level=1
 var jobs: Array=[]           # queue of {"process":id,"left":seconds}; only the first one runs
 var progress: Dictionary={}  # extractor id -> accumulated seconds
 var made: Dictionary={}      # element -> units produced here (stats and guidance)
+var power_gain=0.0          # v0.30: extra speed from fabricator solar panels (set by LabState.sync_gear, not saved)
 
 static func rules() -> Dictionary:
 	if _rules.is_empty(): _rules=JSON.parse_string(FileAccess.get_file_as_string("res://data/refinery.json"))
@@ -17,7 +18,7 @@ func process(id: String) -> Dictionary:
 	return rules().processes.get(id,{})
 
 func speed() -> float:
-	return 1.0+float(rules().speed_per_level)*(level-1)
+	return (1.0+float(rules().speed_per_level)*(level-1))*(1.0+power_gain)
 
 func extractor_cap() -> int:
 	return int(rules().extractor_cap)+int(rules().extractor_cap_per_level)*(level-1)

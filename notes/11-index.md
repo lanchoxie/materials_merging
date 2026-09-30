@@ -1,5 +1,8 @@
 # 11 · v0.29 "Index": a real chemistry database inside the game
 
+> v0.30 added Fe and Sn and rebuilt the crystal list with the same filters: 1 835 entries (682 observed), 949 formulas.
+> The numbers below are the v0.29 build. See [12-fabricator.md](12-fabricator.md) §3.
+
 The plan is in [08-chemistry-loop.md](08-chemistry-loop.md) §2. The user supplied a Materials Project API key on 2026-10-01.
 The key lives only in `.runtime/secrets/mp_api_key` (gitignored). It is never committed, logged, or bundled.
 
