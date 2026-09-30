@@ -19,7 +19,13 @@ func entries(state) -> Dictionary:
 		var spec=v.field.rules.resources[id]; var key="raw:"+str(id)
 		if int(v.field.stock[id])<=0 and key not in slots: continue
 		var action={"type":"feed","resource":id} if id in ["fruit","grain"] else ({"type":"fill"} if id=="soil" else {})
-		result[key]=_item(key,spec.name,"raw",spec.icon,int(v.field.stock[id]),"从河湾采集或收获，回浮岛仍在同一背包中。"+("瞄准地面填高一格；消耗1份土方，可用铲子挖回。" if id=="soil" else ("瞄准小兽可喂食，也可送入粮仓。" if not action.is_empty() else "到工艺车间加工成建材，无需购买标准供料。")),action)
+		result[key]=_item(key,spec.name,"raw",spec.icon,int(v.field.stock[id]),"从河湾采集或收获，回浮岛仍在同一背包中。"+("瞄准地面填高一格；消耗1份土方，可用采掘镐挖回。" if id=="soil" else ("瞄准小兽可喂食，也可送入粮仓。" if not action.is_empty() else "到工艺车间加工成建材，无需购买标准供料。")),action)
+	for id in v.nature.minerals:
+		var spec=v.nature.Geology.info(str(id)); var key="rock:"+str(id)
+		if int(v.nature.minerals[id])<=0 and key not in slots: continue
+		result[key]=_item(key,str(spec.name),"minerals","rock",int(v.nature.minerals[id]),"%s
+采掘镐从地下挖出的真实矿物方块。拿起后瞄准地面或岩壁的一个面按 E 放置；后续版本可在浮岛精炼成元素。" % v.nature.Geology.describe(str(id)),{"type":"place_rock","mineral":id})
+		result[key].color=str(spec.color)
 	for species in v.nature.seeds:
 		var spec=v.nature.rules.species[species]; var key="tree:"+str(species)
 		if v.nature.seeds[species]>0 or key in slots: result[key]=_item(key,spec.seed,"trees","seed",int(v.nature.seeds[species]),"种在空地长成"+str(spec.name)+"；用水样或标准水箱浇灌可加快生长。",{"type":"tree_plant","species":species})
@@ -87,10 +93,10 @@ func bind_slot(index: int,id: String,items: Dictionary) -> bool:
 	return true
 
 func serialize() -> Dictionary:
-	return {"version":1,"slots":slots.duplicate(),"selected":selected}
+	return {"version":2,"slots":slots.duplicate(),"selected":selected}
 
 func restore(data) -> bool:
-	if not data is Dictionary or data.get("version")!=1 or not data.get("slots") is Array or data.slots.size()!=int(rules.slots): return false
+	if not data is Dictionary or data.get("version") not in [1,2,1.0,2.0] or not data.get("slots") is Array or data.slots.size()!=int(rules.slots): return false
 	var n=data.get("selected")
 	if not (n is int or n is float) or not is_finite(float(n)) or n!=floor(n) or n<0 or n>=int(rules.slots): return false
 	var seen={}
@@ -98,7 +104,12 @@ func restore(data) -> bool:
 		if not id is String or id.length()>160: return false
 		if id.is_empty(): continue
 		if seen.has(id): return false
-		if not (id.begins_with("solution:") or id.begins_with("recipe:") or id.begins_with("sample:") or id.begins_with("raw:") or id.begins_with("tree:") or id.begins_with("mini:") or id=="seed:grain" or id=="food" or (id.begins_with("tool:") and rules.tools.has(id.trim_prefix("tool:")))): return false
+		if not (id.begins_with("solution:") or id.begins_with("recipe:") or id.begins_with("sample:") or id.begins_with("raw:") or id.begins_with("tree:") or id.begins_with("mini:") or id.begins_with("rock:") or id=="seed:grain" or id=="food" or (id.begins_with("tool:") and rules.tools.has(id.trim_prefix("tool:")))): return false
 		seen[id]=true
 	slots=data.slots.duplicate(); selected=int(n)
+	# v0.26: hand the new pick and analyser to pre-Bedrock hotbars once, in free slots only.
+	if int(data.version)==1:
+		for tool in ["tool:dig","tool:scan"]:
+			var free=slots.find("")
+			if tool not in slots and free>=0: slots[free]=tool
 	return true

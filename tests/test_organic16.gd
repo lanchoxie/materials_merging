@@ -26,7 +26,7 @@ func _initialize() -> void:
 		if batches.is_empty(): continue
 		var sample=batches[0]; v.active=true
 		var water=s.product_snapshot(s._new_reactor(5,"water",0)); s.storage.add_product(water,3)
-		var tank=helper.place(v,"mixing_tank",Vector2(12,12)); helper.look(v,Vector2(12,12),0.5)
+		var tank=helper.place(v,"mixing_tank",Vector2(12,12)); helper.look(v,Vector2(12,12),0.4)
 		var token=s.planet.shipment_serial
 		var payload={"batch_id":sample.id,"token":token}
 		s.planet.command(s,"organic_add",payload); s.planet.command(s,"organic_add",payload)
@@ -50,7 +50,7 @@ func _initialize() -> void:
 		var fake_batch={"id":"other","work":flow.draft(s,other)}
 		o.tank(other_tank,v.construction); o.add_input(other_tank,other,fake_batch)
 		check(not o.return_error(id,other_tank,v.construction).is_empty(),"pouring into different compound is refused")
-		helper.look(v,Vector2(12,12),0.5); token=s.planet.shipment_serial
+		helper.look(v,Vector2(12,12),0.4); token=s.planet.shipment_serial
 		payload={"id":id,"token":token}; s.planet.command(s,"organic_apply",payload); s.planet.command(s,"organic_apply",payload)
 		check(not o.bottles.has(id) and o.tanks[tank].water_l==1 and o.tanks[tank].dissolved_g==5,"pour back with retry cannot duplicate bottle or mass")
 		s.planet.command(s,"organic_add",{"batch_id":water.id,"token":s.planet.shipment_serial})

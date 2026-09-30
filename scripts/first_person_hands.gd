@@ -36,6 +36,12 @@ func set_tool(kind: String) -> void:
 		G.cube(st,Vector3(0,0.39,-0.14),Vector3(0.10,0.08,0.10),Color("dac389"))
 		G.cube(st,Vector3(0,0.23,-0.235),Vector3(0.13,0.11,0.015),Color("f6e9bf"))
 		G.cube(st,Vector3(0,0.23,-0.245),Vector3(0.065,0.05,0.012),Color("5ca879"))
+	elif kind=="scan":
+		G.cube(st,Vector3(0,0.2,-0.12),Vector3(0.16,0.26,0.07),Color("3b4b55"))
+		G.cube(st,Vector3(0,0.25,-0.16),Vector3(0.12,0.12,0.012),Color("7ee0c9"))
+		G.cube(st,Vector3(0,0.36,-0.12),Vector3(0.04,0.06,0.04),Color("f1c96a"))
+	elif kind.begins_with("place_rock"):
+		G.cube(st,Vector3(0,0.22,-0.14),Vector3(0.22,0.22,0.22),Color(kind.get_slice(":",1)) if kind.contains(":") else Color("a0948f"))
 	elif kind=="organic_sample":
 		G.cube(st,Vector3(0,0.22,-0.14),Vector3(0.22,0.24,0.19),Color("f3eee0"))
 		G.cube(st,Vector3(0,0.25,-0.242),Vector3(0.14,0.07,0.02),Color("6cbea6"))

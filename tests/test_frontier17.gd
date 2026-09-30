@@ -33,8 +33,9 @@ func _initialize() -> void:
 			if not t.blocked(point) and not t.on_path(point): clear=point; break
 		if clear!=Vector2.ZERO: break
 	check(clear!=Vector2.ZERO,"far wilderness has accessible land")
-	var before=t.height_at(clear); v.nature.terraform(-1,Vector3(clear.x,before,clear.y),v)
-	check(t.height_at(clear)==before-1 and v.field.stock.soil==1,"remote digging changes persistent terrain and yields finite soil")
+	var before=t.height_at(clear); var top=Vector3i(int(clear.x),ceili(before)-1,int(clear.y))
+	var drop=t.cell_height(top); v.nature.dig({"voxel":top},v)
+	check(is_equal_approx(t.height_at(clear),before-drop) and v.field.stock.soil==1,"remote digging changes persistent terrain and yields finite soil")
 	var tree=t.tree_records(t.chunk_at(p))[0]
 	for i in range(int(v.nature.rules.chop_hits)): v.nature.chop(tree.id,v.field,t)
 	check(v.nature.trees[tree.id].cut,"remote tree can be harvested beyond original 512 metre save bound")

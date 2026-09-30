@@ -57,7 +57,7 @@ func setup(model) -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var heading=UI.label("河湾 · 一片会生长的世界",30,UI.MINT); heading.position=Vector2(28,18); add_child(heading)
-	var sub=UI.label("上帝视角 ↔ 第一人称   /   0.21 开发预览 · 单星球版   /   约16公里探索区",14,UI.MUTED); sub.position=Vector2(30,62); add_child(sub)
+	var sub=UI.label("上帝视角 ↔ 第一人称   /   0.26 基岩 · 方块地层与真实矿物   /   约16公里探索区",14,UI.MUTED); sub.position=Vector2(30,62); add_child(sub)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1288,22); close.size=Vector2(124,48); add_child(close)
 	time_label=UI.label("",19,UI.GOLD); time_label.position=Vector2(680,28); time_label.size=Vector2(580,38); time_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; add_child(time_label)
 	var region_bar=UI.row(self,8); region_bar.position=Vector2(28,99)
@@ -220,9 +220,9 @@ func _use_item(id: String,alternate: String="") -> void:
 	var target=state.planet.v2.Target.query(state.planet.v2)
 	if alternate=="pantry": _act("v2_field_pantry",{"resource":action.get("resource","")}); return
 	if alternate=="deploy" and type=="build": type="product"
-	view.hands.set_tool(type); view.hands.swing()
-	if type in ["axe","dig","fill","tree_plant","mini_pack","mini_unfold"]:
-		var command={"axe":"v2_chop","dig":"v2_dig","fill":"v2_fill","tree_plant":"v2_tree_plant","mini_pack":"v2_mini_pack","mini_unfold":"v2_mini_unfold"}
+	view.hands.set_tool(type+(":"+str(item.get("color","")) if type=="place_rock" else "")); view.hands.swing()
+	if type in ["axe","dig","fill","place_rock","scan","tree_plant","mini_pack","mini_unfold"]:
+		var command={"axe":"v2_chop","dig":"v2_dig","fill":"v2_fill","place_rock":"v2_place_rock","scan":"v2_scan","tree_plant":"v2_tree_plant","mini_pack":"v2_mini_pack","mini_unfold":"v2_mini_unfold"}
 		_act(command[type],action)
 	elif type in ["build","remove"]:
 		_update_actor()
@@ -331,7 +331,7 @@ func _aim() -> void:
 	var action: Dictionary=item.get("action",{})
 	var target=v.Target.query(v)
 	encounter_hud.target=target
-	view.hands.set_tool(str(action.get("type","collect")))
+	view.hands.set_tool(str(action.get("type","collect"))+(":"+str(item.get("color","")) if action.get("type")=="place_rock" else ""))
 	aim_label.text=view.construction_view.preview(v.construction,v.actor,build_mode,state.planet.products,str(action.get("recipe","")))
 	if build_mode=="observe": aim_label.text=v.Target.prompt(v,target)
 	if build_mode=="observe" and action.get("type")!="collect":
@@ -355,11 +355,11 @@ func _act(action: String,payload: Dictionary={}) -> void:
 	message=state.planet.command(state,action,payload); _feel(action); acted.emit(message); _refresh_hotbar(); _redraw(); _sync()
 
 ## Each tool gets its own sound; impacts nudge the first-person camera. Failures only buzz.
-const ACTION_SOUNDS={"v2_chop":["chop",1.0],"v2_dig":["dig",1.0],"v2_fill":["dig",0.8],"v2_strike":["hit",1.0],
+const ACTION_SOUNDS={"v2_chop":["chop",1.0],"v2_dig":["dig",1.0],"v2_fill":["dig",0.8],"v2_place_rock":["build",0.9],"v2_scan":["whoosh",1.4],"v2_strike":["hit",1.0],
 	"v2_build":["build",1.0],"v2_dismantle":["build",0.8],"v2_tree_plant":["pop",0.9],"v2_field_plant":["pop",1.0],"v2_plant":["pop",1.0],
 	"v2_field_collect":["pop",1.25],"v2_collect_wild":["pop",1.25],"v2_harvest":["harvest",1.0],"v2_field_water":["whoosh",1.2],
 	"v2_field_feed":["pop",1.1],"v2_mini_pack":["close",1.0],"v2_mini_unfold":["open",1.0],"v2_deploy_product":["build",1.1]}
-const KICK_ACTIONS={"v2_chop":1.0,"v2_dig":0.8,"v2_fill":0.6,"v2_strike":1.2,"v2_build":0.5,"v2_dismantle":0.5}
+const KICK_ACTIONS={"v2_chop":1.0,"v2_dig":0.8,"v2_fill":0.6,"v2_place_rock":0.6,"v2_strike":1.2,"v2_build":0.5,"v2_dismantle":0.5}
 
 func _feel(action: String) -> void:
 	var sfx=get_node_or_null("/root/Sfx")
@@ -378,7 +378,7 @@ func _key() -> String:
 	var life=[]; var crops=[]
 	for a in r.animals: life.append(a.id)
 	for c in r.crops: crops.append([c.crop,c.ready])
-	return str([selected_region,section,_in_wilderness(),v.population.enabled,stock,state.planet.products,life,crops,r.buildings,r.enclosed,v.world.events.size(),v.world.events[0],v.world.seeds,v.world.food,v.construction.revision,v.field.revision,v.ranch.revision,v.organics.revision,v.journey.revision,v.settlement.era,v.settlement.people.map(func(p): return [p.id,p.get("generation",0)])])
+	return str([selected_region,section,_in_wilderness(),v.population.enabled,stock,state.planet.products,life,crops,r.buildings,r.enclosed,v.world.events.size(),v.world.events[0],v.world.seeds,v.world.food,v.construction.revision,v.field.revision,v.ranch.revision,v.organics.revision,v.journey.revision,v.nature.discovered.size(),v.settlement.era,v.settlement.people.map(func(p): return [p.id,p.get("generation",0)])])
 
 func _redraw(reset_scroll: bool=false) -> void:
 	if body==null: return
@@ -492,7 +492,16 @@ func _nearby_text() -> String:
 	return text
 
 func _journal() -> void:
-	var v=state.planet.v2; var events=_card("河湾年鉴")
+	var v=state.planet.v2; var Geology=v.nature.Geology; var all: Dictionary=Geology.rules().materials
+	var codex=_card("矿物图鉴 · %d / %d" % [v.nature.discovered.size(),all.size()])
+	codex.add_child(UI.paragraph("用采掘镐向下挖，或用分析仪扫描岩壁，第一次遇到的岩土和矿物会记在这里。成分来自真实矿物学数据。",14,UI.GOLD))
+	for id in all:
+		var m: Dictionary=all[id]
+		if v.nature.discovered.has(id):
+			var have=int(v.nature.minerals.get(id,0))
+			codex.add_child(UI.paragraph("◆ %s  %s%s" % [m.name,m.formula,"  · 背包 %d" % have if have>0 else ""],15,UI.TEXT))
+		else: codex.add_child(UI.paragraph("◇ ？？？ · %s" % m.layer,14))
+	var events=_card("河湾年鉴")
 	for e in v.world.events:
 		events.add_child(UI.paragraph("第%d天  ·  %s" % [int(float(e.time)/float(v.rules.clock.day_seconds))+1,e.text],15,UI.TEXT))
 	var deliveries=_card("材料足迹 · 最近8次")

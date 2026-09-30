@@ -4,11 +4,12 @@ static func button_text(action: Dictionary,target: Dictionary) -> String:
 	match action.get("type",""):
 		"collect": return "查看 E" if target.has("entity") or target.get("kind") in ["trough","feeder","mixing_tank"] else "采集 E"
 		"strike": return "攻击 E"
-		"build","mini_unfold","fill": return "放置 E"
+		"build","mini_unfold","fill","place_rock": return "放置 E"
 		"remove": return "拆回 E"
 		"plant","tree_plant": return "种植 E"
 		"axe": return "砍树 E"
-		"dig": return "挖土 E"
+		"dig": return "采掘 E"
+		"scan": return "扫描 E"
 		"organic_solution": return "倒回 E" if target.get("kind")=="mixing_tank" or action.get("reference","urea")!="urea" else "施肥 E"
 		"organic_sample": return "加料 E"
 		"feed": return "喂食 E"
@@ -34,6 +35,8 @@ static func prompt(v,item: Dictionary,target: Dictionary,fallback: String) -> St
 	if target.get("kind")=="mixing_tank" and kind=="sample": return "配料罐 · E 加入1份水样（1教学升）"
 	if kind=="strike": return "挥拳 · 瞄准%.1f米内的动物或人物 · E/F 攻击" % v.combat.rules.reach
 	if kind=="tree_plant": return str(item.name)+" · 瞄准空地，E种植"
-	if kind=="fill": return "土方 ×%d · 瞄准地面，E填高" % item.quantity
+	if kind=="fill": return "土方 ×%d · 瞄准地面或岩壁的一个面，E放置" % item.quantity
+	if kind=="place_rock": return "%s ×%d · 瞄准地面或岩壁的一个面，E放置" % [item.name,item.quantity]
+	if kind=="scan" and target.is_empty(): return "分析仪 · 瞄准5米内的岩土、树木或采集点，E扫描"
 	if kind=="mini_unfold": return str(item.name)+" · 瞄准空地，E展开作品"
 	return fallback

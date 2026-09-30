@@ -44,18 +44,24 @@ func trace(origin: Vector3, direction: Vector3) -> Dictionary:
 		var p := origin + direction.normalized() * (i * 0.04)
 		var c := cell_at(p); var k := key(c); var flat := Vector2(p.x,p.z)
 		if blocks.has(k):
-			var normal := previous - c
-			if normal == Vector3i.ZERO: normal = Vector3i.UP
-			# At an edge choose a single face, never a diagonal attachment.
-			if normal.x != 0: normal = Vector3i(signi(normal.x),0,0)
-			elif normal.y != 0: normal = Vector3i(0,signi(normal.y),0)
-			else: normal = Vector3i(0,0,signi(normal.z))
-			return {"hit":k,"target":c+normal,"point":p}
+			return {"hit":k,"target":c+_face(previous-c),"point":p}
 		if not terrain.inside(flat,1): return {}
-		if p.y <= terrain.ground(flat): return {"hit":"","target":Vector3i(c.x,base(c),c.z),"point":p}
+		if terrain.solid(c) and p.y < c.y + terrain.cell_height(c):
+			var normal := _face(previous-c)
+			# A slab's top face builds into the slab cell itself (the block encloses it).
+			var target := c if normal == Vector3i.UP and terrain.cell_height(c) < 1.0 else c+normal
+			return {"hit":"","voxel":c,"target":target,"point":p}
 		if p.y < terrain.ground(flat)+4 and terrain.blocked(flat,obstacles): return {"blocked":true,"point":p}
+		if terrain.bridge(flat) and p.y <= terrain.ground(flat): return {"hit":"","target":Vector3i(c.x,base(c),c.z),"point":p}
 		previous = c
 	return {}
+
+## At an edge choose a single face, never a diagonal attachment.
+func _face(normal: Vector3i) -> Vector3i:
+	if normal == Vector3i.ZERO: return Vector3i.UP
+	if normal.x != 0: return Vector3i(signi(normal.x),0,0)
+	if normal.y != 0: return Vector3i(0,signi(normal.y),0)
+	return Vector3i(0,0,signi(normal.z))
 
 func overlaps(p: Vector2, feet: float, height: float) -> bool:
 	var radius := float(terrain.rules.player_radius)
@@ -66,8 +72,12 @@ func overlaps(p: Vector2, feet: float, height: float) -> bool:
 	return false
 
 func floor_at(p: Vector2, ceiling: float) -> float:
-	var h := terrain.ground(p)
 	var radius := float(terrain.rules.player_radius)
+	var h := -INF
+	for x in range(floori(p.x-radius+0.5),floori(p.x+radius+0.5)+1):
+		for z in range(floori(p.y-radius+0.5),floori(p.y+radius+0.5)+1):
+			h=maxf(h,terrain.floor_below(x,z,ceiling))
+	if terrain.bridge(p) and terrain.ground(p) <= ceiling+0.001: h=maxf(h,terrain.ground(p))
 	for x in range(floori(p.x-radius+0.5),floori(p.x+radius+0.5)+1):
 		for z in range(floori(p.y-radius+0.5),floori(p.y+radius+0.5)+1):
 			for y in range(floori(ceiling)-1, floori(h)-1, -1):
@@ -107,6 +117,7 @@ func place_error(c: Vector3i, actor: Dictionary) -> String:
 	var flat := Vector2(c.x,c.z)
 	if not terrain.inside(flat,2) or c.y < base(c) or c.y > base(c)+int(rules.height_limit): return "请放在地表附近，建筑最高8层"
 	if terrain.blocked(flat,obstacles): return "这里有树木或已有设施，请换一个位置"
+	if terrain.solid(c) and terrain.cell_height(c) >= 1.0: return "这里被岩土占据，请换一个位置"
 	var feet: Vector3 = actor.feet
 	if absf(feet.x-c.x)<0.8 and absf(feet.z-c.z)<0.8 and feet.y<c.y+1 and feet.y+float(terrain.rules.body_height)>c.y: return "构件会碰到你，请退开一点"
 	if Vector3(c.x,c.y+0.5,c.z).distance_to(actor.eye)>float(rules.reach)+0.9: return "离得太远，请走近些"

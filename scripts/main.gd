@@ -160,7 +160,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.25 海岛昼夜  ·  海浪 · 玻璃炉 · 摇曳树影", 11, UI.MUTED)
+	save_label = UI.label("v0.26 基岩  ·  方块地层 · 真实矿物 · 采掘与分析仪", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 

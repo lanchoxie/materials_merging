@@ -176,15 +176,17 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			return "已退回预留供料；本次装罐费不退还"
 		"v2_enter":
 			return v2.enter(str(payload.get("region_id","wetland")))
-		"v2_chop", "v2_dig", "v2_fill", "v2_tree_plant", "v2_strike", "v2_mini_pack", "v2_mini_unfold":
+		"v2_chop", "v2_dig", "v2_fill", "v2_place_rock", "v2_scan", "v2_tree_plant", "v2_strike", "v2_mini_pack", "v2_mini_unfold":
 			if not v2.active or v2.actor.is_empty(): return "进入星球第一人称后再操作"
 			if v2.combat.player_health<=0: return "先回营地休息"
 			var aim=v2.Target.query(v2)
 			match action:
 				"v2_chop": return v2.nature.chop(str(aim.get("tree_id","")),v2.field,v2.construction.terrain)
-				"v2_dig", "v2_fill":
-					if aim.get("type")!="terrain": return "请瞄准没有植物或构件遮挡的地面"
-					return v2.nature.terraform(-1 if action=="v2_dig" else 1,aim.point,v2)
+				"v2_dig", "v2_fill", "v2_place_rock":
+					if aim.get("type")!="terrain": return "请瞄准没有植物或构件遮挡的地面或岩壁"
+					if action=="v2_dig": return v2.nature.dig(aim,v2)
+					return v2.nature.place(aim,"topsoil" if action=="v2_fill" else str(payload.get("mineral","")),v2)
+				"v2_scan": return v2.nature.scan(aim,v2)
 				"v2_tree_plant":
 					if aim.get("type")!="terrain": return "请瞄准空地种树"
 					return v2.nature.plant(str(payload.get("species","")),Vector2(aim.point.x,aim.point.z),v2)

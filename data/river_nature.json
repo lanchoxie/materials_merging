@@ -1,5 +1,6 @@
 {
   "max_edits": 4096, "max_trees": 2048, "height_change_limit": 6,
+  "max_voxels": 16384, "max_mineral_stock": 999, "build_above": 16, "build_ceiling": 96,
   "max_seed_stock": 999, "reach": 5, "chop_hits": 4, "timber_yield": 5,
   "growth_seconds": 240, "rain_growth": 0.45, "watering_growth": 1.0,
   "species": {

@@ -54,7 +54,7 @@ func _ready() -> void:
 	var sea=MeshInstance3D.new(); var ocean=PlaneMesh.new()
 	ocean.size=Vector2.ONE*float(terrain.rules.radius)*6
 	var sea_material=StandardMaterial3D.new(); sea_material.albedo_color=Color("4e8caa"); sea_material.roughness=0.85
-	ocean.material=sea_material; sea.mesh=ocean; sea.position.y=-1.3; terrain_root.add_child(sea)
+	ocean.material=sea_material; sea.mesh=ocean; sea.position.y=terrain.Geology.bedrock_y()-1.0; terrain_root.add_child(sea)  # below bedrock: dug pits must not fill with sea
 	stream=Stream.new(); stream.terrain=terrain; stream.material=mat; terrain_root.add_child(stream); chunks=stream.chunks
 	for id in CENTERS:
 		var n=MeshInstance3D.new(); terrain_root.add_child(n); water_nodes[id]=n

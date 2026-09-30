@@ -79,7 +79,7 @@ func _move(e: Dictionary,target: Vector2,v,speed: float) -> bool:
 		var local=(p-e.origin)/float(e.scale)
 		var bound=3.5 if e.type=="animal" else 9.0
 		if e.type in ["animal","wild"] and (absf(local.x)>bound or absf(local.y)>bound): continue
-		if t.blocked(p,c.obstacles) or c.overlaps(p,t.ground(p),e.height) or absf(t.ground(p)-t.ground(e.position))>0.42: continue
+		if t.blocked(p,c.obstacles) or c.overlaps(p,t.ground(p),e.height) or absf(t.ground(p)-t.ground(e.position))>0.55: continue
 		e.row.x=local.x; e.row.z=local.y; return false
 	if e.has("key") and lives.has(e.key): lives[e.key].task="被困"
 	return false

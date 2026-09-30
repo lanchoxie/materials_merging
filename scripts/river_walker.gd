@@ -49,10 +49,11 @@ func _floor(p: Vector2,ceiling: float) -> float:
 func _step_motion(dt: float) -> void:
 	var direction=Vector3(movement.x,0,movement.y).limit_length(1).rotated(Vector3.UP,yaw)
 	var speed=float(terrain.rules.run_speed if running else terrain.rules.walk_speed)
-	if terrain.height_at(position)<0.1 and not terrain.bridge(position): speed*=float(terrain.rules.wading_multiplier)
+	if terrain.water_at(position) and feet_y<0.3: speed*=float(terrain.rules.wading_multiplier)
 	var offset=Vector2(direction.x,direction.z)*speed*dt
 	# Small substeps prevent tunnelling through a trunk or fence on slow frames.
 	var steps=maxi(1,ceili(offset.length()/0.10))
+	var climb=false
 	for i in range(steps):
 		var d=offset/steps
 		for axis in [Vector2(d.x,0),Vector2(0,d.y)]:
@@ -65,13 +66,18 @@ func _step_motion(dt: float) -> void:
 			var next_y=maxf(feet_y,ground) if grounded else feet_y
 			if terrain.blocked(next,low_barriers) or not can_step: continue
 			if construction!=null and construction.overlaps(next,next_y,float(terrain.rules.body_height)): continue
+			if terrain.overlaps(next,next_y,float(terrain.rules.body_height)):
+				# Minecraft-style auto-jump onto a single natural or dug block step.
+				if grounded and _floor(next,feet_y+1.05)<=feet_y+1.05 and not terrain.overlaps(next,_floor(next,feet_y+1.05),float(terrain.rules.body_height)): climb=true
+				continue
 			position=next; feet_y=next_y
+	if climb and grounded: jump()
 	var floor_height=_floor(position,feet_y+0.001)
 	if grounded and floor_height<feet_y-0.01: grounded=false
 	if not grounded:
 		vertical_speed-=float(terrain.rules.gravity)*dt
 		var next_y=feet_y+vertical_speed*dt
-		if vertical_speed>0 and construction!=null and construction.overlaps(position,next_y,float(terrain.rules.body_height)):
+		if vertical_speed>0 and ((construction!=null and construction.overlaps(position,next_y,float(terrain.rules.body_height))) or terrain.overlaps(position,next_y,float(terrain.rules.body_height))):
 			vertical_speed=0
 		elif vertical_speed<=0 and next_y<=floor_height:
 			feet_y=floor_height; vertical_speed=0; grounded=true

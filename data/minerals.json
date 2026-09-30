@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "note": "Formulas and Mohs hardness are standard mineralogy values (IMA mineral list; mindat.org mineral pages, accessed 2026-09-30). Rocks and soils are mixtures: they list their main minerals and never get a single invented formula. 'hits' is a game value derived from how hard the material is to break; it is not a physical quantity.",
+  "sources": [
+    {"name": "mindat.org · mineral pages (formula, Mohs hardness)", "url": "https://www.mindat.org/"},
+    {"name": "IMA list of minerals", "url": "https://rruff.info/ima/"}
+  ],
+  "bedrock_y": -32,
+  "materials": {
+    "topsoil":   {"name": "表土", "kind": "mixture", "formula": "", "components": "矿物颗粒 + 腐殖质 + 水与空气", "elements": {}, "mohs": "", "hits": 1, "color": "7a5a3e", "yield": "soil", "layer": "地表"},
+    "sand":      {"name": "石英砂", "kind": "mineral", "formula": "SiO₂", "components": "主要为石英颗粒", "elements": {"Si": 1, "O": 2}, "mohs": "7（石英颗粒，松散）", "hits": 1, "color": "dccb97", "layer": "河岸与浅层"},
+    "clay":      {"name": "黏土", "kind": "mixture", "formula": "Al₂Si₂O₅(OH)₄", "components": "主要黏土矿物为高岭石", "elements": {"Al": 2, "Si": 2, "O": 9, "H": 4}, "mohs": "2–2.5（高岭石）", "hits": 2, "color": "b98f6d", "layer": "表土之下 1–2 米"},
+    "limestone": {"name": "石灰岩", "kind": "rock", "formula": "CaCO₃", "components": "沉积岩，主要矿物为方解石", "elements": {"Ca": 1, "C": 1, "O": 3}, "mohs": "3（方解石）", "hits": 3, "color": "c3bca8", "layer": "沉积岩层 · 约 −12 米以上"},
+    "granite":   {"name": "花岗岩", "kind": "rock", "formula": "", "components": "石英 + 长石 + 云母（比例因岩体而异）", "elements": {}, "mohs": "", "hits": 5, "color": "a0948f", "layer": "花岗岩层 · −12 至 −22 米"},
+    "basalt":    {"name": "玄武岩", "kind": "rock", "formula": "", "components": "辉石 + 斜长石等细粒火成岩", "elements": {}, "mohs": "", "hits": 5, "color": "4d5256", "layer": "玄武岩层 · −22 米以下"},
+    "bedrock":   {"name": "基岩", "kind": "rock", "formula": "", "components": "探索区的最底层，当前工具无法破开", "elements": {}, "mohs": "", "hits": 0, "color": "2c2e33", "layer": "−32 米"},
+    "coal":      {"name": "煤", "kind": "rock", "formula": "", "components": "以碳为主的沉积岩，含氢、氧、氮、硫", "elements": {"C": 1}, "mohs": "", "hits": 2, "color": "2e2d2d", "layer": "沉积岩层中的煤层"},
+    "halite":    {"name": "岩盐", "kind": "mineral", "formula": "NaCl", "components": "石盐", "elements": {"Na": 1, "Cl": 1}, "mohs": "2.5", "hits": 2, "color": "e6d9d2", "layer": "沉积岩层中的盐透镜体"},
+    "sulfur":    {"name": "自然硫", "kind": "mineral", "formula": "S", "components": "自然元素硫", "elements": {"S": 1}, "mohs": "1.5–2.5", "hits": 2, "color": "e7cf45", "layer": "盐体附近，稀有"},
+    "galena":    {"name": "方铅矿", "kind": "mineral", "formula": "PbS", "components": "铅的主要矿石矿物", "elements": {"Pb": 1, "S": 1}, "mohs": "2.5–2.75", "hits": 3, "color": "7b8189", "layer": "石灰岩中的矿脉"},
+    "fluorite":  {"name": "萤石", "kind": "mineral", "formula": "CaF₂", "components": "莫氏硬度 4 的标准矿物", "elements": {"Ca": 1, "F": 2}, "mohs": "4", "hits": 3, "color": "9a7fc6", "layer": "石灰岩中的矿脉"},
+    "malachite": {"name": "孔雀石", "kind": "mineral", "formula": "Cu₂CO₃(OH)₂", "components": "铜矿床浅部的氧化矿物", "elements": {"Cu": 2, "C": 1, "O": 5, "H": 2}, "mohs": "3.5–4", "hits": 3, "color": "2f9d69", "layer": "浅部 · 约 −8 米以上"},
+    "gibbsite":  {"name": "铝土矿", "kind": "mixture", "formula": "Al(OH)₃", "components": "主要矿物为三水铝石", "elements": {"Al": 1, "O": 3, "H": 3}, "mohs": "2.5–3（三水铝石）", "hits": 2, "color": "c58a63", "layer": "黏土层中的风化团块"},
+    "cassiterite": {"name": "锡石", "kind": "mineral", "formula": "SnO₂", "components": "锡的主要矿石矿物，常与花岗岩有关", "elements": {"Sn": 1, "O": 2}, "mohs": "6–7", "hits": 4, "color": "5a3f33", "layer": "花岗岩层"},
+    "spodumene": {"name": "锂辉石", "kind": "mineral", "formula": "LiAlSi₂O₆", "components": "花岗伟晶岩中的锂矿物", "elements": {"Li": 1, "Al": 1, "Si": 2, "O": 6}, "mohs": "6.5–7", "hits": 5, "color": "d7c3d9", "layer": "花岗岩层中的伟晶岩"},
+    "pollucite": {"name": "铯榴石", "kind": "mineral", "formula": "(Cs,Na)₂Al₂Si₄O₁₂·2H₂O", "components": "铯的主要矿物，只见于少数伟晶岩", "elements": {"Cs": 2, "Al": 2, "Si": 4, "O": 14, "H": 4}, "mohs": "6.5–7", "hits": 5, "color": "efeee6", "layer": "深部花岗岩 · 非常稀有"},
+    "hematite":  {"name": "赤铁矿", "kind": "mineral", "formula": "Fe₂O₃", "components": "铁的主要矿石矿物", "elements": {"Fe": 2, "O": 3}, "mohs": "5.5–6.5", "hits": 4, "color": "8a3a30", "layer": "花岗岩与玄武岩层"}
+  }
+}

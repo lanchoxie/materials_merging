@@ -42,7 +42,7 @@ func _initialize() -> void:
 	check(candidates.size()==1 and candidates[0].id==current and candidates[0].quantity==1,"harvest transfers reactor's exact immutable structure batch")
 	flow.harvest(s,0,"urea"); check(flow.stock(s,"urea")==1,"repeated harvest cannot duplicate product")
 	var candidate=candidates[0]; var v=s.planet.v2; v.active=true
-	var helper=Placement.new(); var tank=helper.place(v,"mixing_tank",Vector2(12,12)); helper.look(v,Vector2(12,12),0.5)
+	var helper=Placement.new(); var tank=helper.place(v,"mixing_tank",Vector2(12,12)); helper.look(v,Vector2(12,12),0.4)
 	var response=s.planet.command(s,"organic_add",{"batch_id":candidate.id,"token":s.planet.shipment_serial})
 	check(v.organics.tanks[tank].solid_g==5 and flow.stock(s,"urea")==0,"mixing tank consumes only the sample produced and harvested above")
 	check(v.organics.inputs[candidate.id].work==candidate.work,"mixing source retains reactor-produced molecular identity")

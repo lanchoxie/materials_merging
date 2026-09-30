@@ -81,6 +81,9 @@ func _details() -> void:
 		if type=="build": steps="拿起 → 对准5米内地面或构件 → 绿色预览时点放置。红色预览会说明原因；每次消耗1块。"
 		elif type in ["sample","product"]: steps="先拿起再瞄准使用；水样可浇树苗、种植箱或补充水槽。装到手上不会消耗。"
 		elif type=="plant": steps="拿起 → 对准空种植箱 → 点种植。"
+		elif type in ["place_rock","fill"]: steps="拿起 → 对准5米内地面或岩壁的一个面 → 点放置，每次放下1格。"
+		elif type=="scan": steps="拿起 → 对准岩土、树木或采集点 → 点扫描，读出真实成分。"
+		elif type=="dig": steps="拿起 → 对准地面或岩壁 → 连续敲击；硬的岩石需要敲更多下。"
 		elif type=="tree_plant": steps="拿起 → 对准近处空地 → 点种植，树苗会慢慢长大。"
 		elif type=="strike": steps="瞄准3.2米内的生物，E/F或攻击按钮挥拳；手套也可左键攻击、E查看。"
 		detail.add_child(UI.paragraph(steps,15,UI.MINT))

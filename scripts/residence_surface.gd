@@ -11,6 +11,11 @@ func setup(plan) -> void:
 
 func spawn(_region: String) -> Vector2: return Vector2(0,layout.depth/2-1.6)
 func ground(_p: Vector2) -> float: return 0.12
+
+## The residence has no voxel ground or water; the shared walker still asks.
+func water_at(_p: Vector2) -> bool: return false
+
+func overlaps(_p: Vector2,_feet: float,_height: float) -> bool: return false
 func height_at(p: Vector2) -> float: return ground(p)
 func bridge(_p: Vector2) -> bool: return false
 func river_x(_z: float) -> float: return 100000

@@ -1,5 +1,6 @@
 extends RefCounted
 ## Shared geometry queries: renderer and walker always use the same ground.
+const Geology=preload("res://scripts/planet_geology.gd")
 const CENTERS={"wetland":Vector3(-10,0,10),"riverbank":Vector3(-10,0,-10),"meadow":Vector3(10,0,10),"highland":Vector3(10,0,-10)}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_exploration.json"))
 var nature
@@ -61,11 +62,88 @@ func cell_center(p: Vector2) -> Vector2:
 	return (p/float(rules.cell_size)).round()*float(rules.cell_size)
 
 func height_at(p: Vector2) -> float:
-	return natural_height(p)+(float(nature.edits.get(nature.cell_key(cell_center(p)),0)) if nature!=null else 0.0)
+	var c=cell_center(p)
+	return top_at(roundi(c.x),roundi(c.y))
 
+## v0.26: the ground is a 1 m voxel grid. The natural column top keeps the old landscape,
+## floored to half metres so the top cell is a full block or a slab. floor() keeps every old
+## building's base cell (floor of the old ground) exactly where it was.
 func natural_height(p: Vector2) -> float:
 	var c=cell_center(p)
-	if absf(c.x-river_x(c.y))<2.0: return 0.03
+	if river_cell(c): return 0.0
+	return maxf(0.5,floor((legacy_height(c)+0.055)*2.0)/2.0)
+
+func river_cell(c: Vector2) -> bool:
+	return absf(c.x-river_x(c.y))<2.0
+
+func water_at(p: Vector2) -> bool:
+	return river_cell(cell_center(p)) and not bridge(p)
+
+func _edited(x: int,z: int) -> bool:
+	return nature!=null and nature.columns.has(Vector2i(x,z))
+
+func top_at(x: int,z: int) -> float:
+	var natural=natural_height(Vector2(x,z))
+	if not _edited(x,z): return natural
+	var ys: Dictionary=nature.columns[Vector2i(x,z)]; var top=-INF
+	for y in ys:
+		if nature.voxels[Vector3i(x,y,z)]!="": top=maxf(top,y+1)
+	var y=ceili(natural)-1
+	while y>Geology.bedrock_y() and nature.voxels.get(Vector3i(x,y,z),"x")=="": y-=1
+	return maxf(top,natural if y==ceili(natural)-1 else float(y+1))
+
+func natural_solid(c: Vector3i) -> bool:
+	return c.y<=Geology.bedrock_y() or c.y<ceili(natural_height(Vector2(c.x,c.z)))
+
+func solid(c: Vector3i) -> bool:
+	if nature!=null and nature.voxels.has(c): return nature.voxels[c]!=""
+	return natural_solid(c)
+
+## Natural top cells may be half-height slabs; every placed cell is a full block.
+func cell_height(c: Vector3i) -> float:
+	if nature!=null and nature.voxels.has(c): return 1.0
+	return natural_cell_height(c)
+
+func natural_cell_height(c: Vector3i) -> float:
+	var top=natural_height(Vector2(c.x,c.z))
+	return top-c.y if c.y==ceili(top)-1 and top-c.y<1.0 else 1.0
+
+func material(c: Vector3i) -> String:
+	if nature!=null and nature.voxels.has(c): return nature.voxels[c]
+	return natural_material(c)
+
+func natural_material(c: Vector3i) -> String:
+	if not natural_solid(c): return ""
+	var p=Vector2(c.x,c.z)
+	return Geology.natural(c,natural_height(p),river_cell(p))
+
+## Highest standing surface in one column at or below `ceiling`.
+func floor_below(x: int,z: int,ceiling: float) -> float:
+	if not _edited(x,z):
+		var top=natural_height(Vector2(x,z))
+		return top if top<=ceiling+0.001 else float(floori(ceiling+0.001))
+	var y=floori(ceiling+0.001)
+	while y>Geology.bedrock_y():
+		var c=Vector3i(x,y,z)
+		if solid(c) and y+cell_height(c)<=ceiling+0.001: return y+cell_height(c)
+		y-=1
+	return float(Geology.bedrock_y()+1)
+
+## Does a body (feet..feet+height, radius) intersect solid ground cells?
+func overlaps(p: Vector2,feet: float,height: float) -> bool:
+	var radius=float(rules.player_radius)
+	for x in range(floori(p.x-radius+0.5),floori(p.x+radius+0.5)+1):
+		for z in range(floori(p.y-radius+0.5),floori(p.y+radius+0.5)+1):
+			if not _edited(x,z):
+				if natural_height(Vector2(x,z))>feet+0.001: return true
+				continue
+			for y in range(floori(feet+0.001),floori(feet+height-0.001)+1):
+				var c=Vector3i(x,y,z)
+				if solid(c) and y+cell_height(c)>feet+0.001: return true
+	return false
+
+func legacy_height(c: Vector2) -> float:
+	if river_cell(c): return 0.03
 	var h=0.55+floor((sin(c.x*0.22)+cos(c.y*0.23))*1.2)*0.14
 	var far=clampf((c.length()-32)/30.0,0,1)
 	if c.x>0 and c.y<0:
@@ -79,7 +157,7 @@ func bridge(p: Vector2) -> bool:
 	return absf(p.y)<1.0 and absf(p.x-river_x(0))<3.3
 
 func ground(p: Vector2) -> float:
-	return maxf(height_at(p)+0.055,0.72) if bridge(p) else height_at(p)+0.055
+	return maxf(height_at(p),0.72) if bridge(p) else height_at(p)
 
 func on_path(p: Vector2) -> bool:
 	return absf(p.y)<0.65 or (absf(p.x-10)<0.6 and absf(p.y)<11)

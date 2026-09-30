@@ -47,8 +47,9 @@ func _draw() -> void:
 	if item.is_empty(): return
 	var p=Vector2(size.x*0.5,34); var color=Color("d7af7a")
 	match item.get("icon",""):
-		"block", "crate", "planter", "floor", "roof":
+		"block", "crate", "planter", "floor", "roof", "rock":
 			if item.icon=="floor": color=Color("a7b7b8")
+			elif item.icon=="rock": color=Color(str(item.get("color","a0948f")))
 			elif item.icon=="roof": color=Color("cabc7e")
 			draw_colored_polygon(PackedVector2Array([p+Vector2(0,-15),p+Vector2(17,-6),p+Vector2(0,3),p+Vector2(-17,-6)]),color.lightened(0.2))
 			draw_colored_polygon(PackedVector2Array([p+Vector2(-17,-6),p+Vector2(0,3),p+Vector2(0,20),p+Vector2(-17,11)]),color.darkened(0.15))
@@ -73,6 +74,11 @@ func _draw() -> void:
 			draw_line(p+Vector2(0,18),p+Vector2(0,-10),Color("93b881"),3)
 			for i in range(3):
 				draw_circle(p+Vector2(-6,-8+i*8),5,Color("e4c878")); draw_circle(p+Vector2(6,-12+i*8),5,Color("e4c878"))
+		"scanner":
+			draw_rect(Rect2(p-Vector2(13,16),Vector2(26,34)),Color("3b4b55"))
+			draw_rect(Rect2(p-Vector2(9,12),Vector2(18,13)),Color("7ee0c9"))
+			draw_line(p+Vector2(-6,-5),p+Vector2(-1,-9),Color("20343a"),2); draw_line(p+Vector2(-1,-9),p+Vector2(6,-3),Color("20343a"),2)
+			draw_circle(p+Vector2(0,10),4,Color("f1c96a"))
 		"hammer":
 			draw_line(p+Vector2(-9,19),p+Vector2(7,-8),color,7); draw_line(p+Vector2(-4,-12),p+Vector2(19,0),Color("a8c4cf"),11)
 		"hand":

@@ -30,7 +30,57 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
-## v0.26.0 "Bedrock" (in progress)
+## v0.26.0 "Bedrock": the planet ground becomes blocks with real geology
+Top-level save stays v23. Inside it, planet nature goes to version 2 (sparse voxels, mined minerals,
+codex) and the hotbar to version 2. Every older save loads; a v0.26 save does not load in v0.25.
+
+**Voxel ground** (`scripts/river_terrain.gd`, `scripts/river_nature.gd`)
+- The ground is a 1 m grid from the surface down to bedrock at y = −32. The natural top keeps the old
+  landscape floored to half metres, so the top cell is a full block or a 0.5 m slab.
+- Only edits are stored: `nature.voxels` (cell → material, "" = dug) plus a per-column index.
+  Putting the original material back erases the edit, slabs included, so a repaired world saves as pristine.
+- Old whole-column height edits migrate to cells. The floor of the old ground is kept exactly, so every
+  existing building stays on its base cell (checked on 40 probe columns in tests).
+- Walking, jumping, construction rays and aiming all use the same cell queries. The walker collides with
+  walls and ceilings and auto-jumps a single-block step. Animals now cross 0.5 m steps (0.42 → 0.55).
+
+**Real geology** (`data/minerals.json`, `scripts/planet_geology.gd`)
+- 18 materials with formulas and Mohs hardness from mindat.org / the IMA list. Rocks and soils are
+  labelled as mixtures and never get an invented single formula.
+- Layers: topsoil → clay/sand with bauxite (gibbsite) → limestone (malachite, halite, sulfur, coal seams,
+  galena, fluorite) → granite from −12 m (spodumene, cassiterite, hematite, rare pollucite below −17 m)
+  → basalt from −22 m → bedrock. Ore bodies come from a deterministic hash, so nothing is saved for them.
+
+**Tools**
+- 地形铲 is now 采掘镐 (pick): hits depend on hardness (topsoil 1 … granite 5), progress shows in the HUD;
+  bedrock refuses it. Topsoil goes to the soil stock; everything else becomes a `rock:<id>` backpack item.
+- New 分析仪 (analyser): E on rock, trees or forage reads composition, formula, hardness and layer.
+- Mined rocks can be placed on any face (up to 16 blocks above the original ground). You can't place them
+  inside your own body, on a building column, under trees or on the public paths.
+- New mineral codex (年鉴 → 矿物图鉴 x/18); first finds are announced.
+- Pre-v0.26 hotbars get the pick and analyser once, in free slots only.
+
+**Rendering** (`scripts/river_chunk_stream.gd`)
+- A voxel column mesher: untouched columns take a heightmap fast path; edited columns emit exposed faces
+  per cell with mineral colours, cave ceilings and slabs. It averages 3.5 ms per 16×16 chunk headless,
+  faster than the old heightmap (6.4 ms). A chunk with 16 deep shafts takes about 11 ms.
+- The sea plane moved from y −1.3 to below bedrock, so dug pits no longer fill with "sea".
+
+**Tests**
+- New `tests/test_bedrock.gd` (114 checks) covers:
+  - formulas vs elements and the textbook reference values;
+  - every material occurring near home, and determinism;
+  - aim → voxel, hits, codex and scan;
+  - place/restore, bedrock, building-column and self-entombing refusals, the edit cap;
+  - save v2 round trip and rejection of bad saves;
+  - v1 migration keeping building bases;
+  - pit walls, auto-jump and a roof capping a jump;
+  - mesher faces and budget.
+- Updated tests for slab-aware digging and the half-metre ground: sandbox12, frontier17 and organic14/15/16
+  aim heights. The test doubles got `water_at`/`overlaps`/`floor_below`.
+- Full suite: **61 passed, 0 failed**.
+
+### v0.26 step 1: test suite repair
 v0.26 in progress: fixed tests. The full suite is now **60 passed, 0 failed** (it was 44 / 16):
 - **Headless input (11 tests).** Headless Godot has a 0×0 window. The root viewport is then 64×64 with
   a ~0.044 `canvas_items` stretch transform, so scripted events given in 1440×900 canvas coordinates

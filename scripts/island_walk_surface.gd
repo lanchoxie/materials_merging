@@ -36,6 +36,13 @@ func bridge(p: Vector2) -> bool:
 func inside(p: Vector2,_margin: float=0) -> bool:
 	return parcels.has(Vector2i(roundi(p.x/3),roundi(p.y/3))) or bridge(p)
 
+## The island has no voxel ground or water; the shared walker still asks.
+func water_at(_p: Vector2) -> bool:
+	return false
+
+func overlaps(_p: Vector2,_feet: float,_height: float) -> bool:
+	return false
+
 func ground(p: Vector2) -> float:
 	return lerpf(light_bridge.start.y,light_bridge.tip.y,_bridge_t(p)) if bridge(p) else 0.12
 

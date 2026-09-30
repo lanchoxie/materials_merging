@@ -57,7 +57,7 @@ The user asked for island materials that reshape a planet's environment, huge wo
 as a core pillar. Earth comes first. The full breakdown and release slicing is in **[06-planets.md](06-planets.md)**.
 
 - **Order (user OK'd v0.26 Bedrock first, 2026-09-30):** see [07-world-blocks.md](07-world-blocks.md) and [08-chemistry-loop.md](08-chemistry-loop.md).
-- v0.26 "Bedrock": voxel ground (cube/slab/slope), dig/place any cell, real-mineral geology, scanner.
+- ✅ v0.26 "Bedrock" (tag `v0.26.0`): voxel ground (cube/slab), dig/place any cell, real-mineral geology, analyser, mineral codex. Slopes deferred.
   Stabilise the river touch tests first.
 - v0.27 "Refinery": minerals → real processes → elements; island seawater/air trickle; **element shop removed**.
 - v0.28 "Index": offline chemistry index from Materials Project / COD / PubChem; real properties in the codex.

@@ -77,7 +77,7 @@ func tick(dt: float,v,advance_encounters: bool=true) -> void:
 				var next=e.position+dir*float(rules.speed)*dt
 				if next.distance_to(leash)>7.5: continue
 				if t.blocked(next,c.obstacles) or c.overlaps(next,t.ground(next),e.height): continue
-				if absf(t.ground(next)-t.ground(e.position))>0.42: continue
+				if absf(t.ground(next)-t.ground(e.position))>0.55: continue
 				var local=(next-e.origin)/float(e.scale)
 				if e.type=="animal" and (absf(local.x)>3.5 or absf(local.y)>3.5): continue
 				if e.type in ["wild","visitor"] and (absf(local.x)>9 or absf(local.y)>9): continue

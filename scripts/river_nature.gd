@@ -1,7 +1,13 @@
 extends RefCounted
 ## Sparse, persistent changes over deterministic terrain. Inventory commits are atomic.
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/river_nature.json"))
-var edits={}
+const Geology=preload("res://scripts/planet_geology.gd")
+const SOIL_ONLY="树苗需要种在表土或黏土上"
+var voxels={}      # Vector3i -> material id; "" means dug out
+var columns={}     # Vector2i -> {y: true}: index of edited cells per column
+var minerals={}    # mined stock by material id (表土 goes to the field's soil stock)
+var discovered={}  # material id -> true (矿物图鉴)
+var mining={}      # transient hit progress on one cell
 var trees={}
 var seeds={"oak":0,"birch":0,"pine":0}
 var revision=0
@@ -61,6 +67,7 @@ func plant(kind: String,p: Vector2,v) -> String:
 	var t=v.construction.terrain; p=p.round()
 	if not seeds.has(kind) or seeds[kind]<1: return "背包里没有这种树种；砍成熟的同种树可得到"
 	if not t.inside(p,2) or t.height_at(p)<0.22 or t.bridge(p) or t.on_path(p): return "请选一块干燥的空地"
+	if t.material(Vector3i(int(p.x),ceili(t.height_at(p))-1,int(p.y))) not in ["topsoil","clay"]: return SOIL_ONLY
 	if t.blocked(p,v.construction.obstacles) or v.construction.overlaps(p,t.ground(p),5): return "这里有树木或建筑，换一块空地"
 	for z in range(-1,2):
 		for x in range(-1,2):
@@ -93,46 +100,145 @@ func tick(t) -> void:
 		tree.water=maxf(0,tree.water-0.003)
 		if int(tree.growth*8)!=phase: touch(Vector2(tree.x,tree.z),t)
 
-func terraform(delta: int,point: Vector3,v) -> String:
-	var c=v.construction; var t=c.terrain; var p=t.cell_center(Vector2(point.x,point.z)); var k=cell_key(p)
-	if delta not in [-1,1] or not t.inside(p,3): return "只能在探索区内施工"
+## v0.26 voxel ground. Only cells that differ from the deterministic geology are stored.
+func set_voxel(c: Vector3i,id: String,t) -> void:
+	var natural: String=t.natural_material(c)
+	var restores=id==natural and (id=="" or t.natural_cell_height(c)>=1.0 or voxels.get(c,"x")=="")
+	var column=Vector2i(c.x,c.z)
+	if restores:
+		voxels.erase(c)
+		if columns.has(column):
+			columns[column].erase(c.y)
+			if columns[column].is_empty(): columns.erase(column)
+	else:
+		voxels[c]=id
+		if not columns.has(column): columns[column]={}
+		columns[column][c.y]=true
+
+func _structure_near(c: Vector3i,v) -> String:
+	var con=v.construction; var t=con.terrain; var p=Vector2(c.x,c.z)
 	if t.bridge(p) or t.on_path(p): return "公共桥梁和主路旁保留通行地面"
-	if t.blocked(p,c.obstacles): return "先移开这里的树木或设施"
+	if t.blocked(p,con.obstacles): return "先移开这里的树木或设施"
 	for tree in records(t.chunk_at(p),t):
 		if not tree.cut and p.distance_to(Vector2(tree.x,tree.z))<0.9: return "幼树正在这里扎根，换一块地施工"
-	for b in c.blocks.values():
-		if Vector2(b.x,b.z).distance_to(p)<1.0: return "先拆回上面的构件，以免建筑悬空或被掩埋"
-	for entity in v.combat.entities(v):
-		if entity.position.distance_to(p)<0.9: return "生物正在这里，等它走开再施工"
-	var value=int(edits.get(k,0)); var next=value+delta
-	if absi(next)>int(rules.height_change_limit): return "这一列已到当前可改造的高度范围"
-	if not edits.has(k) and edits.size()>=int(rules.max_edits): return "改造记录已满，先恢复一些地面"
-	if delta<0 and not v.field.can_add("soil",1): return "土方格已满"
-	if delta>0 and v.field.stock.soil<1: return "需要1份土方；用铲子挖土获得"
-	if delta>0 and not v.actor.is_empty():
+	return ""
+
+func dig(aim: Dictionary,v) -> String:
+	var c=aim.get("voxel")
+	if not c is Vector3i: return "请瞄准5米内的地面或岩壁"
+	var con=v.construction; var t=con.terrain; var p=Vector2(c.x,c.z)
+	if not t.inside(p,3): return "只能在探索区内施工"
+	var id: String=t.material(c)
+	if id=="": return "这里已经挖空了"
+	if id=="bedrock": return "基岩是探索区的底部，当前工具无法破开"
+	var near=_structure_near(c,v)
+	if not near.is_empty(): return near
+	for dy in [0,1]:
+		if con.blocks.has(con.key(c+Vector3i(0,dy,0))): return "先拆回上面的构件，以免建筑悬空或被掩埋"
+	if c.y>=ceili(t.height_at(p))-1:
+		for entity in v.combat.entities(v):
+			if entity.position.distance_to(p)<0.9: return "生物正在这里，等它走开再施工"
+	if not voxels.has(c) and voxels.size()>=int(rules.max_voxels): return "改造记录已满，先把一些方块放回原处"
+	var spec: Dictionary=Geology.info(id); var soil=str(spec.get("yield",""))=="soil"
+	if soil and not v.field.can_add("soil",1): return "土方格已满"
+	if not soil and int(minerals.get(id,0))>=int(rules.max_mineral_stock): return "%s已装满，先放置或带回一些" % spec.name
+	if mining.get("cell")!=c: mining={"cell":c,"hits":0}
+	mining.hits+=1
+	if mining.hits<int(spec.hits): return "%s · 采掘 %d/%d" % [spec.name,mining.hits,int(spec.hits)]
+	mining={}
+	set_voxel(c,"",t); touch(p,t)
+	var found=_discover(id)
+	if soil:
+		v.field.stock.soil+=1; v.field.revision+=1
+		return "挖出1份土方（表土），这一格已挖空"+found
+	minerals[id]=int(minerals.get(id,0))+1
+	return "采到%s%s ×1%s" % [spec.name,(" "+str(spec.formula)) if str(spec.formula)!="" else "",found]
+
+func place(aim: Dictionary,id: String,v) -> String:
+	var c=aim.get("target")
+	if not c is Vector3i or not aim.has("voxel"): return "瞄准地面或岩壁的一个面来放置"
+	var con=v.construction; var t=con.terrain; var p=Vector2(c.x,c.z)
+	var spec: Dictionary=Geology.info(id)
+	if spec.is_empty() or id=="bedrock": return "这种物质不能作为方块放置"
+	if not t.inside(p,3): return "只能在探索区内施工"
+	if t.solid(c) and t.cell_height(c)>=1.0: return "这里已经被岩土占据"
+	if c.y<=Geology.bedrock_y() or c.y>mini(int(rules.build_ceiling),floori(t.natural_height(p))+int(rules.build_above)): return "太高了，当前最多在原地面上方堆16层"
+	for b in con.blocks.values():
+		if int(b.x)==c.x and int(b.z)==c.z: return "这一列有自建构件，不能把岩土压在构件上"
+	var near=_structure_near(c,v)
+	if not near.is_empty(): return near
+	if not v.actor.is_empty():
 		var feet: Vector3=v.actor.feet
-		if absf(feet.x-p.x)<0.85 and absf(feet.z-p.y)<0.85 and feet.y<t.ground(p)+1: return "退开一点，不能把土填到脚下"
-	v.field.stock.soil-=delta; v.field.revision+=1
-	if next==0: edits.erase(k)
-	else: edits[k]=next
-	touch(p,t)
-	return "挖出1份土方，地面下降一格" if delta<0 else "放下1份土方，地面抬高一格"
+		if absf(feet.x-c.x)<0.8 and absf(feet.z-c.z)<0.8 and feet.y<c.y+1 and feet.y+float(t.rules.body_height)>c.y: return "退开一点，不能把方块放到自己身上"
+		if Vector3(c.x,c.y+0.5,c.z).distance_to(v.actor.eye)>float(con.rules.reach)+0.9: return "离得太远，请走近些"
+	for entity in v.combat.entities(v):
+		if entity.position.distance_to(p)<0.9 and c.y<=ceili(t.height_at(p))+1: return "生物正在这里，等它走开再施工"
+	if not voxels.has(c) and voxels.size()>=int(rules.max_voxels): return "改造记录已满，先把一些方块放回原处"
+	var soil=str(spec.get("yield",""))=="soil"
+	if soil and v.field.stock.soil<1: return "需要1份土方；用采掘镐挖表土获得"
+	if not soil and int(minerals.get(id,0))<1: return "背包里没有%s；先去地下采掘" % spec.name
+	if soil: v.field.stock.soil-=1; v.field.revision+=1
+	else: minerals[id]=int(minerals[id])-1
+	set_voxel(c,id,t); touch(p,t)
+	return "放下1份土方，地面抬高一格" if soil else "放下1块%s" % spec.name
+
+## The analyser reads real composition; unknown things are never given invented properties.
+func scan(aim: Dictionary,v) -> String:
+	match str(aim.get("type","")):
+		"terrain":
+			var c: Vector3i=aim.voxel; var id=v.construction.terrain.material(c)
+			return "分析仪 · %s · 深度 y=%d%s" % [Geology.summary(id),c.y,_discover(id)]
+		"tree": return "分析仪 · %s\n木材：纤维素 (C₆H₁₀O₅)ₙ + 半纤维素 + 木质素（混合物）" % aim.name
+		"resource":
+			var kinds={"timber":"枯枝：木材（纤维素 + 木质素，混合物）","stone":"散石：风化岩块（混合物，成分随母岩而异）","fiber":"纤维草：植物纤维，主要为纤维素 (C₆H₁₀O₅)ₙ","fruit":"野果：水分 + 糖类 + 纤维（混合物）"}
+			return "分析仪 · "+str(kinds.get(aim.node.kind,aim.name))
+		"animal","creature": return "分析仪 · %s\n生物扫描与标本将在后续版本开放；现在可以观察它的健康与习性。" % aim.name
+		"block": return "分析仪 · %s\n自建构件：材料来自浮岛工坊，来源编号保存在建造记录里。" % aim.name
+	return "分析仪 · 瞄准5米内的岩土、树木或采集点"
+
+func _discover(id: String) -> String:
+	if id=="" or discovered.has(id): return ""
+	discovered[id]=true
+	return "\n★ 新发现！矿物图鉴 %d/%d" % [discovered.size(),Geology.rules().materials.size()]
 
 func serialize() -> Dictionary:
-	return {"version":1,"edits":edits.duplicate(),"trees":trees.duplicate(true),"seeds":seeds.duplicate()}
+	var cells={}
+	for c in voxels: cells["%d:%d:%d" % [c.x,c.y,c.z]]=voxels[c]
+	return {"version":2,"voxels":cells,"trees":trees.duplicate(true),"seeds":seeds.duplicate(),"minerals":minerals.duplicate(),"discovered":discovered.keys()}
 
 func restore(data,t) -> bool:
-	if not data is Dictionary or data.get("version")!=1: return false
-	for k in ["edits","trees","seeds"]:
+	# JSON turns the version into a float; compare by value, not by Variant type.
+	if not data is Dictionary or not _num(data.get("version"),1,2,true): return false
+	for k in (["edits"] if data.version==1 else ["voxels","minerals"])+["trees","seeds"]:
 		if not data.get(k) is Dictionary: return false
-	if data.edits.size()>int(rules.max_edits) or data.trees.size()>int(rules.max_trees) or data.seeds.size()!=seeds.size(): return false
+	if data.trees.size()>int(rules.max_trees) or data.seeds.size()!=seeds.size(): return false
 	for k in seeds:
 		if not _num(data.seeds.get(k),0,rules.max_seed_stock,true): return false
-	for k in data.edits:
-		var parts=str(k).split(":")
-		if parts.size()!=2 or not parts[0].is_valid_int() or not parts[1].is_valid_int(): return false
-		var p=Vector2(int(parts[0]),int(parts[1]))
-		if k!=cell_key(p) or not t.inside(p,3) or not _num(data.edits[k],-rules.height_change_limit,rules.height_change_limit,true): return false
+	var cells={}
+	if data.version==1:
+		# v0.25 and older: whole-column height offsets become explicit cells on the voxel grid.
+		if data.edits.size()>int(rules.max_edits): return false
+		for k in data.edits:
+			var parts=str(k).split(":")
+			if parts.size()!=2 or not parts[0].is_valid_int() or not parts[1].is_valid_int(): return false
+			var p=Vector2(int(parts[0]),int(parts[1]))
+			if k!=cell_key(p) or not t.inside(p,3) or not _num(data.edits[k],-rules.height_change_limit,rules.height_change_limit,true): return false
+			var top=t.natural_height(p); var delta=int(data.edits[k])
+			for y in (range(floori(top),floori(top)+delta) if delta>0 else range(floori(top)+delta,ceili(top))):
+				cells[Vector3i(int(p.x),y,int(p.y))]="topsoil" if delta>0 else ""
+	else:
+		if data.voxels.size()>int(rules.max_voxels) or not data.get("discovered") is Array: return false
+		for k in data.voxels:
+			var parts=str(k).split(":"); var id=data.voxels[k]
+			if parts.size()!=3 or not parts[0].is_valid_int() or not parts[1].is_valid_int() or not parts[2].is_valid_int(): return false
+			var c=Vector3i(int(parts[0]),int(parts[1]),int(parts[2]))
+			if k!="%d:%d:%d" % [c.x,c.y,c.z] or not t.inside(Vector2(c.x,c.z),3) or c.y<=Geology.bedrock_y() or c.y>int(rules.build_ceiling): return false
+			if not id is String or id=="bedrock" or (id!="" and Geology.info(id).is_empty()): return false
+			cells[c]=id
+		for id in data.minerals:
+			if Geology.info(str(id)).is_empty() or id in ["topsoil","bedrock"] or not _num(data.minerals[id],0,rules.max_mineral_stock,true): return false
+		for id in data.discovered:
+			if not id is String or Geology.info(id).is_empty(): return false
 	for id in data.trees:
 		var row=data.trees[id]
 		if not row is Dictionary or not rules.species.has(row.get("species")) or not row.get("cut") is bool: return false
@@ -143,7 +249,17 @@ func restore(data,t) -> bool:
 			if p!=p.round() or id!="p:"+cell_key(p): return false
 		elif lookup(str(id),t).is_empty() or id!=natural_id(p) or not p.is_equal_approx(Vector2(lookup(id,t).x,lookup(id,t).z)): return false
 		if not _num(row.get("growth"),0.12,1) or not _num(row.get("water"),0,1) or not _num(row.get("hits"),0,int(rules.chop_hits)-1,true): return false
-	edits=data.edits.duplicate(); trees=data.trees.duplicate(true); seeds=data.seeds.duplicate(); revision+=1; chunk_versions.clear(); planted_by_chunk.clear()
+	voxels=cells; columns.clear(); mining={}
+	for c in voxels:
+		var column=Vector2i(c.x,c.z)
+		if not columns.has(column): columns[column]={}
+		columns[column][c.y]=true
+	minerals={} if data.version==1 else data.minerals.duplicate()
+	for id in minerals: minerals[id]=int(minerals[id])
+	discovered={}
+	if data.version==2:
+		for id in data.discovered: discovered[id]=true
+	trees=data.trees.duplicate(true); seeds=data.seeds.duplicate(); revision+=1; chunk_versions.clear(); planted_by_chunk.clear()
 	for id in trees:
 		if not str(id).begins_with("p:"): continue
 		var chunk=t.chunk_at(Vector2(trees[id].x,trees[id].z))

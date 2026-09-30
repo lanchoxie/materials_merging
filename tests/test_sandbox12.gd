@@ -47,13 +47,13 @@ func _initialize() -> void:
 	s.planet.command(s,"v2_field_water",payload); check(s.storage.batch(water.id).quantity==1,"replayed irrigation cannot consume twice")
 	for i in range(600): n.tick(t)
 	check(n.trees[planted].growth==1 and free in t.chunk_trees(t.chunk_at(free)),"seedling matures into solid matching-species tree")
-	var dirt=Vector2(15,14); var before=t.ground(dirt); above(v,dirt)
+	var dirt=Vector2(15,14); var before=t.ground(dirt); var drop=t.cell_height(Vector3i(15,ceili(before)-1,14)); above(v,dirt)
 	s.planet.command(s,"v2_dig")
-	check(f.stock.soil==1 and is_equal_approx(t.ground(dirt),before-1),"digging changes shared terrain and grants exactly one soil")
+	check(f.stock.soil==1 and is_equal_approx(t.ground(dirt),before-drop),"digging removes the top voxel (block or slab) and grants exactly one soil")
 	var walker=preload("res://scripts/river_walker.gd").new(t); walker.position=dirt; walker.reset_height()
 	check(is_equal_approx(walker.feet_y,t.ground(dirt)),"walking reads modified terrain height")
-	v.actor.feet.y=t.ground(dirt); var edits=n.edits.duplicate(); s.planet.command(s,"v2_fill")
-	check(n.edits==edits and f.stock.soil==1,"cannot entomb player with soil placement")
+	v.actor.feet.y=t.ground(dirt); var edits=n.voxels.duplicate(); s.planet.command(s,"v2_fill")
+	check(n.voxels==edits and f.stock.soil==1,"cannot entomb player with soil placement")
 	above(v,dirt); s.planet.command(s,"v2_fill")
 	check(f.stock.soil==0 and is_equal_approx(t.ground(dirt),before),"soil placement returns original ground and spends inventory")
 	above(v,dirt); s.planet.command(s,"v2_fill"); check(is_equal_approx(t.ground(dirt),before),"no soil means no free terrain creation")
@@ -66,8 +66,10 @@ func _initialize() -> void:
 	check(stable.x==node.x and stable.z==node.z and V2.new().restore(v.serialize()),"planting near a harvested resource preserves its identity and loadable save")
 	var legacy=V2.new().serialize(); legacy.erase("nature"); legacy.erase("combat"); legacy.field.stock.erase("soil"); legacy.construction.erase("miniatures"); legacy.construction.erase("miniature_serial")
 	check(V2.new().restore(legacy),"previous homestead save migrates without new fields")
-	var bad=v.serialize(); bad.nature.edits["24:24"]=7
-	check(not V2.new().restore(bad),"invalid terrain height is rejected")
+	var bad=v.serialize(); bad.nature.voxels["24:999:24"]="topsoil"
+	check(not V2.new().restore(bad),"voxel above the build ceiling is rejected")
+	bad=v.serialize(); bad.nature.voxels["24:0:24"]="unobtainium"
+	check(not V2.new().restore(bad),"unknown voxel material is rejected")
 	# Tiny real construction ledger, with two pieces reserved from an eight-piece package.
 	var b1={"x":19,"y":c.base(Vector3i(19,0,14)),"z":14,"kind":"block","source":"1"}; var b2=b1.duplicate(); b2.y+=1
 	c.sources={"1":{"product":{"id":1,"recipe":"field_wall","recipe_version":1,"source_batch":"field:1"},"remaining":6}}
@@ -89,6 +91,8 @@ func _initialize() -> void:
 	var target=v.Target.query(v); check(target.get("entity",{}).get("type")=="resident","humans participate in same target query as animals")
 	s.planet.command(s,"v2_strike"); check(person.health<1 and v.combat.records.get("resident:1",{}).get("anger",0)>0,"strike changes persistent health and anger")
 	var health=person.health; s.planet.command(s,"v2_strike"); check(person.health==health,"strike cooldown prevents click-rate damage exploit")
+	# Stand on the voxel ground (facing() leaves the feet inside it) so the resident has a clear swing.
+	v.actor.feet.y=t.ground(Vector2(v.actor.feet.x,v.actor.feet.z))
 	for i in range(100): v.combat.tick(0.02,v)
 	check(v.combat.player_health<100,"angry resident closes distance and retaliates")
 	var combat_saved=v.combat.serialize(); var combat_copy=preload("res://scripts/river_combat.gd").new()

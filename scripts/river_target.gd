@@ -1,5 +1,7 @@
 extends RefCounted
 ## One aim query for prompts and authoritative interactions, with terrain/block occlusion.
+const Geology=preload("res://scripts/planet_geology.gd")
+
 static func query(v) -> Dictionary:
 	var actor: Dictionary=v.actor
 	if actor.is_empty() or not actor.get("eye") is Vector3 or not actor.get("direction") is Vector3: return {}
@@ -10,7 +12,11 @@ static func query(v) -> Dictionary:
 	var hit: Dictionary=c.trace(eye,direction)
 	if hit.has("point"):
 		limit=eye.distance_to(hit.point)+0.05
-		if str(hit.get("hit","")).is_empty() and hit.has("target"): best={"type":"terrain","name":"地面","point":hit.point,"distance":limit}
+		if str(hit.get("hit","")).is_empty() and hit.has("target"):
+			best={"type":"terrain","name":"地面","point":hit.point,"distance":limit,"target":hit.target}
+			if hit.has("voxel"):
+				best.voxel=hit.voxel; best.material=c.terrain.material(hit.voxel)
+				best.name=str(Geology.info(best.material).get("name","地面"))
 		if not str(hit.get("hit","")).is_empty():
 			var b: Dictionary=c.blocks[hit.hit]
 			best={"type":"block","key":hit.hit,"kind":b.kind,"name":c.rules.kinds[b.kind].name,"distance":limit,"point":hit.point}
@@ -85,5 +91,11 @@ static func prompt(v,target: Dictionary) -> String:
 		"animal": return text+" · 健康%.0f%% · %s" % [target.health*100,"观察水质与溶氧" if target.fish else "装备野果喂食"]
 		"facility": return text+(" · E 开关围栏" if target.recipe=="frame_bundle" else " · 背包补充相应运行材料")
 		"tree": return text+(" · 装备斧头砍伐，掉落木料与树种" if target.growth>=0.99 else " · 生长%.0f%% · 水样可以浇灌" % (target.growth*100))
-		"terrain": return text+" · 铲子挖土 / 土方填高 / 树种种植"
+		"terrain":
+			var spec=Geology.info(str(target.get("material","")))
+			if spec.is_empty(): return text+" · 采掘镐挖掘 / 土方填高 / 树种种植"
+			var mining=v.nature.mining
+			var progress=" · 采掘 %d/%d" % [int(mining.hits),int(spec.hits)] if mining.get("cell")==target.get("voxel") else ""
+			if str(target.material)=="bedrock": return text+" · 基岩无法挖掘"
+			return text+(" "+str(spec.formula) if str(spec.formula)!="" else "")+progress+" · 采掘镐挖掘 / 分析仪扫描"
 	return text

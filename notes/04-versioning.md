@@ -10,6 +10,7 @@
 | v0.23.0 "Goals" | branch `claude/v0.23-goals`, tag **`v0.23.0`** (save v22) |
 | v0.24.0 "Discovery" | branch `claude/v0.24-discovery`, tag **`v0.24.0`** (save v23) |
 | v0.25.0 "Looks" | branch `claude/v0.25-looks`, tag **`v0.25.0`** (save v23, cosmetic only) |
+| v0.26.0 "Bedrock" | branch `claude/v0.26-bedrock`, tag **`v0.26.0`** (save v23 with nature v2 + hotbar v2; loads every older save, older builds cannot read its planet) |
 | Old APKs / source zips | `builds/` (git-ignored, never overwritten — build script refuses to overwrite) |
 
 > The v0.20/v0.21 work had **never been committed** (the repo is owned by a different Windows

@@ -14,6 +14,11 @@ class Flat extends RefCounted:
 	func ground(_p): return 0.0
 	func height_at(_p): return 0.3
 	func bridge(_p): return false
+	func water_at(_p): return false
+	func overlaps(_p,feet,_height): return feet<0.0
+	func floor_below(_x,_z,_ceiling): return 0.0
+	func solid(c): return c.y<0
+	func cell_height(_c): return 1.0
 	func spawn(_region): return Vector2.ZERO
 	func blocked(p,barriers=[]):
 		for r in barriers:

@@ -40,25 +40,105 @@ func drain(limit: int) -> void:
 func _process(_dt: float) -> void:
 	if terrain!=null: drain(int(terrain.rules.chunks_per_frame))
 
+## v0.26 voxel mesher: per column, emit the faces of solid cells that touch air or a lower slab.
+## Unedited columns skip straight to their visible band, so a plain chunk costs about what the
+## old heightmap did; only dug or built columns walk deeper cells.
+const DIRS=[Vector3i(1,0,0),Vector3i(-1,0,0),Vector3i(0,0,1),Vector3i(0,0,-1)]
+var palette={}
+
+func _color(id: String) -> Color:
+	if not palette.has(id): palette[id]=Color(str(terrain.Geology.info(id).get("color","958369")))
+	return palette[id]
+
+## get() would evaluate a default eagerly; only fall back to the formula outside the cache.
+func _top(c: Vector3i,tops: Dictionary) -> float:
+	var k=Vector2i(c.x,c.z)
+	return tops[k] if tops.has(k) else terrain.natural_height(Vector2(c.x,c.z))
+
+func _solid(c: Vector3i,voxels: Dictionary,tops: Dictionary,bedrock: int) -> bool:
+	if voxels.has(c): return voxels[c]!=""
+	return c.y<=bedrock or c.y<ceili(_top(c,tops))
+
+func _height(c: Vector3i,voxels: Dictionary,tops: Dictionary) -> float:
+	if voxels.has(c): return 1.0
+	var top=_top(c,tops)
+	return top-c.y if c.y==ceili(top)-1 and top-c.y<1.0 else 1.0
+
+## Grass follows the season on topsoil; the river bed shows water; rock shows its mineral colour.
+func _top_color(id: String,p: Vector2,river: bool,natural_top: bool,grass: Color,shade: float,x: int,y: int,z: int) -> Color:
+	if id=="topsoil":
+		var c=grass
+		if p.x>0 and p.y<0: c=c.lerp(Color("9ba49a"),0.35)
+		if terrain.on_path(p): c=Color("bdad83")
+		return c.lightened(shade)
+	if river and natural_top: return Color("708f89").lightened(shade*0.85)
+	return _color(id).lightened(terrain.Geology._hash(x,y,z,5)*0.08)
+
+func _side_color(id: String,d: Vector3i,x: int,y: int,z: int) -> Color:
+	if id=="topsoil": return Color("958369")
+	return _color(id).lightened(terrain.Geology._hash(x,y,z,5)*0.08).darkened(0.08 if d.x!=0 else 0.14)
+
 func _build(key: Vector2i) -> Mesh:
 	var st=G.surface(material); var span=int(terrain.rules.chunk_cells); var cell=float(terrain.rules.cell_size); var tiles=0
+	var nature=terrain.nature; var voxels={} if nature==null else nature.voxels; var columns={} if nature==null else nature.columns
+	var Geology=terrain.Geology; var bedrock: int=Geology.bedrock_y()
+	var tops={}
+	for iz in range(key.y*span-1,(key.y+1)*span+1):
+		for ix in range(key.x*span-1,(key.x+1)*span+1): tops[Vector2i(ix,iz)]=terrain.natural_height(Vector2(ix,iz))
+	# Only chunks at the far rim of the world need per-cell boundary checks.
+	var corner=Vector2(key)*span*cell; var rim=not terrain.inside(corner,span*2*cell) or not terrain.inside(corner+Vector2(span,span)*cell,span*2*cell)
+	var grass=Color(["749b64","6f9a60","b4a262","bdcfbd"][season])
 	for iz in range(key.y*span,(key.y+1)*span):
 		for ix in range(key.x*span,(key.x+1)*span):
 			var p=Vector2(ix,iz)*cell
-			if not terrain.inside(p): continue
+			if rim and not terrain.inside(p): continue
 			tiles+=1
-			var h=terrain.height_at(p)
-			var c=Color(["749b64","6f9a60","b4a262","bdcfbd"][season])
-			if h<0.1: c=Color("708f89")
-			elif p.x>0 and p.y<0: c=c.lerp(Color("9ba49a"),0.35)
-			if terrain.on_path(p) and h>0.1: c=Color("bdad83")
-			c=c.lightened((sin(p.x*13+p.y*17)+1)*0.035)
-			G.face(st,[Vector3(p.x-cell/2,h+0.055,p.y-cell/2),Vector3(p.x+cell/2,h+0.055,p.y-cell/2),Vector3(p.x+cell/2,h+0.055,p.y+cell/2),Vector3(p.x-cell/2,h+0.055,p.y+cell/2)],c)
-			for d in [Vector2(1,0),Vector2(-1,0),Vector2(0,1),Vector2(0,-1)]:
-				var q=p+d*cell; var low=terrain.height_at(q)+0.055 if terrain.inside(q) else -1.5
-				if low>=h+0.055: continue
-				var a=p+d*cell/2; var tangent=Vector2(-d.y,d.x)*cell/2
-				G.face(st,[Vector3(a.x-tangent.x,low,a.y-tangent.y),Vector3(a.x+tangent.x,low,a.y+tangent.y),Vector3(a.x+tangent.x,h+0.055,a.y+tangent.y),Vector3(a.x-tangent.x,h+0.055,a.y-tangent.y)],Color("958369"))
+			var col=Vector2i(ix,iz); var top: float=tops[col]; var river=terrain.river_cell(p)
+			var x0=p.x-cell/2; var x1=p.x+cell/2; var z0=p.y-cell/2; var z1=p.y+cell/2
+			var near_edit=columns.has(col)
+			for d in DIRS:
+				if columns.has(col+Vector2i(d.x,d.z)): near_edit=true
+			var shade=(sin(p.x*13+p.y*17)+1)*0.035
+			if not near_edit and not rim:
+				# Fast path: untouched heightmap column. One top face plus the exposed side bands.
+				var yc=ceili(top)-1; var id: String=Geology.natural(Vector3i(ix,yc,iz),top,river)
+				G.face(st,[Vector3(x0,top,z0),Vector3(x1,top,z0),Vector3(x1,top,z1),Vector3(x0,top,z1)],_top_color(id,p,river,true,grass,shade,ix,yc,iz))
+				for d in DIRS:
+					var low: float=tops[col+Vector2i(d.x,d.z)]
+					if low>=top: continue
+					var a=p+Vector2(d.x,d.z)*cell/2; var tangent=Vector2(-d.z,d.x)*cell/2
+					for y in range(floori(low),yc+1):
+						var y0=maxf(low,y); var y1=minf(top,y+1)
+						var mid: String=id if y==yc else Geology.natural(Vector3i(ix,y,iz),top,river)
+						G.face(st,[Vector3(a.x-tangent.x,y0,a.y-tangent.y),Vector3(a.x+tangent.x,y0,a.y+tangent.y),Vector3(a.x+tangent.x,y1,a.y+tangent.y),Vector3(a.x-tangent.x,y1,a.y-tangent.y)],_side_color(mid,d,ix,y,iz))
+				continue
+			var lo=ceili(top)-1; var hi=ceili(top)-1; var edge=false
+			if columns.has(col):
+				for y in columns[col]:
+					lo=mini(lo,y-1); hi=maxi(hi,y)
+			for d in DIRS:
+				var n=col+Vector2i(d.x,d.z)
+				if rim and not terrain.inside(Vector2(n)*cell): edge=true; continue
+				lo=mini(lo,floori(tops[n]))
+				if columns.has(n):
+					for y in columns[n]: lo=mini(lo,y)
+			if edge: lo=mini(lo,ceili(top)-3)
+			lo=maxi(lo,bedrock)
+			for y in range(lo,hi+1):
+				var c=Vector3i(ix,y,iz)
+				if not _solid(c,voxels,tops,bedrock): continue
+				var h=_height(c,voxels,tops); var id: String=voxels[c] if voxels.has(c) else Geology.natural(c,top,river); var yt=y+h
+				if h<1.0 or not _solid(c+Vector3i.UP,voxels,tops,bedrock):
+					G.face(st,[Vector3(x0,yt,z0),Vector3(x1,yt,z0),Vector3(x1,yt,z1),Vector3(x0,yt,z1)],_top_color(id,p,river,not voxels.has(c) and y==ceili(top)-1,grass,shade,ix,y,iz))
+				if y>bedrock and not _solid(c+Vector3i.DOWN,voxels,tops,bedrock):
+					G.face(st,[Vector3(x0,y,z1),Vector3(x1,y,z1),Vector3(x1,y,z0),Vector3(x0,y,z0)],_color(id).darkened(0.25))
+				for d in DIRS:
+					var n=c+d; var low=float(y)
+					if (not rim or terrain.inside(Vector2(n.x,n.z)*cell)) and _solid(n,voxels,tops,bedrock):
+						low=y+_height(n,voxels,tops)
+						if low>=yt: continue
+					var a=p+Vector2(d.x,d.z)*cell/2; var tangent=Vector2(-d.z,d.x)*cell/2
+					G.face(st,[Vector3(a.x-tangent.x,low,a.y-tangent.y),Vector3(a.x+tangent.x,low,a.y+tangent.y),Vector3(a.x+tangent.x,yt,a.y+tangent.y),Vector3(a.x-tangent.x,yt,a.y-tangent.y)],_side_color(id,d,ix,y,iz))
 	# Outside the original experiment: the continued river is natural scenery.
 	for iz in range(key.y*span,(key.y+1)*span):
 		var z=float(iz)*cell; var x=terrain.river_x(z)
