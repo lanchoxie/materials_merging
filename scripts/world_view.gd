@@ -1,5 +1,9 @@
 extends Node3D
 const StaticGeometry=preload("res://scripts/static_geometry.gd")
+const DayCycle = preload("res://scripts/core/day_cycle.gd")
+const SEA_SHADER = preload("res://assets/shaders/sea.gdshader")
+const GLASS_SHADER = preload("res://assets/shaders/glass.gdshader")
+const FOLIAGE_SHADER = preload("res://assets/shaders/foliage.gdshader")
 ## The entire little laboratory is made from meshes, so it needs no imported art.
 
 signal plot_clicked(index: int)
@@ -45,6 +49,22 @@ var detail_budget: int = DETAIL_BUDGET
 var detail_refresh_left: float = -1.0
 var geometry_rebuilds: int = 0
 var interaction_lock: bool = false
+## v0.25 looks: cosmetic day/night phase in [0, 1) from the wall clock; pin it with
+## day_phase_override >= 0 (tests, screenshots). Never saved, never affects the economy.
+const SEA_LEVEL: float = -0.86
+const SHORE_PIXELS_PER_UNIT: float = 1.5
+var day_phase_override: float = -1.0
+var day_phase: float = 0.0
+var night: float = 0.0
+var sea: MeshInstance3D
+var _environment: Environment
+var _sun: DirectionalLight3D
+var _sea_material: ShaderMaterial
+var _glass_material: ShaderMaterial
+var _leaf_materials: Dictionary = {}
+var _glow_materials: Array = []
+var _shore_key: String = ""
+var _day_refresh: float = 0.0
 # The visiting buyer lives outside ProceduralIsland so land and LOD rebuilds
 # never restart an arrival, reset a wave, or duplicate a character.
 var _visitor_node: Node3D
@@ -129,6 +149,7 @@ func _ensure_stage() -> void:
 	environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	environment_node.environment = environment
 	add_child(environment_node)
+	_environment = environment
 	var sunlight: DirectionalLight3D = DirectionalLight3D.new()
 	sunlight.rotation_degrees = Vector3(-53.0, -34.0, 0.0)
 	sunlight.light_color = Color("fff1d9")
@@ -138,6 +159,7 @@ func _ensure_stage() -> void:
 	sunlight.shadow_bias = 0.035
 	sunlight.shadow_normal_bias = 1.0
 	add_child(sunlight)
+	_sun = sunlight
 	var fill: DirectionalLight3D = DirectionalLight3D.new()
 	fill.rotation_degrees = Vector3(-24.0, 140.0, 0.0)
 	fill.light_color = Color("bfe7e7")
@@ -152,8 +174,20 @@ func _ensure_stage() -> void:
 	add_child(camera)
 	camera.look_at(_camera_target)
 	camera.current = true
-	# A matte studio floor grounds the island and catches its soft shadows.
-	_box(self, Vector3(1640.0, 0.12, 1640.0), Vector3(0.0, -1.36, 0.0), _mat(Color("19343d")))
+	# v0.25: a stylized sea replaces the matte studio floor. Shore foam and shallows come from
+	# a small baked distance mask of the island (_update_shore), so it follows every expansion.
+	_sea_material = ShaderMaterial.new()
+	_sea_material.shader = SEA_SHADER
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(1640.0, 1640.0)
+	sea = MeshInstance3D.new()
+	sea.name = "Sea"
+	sea.mesh = plane
+	sea.material_override = _sea_material
+	sea.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	sea.position.y = SEA_LEVEL
+	add_child(sea)
+	_apply_day()
 
 
 func rebuild() -> void:
@@ -170,6 +204,7 @@ func rebuild() -> void:
 	_motes.clear()
 	_selection_markers.clear()
 	_update_map_lookup()
+	_update_shore()
 	_choose_visible_details()
 	_build_foundation()
 	for index in range(_plots.size()):
@@ -388,10 +423,7 @@ func _build_reactor(parent: Node3D, reactor: Dictionary) -> void:
 	_cylinder(parent, 0.87, 0.87, 0.075, Vector3(0, 0.50, 0), mint, 48)
 	_cylinder(parent, 0.72, 0.72, 0.016, Vector3(0, 0.55, 0), _mat(Color("d6f5dd"), 0.23), 48)
 	# A translucent open chamber makes the atoms the star of the laboratory.
-	var glass: StandardMaterial3D = _mat(Color(0.66, 0.92, 0.90, 0.14))
-	glass.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	glass.cull_mode = BaseMaterial3D.CULL_DISABLED
-	var chamber: MeshInstance3D = _cylinder(parent, 0.88, 0.88, 1.34, Vector3(0, 1.20, 0), glass, 48)
+	var chamber: MeshInstance3D = _cylinder(parent, 0.88, 0.88, 1.34, Vector3(0, 1.20, 0), _glass(), 48)
 	chamber.mesh.cap_top = false
 	chamber.mesh.cap_bottom = false
 	chamber.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -670,16 +702,16 @@ func _tree(parent: Node3D, pos: Vector3, scale_value: float) -> void:
 	tree.position = pos
 	tree.scale = Vector3.ONE * scale_value
 	_cylinder(tree, 0.12, 0.08, 0.81, Vector3(0, 0.41, 0), _mat(Color("bc9873")), 9)
-	_sphere(tree, 0.51, Vector3(0, 1.04, 0), _mat(Color("70aa8b")), Vector3(1.0, 1.22, 1.0), 16)
-	_sphere(tree, 0.35, Vector3(-0.25, 0.90, 0.12), _mat(Color("85bd96")), Vector3(1.0, 1.12, 1.0), 16)
-	_sphere(tree, 0.33, Vector3(0.27, 1.13, 0.04), _mat(Color("a2cfa2")), Vector3(1.0, 1.1, 1.0), 16)
+	_sphere(tree, 0.51, Vector3(0, 1.04, 0), _leaf(Color("70aa8b")), Vector3(1.0, 1.22, 1.0), 16)
+	_sphere(tree, 0.35, Vector3(-0.25, 0.90, 0.12), _leaf(Color("85bd96")), Vector3(1.0, 1.12, 1.0), 16)
+	_sphere(tree, 0.33, Vector3(0.27, 1.13, 0.04), _leaf(Color("a2cfa2")), Vector3(1.0, 1.1, 1.0), 16)
 	_sphere(tree, 0.055, Vector3(0.21, 1.16, 0.37), _mat(Color("f1b79a")))
 	_sphere(tree, 0.05, Vector3(-0.15, 0.95, 0.48), _mat(Color("f1b79a")))
 
 
 func _bush(parent: Node3D, pos: Vector3, radius: float) -> void:
-	_sphere(parent, radius, pos + Vector3(0, radius * 0.45, 0), _mat(Color("7eb68e")), Vector3(1.1, 0.78, 1.0), 12)
-	_sphere(parent, radius * 0.63, pos + Vector3(radius * 0.62, radius * 0.30, 0.08), _mat(Color("a5cc93")), Vector3(1.0, 0.9, 1.0), 12)
+	_sphere(parent, radius, pos + Vector3(0, radius * 0.45, 0), _leaf(Color("7eb68e")), Vector3(1.1, 0.78, 1.0), 12)
+	_sphere(parent, radius * 0.63, pos + Vector3(radius * 0.62, radius * 0.30, 0.08), _leaf(Color("a5cc93")), Vector3(1.0, 0.9, 1.0), 12)
 	_sphere(parent, 0.035, pos + Vector3(-radius * 0.2, radius * 1.10, radius * 0.6), _mat(Color("fce0b2")))
 
 
@@ -1074,6 +1106,10 @@ func _process(delta: float) -> void:
 		detail_refresh_left -= delta
 		if detail_refresh_left < 0.0: _commit_camera_details()
 	_time += delta
+	_day_refresh -= delta
+	if _day_refresh <= 0.0:
+		_day_refresh = 0.5
+		_apply_day()
 	_animate_visitor(delta)
 	for item in _molecules:
 		var node: Node3D = item.node
@@ -1126,9 +1162,87 @@ func _mat(color: Color, glow: float = 0.0) -> StandardMaterial3D:
 	if glow > 0.0:
 		material.emission_enabled = true
 		material.emission = color
-		material.emission_energy_multiplier = glow
+		material.emission_energy_multiplier = glow * (1.0 + night * 2.2)
+		_glow_materials.append([material, glow])
 	_materials[key] = material
 	return material
+
+
+## Leaves sway in a breeze (foliage shader). Marked so static batching still merges them.
+func _leaf(color: Color) -> ShaderMaterial:
+	var key := color.to_html(false)
+	if not _leaf_materials.has(key):
+		var material := ShaderMaterial.new()
+		material.shader = FOLIAGE_SHADER
+		material.set_shader_parameter("albedo", color)
+		material.set_meta("static_batch", true)
+		_leaf_materials[key] = material
+	return _leaf_materials[key]
+
+
+## Reactor chambers: faint glass with a fresnel rim that brightens at night.
+func _glass() -> ShaderMaterial:
+	if _glass_material == null:
+		_glass_material = ShaderMaterial.new()
+		_glass_material.shader = GLASS_SHADER
+		_glass_material.set_shader_parameter("glow", night)
+	return _glass_material
+
+
+func _apply_day() -> void:
+	day_phase = day_phase_override if day_phase_override >= 0.0 else DayCycle.phase_at(Time.get_unix_time_from_system())
+	var look: Dictionary = DayCycle.sample(day_phase)
+	night = float(look.night)
+	if is_instance_valid(_sun):
+		_sun.rotation_degrees = Vector3(float(look.sun_pitch), float(look.sun_yaw), 0.0)
+		_sun.light_color = look.sun_color
+		_sun.light_energy = float(look.sun_energy)
+	if _environment != null:
+		_environment.background_color = look.sky
+		_environment.ambient_light_color = look.ambient_color
+		_environment.ambient_light_energy = float(look.ambient_energy)
+	if _sea_material != null:
+		_sea_material.set_shader_parameter("deep_color", look.sea_deep)
+		_sea_material.set_shader_parameter("shallow_color", look.sea_shallow)
+		_sea_material.set_shader_parameter("night", night)
+	if _glass_material != null: _glass_material.set_shader_parameter("glow", night)
+	for entry in _glow_materials:
+		entry[0].emission_energy_multiplier = float(entry[1]) * (1.0 + night * 2.2)
+
+
+## Bake a small distance-to-island mask (1 at the shore, 0 two parcels out) for the sea shader.
+## Rebuilt only when the set of parcels changes.
+func _update_shore() -> void:
+	if _sea_material == null or _coord_lookup.is_empty(): return
+	var key := str(_coord_lookup.keys())
+	if key == _shore_key: return
+	_shore_key = key
+	var lo := Vector2i(1000000, 1000000)
+	var hi := Vector2i(-1000000, -1000000)
+	for coord in _coord_lookup:
+		lo = lo.min(coord)
+		hi = hi.max(coord)
+	var origin := Vector2(lo - Vector2i(3, 3)) * PITCH - Vector2.ONE * PITCH * 0.5
+	var extent := Vector2(hi - lo + Vector2i(7, 7)) * PITCH
+	var width := int(ceil(extent.x * SHORE_PIXELS_PER_UNIT))
+	var depth := int(ceil(extent.y * SHORE_PIXELS_PER_UNIT))
+	var image := Image.create(width, depth, false, Image.FORMAT_L8)
+	var half := PITCH * 0.5
+	for y in range(depth):
+		for x in range(width):
+			var point := origin + Vector2(x + 0.5, y + 0.5) / SHORE_PIXELS_PER_UNIT
+			var cell := Vector2i(floori((point.x + half) / PITCH), floori((point.y + half) / PITCH))
+			var best := INF
+			for dy in range(-2, 3):
+				for dx in range(-2, 3):
+					var coord := cell + Vector2i(dx, dy)
+					if not _coord_lookup.has(coord): continue
+					var gap := ((point - Vector2(coord) * PITCH).abs() - Vector2(half, half)).max(Vector2.ZERO)
+					best = minf(best, gap.length())
+			var value := clampf(1.0 - best / (PITCH * 2.0), 0.0, 1.0)
+			image.set_pixel(x, y, Color(value, value, value))
+	_sea_material.set_shader_parameter("shore_mask", ImageTexture.create_from_image(image))
+	_sea_material.set_shader_parameter("mask_rect", Vector4(origin.x, origin.y, extent.x, extent.y))
 
 
 func _box(parent: Node3D, size_value: Vector3, pos: Vector3, material: Material) -> MeshInstance3D:

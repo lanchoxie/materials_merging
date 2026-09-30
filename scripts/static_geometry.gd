@@ -24,7 +24,8 @@ static func _gather(node: Node3D, transform: Transform3D, groups: Dictionary) ->
 		var relative: Transform3D = transform * child.transform
 		if child is MeshInstance3D and child.mesh != null:
 			var mat = child.material_override
-			if mat is StandardMaterial3D and mat.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED:
+			var batchable: bool = (mat is StandardMaterial3D and mat.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED) or (mat is ShaderMaterial and mat.get_meta("static_batch", false))
+			if batchable:
 				var key = mat.get_instance_id()
 				if not groups.has(key): groups[key] = {"material":mat,"items":[]}
 				groups[key].items.append({"node":child,"transform":relative})
