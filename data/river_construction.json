@@ -47,6 +47,22 @@
     "field_mixing_tank": {
       "units": 1,
       "kind": "mixing_tank"
+    },
+    "earth_sprinkler": {
+      "units": 1,
+      "kind": "sprinkler"
+    },
+    "earth_oxygen_tower": {
+      "units": 1,
+      "kind": "oxygen_tower"
+    },
+    "earth_co2_tower": {
+      "units": 1,
+      "kind": "co2_tower"
+    },
+    "earth_fertilizer": {
+      "units": 1,
+      "kind": "fertilizer_spreader"
     }
   },
   "kinds": {
@@ -87,6 +103,26 @@
     "mixing_tank": {
       "name": "有机配料罐",
       "color": "53aa9e"
+    },
+    "sprinkler": {
+      "name": "喷淋塔",
+      "color": "6fb7c9",
+      "machine": true
+    },
+    "oxygen_tower": {
+      "name": "制氧塔",
+      "color": "8fd3e8",
+      "machine": true
+    },
+    "co2_tower": {
+      "name": "温室气体塔",
+      "color": "b7a07a",
+      "machine": true
+    },
+    "fertilizer_spreader": {
+      "name": "氨肥撒播机",
+      "color": "c9a75a",
+      "machine": true
     }
   },
   "scope": "一包构件拆成8块；拆回原批次，全部收回才可还原整包。方块须与地面连通，暂不模拟真实结构强度。太阳能输出为统一的游戏服务点，不是实测器件效率。"

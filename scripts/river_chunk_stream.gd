@@ -8,13 +8,15 @@ var pending=[]
 var center_key=Vector2i(99999,99999)
 var season=-1
 var nature_revision=-1
+var env_revision=-1
 var last_build_us=0
 
 func schedule(at: Vector2,new_season: int) -> void:
 	var center=terrain.chunk_at(at)
 	var rev=terrain.nature.revision if terrain.nature!=null else 0
-	if center==center_key and new_season==season and nature_revision==rev: return
-	nature_revision=rev
+	var climate=terrain.environment.revision if terrain.environment!=null else 0
+	if center==center_key and new_season==season and nature_revision==rev and env_revision==climate: return
+	nature_revision=rev; env_revision=climate
 	season=new_season; center_key=center
 	var wanted={}; var radius=int(terrain.rules.stream_radius); var span=float(terrain.rules.chunk_cells)*terrain.rules.cell_size
 	for z in range(-radius,radius+1):
@@ -27,7 +29,7 @@ func schedule(at: Vector2,new_season: int) -> void:
 	pending=[]
 	for key in wanted:
 		var revision=int(terrain.nature.chunk_versions.get(key,0)) if terrain.nature!=null else 0
-		if not chunks.has(key) or chunks[key].get_meta("season",-1)!=season or chunks[key].get_meta("nature",-1)!=revision: pending.append(key)
+		if not chunks.has(key) or chunks[key].get_meta("season",-1)!=season or chunks[key].get_meta("nature",-1)!=revision or chunks[key].get_meta("env",-1)!=_env_version(key): pending.append(key)
 	pending.sort_custom(func(a,b): return Vector2(a-center).length_squared()<Vector2(b-center).length_squared())
 
 func drain(limit: int) -> void:
@@ -35,7 +37,12 @@ func drain(limit: int) -> void:
 		var key=pending.pop_front(); var start=Time.get_ticks_usec(); var mesh=_build(key)
 		if not chunks.has(key):
 			var n=MeshInstance3D.new(); add_child(n); chunks[key]=n
-		chunks[key].mesh=mesh; chunks[key].set_meta("nature",int(terrain.nature.chunk_versions.get(key,0)) if terrain.nature!=null else 0); chunks[key].set_meta("season",season); last_build_us=Time.get_ticks_usec()-start
+		chunks[key].mesh=mesh; chunks[key].set_meta("nature",int(terrain.nature.chunk_versions.get(key,0)) if terrain.nature!=null else 0); chunks[key].set_meta("season",season); chunks[key].set_meta("env",_env_version(key)); last_build_us=Time.get_ticks_usec()-start
+
+func _env_version(key: Vector2i) -> int:
+	if terrain.environment==null: return 0
+	var span=float(terrain.rules.chunk_cells)*terrain.rules.cell_size
+	return terrain.environment.chunk_version((Vector2(key)+Vector2(0.5,0.5))*span)
 
 func _process(_dt: float) -> void:
 	if terrain!=null: drain(int(terrain.rules.chunks_per_frame))
@@ -64,6 +71,34 @@ func _height(c: Vector3i,voxels: Dictionary,tops: Dictionary) -> float:
 	var top=_top(c,tops)
 	return top-c.y if c.y==ceili(top)-1 and top-c.y<1.0 else 1.0
 
+## v0.32 render-only biome decor: cacti, snow mounds, reeds, ferns and flowers. No collision, no state.
+func _decor(st: SurfaceTool,p: Vector2,top: float,v: Vector4,roll: float) -> void:
+	var b=Vector3(p.x+(roll*50-0.5)*0.4,top,p.y+(fposmod(roll*977,1)-0.5)*0.4)
+	if v.y<2.0:
+		G.cube(st,b+Vector3(0,0.06,0),Vector3(0.9,0.12,0.7),Color("f2f6f7"))
+		if roll<0.008: G.cube(st,b+Vector3(0.2,0.22,0.1),Vector3(0.35,0.3,0.3),Color("b8d4e0"))
+	elif v.x<0.25:
+		if roll<0.01:
+			G.cube(st,b+Vector3(0,0.75,0),Vector3(0.26,1.5,0.26),Color("5d8a4a"))
+			G.cube(st,b+Vector3(0.25,0.75,0),Vector3(0.3,0.16,0.16),Color("5d8a4a")); G.cube(st,b+Vector3(0.36,1.0,0),Vector3(0.16,0.45,0.16),Color("6a9a55"))
+			G.cube(st,b+Vector3(-0.22,0.55,0),Vector3(0.24,0.14,0.14),Color("5d8a4a")); G.cube(st,b+Vector3(-0.3,0.75,0),Vector3(0.14,0.32,0.14),Color("6a9a55"))
+			G.cube(st,b+Vector3(0,1.53,0),Vector3(0.12,0.08,0.12),Color("e68aa0"))
+		else:
+			for i in range(3): G.cube(st,b+Vector3((i-1)*0.16,0.16,(i%2)*0.1),Vector3(0.05,0.32,0.05),Color("9c8150"))
+	elif v.x>0.78:
+		for i in range(5):
+			var h=0.9+fposmod(roll*(31+i*7),1)*0.6
+			G.cube(st,b+Vector3((i-2)*0.11,h*0.5,fposmod(roll*(13+i),1)*0.25),Vector3(0.04,h,0.04),Color("8fae6a"))
+			G.cube(st,b+Vector3((i-2)*0.11,h+0.08,fposmod(roll*(13+i),1)*0.25),Vector3(0.07,0.18,0.07),Color("7a5a3a"))
+	elif v.x>=0.45 and v.z>0.46 and v.y>5.0 and v.y<28.0:
+		for i in range(3): G.cube(st,b+Vector3(0,0.18,0),Vector3(0.9 if i!=1 else 0.12,0.05,0.12 if i!=1 else 0.9),Color("3f7a3c").lightened(i*0.08))
+		G.cube(st,b+Vector3(0,0.3,0),Vector3(0.1,0.3,0.1),Color("4b8a45"))
+	elif roll<0.012:
+		var bloom=[Color("f1d35a"),Color("e98fb0"),Color("f4f0e6"),Color("9b8cf0")][int(roll*1000)%4]
+		for i in range(3):
+			var at=b+Vector3((i-1)*0.18,0,fposmod(roll*(17+i*5),1)*0.3-0.15)
+			G.cube(st,at+Vector3(0,0.17,0),Vector3(0.03,0.34,0.03),Color("5b8a45")); G.cube(st,at+Vector3(0,0.36,0),Vector3(0.11,0.07,0.11),bloom)
+
 ## Grass follows the season on topsoil; the river bed shows water; rock shows its mineral colour.
 func _top_color(id: String,p: Vector2,river: bool,natural_top: bool,grass: Color,shade: float,x: int,y: int,z: int) -> Color:
 	if id=="topsoil":
@@ -88,6 +123,11 @@ func _build(key: Vector2i) -> Mesh:
 	# Only chunks at the far rim of the world need per-cell boundary checks.
 	var corner=Vector2(key)*span*cell; var rim=not terrain.inside(corner,span*2*cell) or not terrain.inside(corner+Vector2(span,span)*cell,span*2*cell)
 	var grass=Color(["749b64","6f9a60","b4a262","bdcfbd"][season])
+	# v0.32 Earth: a chunk never crosses a cell centre line, so the blended climate is bilinear
+	# inside it; four corner samples are enough.
+	var env=terrain.environment; var climate=[]; var decor=[]
+	if env!=null:
+		for at in [Vector2(0,0),Vector2(1,0),Vector2(0,1),Vector2(1,1)]: climate.append(env.blend((Vector2(key)+at)*span*cell))
 	for iz in range(key.y*span,(key.y+1)*span):
 		for ix in range(key.x*span,(key.x+1)*span):
 			var p=Vector2(ix,iz)*cell
@@ -99,10 +139,17 @@ func _build(key: Vector2i) -> Mesh:
 			for d in DIRS:
 				if columns.has(col+Vector2i(d.x,d.z)): near_edit=true
 			var shade=(sin(p.x*13+p.y*17)+1)*0.035
+			var tile_grass=grass
+			if env!=null:
+				var u=(p.x/cell-key.x*span)/span; var w=(p.y/cell-key.y*span)/span
+				var v: Vector4=climate[0].lerp(climate[1],u).lerp(climate[2].lerp(climate[3],u),w)
+				tile_grass=env.tint(v,grass)
+				var roll=fposmod(sin(ix*12.9898+iz*78.233)*43758.5453,1.0)
+				if roll<0.02 and not near_edit and not river and p.length()>40 and not terrain.on_path(p): decor.append([p,top,v,roll])
 			if not near_edit and not rim:
 				# Fast path: untouched heightmap column. One top face plus the exposed side bands.
 				var yc=ceili(top)-1; var id: String=Geology.natural(Vector3i(ix,yc,iz),top,river)
-				G.face(st,[Vector3(x0,top,z0),Vector3(x1,top,z0),Vector3(x1,top,z1),Vector3(x0,top,z1)],_top_color(id,p,river,true,grass,shade,ix,yc,iz))
+				G.face(st,[Vector3(x0,top,z0),Vector3(x1,top,z0),Vector3(x1,top,z1),Vector3(x0,top,z1)],_top_color(id,p,river,true,tile_grass,shade,ix,yc,iz))
 				for d in DIRS:
 					var low: float=tops[col+Vector2i(d.x,d.z)]
 					if low>=top: continue
@@ -129,7 +176,7 @@ func _build(key: Vector2i) -> Mesh:
 				if not _solid(c,voxels,tops,bedrock): continue
 				var h=_height(c,voxels,tops); var id: String=voxels[c] if voxels.has(c) else Geology.natural(c,top,river); var yt=y+h
 				if h<1.0 or not _solid(c+Vector3i.UP,voxels,tops,bedrock):
-					G.face(st,[Vector3(x0,yt,z0),Vector3(x1,yt,z0),Vector3(x1,yt,z1),Vector3(x0,yt,z1)],_top_color(id,p,river,not voxels.has(c) and y==ceili(top)-1,grass,shade,ix,y,iz))
+					G.face(st,[Vector3(x0,yt,z0),Vector3(x1,yt,z0),Vector3(x1,yt,z1),Vector3(x0,yt,z1)],_top_color(id,p,river,not voxels.has(c) and y==ceili(top)-1,tile_grass,shade,ix,y,iz))
 				if y>bedrock and not _solid(c+Vector3i.DOWN,voxels,tops,bedrock):
 					G.face(st,[Vector3(x0,y,z1),Vector3(x1,y,z1),Vector3(x1,y,z0),Vector3(x0,y,z0)],_color(id).darkened(0.25))
 				for d in DIRS:
@@ -144,6 +191,7 @@ func _build(key: Vector2i) -> Mesh:
 		var z=float(iz)*cell; var x=terrain.river_x(z)
 		if absf(z)<=29 or terrain.chunk_at(Vector2(x,z)).x!=key.x or not terrain.inside(Vector2(x,z),1.0): continue
 		G.cube(st,Vector3(x,0.20,z),Vector3(2.85,0.06,cell+0.02),Color("59aab8"))
+	for item in decor: _decor(st,item[0],item[1],item[2],item[3])
 	for tree in terrain.tree_records(key):
 		var p=Vector2(tree.x,tree.z); var h=terrain.ground(p)
 		var spec=terrain.nature.rules.species[tree.species] if terrain.nature!=null else {"height":3.1,"leaf":"629956","wood":"956f4c"}
@@ -152,6 +200,9 @@ func _build(key: Vector2i) -> Mesh:
 		var scale=0.25+float(tree.growth)*0.75; var tall=float(spec.height)*scale
 		var wood=Color(spec.wood); var leaf=Color(spec.leaf).lerp(Color("cf9457"),0.45 if season==2 else 0)
 		if season==3: leaf=leaf.lerp(Color("e3ede4"),0.55)
+		if env!=null:
+			var tv: Vector4=env.blend(p)
+			leaf=leaf.lerp(Color("a7955a"),smoothstep(0.34,0.18,tv.x)*0.6).lerp(Color("e3ede4"),smoothstep(4.0,-1.0,tv.y)*0.6)
 		G.cube(st,Vector3(p.x,h+tall*0.42,p.y),Vector3(0.35*scale,tall*0.84,0.35*scale),wood)
 		if tree.species=="pine":
 			for tier in range(4):

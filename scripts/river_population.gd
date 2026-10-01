@@ -8,6 +8,8 @@ var active_sites=[]
 var enabled=true
 var combat
 var ranch
+## v0.32: wild sites live in the Earth climate field when it is linked.
+var environment
 
 func _init() -> void:
 	for id in Terrain.CENTERS:
@@ -23,7 +25,9 @@ func _site(id: String,p: Vector2,camp: bool,home: bool=false) -> Dictionary:
 
 func _animal(site: Dictionary) -> Dictionary:
 	var id=int(site.serial); site.serial+=1
-	return {"id":id,"species":"woodland_boar" if id%2==0 else "meadow_herbivore","health":0.9,"age":0.5,"x":sin(id*9.1)*2,"z":cos(id*4.7)*2}
+	var boar=id%2==0
+	if environment!=null and not site.home and environment.biome_at(Vector2(site.x,site.z))=="forest": boar=true
+	return {"id":id,"species":"woodland_boar" if boar else "meadow_herbivore","health":0.9,"age":0.5,"x":sin(id*9.1)*2,"z":cos(id*4.7)*2}
 
 func _visitor(site: Dictionary) -> Dictionary:
 	var id=int(site.serial); site.serial+=1
@@ -49,11 +53,12 @@ func advance(regions: Dictionary) -> Array:
 	var arrivals=[]
 	for key in simulation_keys():
 		var s: Dictionary=sites[key]
-		var env=regions[key] if s.home else rules.wild_environment
+		var env=regions[key] if s.home else (environment.habitat(Vector2(s.x,s.z)) if environment!=null else rules.wild_environment)
 		s.seconds+=1
 		var good=_suitable(env)
 		if enabled and good: s.flora=minf(1,float(s.flora)+1.0/float(rules.plant_regrow_seconds))
-		elif not good: s.flora=maxf(0,float(s.flora)-0.001)
+		# v0.32: natives of a harsh biome hang on at sparse cover; only pollution strips a wild site bare.
+		elif not good: s.flora=maxf(0.2 if not s.home and float(env.pollution)<0.4 and float(s.flora)>=0.2 else 0.0,float(s.flora)-0.001)
 		s.animal_clock=mini(int(rules.animal_interval),int(s.animal_clock)+1)
 		var animals: Array=env.animals if s.home else s.animals
 		if enabled and good and s.flora>0.35 and not env.enclosed and s.animal_clock>=int(rules.animal_interval) and animals.size()<int(rules.animal_target):

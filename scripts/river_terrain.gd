@@ -4,6 +4,8 @@ const Geology=preload("res://scripts/planet_geology.gd")
 const CENTERS={"wetland":Vector3(-10,0,10),"riverbank":Vector3(-10,0,-10),"meadow":Vector3(10,0,10),"highland":Vector3(10,0,-10)}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_exploration.json"))
 var nature
+## v0.32: the climate field (PlanetEnvironment) for ground colours; null in bare tests.
+var environment
 var trees: Array[Vector2]=[]
 var tree_cache={}
 const LANDMARKS={"home":{"name":"起始河湾","at":Vector2(10,15)},"homestead":{"name":"采集坡 · 小屋营地","at":Vector2(16,22)},"camp":{"name":"旅人林间营地","at":Vector2(68,68)},"woods":{"name":"西岸林地","at":Vector2(-124,68)},"ridge":{"name":"远方高原","at":Vector2(196,-188)},"frontier":{"name":"千米林海 · 远征起点","at":Vector2(1348,1348)},"far_river":{"name":"六公里外 · 上游河谷","at":Vector2(-8,-6140)}}

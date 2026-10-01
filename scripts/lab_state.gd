@@ -1301,7 +1301,7 @@ func _validate_save(data) -> bool:
 	if int(data.version)==17 and data.planet.version!=7: return false
 	if int(data.version)==18 and data.planet.version!=8: return false
 	if int(data.version)==19 and data.planet.version!=9: return false
-	if int(data.version)>=20 and int(data.planet.version) not in [10,11]: return false
+	if int(data.version)>=20 and int(data.planet.version) not in [10,11,12]: return false
 	if int(data.version) >= 3:
 		# v0.3 saves may predate newly discoverable elements. Keep every
 		# existing quantity and initialize only symbols introduced in v0.4.

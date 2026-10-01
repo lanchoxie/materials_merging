@@ -26,6 +26,9 @@ var shipment_serial=1
 var _reference_cache: Dictionary={}
 var notice=""
 var v2=PlanetV2.new()
+## v0.32: samples whose identity unlocks a workshop line (water is the original entry pass).
+const SAMPLE_REFERENCES={"water":"水样","oxygen":"氧气 O₂ 样品","carbon_dioxide":"二氧化碳 CO₂ 样品","ammonia":"氨 NH₃ 样品"}
+const EARTH_KITS=["earth_sprinkler_kit","earth_oxygen_tower_kit","earth_co2_tower_kit","earth_fertilizer_kit"]
 
 func _init() -> void:
 	for id in config.supplies: supplies[id]=0
@@ -126,17 +129,17 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 		"qualify":
 			if not joined: return "先在邮箱领取浮岛工坊合作"
 			var ref=str(payload.get("reference","water"))
-			if ref not in ["water","oxygen"]: return "暂无这个体系的工艺"
+			if not SAMPLE_REFERENCES.has(ref): return "暂无这个体系的工艺"
 			if qualified_for(ref): return "工艺已经解锁，无需重复提交样品"
 			var id=str(payload.get("batch_id","")); var accepted: Dictionary={}
 			for candidate in sample_candidates(state,ref):
 				if candidate.id==id: accepted=candidate
-			if accepted.is_empty() or int(accepted.quantity)<int(config.workshop.samples_required): return "需要同一批次的%d份%s样品，其他结构不能代替" % [int(config.workshop.samples_required),"水" if ref=="water" else "氧气 O₂"]
+			if accepted.is_empty() or int(accepted.quantity)<int(config.workshop.samples_required): return "需要同一批次的%d份%s，其他结构不能代替" % [int(config.workshop.samples_required),SAMPLE_REFERENCES[ref]]
 			var proof={"batch_id":id,"work":accepted.work.duplicate(true),"reference":ref,"method":"reference_identity_v1"}
 			state.storage.take_product(id,int(config.workshop.samples_required))
 			if ref=="water": qualification=proof; qualified=true
 			else: extra_qualifications[ref]=proof
-			return "%s样品身份已验证，对应工艺开放；批量供料由合作方提供" % ("水" if ref=="water" else "氧气")
+			return "%s身份已验证，对应工艺开放；批量供料由合作方提供" % SAMPLE_REFERENCES[ref]
 		"buy_feed":
 			if not joined: return "先领取合作补给"
 			var input_id=str(payload.get("input","feed"))
@@ -346,10 +349,10 @@ func tick(dt: float,effort: float=0.0) -> void:
 	v2.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":11,"laminates":laminates.serialize(),"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"retired_planet":retired_planet.duplicate(true),"v2":v2.serialize()}
+	return {"version":12,"laminates":laminates.serialize(),"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"retired_planet":retired_planet.duplicate(true),"v2":v2.serialize()}
 
 func restore(data,state) -> bool:
-	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8,9,10,11]: return false
+	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8,9,10,11,12]: return false
 	data=data.duplicate(true)
 	if data.version<5: data.production_mode="partner"
 	if data.get("production_mode") not in ["partner","island"]: return false
@@ -374,6 +377,11 @@ func restore(data,state) -> bool:
 		if not data.get("supplies") is Dictionary or data.supplies.size()!=23: return false
 		for id in config.supplies:
 			if not data.supplies.has(id): data.supplies[id]=0
+	if data.version<12:
+		# v0.32 Earth machines add their supply kits.
+		if not data.get("supplies") is Dictionary: return false
+		for id in EARTH_KITS:
+			if not data.supplies.has(id): data.supplies[id]=0
 	if not data.get("circuit_reports") is Dictionary or data.circuit_reports.size()>2: return false
 	for mode in data.circuit_reports:
 		if not electrical.valid_report(data.circuit_reports[mode],str(mode)) or data.get("joined")!=true: return false
@@ -394,9 +402,9 @@ func restore(data,state) -> bool:
 	if not data.get("supplies") is Dictionary or data.supplies.size()!=config.supplies.size(): return false
 	for key in config.supplies:
 		if not Count.count_ok(data.supplies.get(key)) or int(data.supplies[key])>int(config.workshop.inventory_limit): return false
-	if not data.get("extra_qualifications") is Dictionary or data.extra_qualifications.size()>1: return false
+	if not data.get("extra_qualifications") is Dictionary or data.extra_qualifications.size()>SAMPLE_REFERENCES.size()-1: return false
 	for ref in data.extra_qualifications:
-		if ref!="oxygen" or not data.joined: return false
+		if ref=="water" or not SAMPLE_REFERENCES.has(ref) or not data.joined: return false
 		var q=data.extra_qualifications[ref]
 		if not q is Dictionary or not q.get("batch_id") is String or q.batch_id.is_empty() or q.batch_id.length()>96: return false
 		if q.get("reference")!=ref or q.get("method")!="reference_identity_v1" or not q.get("work") is Dictionary: return false

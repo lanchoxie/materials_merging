@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "model": "earth_climate_field_v1",
+  "cell_size": 256.0,
+  "grid": 64,
+  "origin": -8192.0,
+  "baseline": {
+    "water": 0.55,
+    "temperature": 19.0,
+    "nutrients": 0.44,
+    "o2": 20.9,
+    "co2": 420.0,
+    "calm_radius": 300.0,
+    "ramp": 700.0
+  },
+  "climate": {
+    "sensitivity_c_per_doubling": 3.0,
+    "atmosphere_tau": 1800.0,
+    "local_tau": 600.0,
+    "neighbour_share": 0.35,
+    "co2_growth_max": 0.25
+  },
+  "caps": {
+    "water": 0.6,
+    "nutrients": 0.6,
+    "pollution": 0.3,
+    "temperature": 4.0,
+    "o2": 2.0,
+    "co2": 1200.0
+  },
+  "emitters": {
+    "sprinkler": {"name": "喷淋塔", "water": 0.30, "temperature": -1.0, "summary": "周围变湿润，略微降温"},
+    "oxygen_tower": {"name": "制氧塔", "o2": 0.4, "summary": "提高全球大气含氧量"},
+    "co2_tower": {"name": "温室气体塔", "co2": 150.0, "summary": "提高全球CO₂，全球升温，作物稍快"},
+    "fertilizer_spreader": {"name": "氨肥撒播机", "nutrients": 0.30, "pollution": 0.04, "summary": "土壤变肥，带来少量污染"}
+  },
+  "biomes": {
+    "grassland": {"name": "草原", "color": "86b06a"},
+    "forest": {"name": "森林", "color": "3f7d45"},
+    "wetland": {"name": "湿地", "color": "4f8f8a"},
+    "desert": {"name": "荒漠", "color": "d8bf86"},
+    "tundra": {"name": "冻原", "color": "e6eef0"}
+  },
+  "scope": "地球环境是教学模型：基线由公式生成，水分、营养、污染为0—1游戏指标；每台设备的效果、时间尺度都经过游戏压缩。升温按每翻倍3°C（IPCC AR6平衡气候敏感度最佳估计）计算，但发生在几分钟内而非几十年。",
+  "science_basis": [
+    {"topic": "平衡气候敏感度约3°C（每CO₂翻倍）", "url": "https://www.ipcc.ch/report/ar6/wg1/chapter/chapter-7/", "checked": "2026-10-01", "scope": "只用于升温与CO₂的对数关系；时间尺度为游戏压缩"},
+    {"topic": "CO₂施肥效应", "url": "https://www.nature.com/articles/nclimate3004", "checked": "2026-10-01", "scope": "支持定性加快C3作物生长；本游戏上限+25%为游戏数值"}
+  ]
+}

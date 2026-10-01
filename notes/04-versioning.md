@@ -17,6 +17,7 @@
 | v0.29.0 "Index" | branch `claude/v0.29-index`, tag **`v0.29.0`** (save v25 with `index_found`; loads every older save, v0.28 cannot read a v25 save) |
 | v0.30.0 "Fabricator" | branch `claude/v0.30-fabricator`, tag **`v0.30.0`** (save v26 with `fabricator`; loads every older save, v0.29 cannot read a v26 save) |
 | v0.31.0 "Builder" | branch `claude/v0.31-builder`, tag **`v0.31.0`** (save v27: town items may spill across plots; loads every older save, v0.30 cannot read a v27 save) |
+| v0.32.0 "Earth" | branch `claude/v0.32-earth`, tag **`v0.32.0`** (planet v2 gains an optional `environment` key; workshop program save v12; loads every older save, v0.31 cannot read a v12 program) |
 | Old APKs / source zips | `builds/` (git-ignored, never overwritten — build script refuses to overwrite) |
 
 > The v0.20/v0.21 work had **never been committed** (the repo is owned by a different Windows

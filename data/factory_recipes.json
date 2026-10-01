@@ -159,6 +159,22 @@
     "modern_aluminum_sink_kit": {
       "name": "等重铝散热芯标准供料",
       "price": 30
+    },
+    "earth_sprinkler_kit": {
+      "name": "喷淋塔泵组与喷头标准供料",
+      "price": 60
+    },
+    "earth_oxygen_tower_kit": {
+      "name": "制氧塔分子筛与风机标准供料",
+      "price": 80
+    },
+    "earth_co2_tower_kit": {
+      "name": "温室气体塔压缩机与储罐标准供料",
+      "price": 90
+    },
+    "earth_fertilizer_kit": {
+      "name": "氨肥撒播机料仓与喷嘴标准供料",
+      "price": 70
     }
   },
   "recipes": {
@@ -529,6 +545,50 @@
       "seconds": 24,
       "domain": "modern",
       "description": "标准供应商的教学器件方案；不由玩家分子形状推导宏观物性。"
+    },
+    "earth_sprinkler": {
+      "id": "earth_sprinkler",
+      "name": "喷淋塔",
+      "version": 1,
+      "reference": "water",
+      "input": "earth_sprinkler_kit",
+      "fee": 20,
+      "seconds": 30,
+      "domain": "earth",
+      "description": "把水样工艺做成能长期工作的喷淋塔。放在地球上，周围约256米变湿润、略微降温；荒漠会慢慢转绿，过量会变成湿地。拆回后环境逐渐恢复。"
+    },
+    "earth_oxygen_tower": {
+      "id": "earth_oxygen_tower",
+      "name": "制氧塔",
+      "version": 1,
+      "reference": "oxygen",
+      "input": "earth_oxygen_tower_kit",
+      "fee": 20,
+      "seconds": 30,
+      "domain": "earth",
+      "description": "用已验证的氧气样品解锁。放在地球任意位置，缓慢提高全球大气含氧量（最多+2%），河湾水体的溶氧目标随之提高。"
+    },
+    "earth_co2_tower": {
+      "id": "earth_co2_tower",
+      "name": "温室气体塔",
+      "version": 1,
+      "reference": "carbon_dioxide",
+      "input": "earth_co2_tower_kit",
+      "fee": 20,
+      "seconds": 30,
+      "domain": "earth",
+      "description": "用已验证的二氧化碳样品解锁。缓慢提高全球CO₂：作物稍快生长，但全球升温（每翻倍约3°C，时间为游戏压缩）。冻原会解冻，南方会更热。"
+    },
+    "earth_fertilizer": {
+      "id": "earth_fertilizer",
+      "name": "氨肥撒播机",
+      "version": 1,
+      "reference": "ammonia",
+      "input": "earth_fertilizer_kit",
+      "fee": 20,
+      "seconds": 30,
+      "domain": "earth",
+      "description": "用已验证的氨样品解锁。周围土壤营养提高，草原可能长成森林；同时带来少量污染，污染过高时野生动物不再定居。"
     }
   }
 }

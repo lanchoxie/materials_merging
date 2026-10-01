@@ -42,6 +42,9 @@ func entries(state) -> Dictionary:
 		if not construction.is_empty():
 			category="components"; icon="solar" if construction.kind=="solar" else "block"
 			if construction.kind in ["floor","roof","fence","planter"]: icon=construction.kind
+			if c.rules.kinds[construction.kind].get("machine",false):
+				icon="machine"; description="地球环境设备：放在地面后持续改变周围约256米的环境或全球大气，拆回后逐渐恢复。
+"+description
 			quantity=c.available(str(construction.kind),p.products,recipe_id)
 			description="可放置构件：每包%d块，数量按块显示。绿色预览可以落下，红色预览需换位置；拆除返还原包。\n" % int(construction.units)+description
 			action={"type":"build","kind":construction.kind,"recipe":recipe_id}
@@ -50,6 +53,7 @@ func entries(state) -> Dictionary:
 		var key="recipe:"+recipe_id
 		if quantity>0 or key in slots:
 			result[key]=_item(key,str(spec.get("name",recipe_id)),category,icon,quantity,description,action)
+			if icon=="machine": result[key].color=str(c.rules.kinds[construction.kind].color)
 	for id in v.organics.bottles:
 		var bottle=v.organics.bottles[id]; var key="solution:"+str(id)
 		var ref=v.organics.substance(bottle); var name=v.organics.substance_name(ref)

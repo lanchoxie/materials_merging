@@ -30,6 +30,22 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.32.0 "Earth": a planet whose climate you can change
+The user asked to build Earth after v0.31 (2026-10-01). Full notes: [15-earth.md](15-earth.md).
+- **Climate field.** The 16 km planet is a 64×64 grid of 256 m cells with water, temperature, nutrients and pollution.
+  - The start area (300 m) is unchanged; further out the land ramps into five biomes: 草原, 森林, 湿地, 荒漠, 冻原.
+  - Cold north, dry east, wet west; the 千米林海 is forest.
+- **Environment machines.** Four new workshop lines, each gated by a real sample:
+  - 喷淋塔 (water): wets and cools its cell and a share of the neighbours; two can green a desert.
+  - 制氧塔 (O₂ sample): raises global O₂, which feeds the regions' oxygen target.
+  - 温室气体塔 (CO₂ sample): raises global CO₂; warming is 3 °C per doubling (IPCC AR6 best estimate, game-time compressed) and crops grow up to 25 % faster.
+  - 氨肥撒播机 (NH₃ sample): richer soil with a little pollution.
+  - They are built from the backpack like solar panels, have tall distinctive models and animated effects, and fade back when removed.
+- **The land follows.** Ground tint blends between cells; biome decor (cacti, reeds, ferns, flowers, snow mounds); dry or snowy trees; forest sites spawn boars; deep desert is not habitable.
+- **环境图.** A camera-bar button opens a 16 km map with biome/water/temperature/nutrient/pollution channels, landmarks, machines, your position and the atmosphere.
+- Saves: planet v2 gains an optional `environment` key (validated on load); workshop program v12 adds the four kits. Older saves load untouched.
+- Tests: new `test_earth` (37 checks) and `test_earth_ui` (18 checks, 8 screenshots).
+
 ## v0.31.0 "Builder": easier building, real doctor and element gates
 The user asked for a tidy pass before Earth (2026-10-01). Full notes: [13-builder.md](13-builder.md).
 - **Seamless island.**

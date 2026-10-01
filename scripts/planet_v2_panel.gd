@@ -50,14 +50,16 @@ var encounter_hud
 var faint_button
 var combat_clock=0.0
 var scroll_memory=preload("res://scripts/panel_scroll.gd").new()
+## v0.32: whole-planet climate overlay.
+var earth_map
 
 func setup(model) -> void:
 	state=model; state.planet.v2.active=true; state.planet.v2.observer_id=get_instance_id()
 	selected_region=str(state.planet.v2.world.current_region)
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
-	var heading=UI.label("河湾 · 一片会生长的世界",30,UI.MINT); heading.position=Vector2(28,18); add_child(heading)
-	var sub=UI.label("上帝视角 ↔ 第一人称   /   0.26 基岩 · 方块地层与真实矿物   /   约16公里探索区",14,UI.MUTED); sub.position=Vector2(30,62); add_child(sub)
+	var heading=UI.label("地球 · 从河湾出发的会生长的世界",30,UI.MINT); heading.position=Vector2(28,18); add_child(heading)
+	var sub=UI.label("上帝视角 ↔ 第一人称   /   0.32 地球 · 冻原、荒漠、湿地与森林，环境设备改变气候   /   约16公里",14,UI.MUTED); sub.position=Vector2(30,62); add_child(sub)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1288,22); close.size=Vector2(124,48); add_child(close)
 	time_label=UI.label("",19,UI.GOLD); time_label.position=Vector2(680,28); time_label.size=Vector2(580,38); time_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; add_child(time_label)
 	var region_bar=UI.row(self,8); region_bar.position=Vector2(28,99)
@@ -89,6 +91,7 @@ func setup(model) -> void:
 	camera_bar.add_child(UI.button("↷",func(): view.orbit(0.4)))
 	camera_bar.add_child(UI.button("＋",func(): view.zoom=clampf(view.zoom-0.15,0.65,1.4)))
 	camera_bar.add_child(UI.button("－",func(): view.zoom=clampf(view.zoom+0.15,0.65,1.4)))
+	camera_bar.add_child(UI.button("环境图",toggle_earth_map))
 	var time_box=UI.box(self,Rect2(28,748,928,91))
 	var time_row=UI.row(time_box,10)
 	pause_button=UI.button("暂停",func(): _act("v2_pause",{"paused":not state.planet.v2.world.paused})); time_row.add_child(pause_button)
@@ -115,6 +118,16 @@ func setup(model) -> void:
 	play_bar.hide()
 	aim_label=UI.label("",15,UI.GOLD); aim_label.position=Vector2(350,606); add_child(aim_label); aim_label.hide()
 	_refresh_hotbar(); _redraw(); _sync.call_deferred()
+
+func toggle_earth_map() -> void:
+	if is_instance_valid(earth_map) and earth_map.env==state.planet.v2.environment:
+		earth_map.visible=not earth_map.visible
+	else:
+		if is_instance_valid(earth_map): earth_map.queue_free()
+		earth_map=preload("res://scripts/earth_map.gd").new(); earth_map.name="EarthMap"
+		earth_map.position=viewport_box.position+Vector2(0,-6); earth_map.size=Vector2(928,580); add_child(earth_map)
+		earth_map.setup(state.planet.v2.environment,_observer_position)
+	if earth_map.visible: earth_map.move_to_front()
 
 func _map_click(at: Vector2) -> void:
 	# Only the map's GUI layer owns selection; its coordinates are always local.
@@ -540,6 +553,8 @@ func _live() -> void:
 		if widgets.has(worker): widgets[worker].text=p.name+" · "+v.ranch.role(int(p.id))+"\n"+v.ranch.job_label(int(p.id))+" · 饥饿%.0f%%" % (p.hunger*100)
 	if section!="observe" or not widgets.has("environment"): return
 	widgets.environment.text="水位 %.0f%% · 土壤湿度 %.0f%%\n溶氧 %.0f%% · 温度 %.1f°C\n土壤营养 %.0f%% · 颗粒负担 %.0f%%" % [r.water*100,r.moisture*100,r.oxygen*100,r.temperature,r.nutrients*100,r.pollution*100]
+	widgets.environment.text+="
+地球：%s · %s" % [v.environment.biome_name(v.environment.biome_at(_observer_position())),v.environment.atmosphere_text()]
 	var generation=0
 	for a in r.animals: generation=maxi(generation,int(a.generation))
 	widgets.herd.text="%d只动物 · 谱系最高第%d代" % [r.animals.size(),generation+1]

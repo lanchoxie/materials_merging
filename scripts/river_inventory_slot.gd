@@ -58,6 +58,12 @@ func _draw() -> void:
 		"fence":
 			for x in [-14,14]: draw_line(p+Vector2(x,-13),p+Vector2(x,20),color,6)
 			for y in [-5,10]: draw_line(p+Vector2(-17,y),p+Vector2(17,y),color,5)
+		"machine":
+			var tint=Color(str(item.get("color","8fd3e8")))
+			draw_rect(Rect2(p+Vector2(-15,12),Vector2(30,7)),Color("2f3a42"))
+			draw_rect(Rect2(p+Vector2(-6,-18),Vector2(12,31)),tint)
+			for y in [-12,-3,6]: draw_line(p+Vector2(-10,y),p+Vector2(10,y),Color("9ff3ff"),2)
+			draw_circle(p+Vector2(0,-21),4,Color("ffffff"))
 		"solar":
 			draw_rect(Rect2(p-Vector2(19,11),Vector2(38,26)),Color("8663a2") if str(item.id).contains("perovskite") else Color("4976a0"))
 			for x in [-12,0,12]: draw_line(p+Vector2(x,-11),p+Vector2(x,15),UI.MINT,1)

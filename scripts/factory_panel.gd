@@ -176,6 +176,7 @@ func _workshop() -> void:
 	if not p.job.is_empty() and p.production_mode=="partner": _text("旧合作订单正在继续完成；下一笔新订单交由本岛车间。",15,UI.GOLD)
 	if selected_recipe=="frame_bundle": _text("星球用途：1包可搭8块木构，也可整体用作动物围栏；两种用法共用这一件成品。",15,UI.MINT)
 	elif selected_recipe in ["modern_silicon","modern_perovskite"]: _text("星球用途：安装1块光伏构件，支持聚落生态站的白天供能。",15,UI.MINT)
+	elif info.get("domain","")=="earth": _text("地球用途：背包装备后放在地面，改变周围约256米的环境或全球大气。打开「地球环境图」查看效果；拆回后环境逐渐恢复。",15,UI.MINT)
 	if ref.begins_with("circuit:") and not p.qualified_for(ref):
 		_text("先在导线对照记录同截面或同重量的结果。",17,UI.GOLD)
 		_button("打开导线对照",func(): section="circuits"; _redraw(),true); return
@@ -184,11 +185,11 @@ func _workshop() -> void:
 		_button("打开材料对照",_open_materials,true)
 		return
 	if not p.qualified_for(ref):
-		var sample_name="水样" if ref=="water" else "氧气 O₂ 样品"
+		var sample_name=str(p.SAMPLE_REFERENCES.get(ref,ref))
 		_text("① 提交%s" % sample_name,21,UI.MINT)
 		_text("需要同一批次的%d份已收集样品。身份验证消耗样品；批量供料另计。" % int(rules.samples_required))
 		var candidates=p.sample_candidates(state,ref)
-		if candidates.is_empty(): _text("在浮岛建造%s反应炉并收获，或在沙盒正确搭出对应结构。" % ("水分子" if ref=="water" else "氧气 O₂"),16,UI.GOLD)
+		if candidates.is_empty(): _text("在浮岛建造%s反应炉并收获，或在沙盒正确搭出对应结构。" % sample_name.trim_suffix("样品").trim_suffix("样").strip_edges(),16,UI.GOLD)
 		for batch in candidates:
 			_button("提交%s · 库存%d份" % [sample_name,int(batch.quantity)],func(): _do("qualify",{"batch_id":str(batch.id),"reference":ref}),true,int(batch.quantity)<int(rules.samples_required))
 	else:

@@ -10,7 +10,7 @@ func check(ok: bool,message: String) -> void:
 func copy(v): return JSON.parse_string(JSON.stringify(v))
 func _initialize() -> void:
 	var s=State.new(); var p=s.planet
-	check(not p.serialize().has("worlds") and p.serialize().version==11 and p.retired_planet.is_empty(),"new games create no legacy worlds")
+	check(not p.serialize().has("worlds") and p.serialize().version==12 and p.retired_planet.is_empty(),"new games create no legacy worlds")
 	var before=p.serialize(); var coins=s.coins
 	for action in ["deploy","fork","reset_trial","select","activate_modern","modern","activate_industry","industry","activate_habitat","habitat","activate_village","village","activate_watershed","watershed","ecology","pause","step_world","step_pair"]:
 		p.command(s,action,{"world_id":"home","token":p.shipment_serial})

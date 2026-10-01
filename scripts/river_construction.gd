@@ -114,6 +114,8 @@ func available(kind: String, products: Array, recipe_id: String="") -> int:
 func place_error(c: Vector3i, actor: Dictionary) -> String:
 	if blocks.size() >= int(rules.max_blocks): return "本星球已放满512块构件"
 	if blocks.has(key(c)): return "这里已经有构件"
+	var below: Dictionary=blocks.get(key(c+Vector3i.DOWN),{})
+	if not below.is_empty() and rules.kinds[below.kind].get("machine",false): return "环境设备上方要留空，不能叠放构件"
 	var flat := Vector2(c.x,c.z)
 	if not terrain.inside(flat,2) or c.y < base(c) or c.y > base(c)+int(rules.height_limit): return "请放在地表附近，建筑最高8层"
 	if terrain.blocked(flat,obstacles): return "这里有树木或已有设施，请换一个位置"

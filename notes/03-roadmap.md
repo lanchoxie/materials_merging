@@ -72,7 +72,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.31 "Builder" (tag `v0.31.0`; see [13-builder.md](13-builder.md)), inserted at the user's request: seamless
   12×12 plots with items crossing plot edges, undo/Ctrl+Z, eraser and one-click recycle, doctor and element gates
   for reactors, templates and element swaps.
-- v0.32 "Earth": environment field (planet + region grid), emitters, biome shifts, plus the machines deferred from v0.30.
+- ✅ v0.32 "Earth" (tag `v0.32.0`; see [15-earth.md](15-earth.md)): a 64×64 climate field over the 16 km planet,
+  five biomes, four environment machines from the workshop (sprinkler, O₂ tower, CO₂ tower, fertiliser spreader),
+  global CO₂ warming (3 °C per doubling), biome-tinted ground and decor, and the 环境图 overlay map.
 - v0.32.x visual polish pass (user request): first-person models, island residents, planet creatures and materials.
 - Phase 2 "浮岛2.0 / Starforge Isle" (see [14-industry-island.md](14-industry-island.md)): a second island with an
   industry chain molecule → material → chip → energy → goods → vehicles → gear → space; products go to the backpack

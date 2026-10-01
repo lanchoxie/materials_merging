@@ -21,6 +21,9 @@ const Organics=preload("res://scripts/river_organics.gd")
 var organics=Organics.new()
 const Journey=preload("res://scripts/river_journey.gd")
 var journey=Journey.new()
+## v0.32 Earth: climate field, atmosphere and machines.
+const Climate=preload("res://scripts/planet_environment.gd")
+var environment=Climate.new()
 var actor: Dictionary={}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_v2.json"))
 var world: Dictionary={}
@@ -33,6 +36,7 @@ func _init() -> void:
 
 func _link_geometry() -> void:
 	construction.terrain.nature=nature
+	construction.terrain.environment=environment; population.environment=environment
 	field.terrain=construction.terrain; population.terrain=construction.terrain
 	population.combat=combat; settlement.combat=combat
 	population.ranch=ranch; settlement.ranch=ranch
@@ -112,6 +116,7 @@ func advance(seconds: float) -> void:
 		_step()
 
 func _step() -> void:
+	environment.tick(construction)
 	nature.tick(construction.terrain)
 	field.tick(world,construction,organics)
 	organics.tick(field,construction)
@@ -129,8 +134,9 @@ func _step() -> void:
 		var evaporation=float(rules.ecology.evaporation[season()])*(0.55 if shade else 1.0)
 		r.water=clampf(r.water+(rain-evaporation)/ds,0,1)
 		r.moisture=clampf(r.moisture+(r.water-r.moisture)*0.06/ds,0,1)
-		r.temperature=float(base.temperature)+float(rules.ecology.temperature[season()])+sin(float(world.elapsed)/ds*TAU)*2
-		r.oxygen=clampf(r.oxygen+(0.52-r.oxygen)*0.16/ds-r.pollution*0.06/ds,0,1)
+		var at: Vector3=construction.terrain.CENTERS[id]
+		r.temperature=float(base.temperature)+float(rules.ecology.temperature[season()])+sin(float(world.elapsed)/ds*TAU)*2+environment.warming()+environment.local_heat(Vector2(at.x,at.z))
+		r.oxygen=clampf(r.oxygen+(0.52*(environment.o2/20.9)-r.oxygen)*0.16/ds-r.pollution*0.06/ds,0,1)
 		if r.oxygen_fuel>0:
 			r.oxygen_fuel=maxf(0,r.oxygen_fuel-1); r.oxygen=clampf(r.oxygen+0.004,0,1)
 		if r.filter_fuel>0:
@@ -141,7 +147,7 @@ func _step() -> void:
 			var water_ok=r.moisture>=c.moisture_min and r.moisture<=c.moisture_max
 			var warm=r.temperature>=c.temperature_min and r.temperature<=c.temperature_max
 			if water_ok and warm and r.nutrients>0.08:
-				plot.growth=minf(1,plot.growth+(0.8 if shade else 1.0)/(float(c.days)*ds))
+				plot.growth=minf(1,plot.growth+(0.8 if shade else 1.0)*environment.co2_growth()/(float(c.days)*ds))
 				r.nutrients=maxf(0,r.nutrients-float(c.nutrient_use)/(float(c.days)*ds))
 			if plot.growth>=1:
 				plot.ready=true; _event("%s的%s成熟了，可以收获留种。" % [r.name,c.name])
@@ -270,7 +276,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize()}
+	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize()}
 
 func _number(v,lo: float,hi: float,whole: bool=false) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
@@ -355,9 +361,12 @@ func restore(data) -> bool:
 	if data.has("ranch") and not restored_ranch.restore(data.ranch,restored_construction,int(w.elapsed),restored_settlement.people): return false
 	var restored_organics=Organics.new()
 	if data.has("organics") and not restored_organics.restore(data.organics,restored_construction): return false
+	var restored_environment=Climate.new()
+	if data.has("environment") and not restored_environment.restore(data.environment): return false
 	var restored_journey=Journey.new()
 	if data.has("journey") and not restored_journey.restore(data.journey,restored_construction.terrain): return false
 	journey=restored_journey
+	environment=restored_environment
 	organics=restored_organics
 	ranch=restored_ranch
 	field=restored_field; restored_construction.occupied=field.gardens
