@@ -75,7 +75,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.32 "Earth" (tag `v0.32.0`; see [15-earth.md](15-earth.md)): a 64×64 climate field over the 16 km planet,
   five biomes, four environment machines from the workshop (sprinkler, O₂ tower, CO₂ tower, fertiliser spreader),
   global CO₂ warming (3 °C per doubling), biome-tinted ground and decor, and the 环境图 overlay map.
-- v0.32.x visual polish pass (user request): first-person models, island residents, planet creatures and materials.
+- ✅ v0.33 "Polish" (tag `v0.33.0`; see [16-polish.md](16-polish.md)), user request: day-cycle sky and sun shadows, shaded
+  first-person hands and tools, chibi island residents by role, rigged planet animals/villagers/visitors with gaits, birds,
+  and a flowing water shader. Display only.
 - Phase 2 "浮岛2.0 / Starforge Isle" (see [14-industry-island.md](14-industry-island.md)): a second island with an
   industry chain molecule → material → chip → energy → goods → vehicles → gear → space; products go to the backpack
   for use on the planet. Draft numbering v0.34–v0.41; how it interleaves with the eras below is an open question.

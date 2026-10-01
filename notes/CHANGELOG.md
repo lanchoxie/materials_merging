@@ -30,6 +30,28 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.33.0 "Polish": nicer people, creatures, light and water
+The user asked for a visual pass after Earth (2026-10-01). Full notes: [16-polish.md](16-polish.md). Display only; saves unchanged.
+- **Light.**
+  - The planet has a day-cycle sky; fog and ambient colour follow the horizon.
+  - Sun shadows on desktop, energy-compensated for the compatibility renderer.
+  - A cool fill light.
+  - Baked contact shading on every voxel wall.
+- **First person.**
+  - A shaded gloved hand with curled fingers, a suit cuff and a wrist analyser.
+  - Detailed tools with glowing screens.
+  - The rig lags camera turns and breathes; a viewmodel shader keeps the held tool from clipping into walls.
+- **Island residents.** Chibi figures with faces, plus role outfits: hard hat and vest, lab coat, glasses, robe, buyer hat. Arms and legs swing.
+- **Planet creatures.**
+  - The deer, boar and fish have detailed models with legs and tails that trot and flick.
+  - Villagers wear straw hats or aprons, and teal caps from era 2.
+  - Visitors have backpacks.
+  - Birds wheel overhead by day.
+- **Water.**
+  - River, ponds and springs use a flowing, slightly transparent shader with glints and a fresnel rim.
+  - The far sea uses the stylised sea shader.
+- Tools: `tests/capture_polish.gd` screenshot helper.
+
 ## v0.32.0 "Earth": a planet whose climate you can change
 The user asked to build Earth after v0.31 (2026-10-01). Full notes: [15-earth.md](15-earth.md).
 - **Climate field.** The 16 km planet is a 64×64 grid of 256 m cells with water, temperature, nutrients and pollution.

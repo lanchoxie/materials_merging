@@ -6,6 +6,13 @@ const Town=preload("res://scripts/island_town.gd")
 const TownDecor=preload("res://scripts/town_decor.gd")
 const Geology=preload("res://scripts/planet_geology.gd")
 const RiverComponents=preload("res://scripts/river_component_geometry.gd")
+const Figure=preload("res://scripts/figure_geometry.gd")
+const ROLE_LOOKS={
+	"engineer":{"coat":"e9963f","pants":"3e5c6c","hair":"4a3328"},
+	"doctor":{"coat":"f1f4f2","pants":"4f7f86","hair":"2d2a30"},
+	"professor":{"coat":"a49dc9","pants":"4a4e6a","hair":"d9d6d0"},
+	"academician":{"coat":"c5ad83","pants":"6b5a45","hair":"9a9a9a"},
+	"buyer":{"coat":"bf8eb6","pants":"4b4258","hair":"6b4a2e"}}
 ## Native building meshes are about 2.15 m wide; v0.27 scales them into their tile footprint.
 const NATIVE_WIDTH=2.15
 var spinners: Array=[]
@@ -27,6 +34,9 @@ var time=0.0
 var _actor_pool: Array=[]
 var static_rebuilds=0
 var avatar_rebuilds=0
+## v0.33: merged figure meshes per role and part, shared by every resident of that role.
+var figure_meshes: Dictionary={}
+var _figure_material: StandardMaterial3D
 
 func setup(model, island) -> void:
 	state=model; world=island
@@ -339,24 +349,80 @@ func _prop(parent: Node3D, kind: String, slot: int) -> void:
 			box(node,Vector3(0.28,0.16,0.28),Vector3(0,0.18,0),Color("446c6b"))
 			ball(node,0.13,Vector3(0,0.39,0),Color("f5ce78"))
 
+func _figure(role: String,part: String) -> ArrayMesh:
+	var key=role+":"+part
+	if figure_meshes.has(key): return figure_meshes[key]
+	if _figure_material==null:
+		_figure_material=StandardMaterial3D.new(); _figure_material.vertex_color_use_as_albedo=true; _figure_material.roughness=0.8
+	var look: Dictionary=ROLE_LOOKS.get(role,{"coat":"a8c7bf","pants":"3e5c6c","hair":"4a3328"})
+	var coat=Color(look.coat); var pants=Color(look.pants); var hair=Color(look.hair)
+	var skin=Color("f5dfbb"); var ink=Color("2b3a42")
+	var st=Figure.G.surface(_figure_material)
+	match part:
+		"body":
+			Figure.box(st,Vector3(0,0.2,0),Vector3(0.19,0.07,0.14),pants)
+			Figure.box(st,Vector3(0,0.3,0),Vector3(0.2,0.17,0.15),coat)
+			Figure.box(st,Vector3(0,0.385,0),Vector3(0.23,0.05,0.155),coat.lightened(0.08))
+			Figure.box(st,Vector3(0,0.425,0),Vector3(0.07,0.04,0.07),skin.darkened(0.08))
+			Figure.ball(st,Vector3(0,0.53,0),0.12,skin)
+			# hair cap set back from the face, with a fringe
+			Figure.ball(st,Vector3(0,0.565,-0.022),0.124,hair,Vector3(1.0,0.82,1.0))
+			Figure.box(st,Vector3(0,0.615,0.07),Vector3(0.17,0.035,0.05),hair)
+			for side in [-1,1]:
+				Figure.ball(st,Vector3(side*0.042,0.535,0.106),0.017,ink)
+				Figure.ball(st,Vector3(side*0.037,0.542,0.12),0.006,Color("ffffff"))
+				Figure.ball(st,Vector3(side*0.072,0.505,0.092),0.016,Color("f2a99c"))
+			Figure.box(st,Vector3(0,0.492,0.116),Vector3(0.032,0.009,0.01),Color("a25d52"))
+			match role:
+				"engineer":
+					for y in [0.27,0.33]: Figure.box(st,Vector3(0,y,0),Vector3(0.205,0.018,0.156),Color("f6f1c8"))
+					Figure.ball(st,Vector3(0,0.6,0),0.13,Color("f5cb6d"),Vector3(1.0,0.62,1.0))
+					Figure.box(st,Vector3(0,0.595,0.02),Vector3(0.29,0.02,0.27),Color("e8b955"))
+					Figure.box(st,Vector3(0,0.66,0),Vector3(0.03,0.03,0.2),Color("e8b955"))
+				"doctor":
+					Figure.box(st,Vector3(0,0.17,0),Vector3(0.21,0.1,0.156),coat)
+					Figure.box(st,Vector3(0,0.33,0.077),Vector3(0.06,0.11,0.004),Color("69b6b1"))
+					Figure.box(st,Vector3(0.055,0.35,0.078),Vector3(0.03,0.03,0.004),Color("e05a5a"))
+					Figure.box(st,Vector3(0,0.4,0.07),Vector3(0.1,0.012,0.02),Color("4c6670"))
+				"professor":
+					for side in [-1,1]: Figure.box(st,Vector3(side*0.044,0.537,0.118),Vector3(0.052,0.038,0.008),Color("395a65"))
+					Figure.box(st,Vector3(0,0.545,0.118),Vector3(0.03,0.008,0.008),Color("395a65"))
+					Figure.box(st,Vector3(0,0.33,0.077),Vector3(0.05,0.12,0.004),Color("f2efe6"))
+				"academician":
+					Figure.box(st,Vector3(0,0.15,0),Vector3(0.22,0.14,0.16),coat.darkened(0.06))
+					Figure.ball(st,Vector3(0,0.33,0.082),0.026,Color("f5ce78"))
+					Figure.box(st,Vector3(0,0.37,0.078),Vector3(0.012,0.06,0.004),Color("b8463e"))
+				"buyer":
+					Figure.box(st,Vector3(0,0.655,0),Vector3(0.29,0.03,0.24),Color("e2c894"))
+					Figure.box(st,Vector3(0,0.7,0),Vector3(0.19,0.09,0.16),Color("e2c894"))
+					Figure.box(st,Vector3(0,0.67,0),Vector3(0.195,0.02,0.165),Color("8f5a3a"))
+					Figure.box(st,Vector3(-0.12,0.25,0.02),Vector3(0.05,0.1,0.1),Color("8f5a3a"))
+		"arm":
+			Figure.box(st,Vector3(0,-0.075,0),Vector3(0.055,0.15,0.06),coat)
+			Figure.box(st,Vector3(0,-0.15,0),Vector3(0.058,0.02,0.064),coat.darkened(0.15))
+			Figure.ball(st,Vector3(0,-0.18,0),0.03,skin)
+		"leg":
+			Figure.box(st,Vector3(0,-0.07,0),Vector3(0.068,0.14,0.08),pants)
+			Figure.box(st,Vector3(0,-0.155,0.015),Vector3(0.074,0.04,0.11),Color("2c3236"))
+	figure_meshes[key]=st.commit()
+	return figure_meshes[key]
+
+func _part(parent: Node3D,role: String,part: String,at: Vector3) -> MeshInstance3D:
+	var node=MeshInstance3D.new(); node.mesh=_figure(role,part); node.position=at; parent.add_child(node)
+	return node
+
 func _avatar(role: String, resident: bool=true) -> Dictionary:
 	if resident: avatar_rebuilds+=1
 	var node=Node3D.new(); add_child(node)
 	var body=Node3D.new(); node.add_child(body)
-	var color=Color({"engineer":"dfa858","doctor":"69b6b1","professor":"a49dc9","academician":"c5ad83","buyer":"bf8eb6"}.get(role,"a8c7bf"))
-	box(body,Vector3(0.20,0.24,0.15),Vector3(0,0.29,0),color)
-	ball(body,0.12,Vector3(0,0.53,0),Color("f5dfbb"))
-	if role=="engineer": box(body,Vector3(0.29,0.05,0.23),Vector3(0,0.64,0),Color("f5cb6d"))
-	elif role=="buyer":
-		box(body,Vector3(0.29,0.04,0.24),Vector3(0,0.65,0),Color("e2c894"))
-		box(body,Vector3(0.19,0.1,0.16),Vector3(0,0.70,0),Color("e2c894"))
-	else: box(body,Vector3(0.20,0.04,0.05),Vector3(0,0.54,0.105),Color("395a65"))
-	for side in [-1,1]: ball(body,0.014,Vector3(side*0.04,0.56,0.107),Color("395a65"))
+	_part(body,role,"body",Vector3.ZERO)
+	var arms=[]
+	for side in [-1,1]: arms.append(_part(body,role,"arm",Vector3(side*0.13,0.39,0)))
 	var legs=[]
-	for side in [-1,1]:
-		var leg=box(node,Vector3(0.065,0.18,0.08),Vector3(side*0.065,0.13,0),Color("3e5c6c")); legs.append(leg)
-	var tool=box(body,Vector3(0.13,0.11,0.12),Vector3(0.19,0.28,0),Color("edc997"))
-	return {"node":node,"body":body,"legs":legs,"tool":tool,"plot":-1,"target":-1,"path":[],"step":0,"role":role,"activity":"idle","revision":-1,"model_travel":false,"travel_progress":0.0,"travel_duration":0.0,"travel_elapsed":0.0,"arrived":false}
+	for side in [-1,1]: legs.append(_part(node,role,"leg",Vector3(side*0.052,0.2,0)))
+	var tool=box(body,Vector3(0.11,0.09,0.1),Vector3(0.15,0.2,0.07),Color("edc997"))
+	box(tool,Vector3(0.07,0.02,0.02),Vector3(0,0.055,0),Color("6f5a46"))
+	return {"node":node,"body":body,"legs":legs,"arms":arms,"tool":tool,"plot":-1,"target":-1,"path":[],"step":0,"role":role,"activity":"idle","revision":-1,"model_travel":false,"travel_progress":0.0,"travel_duration":0.0,"travel_elapsed":0.0,"arrived":false}
 
 func _take_actor(role: String) -> Dictionary:
 	for index in range(_actor_pool.size()):
@@ -439,8 +505,14 @@ func _path_point(path: Array, progress: float) -> Vector3:
 
 func _animate_actor(actor: Dictionary, moving: bool, phase: float) -> void:
 	actor.body.position.y=absf(sin(phase))*0.018 if moving else 0.0
-	for index in range(2): actor.legs[index].rotation.x=sin(phase+index*PI)*0.35 if moving else 0.0
-	actor.tool.rotation.x=sin(time*5)*0.7 if not moving and actor.activity in ["construct","maintain","factory","collect","install"] and actor.arrived else 0.0
+	for index in range(2): actor.legs[index].rotation.x=sin(phase+index*PI)*0.45 if moving else 0.0
+	var working=not moving and actor.activity in ["construct","maintain","factory","collect","install"] and actor.arrived
+	actor.tool.rotation.x=sin(time*5)*0.7 if working else 0.0
+	var arms: Array=actor.get("arms",[])
+	for index in range(arms.size()):
+		var swing=sin(phase+(1-index)*PI)*0.4 if moving else sin(time*1.6+index)*0.04
+		if working and index==1: swing=-0.6+sin(time*5)*0.5
+		arms[index].rotation.x=swing
 
 func _process(delta: float) -> void:
 	if state==null: return

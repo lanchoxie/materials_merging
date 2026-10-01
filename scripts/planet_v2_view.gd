@@ -5,6 +5,8 @@ const Terrain=preload("res://scripts/river_terrain.gd")
 const Walker=preload("res://scripts/river_walker.gd")
 const Stream=preload("res://scripts/river_chunk_stream.gd")
 const LifeView=preload("res://scripts/river_life_view.gd")
+const G=preload("res://scripts/river_geometry.gd")
+const Rig=preload("res://scripts/creature_rig.gd")
 const CENTERS=Terrain.CENTERS
 var terrain=Terrain.new()
 var walker=Walker.new(terrain)
@@ -32,36 +34,52 @@ var water_nodes={}
 var crop_nodes={}
 var building_nodes={}
 var mat: StandardMaterial3D
-var meshes={}
+var water_mat: ShaderMaterial
+var flock: Node3D
 var season_seen=-1
 var render_keys={}
 var marker: MeshInstance3D
 var yaw=-0.35
 var zoom=1.0
 var kick_amount=0.0
+var fill: DirectionalLight3D
+var sky_material: ProceduralSkyMaterial
+var sky_phase=-1.0
 var stride=0.0
 
 func _ready() -> void:
-	mat=StandardMaterial3D.new(); mat.vertex_color_use_as_albedo=true; mat.roughness=0.92
+	mat=StandardMaterial3D.new(); mat.vertex_color_use_as_albedo=true; mat.roughness=0.92; mat.metallic_specular=0.25
 	var environment=WorldEnvironment.new(); env=Environment.new(); environment.environment=env
 	env.background_mode=Environment.BG_COLOR; env.background_color=Color("102c37")
 	env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR; env.ambient_light_color=Color("b0cacc"); env.ambient_light_energy=0.8
+	# v0.33: a painted sky for first person (the god view keeps its dark studio backdrop).
+	sky_material=ProceduralSkyMaterial.new(); sky_material.sun_angle_max=12.0; sky_material.sun_curve=0.08
+	sky_material.ground_bottom_color=Color("2c4a3a"); sky_material.ground_horizon_color=Color("a9c7c4")
+	var sky=Sky.new(); sky.sky_material=sky_material; sky.process_mode=Sky.PROCESS_MODE_QUALITY; env.sky=sky
+	env.reflected_light_source=Environment.REFLECTION_SOURCE_DISABLED; env.ambient_light_sky_contribution=0.0
 	add_child(environment)
-	sun=DirectionalLight3D.new(); sun.rotation_degrees=Vector3(-55,-30,0); sun.light_energy=1.3; sun.light_color=Color("ffe6bf"); add_child(sun)
+	sun=DirectionalLight3D.new(); sun.rotation_degrees=Vector3(-55,-30,0); sun.light_energy=1.3; sun.light_color=Color("ffe6bf")
+	sun.shadow_enabled=not (OS.has_feature("android") or OS.has_feature("web")); sun.directional_shadow_max_distance=40.0
+	sun.directional_shadow_mode=DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS; sun.shadow_bias=0.04; sun.shadow_normal_bias=1.2; sun.shadow_opacity=0.72
+	add_child(sun)
+	fill=DirectionalLight3D.new(); fill.rotation_degrees=Vector3(-28,150,0); fill.light_color=Color("bfe2ea"); fill.light_energy=0.22; fill.sky_mode=DirectionalLight3D.SKY_MODE_LIGHT_ONLY; add_child(fill)
 	camera=Camera3D.new(); camera.projection=Camera3D.PROJECTION_ORTHOGONAL; camera.size=21; add_child(camera); camera.current=true
 	hands=preload("res://scripts/first_person_hands.gd").new(); camera.add_child(hands); hands.hide()
 	terrain_root=Node3D.new(); add_child(terrain_root)
 	var sea=MeshInstance3D.new(); var ocean=PlaneMesh.new()
 	ocean.size=Vector2.ONE*float(terrain.rules.radius)*6
-	var sea_material=StandardMaterial3D.new(); sea_material.albedo_color=Color("4e8caa"); sea_material.roughness=0.85
+	var sea_material=ShaderMaterial.new(); sea_material.shader=preload("res://assets/shaders/sea.gdshader"); sea_material.set_shader_parameter("use_mask",0.0)
+	water_mat=ShaderMaterial.new(); water_mat.shader=preload("res://assets/shaders/planet_water.gdshader")
 	ocean.material=sea_material; sea.mesh=ocean; sea.position.y=terrain.Geology.bedrock_y()-1.0; terrain_root.add_child(sea)  # below bedrock: dug pits must not fill with sea
-	stream=Stream.new(); stream.terrain=terrain; stream.material=mat; terrain_root.add_child(stream); chunks=stream.chunks
+	stream=Stream.new(); stream.terrain=terrain; stream.material=mat; stream.water_material=water_mat; terrain_root.add_child(stream); chunks=stream.chunks
 	for id in CENTERS:
 		var n=MeshInstance3D.new(); terrain_root.add_child(n); water_nodes[id]=n
 		crop_nodes[id]=MeshInstance3D.new(); terrain_root.add_child(crop_nodes[id])
 		building_nodes[id]=MeshInstance3D.new(); terrain_root.add_child(building_nodes[id])
-	for kind in ["marsh_fish","meadow_herbivore","woodland_boar"]: meshes[kind]=_animal_mesh(kind)
-	life_view=LifeView.new(); life_view.terrain=terrain; life_view.material=mat; life_view.animal_mesh=meshes.meadow_herbivore; life_view.boar_mesh=meshes.woodland_boar; terrain_root.add_child(life_view)
+	flock=Node3D.new(); flock.visible=false; add_child(flock)
+	for i in range(6):
+		var b=Rig.bird(mat); b.scale=Vector3.ONE*1.6; flock.add_child(b)
+	life_view=LifeView.new(); life_view.terrain=terrain; life_view.material=mat; life_view.water_material=water_mat; terrain_root.add_child(life_view)
 	construction_view=preload("res://scripts/river_construction_view.gd").new(); construction_view.material=mat; terrain_root.add_child(construction_view)
 	settlement_view=preload("res://scripts/river_settlement_view.gd").new(); settlement_view.material=mat; settlement_view.terrain=terrain; terrain_root.add_child(settlement_view)
 	field_view=preload("res://scripts/river_field_view.gd").new(); field_view.material=mat; terrain_root.add_child(field_view)
@@ -74,12 +92,7 @@ func _surface() -> SurfaceTool:
 	var st=SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_TRIANGLES); st.set_material(mat); return st
 
 func _cube(st: SurfaceTool,p: Vector3,size: Vector3,color: Color) -> void:
-	var h=size*0.5
-	var v=[p+Vector3(-h.x,-h.y,-h.z),p+Vector3(h.x,-h.y,-h.z),p+Vector3(h.x,h.y,-h.z),p+Vector3(-h.x,h.y,-h.z),p+Vector3(-h.x,-h.y,h.z),p+Vector3(h.x,-h.y,h.z),p+Vector3(h.x,h.y,h.z),p+Vector3(-h.x,h.y,h.z)]
-	var faces=[[0,1,2,3],[5,4,7,6],[4,0,3,7],[1,5,6,2],[3,2,6,7],[4,5,1,0]]
-	for face in faces:
-		var normal=(v[face[2]]-v[face[0]]).cross(v[face[1]]-v[face[0]]).normalized()
-		for i in [0,1,2,0,2,3]: st.set_color(color); st.set_normal(normal); st.add_vertex(v[face[i]])
+	G.cube(st,p,size,color)
 
 func _region_at(x: float,z: float) -> String:
 	return terrain.region_at(Vector2(x,z))
@@ -91,7 +104,7 @@ func _terrain(season: int) -> void:
 	stream.schedule(walker.position if first_person else Vector2.ZERO,season)
 
 func _water(id: String,r: Dictionary) -> void:
-	var st=_surface(); var count=0
+	var st=G.surface(water_mat); var count=0
 	for i in range(-29,30):
 		var z=float(i); var x=terrain.river_x(z)
 		if _region_at(x,z)!=id or not terrain.inside(Vector2(x,z),1.0): continue
@@ -144,30 +157,6 @@ func _buildings(id: String,r: Dictionary) -> void:
 	building_nodes[id].visible=count>0
 	if count>0: building_nodes[id].mesh=st.commit()
 
-func _animal_mesh(kind: String) -> Mesh:
-	var st=_surface()
-	if kind=="marsh_fish":
-		_cube(st,Vector3.ZERO,Vector3(0.22,0.15,0.48),Color("f2cb81"))
-		_cube(st,Vector3(0,0,0.27),Vector3(0.33,0.06,0.14),Color("e0a761"))
-		for side in [-1,1]: _cube(st,Vector3(side*0.114,0.035,-0.15),Vector3(0.016,0.055,0.065),Color("263c48"))
-	elif kind=="woodland_boar":
-		_cube(st,Vector3(0,0.34,0),Vector3(0.56,0.45,0.76),Color("8a6754"))
-		_cube(st,Vector3(0,0.31,-0.48),Vector3(0.4,0.28,0.32),Color("b38b73"))
-		for side in [-1,1]:
-			_cube(st,Vector3(side*0.21,0.65,-0.25),Vector3(0.15,0.20,0.08),Color("79543e"))
-			_cube(st,Vector3(side*0.2,0.35,-0.64),Vector3(0.06,0.16,0.07),Color("f2e4c1"))
-			_cube(st,Vector3(side*0.20,0.42,-0.42),Vector3(0.025,0.05,0.08),Color("292c30"))
-			for z in [-0.23,0.23]: _cube(st,Vector3(side*0.18,0.1,z),Vector3(0.1,0.2,0.12),Color("624d43"))
-	else:
-		_cube(st,Vector3(0,0.3,0),Vector3(0.34,0.3,0.55),Color("e2c5a3"))
-		_cube(st,Vector3(0,0.5,-0.26),Vector3(0.3,0.28,0.3),Color("e9d3b6"))
-		_cube(st,Vector3(0,0.43,-0.43),Vector3(0.23,0.13,0.12),Color("b28f74"))
-		for side in [-1,1]:
-			_cube(st,Vector3(side*0.16,0.67,-0.25),Vector3(0.12,0.17,0.08),Color("d5af93"))
-			_cube(st,Vector3(side*0.151,0.55,-0.33),Vector3(0.02,0.06,0.05),Color("34414a"))
-			for dz in [-0.18,0.18]: _cube(st,Vector3(side*0.11,0.1,dz),Vector3(0.08,0.2,0.1),Color("846b5b"))
-	return st.commit()
-
 func sync(w: Dictionary,season: int) -> void:
 	if terrain_root==null: return
 	snapshot=w
@@ -186,7 +175,7 @@ func sync(w: Dictionary,season: int) -> void:
 		for a in r.animals:
 			var key=int(a.id); alive.append(key)
 			if not animal_nodes.has(key):
-				var n=MeshInstance3D.new(); n.mesh=meshes[a.species]; terrain_root.add_child(n); animal_nodes[key]=n
+				var n=Rig.make(str(a.species),mat); terrain_root.add_child(n); animal_nodes[key]=n
 			animal_nodes[key].set_meta("animal",a); animal_nodes[key].set_meta("region",id)
 	for key in animal_nodes.keys():
 		if key not in alive: animal_nodes[key].queue_free(); animal_nodes.erase(key)
@@ -208,7 +197,7 @@ func entity_hitboxes() -> Dictionary:
 
 func _entity_shape(shapes: Dictionary,key: String,node: MeshInstance3D) -> void:
 	if not is_instance_valid(node) or node.is_queued_for_deletion() or not node.is_visible_in_tree() or node.mesh==null: return
-	var bounds: AABB=node.global_transform*node.mesh.get_aabb()
+	var bounds: AABB=node.global_transform*(node.get_meta("bounds") if node.has_meta("bounds") else node.mesh.get_aabb())
 	if bounds.get_center().distance_to(walker.eye())<8:
 		shapes[key]=bounds.grow(0.04)
 
@@ -226,7 +215,10 @@ func set_first_person(enabled: bool) -> void:
 	camera.near=0.06; camera.far=180; camera.fov=72
 	if enabled and not has_walk_position: walker.enter(selected); has_walk_position=true
 	env.fog_enabled=enabled; env.fog_mode=Environment.FOG_MODE_DEPTH; env.fog_density=1.0
-	env.fog_depth_begin=28; env.fog_depth_end=46
+	env.fog_depth_begin=26; env.fog_depth_end=48; env.fog_sky_affect=0.0
+	env.background_mode=Environment.BG_SKY if enabled else Environment.BG_COLOR
+	env.ambient_light_energy=0.55 if enabled else 0.8
+	sky_phase=-1.0
 	_camera(0.0 if enabled else 1.0)
 	_terrain(maxi(0,season_seen))
 
@@ -284,6 +276,33 @@ func _feel(dt: float,walked: float) -> void:
 		var sfx=get_node_or_null("/root/Sfx")
 		if sfx: sfx.play("step")
 
+## v0.33: the sun crosses the sky with the day (long morning shadows, warm dusk) and the sky
+## colours follow it. Sky colours are only pushed when the phase moves, so radiance stays cheap.
+## A loose flock wheeling over the walker by day; scenery only, never targetable.
+func _birds(sun_phase: float) -> void:
+	flock.visible=first_person and sun_phase>0.25
+	if not flock.visible: return
+	var t=Time.get_ticks_msec()/1000.0; var eye=walker.eye()
+	for i in range(flock.get_child_count()):
+		var b: Node3D=flock.get_child(i); var a=t*0.16+i*0.55; var r=13.0+sin(i*1.7)*3.0
+		b.position=Vector3(eye.x+cos(a)*r,eye.y+6.5+sin(t*0.7+i)*0.8+i*0.3,eye.z+sin(a)*r)
+		b.rotation=Vector3(0,PI-a,sin(t+i)*0.15)
+		var flap=sin(t*(8.0+i)+i)*0.7 if fmod(t*0.4+i*0.37,1.0)<0.55 else 0.12
+		for w in b.get_meta("wings"): w.rotation.z=flap*signf(w.scale.x)
+func _daylight(phase: float,day: float) -> void:
+	var arc=fposmod(day,1.0)
+	sun.rotation_degrees=Vector3(-lerpf(14.0,58.0,phase),lerpf(-110.0,70.0,clampf(arc*1.3-0.15,0,1)),0)
+	sun.light_color=Color("ffb27a").lerp(Color("fff0d4"),smoothstep(0.15,0.6,phase))
+	fill.light_energy=0.1+phase*0.1
+	if not first_person or absf(phase-sky_phase)<0.01: return
+	sky_phase=phase
+	sky_material.sky_top_color=Color("1a2c4c").lerp(Color("4f93c9"),phase)
+	sky_material.sky_horizon_color=Color("d9906a").lerp(Color("bcdbe0"),smoothstep(0.1,0.7,phase)).lerp(Color("2a3a55"),1.0-smoothstep(0.0,0.25,phase))
+	sky_material.ground_horizon_color=sky_material.sky_horizon_color
+	sky_material.sun_angle_max=10.0+phase*20.0
+	env.fog_light_color=sky_material.sky_horizon_color
+	env.ambient_light_color=Color("8ea4c4").lerp(Color("bfd3d0"),phase)
+
 func pick(at: Vector2) -> String:
 	if first_person: return selected
 	var origin=camera.project_ray_origin(at); var ray=camera.project_ray_normal(at)
@@ -298,9 +317,13 @@ func _process(dt: float) -> void:
 	_terrain(maxi(0,season_seen))
 	if not snapshot.paused: clock+=dt*minf(4,float(snapshot.speed))
 	var sun_phase=sin(float(snapshot.elapsed)/60.0*TAU-PI/2)*0.5+0.5
-	sun.light_energy=0.35+sun_phase*0.95
+	# Shadowed directional light reads about twice as bright on the compatibility renderer.
+	sun.light_energy=(0.3+sun_phase*0.62)*(0.6 if sun.shadow_enabled else 1.0) if first_person else 0.35+sun_phase*0.95
 	env.background_color=Color("223951").lerp(Color("aacbd1"),sun_phase) if first_person else Color("12283c").lerp(Color("264b58"),sun_phase)
-	env.fog_light_color=env.background_color; env.fog_light_energy=1.0
+	if not first_person: env.fog_light_color=env.background_color
+	env.fog_light_energy=1.0
+	_daylight(sun_phase,float(snapshot.elapsed)/60.0)
+	_birds(sun_phase)
 	for node in animal_nodes.values():
 		var a: Dictionary=node.get_meta("animal"); var id=str(node.get_meta("region")); var c: Vector3=CENTERS[id]
 		var phase=clock*2.2+int(a.id)
@@ -317,6 +340,7 @@ func _process(dt: float) -> void:
 		if Vector2(delta.x,delta.z).length()>0.01:
 			node.rotation.y=lerp_angle(node.rotation.y,atan2(-delta.x,-delta.z),minf(1,dt*6))
 		node.position=node.position.lerp(target,minf(1,dt*6))
+		Rig.animate(node,dt,Vector2(delta.x,delta.z).length()*minf(1,dt*6),clock)
 		node.scale=Vector3.ONE*(0.65 if a.age<1 else 1.0)
 		if ranch!=null and a.species!="marsh_fish":
 			var task=ranch.lives.get("animal:"+id+":"+str(int(a.id)),{}).get("task","")

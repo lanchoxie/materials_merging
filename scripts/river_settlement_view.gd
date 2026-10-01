@@ -1,5 +1,6 @@
 extends Node3D
 const G=preload("res://scripts/river_geometry.gd")
+const Rig=preload("res://scripts/creature_rig.gd")
 var material: Material
 var terrain
 var members={}
@@ -11,21 +12,16 @@ var facility_node
 var stamp=""
 var paused=false
 var clock=0.0
-var meshes={}
+
+## v0.33: villagers are rigged people; the farmer wears a straw hat, the craftsman an apron, and
+## from era 2 both switch to a teal cap with a field analyser.
+func _look(era: int,role: int=1) -> Dictionary:
+	var modern=era>=2
+	return {"coat":"bf9962" if role==1 else "638da4","pants":"546979" if role==1 else "4a5560","hair":"4a3328" if role==1 else "2d2a30",
+		"hat":"cap" if modern else ("straw" if role==1 else ""),"extra":"device" if modern else ("" if role==1 else "apron")}
 
 func _mesh(era: int,role: int=1) -> Mesh:
-	var cache_key=era*10+role
-	if meshes.has(cache_key): return meshes[cache_key]
-	var st=G.surface(material); var coat=Color("bf9962") if role==1 else Color("638da4")
-	G.cube(st,Vector3(0,0.85,0),Vector3(0.42,0.6,0.28),coat)
-	G.cube(st,Vector3(0,1.3,0),Vector3(0.30,0.32,0.30),Color("e6c3a1"))
-	G.cube(st,Vector3(0,1.50,0),Vector3(0.48,0.08,0.42),Color("c2a66b") if era==1 else Color("63bbaa"))
-	for side in [-1,1]:
-		G.cube(st,Vector3(side*0.12,0.28,0),Vector3(0.14,0.56,0.18),Color("546979"))
-		G.cube(st,Vector3(side*0.29,0.83,0),Vector3(0.13,0.52,0.16),coat)
-		G.cube(st,Vector3(side*0.08,1.32,-0.155),Vector3(0.04,0.035,0.01),Color("2c3f45"))
-	if era>=2: G.cube(st,Vector3(0.28,0.71,-0.15),Vector3(0.18,0.25,0.04),Color("539bad"))
-	meshes[cache_key]=st.commit(); return meshes[cache_key]
+	return Rig.person_mesh(_look(era,role),"body",material)
 
 func sync(model,at: Vector2) -> void:
 	_sync_depot(at)
@@ -36,12 +32,12 @@ func sync(model,at: Vector2) -> void:
 		var target=Vector3(person.x,terrain.ground(Vector2(person.x,person.z)),person.z)
 		if not members.has(person.id):
 			var root=Node3D.new(); add_child(root); members[person.id]=root; root.position=target
-			var mesh=MeshInstance3D.new(); mesh.mesh=_mesh(model.era,int(person.id)); root.add_child(mesh)
+			root.add_child(Rig.person(_look(model.era,int(person.id)),material))
 			var carry=MeshInstance3D.new(); var st=G.surface(material)
 			G.cube(st,Vector3(0,0.8,-0.34),Vector3(0.45,0.3,0.3),Color("d4b06f")); carry.mesh=st.commit(); root.add_child(carry)
 			var label=Label3D.new(); label.font=preload("res://assets/fonts/NotoSansCJKsc-Regular.otf"); label.font_size=26; label.pixel_size=0.009; label.position.y=1.95; label.billboard=BaseMaterial3D.BILLBOARD_ENABLED; root.add_child(label)
 		var node=members[person.id]; node.set_meta("target",target)
-		node.get_child(0).mesh=_mesh(model.era,int(person.id))
+		if node.get_child(0).mesh!=_mesh(model.era,int(person.id)): Rig.dress(node.get_child(0),_look(model.era,int(person.id)),material)
 		var j=ranch.jobs.get(str(int(person.id)),{}) if ranch!=null else {}
 		node.get_child(1).visible=not j.get("cargo",{}).is_empty()
 		node.get_child(2).text=person.name+"\n"+("农夫" if int(person.id)==1 else "工匠")
@@ -85,4 +81,7 @@ func _process(dt: float) -> void:
 		if Vector2(delta.x,delta.z).length()>0.02: node.rotation.y=lerp_angle(node.rotation.y,atan2(-delta.x,-delta.z),minf(1,dt*7))
 		node.position=node.position.lerp(target,minf(1,dt*7))
 		var working=node.get_meta("working",false) and not paused
-		node.get_child(0).rotation.x=sin(clock*5)*0.1 if working else 0.0
+		var body: Node3D=node.get_child(0)
+		body.rotation.x=sin(clock*5)*0.05 if working else 0.0
+		body.set_meta("working",working)
+		Rig.animate(body,dt,Vector2(delta.x,delta.z).length()*minf(1,dt*7),clock)

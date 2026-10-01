@@ -3,6 +3,7 @@ extends Node3D
 const G=preload("res://scripts/river_geometry.gd")
 var terrain
 var material: Material
+var water_material: Material
 var chunks={}
 var pending=[]
 var center_key=Vector2i(99999,99999)
@@ -187,10 +188,11 @@ func _build(key: Vector2i) -> Mesh:
 					var a=p+Vector2(d.x,d.z)*cell/2; var tangent=Vector2(-d.z,d.x)*cell/2
 					G.face(st,[Vector3(a.x-tangent.x,low,a.y-tangent.y),Vector3(a.x+tangent.x,low,a.y+tangent.y),Vector3(a.x+tangent.x,yt,a.y+tangent.y),Vector3(a.x-tangent.x,yt,a.y-tangent.y)],_side_color(id,d,ix,y,iz))
 	# Outside the original experiment: the continued river is natural scenery.
+	var wet=G.surface(water_material) if water_material!=null else st; var rivers=0
 	for iz in range(key.y*span,(key.y+1)*span):
 		var z=float(iz)*cell; var x=terrain.river_x(z)
 		if absf(z)<=29 or terrain.chunk_at(Vector2(x,z)).x!=key.x or not terrain.inside(Vector2(x,z),1.0): continue
-		G.cube(st,Vector3(x,0.20,z),Vector3(2.85,0.06,cell+0.02),Color("59aab8"))
+		G.cube(wet,Vector3(x,0.20,z),Vector3(2.85,0.06,cell+0.02),Color("59aab8")); rivers+=1
 	for item in decor: _decor(st,item[0],item[1],item[2],item[3])
 	for tree in terrain.tree_records(key):
 		var p=Vector2(tree.x,tree.z); var h=terrain.ground(p)
@@ -218,4 +220,6 @@ func _build(key: Vector2i) -> Mesh:
 	if key==terrain.chunk_at(Vector2(-10,0)):
 		G.cube(st,Vector3(-10,0.65,0),Vector3(6.6,0.14,2),Color("bd9464"))
 		for i in range(14): G.cube(st,Vector3(-13.2+i*0.48,0.73,0),Vector3(0.04,0.015,2),Color("836745"))
-	return st.commit() if tiles>0 else null
+	if tiles<=0: return null
+	var mesh: ArrayMesh=st.commit()
+	return wet.commit(mesh) if wet!=st and rivers>0 else mesh

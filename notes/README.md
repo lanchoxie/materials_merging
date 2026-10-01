@@ -21,6 +21,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [13-builder.md](13-builder.md) | v0.31: seamless plots, items across plot edges, undo/eraser/recycle, doctor and element gates |
 | [14-industry-island.md](14-industry-island.md) | Phase 2 plan: Starforge Isle industry chain (materials → chips → energy → vehicles → gear → space) |
 | [15-earth.md](15-earth.md) | v0.32: climate field, biomes, environment machines, warming, 环境图 |
+| [16-polish.md](16-polish.md) | v0.33: sky and shadows, shaded hands and tools, chibi residents, rigged planet creatures, water shader |
 | [CHANGELOG.md](CHANGELOG.md) | Running log of what has actually been shipped on this track |
 
 Quick commands:
