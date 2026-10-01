@@ -1,0 +1,329 @@
+# 14 · Phase 2 "Industry Island" (浮岛 2.0): from molecules to rockets
+
+Status: **plan only** (2026-10-01). Nothing here is built yet. Numbers marked *(game)* are balance values to tune.
+Numbers marked *(real)* come from the sources in §11.
+
+User request (2026-10-01, condensed):
+- Add buildings above the molecule level, gated by coins, player level and plot limits.
+- Put them on a new floating island. Examples: polymer plant, metal plant, semiconductor fab, car plant.
+- Research the whole industrial chain and add what fits. Molecules should be processed further into raw materials.
+- Ideal chain: 分子 → 材料 → 芯片 → 集成电路 → 能源 → 家具 → 售卖 → 汽车 → 武器 → 装备 → 太空旅行研发 → 应用.
+- Every building needs a cool sci-fi model with its own theme and a recognisable silhouette.
+- Phase 2: the new products go into the backpack and are used on the planet.
+
+## 0 · What exists (build on it, don't duplicate)
+
+| Need | Existing piece |
+|---|---|
+| Elements | 16 in `data/elements.json`: H O C N S F Cl Br Li Na Cs Al Cu Fe Sn Pb. **No Si, Ca, P, Ga, Ti, Co, Ni.** |
+| Minerals already mined | `minerals.json`. Sand SiO₂, clay, spodumene and pollucite already contain Si. Limestone and fluorite contain Ca. The refinery discards both today. |
+| Minerals → elements | `refinery.json` / `refinery.gd`. Each building runs one job at a time: inputs are reserved up front, then the queue continues, with offline catch-up. Upgrades cost 300 → 4 500 coins. |
+| Molecules and crystals | Reactors → `storage.batches` (≤ 512). Each batch has formula, quantity, `work` and an index key. Templates: water, CH₄, NH₃, HCl, HF, urea, ethanol, glycerol, LiF, NaCl, CsPbBr₃… |
+| Real-compound evidence | `chem_index`: 1 835 MP crystals. Fe₃C, Al₂O₃, AlN, Cu₃Sn, Cu₆Sn₅, Al₂Cu, LiAl, PbO₂, PbSO₄, Li₂S, Fe₂O₃, SnO₂ and CsPbBr₃ are all present. The 106 PubChem molecules include C₂H₄, C₂H₃Cl, C₂F₄, CH₂O, CHCl₃, C₄H₆, C₆H₆O, N₂H₄, N₂O₄, H₂SO₄, CF₄ and SF₆. `index_found` records what the player has made. |
+| Gear from real properties | `fabricator.gd`: pick hardness (Chen 2011) and solar panels (Shockley–Queisser). Quote/craft/equip/scrap with strict save validation. |
+| Planet products | `factory_recipes.json` (34 recipes; Cu/Al wire, "modern_*" teaching kits), `planet_program.products`, `planet_v2.json.products` (effects: water, oxygen, building…) |
+| Backpack | `river_inventory.gd`. `entries(state)` is a *derived view* over global stock, with categories tools/raw/components/products/samples/supplies/minerals/miniatures and 9 hotbar slots. Keys are namespaced (`rock:`, `raw:`, `recipe:`, `sample:`). |
+| Combat | `river_combat.json`: player 100 HP, enemy hit 12. |
+| Economy | Coins (start 220). Buildings cost 55–580 *(game)*. Plots cost 星砂/晶露/合金片 (`plot_cost`). Milestones pay up to 500. |
+| Player level | **None.** Only reactor Lv 1–20, building levels and refinery Lv 1–5 exist. |
+| Plots and building | 3 m plots of 12×12 tiles at 0.25 m. Since v0.31, footprints spill across plots on global tiles, with build-mode undo and eraser. Cap 400 plots. |
+| Look | Procedural low-poly in GDScript (`campus_architecture.gd`, `reactor_look.gd`): Box/Cylinder/Sphere/Torus/Prism meshes, SurfaceTool, MultiMesh, the glass shader, emissive. Renderer is **GL Compatibility** (no real bloom). `dynamic_geometry` keeps animated parts out of static batching. |
+| Island link | `island_light_bridge.gd` (walkable rainbow bridge with a gate). |
+
+## 1 · Goal and place in the roadmap
+- Goal: a second island where the player's molecules and crystals become **materials → devices → machines**.
+  - Its products travel in the backpack and change what is possible on the planet.
+  - This is the "fabricator, but industrial": same science rule, longer chain, bigger buildings.
+- Order: v0.31 Builder → v0.32 Earth → v0.33 visual-polish pass → **phase 2 from v0.34**.
+- The planet track (Specimens, Ice Age, Settlers, Bronze, Clash, star map) also wants v0.33+. See open question Q1.
+  - Default proposal: **interleave**. Industry releases feed the planet ones: metals → natives' Bronze age; batteries and rovers → big world; rockets → star map.
+
+## 2 · Design decisions (proposed)
+1. **One stock, two islands.** Elements, batches, minerals and industry items are global, as `storage` is today.
+   - No manual hauling. The airship (§3) is a visual and an export route, not a chore.
+2. **Evidence gates the material tier.** A recipe unlocks only once the player has *made the real compound* (`index_found`). For example:
+   - steel needs Fe₃C
+   - bronze needs Cu₃Sn
+   - solder joints need Cu₆Sn₅
+   - duralumin needs Al₂Cu
+   - Al–Li needs LiAl
+   - PE needs C₂H₄
+   - PVC needs C₂H₃Cl
+   - PTFE needs C₂F₄
+   - lead-acid needs PbO₂ + PbSO₄
+
+   This ties phase 2 to the atom editor and the index, instead of bypassing them.
+3. **Higher tiers are recipe-based** (idle factory + quotes), like the refinery: chips, ICs, cars and rockets. No new editor puzzles.
+4. **Stats only from real data, or labelled game values.** For example:
+   - hardness: Chen model on MP moduli (existing)
+   - LED colour: λ = 1240 / E_g from the MP gap, with the "GGA underestimates" caveat
+   - battery capacity: Faraday's law on the stoichiometry
+   - rocket Δv: Tsiolkovsky with published Isp
+
+   Device "performance" with no real basis (chip speed, shield strength) is shown as *(游戏数值)*. Sci-fi items are labelled 科幻.
+5. **Player level = 岛主等级 (Island Rank), derived, not stored.**
+   - XP = 20·milestones claimed + 10·codex stars + 15·index_found + 5·Σreactor levels + 8·unlocked plots + 50·refinery level + 25·fabricator crafts + industry XP. Industry XP is the only new stored counter: made, sold, researched.
+   - Rank n needs 100·n^1.6 XP *(game)*.
+   - Old saves get the right rank with no migration windfall, and the rank can never go down.
+6. **Power is the second throttle** (after coins). Every factory draws power units.
+   - A starter 岛心电网 gives 10 *(game)*. The Energy Park and batteries add more.
+   - Staffing is not needed in phase 2 (see Q6).
+7. **Add Si (required) and Ca (recommended). Defer P, Ga, Ti, Co, Ni, Ag.** See §5.
+8. **The chain is a dependency graph, not a strict line.** Furniture and sales only need tier-1 materials, so they open early as the money engine.
+   - The user's scene order is kept *spatially*: a maglev sightseeing loop (产业观光环线) passes the districts in chain order.
+
+## 3 · Island 2.0 「星锻岛 Starforge Isle」: unlock, link, plots
+- **Unlock** (all *(game)*, tune on test fixtures, never on `saves/save.json`):
+  - Rank ≥ 10
+  - 20 000 coins and 40 合金片
+  - Main island ≥ 36 unlocked plots
+  - Refinery Lv ≥ 3
+  - ≥ 1 fabricator item crafted
+  - The unlock card lists each condition with a ✓ or ✗ and a "how to get" line, in the `install_status()` style.
+- **Link:**
+  - A second light bridge from an edge plot of the main island (reuse `island_light_bridge.gd`, recoloured cyan).
+  - A top-bar island switcher (浮岛 Ⅰ / Ⅱ).
+  - A cargo airship (货运飞艇) loops between the islands and the Trade Hub, and carries exports (§7).
+  - Only the active island renders in detail. The other is a low-poly silhouette in the sky.
+- **Plots:**
+  - Same 3 m / 12×12 tile grid and v0.31 global tiles, so `campus_layout`, build mode, undo and eraser all apply.
+  - Starts as 3×3 = 9 plots and is capped at **144** (12×12) for the mobile render budget.
+  - Plot cost: coins 500 × 1.15ⁿ plus 2 合金片. Rings are rank-gated: ring r needs rank 10 + 2r.
+  - Factories are 1×1, 2×1 or 2×2 plots. Paths and decor work as on island Ⅰ.
+- **Licences:**
+  - One of each factory at first, plus one more per 6 ranks *(game)*. This stops one-recipe spam and keeps plots meaningful.
+  - Each factory has Lv 1–3 (queue +1, speed +25 %) with 3 visual tiers, like v0.27.
+- **Save:** a new `industry` section (`{version, plots, buildings, queues, items, power, market, xp, research}`) with defaults.
+  - Older saves load with island Ⅱ locked. Add the usual strict validator and migration test.
+
+## 4 · Production tiers (buildings, inputs, outputs, real basis, gate, cost)
+Batches come from island Ⅰ reactors, `el:` from the refinery, `rock:`/`raw:` from the planet. Costs are coins / 合金片 / footprint in plots, all *(game)*.
+
+| Tier | 建筑 · Building | Main inputs | Outputs | Real process | Gate | Cost |
+|---|---|---|---|---|---|---|
+| 1 材料 | **冶金工厂** Metallurgy Works | Fe+C; Cu+Sn; Sn+Pb (or Sn+Cu); Al+Cu; Al+Li | 碳钢锭, 青铜, 焊料, 硬铝, 铝锂合金 | basic-oxygen steel <2.1 wt% C; bronze ≈Cu-12Sn; eutectic Sn63Pb37 183 °C / Sn-0.7Cu 227 °C; age-hardened Al–Cu; Al–Li 2195 (Rioja 2012) | rank 10 + index phase | 3 000 / 6 / 1×1 |
+| 1 材料 | **高分子工厂** Polymer Works | ethanol, Cl, CHCl₃+HF, urea+CH₂O, phenol, C₄H₆+S | PE, PVC, PTFE, 脲醛树脂, 酚醛树脂, 硫化橡胶 | ethanol dehydration → ethylene (Mohsenzadeh 2017); EDC/VCM (Ullmann, Dreher 2014); PTFE (Plunkett 1941); UF (Dunky 1998); Bakelite (1909); vulcanisation (Goodyear 1844) | rank 10 + index molecule | 3 500 / 6 / 2×1 |
+| 1 材料 | **陶瓷玻璃窑** Ceramic & Glass Works | Al+O, Al+N, Si+O (+Na, Ca), Si+C | 刚玉陶瓷, AlN 基板, 石英玻璃/钠钙玻璃, 碳化硅 | Al₂O₃ (Chen Hv 14.3 GPa, in-game); float glass; Acheson SiC (1893) | rank 12, needs Si | 5 000 / 8 / 2×1 |
+| 2 芯片 | **硅材料厂** Silicon Foundry | sand + coal; Si + HCl batch; H | 冶金硅 → 电子级多晶硅 → 单晶硅棒 → 晶圆 | SiO₂+2C→Si+2CO (arc furnace); Siemens SiHCl₃ CVD at 1000–1150 °C (Kritskaya 2021; Chen 2023); Czochralski 1918 | rank 14 | 9 000 / 10 / 2×1 |
+| 2 芯片 | **晶圆芯片厂** Chip Fab | wafer, O, CF₄/SF₆ (etch), Cu, Al (p-dopant), 光刻胶 (polymer) | 逻辑芯片, 功率芯片, LED 芯片 (AlN deep-UV, CsPbBr₃ green) | oxidation, lithography, plasma etch, Cu damascene (Edelstein 1997); AlN LED 210 nm (Taniyasu 2006); CsPbX₃ (Protesescu 2015) | rank 16 | 15 000 / 12 / 2×2 |
+| 3 集成电路 | **封测电路板厂** Packaging & Board Plant | dies, solder, epoxy/phenolic, Cu foil, glass fibre, Br flame retardant | IC 封装, 控制板, 传感器模组 | flip-chip solder bumps form Cu₆Sn₅ (Abtew 2000); FR-4 = glass + epoxy + brominated FR; Kilby/Noyce IC | rank 17 | 12 000 / 10 / 2×1 |
+| 4 能源 | **电池工厂** Battery Works | Pb+PbO₂+H₂SO₄; Na+Fe+C+N; Li+S+C (+LiTFSI = Li,C,F,S,O,N); control board | 铅酸电池, 钠离子电池 (普鲁士白), 锂硫电池, 电池包 | lead-acid (May 2018); Prussian white Na₂Fe[Fe(CN)₆] (Wang 2015); Li–S (Ji 2009); LiFePO₄ deferred until P (Padhi 1997) | rank 18 | 14 000 / 12 / 2×1 |
+| 4 能源 | **能源园** Energy Park | fabricator panels → Si/perovskite cells; H₂+O₂; Nafion (C,F,S,O,H) | 岛屿电力, 便携发电机, 燃料电池 | Shockley–Queisser (in-game); PEM fuel cell, Nafion (Mauritz 2004) | starter grid at unlock; park at rank 12 | 6 000 / 8 / 2×2 |
+| 5 家具 | **未来家居工坊** Home Goods Studio | planet wood + UF resin, steel, PE/PVC, glass, LED | 科幻家具 (decor for both islands and interiors), 售卖商品 | particleboard bonded with UF (Dunky 1998) | rank 11 | 4 000 / 6 / 1×1 |
+| 6 售卖 | **星港交易所** Trade Hub | any industry item | coins, rank XP, contracts | — (market model is *(game)*, §7) | at unlock | 2 500 / 4 / 1×1 |
+| 7 汽车 | **载具总装厂** Vehicle Assembly | steel/Al body, rubber tyres, glass, battery pack, Cu+Fe motor, control boards | 星球越野车, later 悬浮车 (科幻) | car mass ≈45–70 % steel, 12–17 % plastics (Argonne GREET) | rank 20 | 25 000 / 16 / 2×2 |
+| 8 武器 | **防卫装备厂** Defense Works | Al₂O₃ plates, aramid/UHMWPE (PE), drones (Al, Li–S, IC) | 陶瓷复合护甲, 侦察/护卫无人机, 麻醉发射器, 能量护盾 (科幻) | ceramic armour (Medvedovski 2010); aramid (Kwolek 1972) | rank 22 | 22 000 / 14 / 2×1 |
+| 9 装备 | **装备锻造所** Gear Forge | steel/AlN/Al₂O₃ bits, motors, batteries, CFRP, LEDs | 电钻, 头灯, 滑翔翼, 喷气背包 (科幻), 保温服, 高级分析仪 | drill-bit hardness by the Chen model (in-game rule) | rank 21 | 18 000 / 12 / 1×1 |
+| 10 太空研发 | **航天研究院** Aerospace Institute | prototypes + ICs; research points | tech tree: tanks, heat shield, engines, avionics | Al–Li tanks (Rioja 2012); PICA (Tran 1997); CFRP | rank 24 | 40 000 / 20 / 2×2 |
+| 10 太空研发 | **星际发射场** Launch Pad | Al–Li tank, CFRP, PICA, propellant: LOX/LH₂ (electrolyser), CH₄/LOX (methane template), APCP NH₄ClO₄+Al, N₂H₄/N₂O₄ | 探空火箭 → 卫星 → 载人舱 → 星舰 | Shuttle SRB = 69.6 % AP, 16 % Al (NASA); Tsiolkovsky Δv | rank 26 | 60 000 / 24 / 2×2 |
+| 11 应用 | (no building) satellites and products used on the planet | — | §6 | — | — | — |
+
+Tier notes:
+- Molecule → material uses quantities like the refinery: 1 harvested batch unit plus element units → 1–4 items, 20–60 s *(game)*. The equation is real and shown.
+- n-type doping in Si needs P, As or Sb (none in game). Until P exists, the fab uses "掺杂源（简化）". Al is used honestly as the p-type dopant.
+- Epoxy (bisphenol A + epichlorohydrin) and carbon fibre (PAN) precursors are not in the molecule list. Those steps say "前体简化", with the real names shown.
+- Battery theory, from Faraday's law with stoichiometry. Theory × derating *(game)* gives the in-game pack energy.
+
+  | Chemistry | Capacity *(real)* | Energy *(real)* |
+  |---|---|---|
+  | Li–S (S → Li₂S) | 1 672 mAh/g of S | — |
+  | Prussian white (2 e⁻, 313.8 g/mol) | 171 mAh/g | — |
+  | Lead-acid (reactant mass) | 83 Ah/kg | ≈171 Wh/kg at 2.05 V |
+
+## 5 · New elements (minimal, justified)
+- **Si 硅 (required, tier 2):**
+  - The mineral source is already on the planet (sand, clay, spodumene, pollucite).
+  - Refinery `quartz_silicon`: sand + 2 coal → Si ×2, 45 s. Reaction SiO₂ + 2C → Si + 2CO in a submerged-arc furnace, about 98–99 % MG-Si *(real)*.
+  - The Siemens/Czochralski purification lives in the Silicon Foundry, where it uses the existing HCl template.
+  - Radius 1.11 Å (Cordero 2008, same source as the other elements).
+- **Ca 钙 (recommended):**
+  - It unlocks soda-lime glass, cement/concrete (listed in 08) and CaF₂ optics.
+  - It also lets limestone and fluorite stop discarding CaO.
+  - Route: CaO + Al vacuum aluminothermic reduction *(source to fetch at implementation)*.
+- **Both:** rerun `dev/chem_index/fetch_mp.py` with the same filters.
+  - Needs the user's MP key in `.runtime/secrets/`, run by the user's machine. Never print or commit the key.
+  - Expect the crystal list to grow to about 2–3 k. Watch the APK size.
+- **Deferred:** P (LiFePO₄, n-dopant, needs an apatite mineral), Ga (GaN), Ti (ilmenite, rutile), Co and Ni (NMC), Ag (SAC solder).
+
+## 6 · Backpack and planet use (phase 2 payoff)
+New `river_inventory` categories are 装备 (gear), 载具 (vehicles) and 工业品 (industry). Keys are `ind:<id>`. `entries()` reads `state.industry.items`, and actions go through `planet_v2.json.products`-style effect hooks.
+
+| Item | Planet effect | Stat source |
+|---|---|---|
+| 钢/硬质合金电钻 drill | 3× dig speed, reach 5 → 6 m; drills granite/basalt at full speed above its Hv | Chen Hv of the bit (Fe₃C 7.9, Al₂O₃ 14.3, AlN 16.3, SiC after Si) |
+| PVC 灌溉管 irrigation pipe | water emitter line (v0.32 environment field) | — |
+| 玻璃温室块 greenhouse block | buildable block; raises local temperature and humidity (L1 channels) | — |
+| LED 头灯 headlamp | light radius at night and underground; colour from the band gap | λ = 1240 / E_g |
+| 便携发电机 / 电池包 power | powers O₂ station, filters and emitters in the field (replaces "power feed" packs) | pack Wh from Faraday × derating |
+| 陶瓷复合护甲 armour | enemy hit 12 → 12 × (1 − r), r ≤ 0.6 *(game)*, scaled by plate Hv | Al₂O₃ hardness; MP density sets the walk-speed penalty |
+| 麻醉发射器 tranquilizer | non-lethal capture → "live specimen" (L2), matches the cozy rule | *(game)* |
+| 侦察无人机 drone | reveals minerals in 40 m and marks them in the mineral codex | *(game)* |
+| 滑翔翼 / 喷气背包 (科幻) | traversal; the glider frame mass uses Al or Al–Li density | MP density |
+| 星球越野车 rover | ×3 travel speed and 40-slot cargo. Needs a vehicle controller (big task, its own release) | range = pack Wh / *(game)* Wh per km |
+| 卫星 satellite (launched, not carried) | ore survey map, weather/environment overlay, beacon fast-travel | — |
+| 星舰 starship | opens the star map (roadmap v0.40+ moves after the Launch Pad) | Tsiolkovsky Δv ≥ mission Δv |
+
+Products can also be gifted or traded to natives later (L5 tech diffusion). Metal items drive the Bronze-age revolution.
+
+## 7 · Sales, market and balance
+- **Trade Hub** (星港交易所). Buyers come from data, like `economy.orders.buyers`, each with a story:
+  - 轨道空间站, 城市百货, 汽车经销商, 研究所, later the native caravan (barter)
+- **Price** = base × quality × demand.
+  - Quality comes from a real stat where one exists (panel efficiency, alloy grade, Hv); otherwise it is 1.0.
+  - Demand = 1 − saturation. Saturation rises with each sale and decays with a half-life of 20 min *(game)*. This stops one-item spam and pushes the player up the chain.
+- **Contracts:** 2–4 items, generous soft deadlines and no penalty (cozy). They pay coins plus rank XP. The board refreshes every 15 min.
+- **Export airship:** capacity 20 per trip and 3 min per trip *(game)*. Upgrades add capacity.
+- **Never sell elements or raw batches here.** The refinery must not become a coin mine. The "no element shop" rule from 08 holds in both directions.
+- **Coin sinks:** buildings, plots, upgrades, research, rocket launches (consumable) and licences.
+- **Offline:** factories catch up like the refinery (2 h at 50 %). The market does not trade offline.
+- **Knobs** (one file, `data/industry.json`):
+  - unlock costs and the rank curve
+  - plot growth factor and licences per rank
+  - power per building, recipe seconds and yields
+  - base prices, saturation half-life and contract rewards
+  - derating factors (battery and armour), airship capacity and time
+- **Tuning target:** the first industry coin profit within 15 min of unlock. Each new tier pays back its building in about 1–2 play sessions.
+
+## 8 · Data format proposal (`data/industry.json`, refinery/fabricator style)
+Input namespaces match backpack keys: `el:` elements, `batch:` harvested batch units by template or index key, `rock:` minerals, `raw:` planet resources, `item:` industry items.
+```json
+{ "version": 1,
+  "note": "Island 2.0. Equations and process names are real (sources); prices, seconds, power and yields are game rules.",
+  "sources": [{"id": "dunky1998", "cite": "Dunky, Int. J. Adhes. Adhes. 18, 95-107 (1998)", "doi": "10.1016/S0143-7496(97)00054-7"}],
+  "unlock": {"rank": 10, "coins": 20000, "alloy": 40, "home_plots": 36, "refinery_level": 3, "fabricated": 1},
+  "plots": {"start": [3, 3], "max": 144, "coins": 500, "growth": 1.15, "alloy": 2, "ring_rank": [10, 2]},
+  "power": {"starter": 10},
+  "buildings": {
+    "metal_works": {"name": "冶金工厂", "en": "Metallurgy Works", "tier": 1, "plots": [1, 1], "rank": 10,
+      "cost": {"coins": 3000, "alloy": 6}, "power": 3, "max_level": 3, "upgrade_costs": [6000, 15000],
+      "queue_base": 2, "licences_per_rank": 6, "look": "furnace"}},
+  "recipes": {
+    "carbon_steel": {"name": "碳钢锭", "building": "metal_works", "method": "碱性氧气转炉 · 脱碳到 <2.1 wt% C",
+      "inputs": {"el:Fe": 6, "el:C": 1}, "evidence": ["index:Fe3C"], "outputs": {"item:steel_ingot": 2},
+      "seconds": 40, "equation": "Fe(l) + C → 铁素体 + Fe₃C（渗碳体）", "source": "worldsteel"},
+    "polyethylene": {"name": "聚乙烯粒料", "building": "polymer_works", "method": "乙醇脱水 → 乙烯聚合（催化剂简化）",
+      "inputs": {"batch:ethanol": 2}, "evidence": ["index:C2H4"], "outputs": {"item:pe": 3}, "seconds": 30,
+      "equation": "C₂H₅OH → C₂H₄ + H₂O；n C₂H₄ → (C₂H₄)ₙ", "source": "mohsenzadeh2017"}},
+  "items": {
+    "steel_ingot": {"name": "碳钢锭", "category": "materials", "sell": 30, "stack": 99,
+      "stats": {"hv_gpa": {"from": "index:Fe3C", "model": "chen2011"}}},
+    "rover": {"name": "星球越野车", "category": "vehicles", "sell": 900,
+      "planet": {"type": "vehicle", "speed_factor": 3.0, "cargo": 40}}}}
+```
+- Code:
+  - `scripts/industry.gd` holds rules, queues (copy the refinery reserve-then-run logic), quote/craft and serialize/restore.
+  - `industry_island.gd` holds the plot grid (reusing `campus_layout` and `island_town`), `industry_panel.gd` the UI, and `industry_architecture.gd` the models.
+  - `LabState` owns `industry`, and `sync_gear()` pushes planet effects.
+- Tests per release: `test_industry_<slice>` (logic) and `_ui`. A test enumerates that every recipe input has a reachable source (the 08 anti-softlock rule).
+
+## 9 · Visual direction (procedural, GL Compatibility)
+- **Island Ⅱ itself:**
+  - A gunmetal hex-panel deck, with cyan light strips that glow at night through the existing day/night.
+  - Under the island hang four anti-gravity thruster rings: Torus + emissive, slowly pulsing.
+  - A maglev ring rail (产业观光环线) runs past the districts in chain order, with a small pod that loops.
+- **Fake bloom:** no post bloom in Compatibility. Glow = emissive core + a larger unshaded additive halo mesh + Fx sparkles.
+- **Every building:**
+  - a floating holographic **logo** (Label3D + emissive ring, tier colour) = its 标识
+  - 3 tier looks across its levels (like v0.27)
+  - animated parts tagged `dynamic_geometry`
+- **Tier accent colours:**
+  - materials: amber
+  - chips: cyan
+  - IC: teal
+  - energy: lime
+  - home: coral
+  - sales: gold
+  - vehicles: red
+  - defense: violet
+  - gear: orange
+  - space: white plus plasma blue
+
+| Building | Silhouette | Signature element | Accent / emissive | Animation |
+|---|---|---|---|---|
+| 冶金工厂 | squat tapered blast-furnace stack + hammer press | molten pour arc into ingot moulds | amber/white-hot | pour pulse, press slam with screen kick |
+| 高分子工厂 | cluster of 3 distillation columns with spiral catwalks (torus arcs) | glass pellet silo full of coloured pellets (MultiMesh) | amber pipe joints | pellets trickle, steam puffs |
+| 陶瓷玻璃窑 | half-dome kiln ringed by glowing coils | float-glass ribbon sliding out (UV-scroll shader) | orange coils, glass fresnel | coil glow breathing |
+| 硅材料厂 | white monolith with two tall crystal-puller towers | silver Si boule rising and rotating behind a window | cyan | slow pull and rotate |
+| 晶圆芯片厂 | low clean-room hall with sawtooth roof | giant lithography lens tower firing a violet beam onto a rotating wafer (grid shader) | cyan/violet | beam strobe, wafer spin |
+| 封测电路板厂 | slab building skinned as a PCB | light pulses racing along traces (shader); roof fins as chip pins | teal | trace pulses |
+| 电池工厂 | three cylindrical-cell "skyscrapers" | charge bars in the side windows | lime | bars fill and drain |
+| 能源园 | sun-tracking solar sails + spherical H₂ tanks | fuel-cell stack with blue core | lime/blue | sails follow the island sun angle |
+| 未来家居工坊 | stacked offset glass pods | robot arm placing a chair in a showroom pod | coral neon | arm loop |
+| 星港交易所 | tall spire with an airship docking arm | rotating holo-ring "ticker" of prices | gold | ring spin, airship docking |
+| 载具总装厂 | long clear-roof hangar | rover on a turntable getting a colour-swap paint pass | red stripe | turntable and paint sweep |
+| 防卫装备厂 | hexagonal bunker | fresnel shield dome (glass shader) that ripples | violet | ripple on build; drone orbits |
+| 装备锻造所 | anvil-shaped heavy block | exosuit frame in a display cradle | orange | cradle rotates, sparks |
+| 航天研究院 | ring-shaped campus around a domed observatory | hologram of the current rocket design | white/plasma blue | dome opens at night |
+| 星际发射场 | gantry tower + flame trench | the rocket itself (cylinder + cone + fins) | red beacon blink | gantry retracts; launch = rise, smoke, shake, Fx banner |
+
+## 10 · Release sequence (each shippable, tagged, save-migrated)
+Slots I1–I8. The versions assume back-to-back after v0.33; see Q1 for interleaving.
+
+| Slot (ver.) | Name | Must-have | Planet payoff |
+|---|---|---|---|
+| I1 (v0.34) | 星锻岛 Second Isle | Island Rank; unlock card; bridge + switcher; plots/licences/power; Metallurgy + Polymer Works; Trade Hub v1 (direct sale) | steel/bronze drill bits; PVC irrigation pipe |
+| I2 (v0.35) | 家与市 Home & Market | Home Goods Studio; contracts; airship export; saturation; rubber | sci-fi furniture on both islands and interiors |
+| I3 (v0.36) | 硅 Silicon | Si (+Ca) element(s), refinery route, MP index rebuild; Ceramic & Glass Works; Silicon Foundry; Si solar | greenhouse block; better solar panels |
+| I4 (v0.37) | 芯 Fab | Chip Fab; Packaging & Board Plant; LED colour from gap | headlamp; advanced analyser; sensor beacons |
+| I5 (v0.38) | 能 Power | Battery Works (lead-acid → Na-ion → Li–S); Energy Park; power expansion | portable power for field machines and emitters |
+| I6 (v0.39) | 车 Rover | Vehicle Assembly; planet vehicle controller and camera | rover travel and cargo |
+| I7 (v0.40) | 盾 Aegis | Defense Works + Gear Forge | armour, drone, tranquilizer, glider/jetpack |
+| I8 (v0.41) | 启航 Launch | Aerospace Institute; Launch Pad; research tree; satellites | satellite applications; the starship hands over to the star map |
+
+Every slot also adds: tours, help entry, 规则与数据来源 overlay, codex cards for products, milestones and the save bump.
+
+## 11 · Risks, open questions, deferrals
+**Risks**
+- **Scope:** 15 buildings is about 8 releases. Mitigation: one complete small example per system first (roadmap rule), then content.
+- **Mobile performance:** a second island. Only the active island renders in detail, ≤ 144 plots, MultiMesh for repeats.
+- **Coin inflation** from sales. Mitigation: saturation, coin sinks, and no raw or element sales.
+- **Science honesty at device level.** Chips and shields have no database property, so they must be visibly *(游戏数值)* or 科幻.
+- **Element additions:**
+  - MP rebuild needs the user's key on the user's machine.
+  - The index grows.
+  - Old batches stay valid (additive).
+- **Tone and store rating for "weapons":** keep to armour, non-lethal capture, drones and shields (Q4).
+- **Tests:** the suite already has ~17 flaky touch tests. New UI tests should avoid touch-timing patterns.
+
+**Open questions for the user**
+- Q1. Interleave industry slots with the planet eras (Specimens, Ice Age, Settlers, Bronze…), or run I1–I8 back-to-back?
+- Q2. Add Si only, Si + Ca, or also P (LiFePO₄ batteries, real n-type doping)?
+- Q3. Is the derived 岛主等级 OK, or do you want a visible XP bar with its own sources?
+- Q4. How far should "weapons" go: defensive/non-lethal only? May we supply native factions in wars (L6)?
+- Q5. Should island Ⅱ cost only coins and 合金片, or use a new currency (工业信用 / research points)?
+- Q6. Should factories need staff (engineers, or a new 技工 role with housing on island Ⅱ), or only power?
+- Q7. The rover needs a real driving controller on the planet. Is it worth its own release, or should it be fast-travel only?
+- Q8. Should hero buildings (fab, launch pad) stay procedural, or may we use Blender-made meshes?
+- Q9. Should the starship release replace the roadmap's v0.40+ star map entry point?
+
+**Deferred**
+- Oil/crude refining: there is no crude oil in the game, so the ethanol → ethylene route stands in.
+- Conveyor or logistics simulation, and multiplayer/global market.
+- Real-time vehicle combat. Flight sim beyond a launch cinematic.
+- Ga, Ti, Co, Ni, Ag and the materials that need them (GaN, Ti alloys, NMC, SAC solder).
+
+## 12 · Sources
+- Mohsenzadeh, Zamani & Taherzadeh, *ChemBioEng Rev.* 4, 75–91 (2017), doi:10.1002/cben.201600025 (ethanol → ethylene)
+- Dreher et al., "Chloroethanes and Chloroethylenes", *Ullmann's Encycl. Ind. Chem.* (2014), doi:10.1002/14356007.o06_o01.pub2 (EDC/VCM → PVC)
+- Plunkett, US 2,230,654 (1941), PTFE · Baekeland, US 942,699 (1909), phenolic resin · Goodyear, US 3,633 (1844), vulcanisation · Kwolek, US 3,671,542 (1972), aramid · Acheson, US 492,767 (1893), SiC
+- Dunky, *Int. J. Adhes. Adhes.* 18, 95–107 (1998), doi:10.1016/S0143-7496(97)00054-7 (UF resin, wood panels)
+- Rioja & Liu, *Metall. Mater. Trans. A* 43, 3325–3337 (2012), doi:10.1007/s11661-012-1155-z (Al–Li)
+- Abtew & Selvaduray, *Mater. Sci. Eng. R* 27, 95–141 (2000), doi:10.1016/S0927-796X(00)00010-3 (solders, Cu₆Sn₅)
+- Kritskaya et al., *Mod. Electron. Mater.* 7 (2021), doi:10.3897/j.moem.7.1.64953 (trichlorosilane / Siemens)
+- Chen et al., *J. Cryst. Growth* (2023), doi:10.1016/j.jcrysgro.2023.127314 (Siemens reactor, 1000–1150 °C)
+- Czochralski, *Z. Phys. Chem.* 92, 219–221 (1918), doi:10.1515/zpch-1918-9212
+- Edelstein et al., IEDM 1997, 773–776, doi:10.1109/IEDM.1997.650496 (Cu interconnects)
+- Moore, "Cramming more components…", reprint *Proc. IEEE* 86, 82 (1998), doi:10.1109/JPROC.1998.658762 · Kilby, US 3,138,743 (1964)
+- Taniyasu, Kasu & Makimoto, *Nature* 441, 325 (2006), doi:10.1038/nature04760 (AlN 210 nm LED)
+- Protesescu et al., *Nano Lett.* 15, 3692 (2015), doi:10.1021/nl5048779 (CsPbX₃)
+- SIA × BCG, *Strengthening the Global Semiconductor Supply Chain in an Uncertain Era* (2021), https://www.semiconductors.org/strengthening-the-global-semiconductor-supply-chain-in-an-uncertain-era/
+- May, Davidson & Monahov, *J. Energy Storage* 15, 145–157 (2018), doi:10.1016/j.est.2017.11.008 (lead-acid)
+- Wang et al. (Goodenough), *JACS* 137, 2548–2554 (2015), doi:10.1021/ja510347s (Prussian white Na-ion)
+- Ji, Lee & Nazar, *Nat. Mater.* 8, 500–506 (2009), doi:10.1038/nmat2460 (Li–S)
+- Padhi, Nanjundaswamy & Goodenough, *J. Electrochem. Soc.* 144, 1188 (1997), doi:10.1149/1.1837571 (LiFePO₄, deferred)
+- Mauritz & Moore, *Chem. Rev.* 104, 4535–4586 (2004), doi:10.1021/cr0207123 (Nafion)
+- Argonne GREET vehicle material composition, https://publications.anl.gov/anlpubs/2006/12/58024.pdf and https://downloads.regulations.gov/NHTSA-2022-0075-0024/attachment_41.pdf
+- Medvedovski, *Ceram. Int.* 36, 2103–2115 (2010), doi:10.1016/j.ceramint.2010.05.021 (armour ceramics)
+- Tran et al., NASA TM-110440 (1997), NTRS 19970017002 (PICA)
+- NASA Shuttle press reference, SRB propellant 69.6 % AP / 16 % Al / 0.4 % Fe₂O₃ / 12.04 % PBAN / 1.96 % epoxy, https://16streets.com/39-B/HTML%20Pages/shuttle/technology/sts-newsref/srb.html (mirror of the NASA STS news reference)
+- Already in-game and reused: Chen 2011 (hardness), Shockley & Queisser 1961, Broz 2006, Cordero 2008, Materials Project (Jain 2013) and PubChem (Kim 2025)

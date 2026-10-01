@@ -97,6 +97,11 @@ var rng = RandomNumberGenerator.new()
 var _dry_harvests: int = 0
 var _serial: int = 1
 var _town_serial: int = 1
+## v0.31 undo: session-only groups of town edits (newest last). Never saved.
+var town_journal: Array = []
+var _town_grouping: bool = false
+var _town_undoing: bool = false
+const TOWN_JOURNAL_LIMIT = 40
 
 func _init():
 	market.quote_rules=island_rules.visitors
@@ -301,8 +306,12 @@ func sandbox_reactor_quote(index: int, work: Dictionary) -> Dictionary:
 	q.fee = edit_cost(r)
 	q.message = "需要 %d 金币；更换组成由博士装炉，已完成产物保留" % q.fee
 	if coins < q.fee: q.message="金币不足：本级固定%d金币"%q.fee; return q
-	for s in q.required:
-		if int(element_inventory.get(s,0))<int(q.required[s]): q.message="%s不足：需要%d，库存%d"%[s,q.required[s],element_inventory.get(s,0)]; return q
+	# v0.31: a new composition is installed by a doctor; coordinates alone stay free to tune.
+	if old.atoms != work.atoms or old.bonds != work.bonds or old.mode != work.get("mode","science") or old.periodic != work.get("periodic",false) or old.cell != work.get("cell",[6.0,6.0,6.0]):
+		var gate := install_status()
+		if not gate.ok: q.message=gate.message+"（没有博士时只能微调坐标）"; return q
+	var short := element_shortage(q.required)
+	if not short.is_empty(): q.message=short; return q
 	q.ready=true
 	return q
 
@@ -793,25 +802,94 @@ func buy_plot(index: int) -> String:
 		storage.finds[str(index)]=kinds[(unlocked_plot_count()/int(island_rules.relics.every_plots))%kinds.size()]
 	return "新土地已开拓！可以放置反应炉或装饰"
 
-func place_reactor(plot_index: int, template_id: String = "water") -> String:
+# --- v0.31 gates: a doctor installs, and the atoms come from the element store -----------
+## A doctor on post auto or logistics installs new samples. Without one, only coordinates change.
+func install_status() -> Dictionary:
+	var doctors: int = 0
+	for person in campus.people:
+		if person.role != "doctor": continue
+		doctors += 1
+		if str(person.get("post","auto")) in ["auto","logistics"]: return {"ok":true,"message":""}
+	if doctors == 0: return {"ok":false,"message":"需要装炉博士：先建博士公寓与科研院所，再招募博士"}
+	return {"ok":false,"message":"博士都在其他岗位：在小镇 · 居民里安排一位博士负责装炉"}
+
+func _atom_counts(atoms: Array) -> Dictionary:
+	var out := {}
+	for symbol in atoms: out[str(symbol)] = int(out.get(str(symbol),0)) + 1
+	return out
+
+## Empty when the store holds every required element, otherwise what is short and where to get it.
+func element_shortage(required: Dictionary) -> String:
+	for symbol in required:
+		var have: int = int(element_inventory.get(symbol,0))
+		if have < int(required[symbol]):
+			return "%s不足：需要%d份，仓库有%d份。来源：%s" % [symbol,int(required[symbol]),have,refinery.how_to_get(symbol)]
+	return ""
+
+## Building a reactor: 100 coins plus every atom of the starting structure.
+func reactor_quote(plot_index: int, template_id: String) -> Dictionary:
+	var q := {"ready":false,"fee":100,"required":{},"message":""}
 	if plot_index < 0 or plot_index >= plots.size() or not templates.has(template_id):
-		return "请选择有效的土地和结构"
+		q.message = "请选择有效的土地和结构"; return q
+	q.required = _atom_counts(templates[template_id].atoms)
 	if templates[template_id].get("substitution_only",false) and template_id not in campus.unlocked_materials:
-		return "这个结构需要在原子工作台中替换元素来发现"
+		q.message = "这个结构需要在原子工作台中替换元素来发现"; return q
 	if not plots[plot_index].unlocked or plots[plot_index].kind != "empty":
-		return "请在已开拓的空地上建造"
+		q.message = "请在已开拓的空地上建造"; return q
 	var probe: Dictionary = plots[plot_index].duplicate(); probe.kind = "reactor"
-	if Town.occupancy(probe, -1, true).keys().any(func(c): return Town.primary_rect(probe).has_point(c)):
-		return "反应炉需要地块中央8×8格的空位；先挪开这里的装饰"
+	if not Town.island_free(plots, plot_index, Town.primary_rect(probe)).is_empty():
+		q.message = "反应炉需要地块中央8×8格的空位；先挪开这里的装饰"; return q
 	if coins < 100.0:
-		return "建造反应炉需要100金币"
+		q.message = "建造反应炉需要100金币"; return q
+	var gate := install_status()
+	if not gate.ok: q.message = gate.message; return q
+	q.message = element_shortage(q.required)
+	if not q.message.is_empty(): return q
+	q.ready = true
+	q.message = "100金币 + 结构里的全部元素"
+	return q
+
+## Loading another starting structure: 25 coins plus only the atoms the reactor doesn't hold yet.
+func template_quote(index: int, template_id: String) -> Dictionary:
+	var q := {"ready":false,"fee":25,"required":{},"message":""}
+	if not _valid_index(index) or not templates.has(template_id):
+		q.message = "请选择有效的反应炉和结构"; return q
+	if templates[template_id].get("substitution_only",false) and template_id not in campus.unlocked_materials:
+		q.message = "这个结构只能通过元素替换获得，不能直接装载"; return q
+	var r: Dictionary = reactors[index]
+	var held := _atom_counts(atom_symbols(r))
+	var wanted := _atom_counts(templates[template_id].atoms)
+	for symbol in wanted:
+		var extra: int = int(wanted[symbol]) - int(held.get(symbol,0))
+		if extra > 0: q.required[symbol] = extra
+	if float(r.build_left) > 0.0: q.message = "反应炉建好后才能更换结构"; return q
+	if not r.get("installation",{}).is_empty(): q.message = "已有待装炉样品，请等待博士或取消装炉"; return q
+	if reference_id(r) == template_id: q.message = "反应炉已经使用这个结构；修改坐标请使用原子编辑器"; return q
+	if coins < 25.0: q.message = "更换结构需要25金币"; return q
+	var gate := install_status()
+	if not gate.ok: q.message = gate.message; return q
+	q.message = element_shortage(q.required)
+	if not q.message.is_empty(): return q
+	q.ready = true
+	q.message = "25金币 + 新增的元素，博士装炉"
+	return q
+
+func place_reactor(plot_index: int, template_id: String = "water") -> String:
+	var q := reactor_quote(plot_index, template_id)
+	if not q.ready: return q.message
 	coins -= 100.0
+	for symbol in q.required: element_inventory[symbol] -= int(q.required[symbol])
 	var r = _new_reactor(plot_index, template_id, 12.0)
 	reactors.append(r)
 	plots[plot_index].kind = "reactor"
 	plots[plot_index].rid = reactors.size() - 1
 	layout.mark_changed()
-	return "反应炉开始建造 · 初始结构待调节，调整键长可提高产率"
+	return "反应炉开始建造 · 用掉%s · 初始结构待调节，调整键长可提高产率" % _required_text(q.required)
+
+func _required_text(required: Dictionary) -> String:
+	var parts: Array = []
+	for symbol in required: parts.append("%s×%d" % [symbol,int(required[symbol])])
+	return "、".join(parts) if not parts.is_empty() else "无新元素"
 
 const DECORATIONS = {"garden":{"name":"晶体花园","cost":35},"house":{"name":"工程师小屋","cost":60},"road":{"name":"星砂小径","cost":18},"fence":{"name":"木质围栏","cost":24},"sculpture":{"name":"原子纪念雕塑","cost":85}}
 
@@ -837,9 +915,7 @@ func move_building(source: int, target: int) -> String:
 	if not destination.unlocked or destination.kind != "empty": return "请选择已开拓的空地"
 	var probe: Dictionary = destination.duplicate(); probe.kind = origin.kind
 	if origin.has("at"): probe.at = origin.at.duplicate()
-	var footprint: Rect2i = Town.primary_rect(probe)
-	for cell in Town.occupancy(destination):
-		if footprint.has_point(cell): return "那块地上的装饰挡住了建筑位置，先挪开"
+	if not Town.island_free(plots, target, Town.primary_rect(probe), ["%d:p" % source]).is_empty(): return "那块地上的装饰挡住了建筑位置，先挪开"
 	# Other buildings on the old plot keep their residents; only the moved kind's people follow.
 	var moved_kind: String = Town.building_kind(str(origin.kind))
 	var stays: bool = false
@@ -1065,14 +1141,19 @@ func edit_quote(index: int, positions: Array, atoms: Array) -> Dictionary:
 	if not quote.changed:
 		quote.message = "结构未变化，不扣费"
 		return quote
+	if atoms != old_atoms:
+		var gate := install_status()
+		if not gate.ok:
+			quote.message = gate.message + "（没有博士时只能微调坐标）"
+			return quote
 	quote.fee = edit_cost(r)
 	if coins < quote.fee:
 		quote.message = "本级确认编辑需要%d金币" % quote.fee
 		return quote
-	for symbol in quote.required:
-		if int(element_inventory.get(symbol,0)) < int(quote.required[symbol]):
-			quote.message = "%s不足：需要%d份，仓库有%d份" % [symbol,quote.required[symbol],element_inventory.get(symbol,0)]
-			return quote
+	var short := element_shortage(quote.required)
+	if not short.is_empty():
+		quote.message = short
+		return quote
 	quote.ready = true
 	quote.message = "可以应用：一次编辑%d金币，元素按预览扣除" % quote.fee
 	return quote
@@ -1097,16 +1178,11 @@ func change_template(index: int, template_id: String) -> String:
 		return "请选择有效的反应炉和结构"
 	if templates[template_id].get("substitution_only",false) and template_id not in campus.unlocked_materials:
 		return "这个结构只能通过元素替换获得，不能直接装载"
-	var r = reactors[index]
-	if float(r.build_left) > 0.0:
-		return "反应炉建好后才能更换结构"
-	if not r.get("installation",{}).is_empty(): return "已有待装炉样品，请等待博士或取消装炉"
-	if reference_id(r) == template_id:
-		return "反应炉已经使用这个结构；修改坐标请使用原子编辑器"
-	if coins < 25.0:
-		return "更换结构需要25金币"
+	var q := template_quote(index, template_id)
+	if not q.ready: return q.message
 	coins -= 25.0
-	return _queue_install(r,{"kind":"template","template":template_id},{"fee":25,"required":{}})
+	for symbol in q.required: element_inventory[symbol] -= int(q.required[symbol])
+	return _queue_install(reactors[index],{"kind":"template","template":template_id},q)
 
 func signature(r: Dictionary) -> String:
 	var parts = [str(r.get("template", "unknown"))]
@@ -1139,7 +1215,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 26, "fabricator": fabricator.serialize(), "index_found": index_found.keys(), "refinery": refinery.serialize(), "coach": coach_seen.keys(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 27, "fabricator": fabricator.serialize(), "index_found": index_found.keys(), "refinery": refinery.serialize(), "coach": coach_seen.keys(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1201,7 +1277,7 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 26, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 27, true):
 		return false
 	if int(data.version)>=26 and not Fabricator.new().restore(data.get("fabricator")): return false
 	if int(data.version)>=25 and (not data.get("index_found") is Array or data.index_found.size()>4096 or data.index_found.any(func(id): return not id is String or str(id).length()>40)): return false
@@ -1446,6 +1522,7 @@ func load_game(path: String = "") -> bool:
 	layout.initialize(plots,true)
 	_append_frontier()
 	_restore_town_serial()
+	town_journal.clear()
 	if int(data.version)>=8:
 		campus.restore(data.campus)
 	else:
@@ -1557,8 +1634,8 @@ func campus_build(plot: int, kind: String) -> String:
 	if not plots[plot].unlocked or plots[plot].kind in ["reactor","plaza"] or plots[plot].kind in Town.LEGACY_WHOLE: return "建筑需要已开拓的空地或住宅区地块"
 	if coins<float(info.cost): return "需要%d金币" % int(info.cost)
 	layout.pin(plots[plot])
-	var at: Vector2i = Town.default_anchor(plots[plot],kind) if plots[plot].kind=="empty" else Town.first_fit(plots[plot],kind)
-	if at.x<0 or not Town.fits(plots[plot],kind,at,0).is_empty(): return "这块地放不下%s了；试试另一块地" % info.name
+	var at: Vector2i = town_spot(plot,kind)
+	if at.x<0: return "这块地放不下%s了；试试另一块地" % info.name
 	var message=town_place(plot,kind,at.x,at.y)
 	if message.contains("落成"): return "%s已落成，小路自动连通" % info.name
 	return message
@@ -1596,7 +1673,7 @@ func campus_prop(plot: int, slot: int, kind: String) -> String:
 	for prop in props:
 		if int(prop.slot)==slot: return "这个位置已有物件，请先收纳"
 	layout.pin(plots[plot])
-	if Town.occupancy(plots[plot]).has(Town.prop_tile(slot)): return "这个位置已被建筑或庭院物品占用"
+	if not Town.island_free(plots,plot,Rect2i(Town.prop_tile(slot),Vector2i.ONE)).is_empty(): return "这个位置已被建筑或庭院物品占用"
 	if int(storage.decorations.get(kind,0))>0: storage.decorations[kind]-=1
 	else:
 		if coins<float(info.cost): return "金币不足"
@@ -1796,21 +1873,21 @@ func town_place(plot: int, kind: String, x: int, z: int, rot: int=0) -> String:
 	var building=Town.is_building(kind) and not layout.building_info(kind).is_empty()
 	if not building and not Town.is_decor(kind): return "没有这种建筑或装饰"
 	var p: Dictionary=plots[plot]; layout.pin(p)
-	if building and p.kind=="reactor": return "反应炉地块只能摆放装饰；建筑请放在空地或住宅区"
 	if p.items.size()>=int(Town.rules().max_items_per_plot): return "这块地已经摆得很满了"
 	var stored=int(storage.decorations.get(kind,0))
 	if not building and stored<=0:
 		var locked=town_locked(kind)
 		if not locked.is_empty(): return locked
-	error=Town.fits(p,kind,Vector2i(x,z),rot)
+	error=town_fits(plot,kind,Vector2i(x,z),rot)
 	if not error.is_empty(): return error
 	var price=0 if (not building and stored>0) else town_price(kind)
 	if coins<price: return "金币不足，需要%d金币" % price
 	coins-=price
 	if not building and stored>0: storage.decorations[kind]=stored-1
+	var entry={"op":"place","plot":plot,"uid":0,"kind":kind,"paid":price,"toolbox":not building and stored>0}
 	if building and p.kind=="empty":
 		p.kind=kind; p.building_level=1; p.at=[x,z]
-		layout.mark_changed()
+		layout.mark_changed(); _town_log(entry)
 		return "%s落成了 · 同一块地还能再建其他建筑和装饰" % town_name(kind)
 	var item={"uid":_town_serial,"kind":kind,"x":x,"z":z,"rot":posmod(rot,4) if not building else 0}
 	_town_serial+=1
@@ -1818,6 +1895,7 @@ func town_place(plot: int, kind: String, x: int, z: int, rot: int=0) -> String:
 	if bool(Town.info(kind).get("display",false)): item.show={}
 	p.items.append(item)
 	layout.mark_changed()
+	entry.uid=int(item.uid); _town_log(entry)
 	if building: return "%s落成了 · 与同地块的同类建筑共用床位/工位" % town_name(kind)
 	return "%s已摆放%s" % [town_name(kind)," · 从工具箱取出" if price==0 else ""]
 
@@ -1830,20 +1908,22 @@ func town_move(plot: int, uid: int, target: int, x: int, z: int, rot: int=0) -> 
 	if uid==0:
 		if not Town.is_building(str(p.kind)): return "这里没有可挪动的主建筑"
 		if target!=plot: return "主建筑请用长按拖动搬到另一块空地"
-		error=Town.fits(p,str(p.kind),Vector2i(x,z),0,-1,true)
+		error=town_fits(plot,str(p.kind),Vector2i(x,z),0,["%d:p" % plot])
 		if not error.is_empty(): return error
+		var old=Town.primary_anchor(p)
 		p.at=[x,z]; layout.mark_changed()
+		_town_log({"op":"move","plot":plot,"uid":0,"from":plot,"x":old.x,"z":old.y,"rot":0})
 		return "%s已挪到新位置" % town_name(str(p.kind))
 	var item=town_item(plot,uid)
 	if item.is_empty(): return "找不到这件物品"
-	if Town.is_building(str(item.kind)) and target!=plot: return "建筑只能在本地块内挪动，居民的住址不变"
+	if Town.is_building(str(item.kind)) and target!=plot: return "建筑的落脚格要留在本地块（可以跨出边缘），居民的住址不变"
 	var destination: Dictionary=plots[target]; layout.pin(destination)
-	if Town.is_building(str(item.kind)) and destination.kind=="reactor": return "反应炉地块只能摆放装饰"
-	error=Town.fits(destination,str(item.kind),Vector2i(x,z),rot,uid if target==plot else -1)
+	error=town_fits(target,str(item.kind),Vector2i(x,z),rot,["%d:%d" % [plot,uid]])
 	if not error.is_empty(): return error
 	if target!=plot:
 		if destination.items.size()>=int(Town.rules().max_items_per_plot): return "那块地已经摆得很满了"
 		p.items.erase(item); destination.items.append(item)
+	_town_log({"op":"move","plot":target,"uid":uid,"from":plot,"x":int(item.x),"z":int(item.z),"rot":int(item.get("rot",0))})
 	item.x=x; item.z=z
 	if not Town.is_building(str(item.kind)): item.rot=posmod(rot,4)
 	layout.mark_changed()
@@ -1868,6 +1948,7 @@ func town_store(plot: int, uid: int) -> String:
 	plots[plot].items.erase(item)
 	storage.decorations[item.kind]=int(storage.decorations.get(item.kind,0))+1
 	layout.mark_changed()
+	_town_log({"op":"store","plot":plot,"item":item.duplicate(true)})
 	return "%s已收入工具箱，可以免费再次摆放" % town_name(str(item.kind))
 
 func _town_building_in_use(plot: int, item: Dictionary) -> String:
@@ -1947,8 +2028,137 @@ func town_unexhibit(plot: int, uid: int) -> String:
 	layout.mark_changed()
 	return "展品已收回背包"
 
+# --- v0.31 Builder: island-wide tiles, undo, recycle ------------------------------------
+## Placement check with the anchor in plot and the footprint free across the island.
+func town_fits(plot: int, kind: String, at: Vector2i, rot: int=0, ignore: Array=[]) -> String:
+	return Town.island_fits(plots,plot,kind,at,rot,ignore)
+
+## A free anchor for kind in plot, or (-1,-1): centred on an empty plot, else the first free spot.
+func town_spot(plot: int, kind: String) -> Vector2i:
+	if plot<0 or plot>=plots.size(): return Vector2i(-1,-1)
+	if plots[plot].kind=="empty":
+		var at=Town.default_anchor(plots[plot],kind)
+		if town_fits(plot,kind,at).is_empty(): return at
+	return Town.island_first_fit(plots,plot,kind)
+
+## What sits on a global tile: {"plot", "id"} with id "p", "s<slot>" or the uid as a string; {} if free.
+func town_at(global: Vector2i) -> Dictionary:
+	var plot=int(Town.coord_lookup(plots).get(Town.plot_of(global),-1))
+	if plot<0: return {}
+	var who=Town.island_cells(plots,plot).get(global)
+	return {} if who==null else {"plot":int(who[0]),"id":str(who[1])}
+
+## Decorations a recycle would collect: one plot's paths and decor, or (plot -1) every path.
+func town_recyclable(plot: int) -> Array:
+	var out: Array=[]
+	for i in range(plots.size()):
+		if plot>=0 and i!=plot: continue
+		for item in plots[i].get("items",[]):
+			if Town.is_building(str(item.kind)): continue
+			if plot<0 and str(Town.info(str(item.kind)).get("category",""))!="path": continue
+			out.append([i,int(item.uid)])
+	return out
+
+## One tap: everything town_recyclable() lists goes into the toolbox as one undo step.
+func town_recycle(plot: int) -> String:
+	var list=town_recyclable(plot)
+	if list.is_empty(): return "这里没有可回收的小路或装饰" if plot>=0 else "岛上还没有铺小路"
+	town_group_begin()
+	for pair in list: town_store(int(pair[0]),int(pair[1]))
+	town_group_end()
+	return "已回收%d件%s到工具箱 · 可以撤销，也可以免费再摆" % [list.size(),"小路" if plot<0 else "小路与装饰"]
+
+func town_group_begin() -> void:
+	town_journal.append([]); _town_grouping=true
+	while town_journal.size()>TOWN_JOURNAL_LIMIT: town_journal.pop_front()
+
+func town_group_end() -> void:
+	_town_grouping=false
+	if not town_journal.is_empty() and town_journal.back().is_empty(): town_journal.pop_back()
+
+func _town_log(entry: Dictionary) -> void:
+	if _town_undoing: return
+	if _town_grouping and not town_journal.is_empty(): town_journal.back().append(entry); return
+	town_journal.append([entry])
+	while town_journal.size()>TOWN_JOURNAL_LIMIT: town_journal.pop_front()
+
+func _town_group_text(group: Array) -> String:
+	var verbs={"place":"摆放","move":"挪动","store":"回收"}
+	var counts={}; var order: Array=[]
+	for entry in group:
+		var kind=str(entry.item.kind) if entry.op=="store" else str(entry.get("kind","")) if entry.op=="place" else ""
+		if entry.op=="move":
+			var p: Dictionary=plots[int(entry.plot)]
+			kind=str(p.kind) if int(entry.uid)==0 else str(town_item(int(entry.plot),int(entry.uid)).get("kind",""))
+		var key="%s%s" % [verbs.get(entry.op,""),town_name(kind)]
+		if not counts.has(key): order.append(key)
+		counts[key]=int(counts.get(key,0))+1
+	var parts: Array=[]
+	for key in order: parts.append(key if int(counts[key])==1 else "%s×%d" % [key,int(counts[key])])
+	return "、".join(parts)
+
+## Label for the undo button, empty when there is nothing to undo.
+func town_undo_text() -> String:
+	return "" if town_journal.is_empty() else _town_group_text(town_journal.back())
+
+## Undo the newest group; coins and toolbox stock go back exactly as they were taken.
+func town_undo() -> String:
+	if town_journal.is_empty(): return "没有可以撤销的操作"
+	var group: Array=town_journal.pop_back()
+	var text=_town_group_text(group)
+	_town_undoing=true
+	var failed=""
+	for i in range(group.size()-1,-1,-1):
+		var message=_town_revert(group[i])
+		if not message.is_empty(): failed=message
+	_town_undoing=false
+	layout.mark_changed()
+	return "已撤销：" + text if failed.is_empty() else "部分没能撤销：" + failed
+
+func _town_revert(entry: Dictionary) -> String:
+	var plot=int(entry.plot)
+	if plot<0 or plot>=plots.size(): return "地块不存在"
+	var p: Dictionary=plots[plot]
+	match str(entry.op):
+		"place":
+			var kind=str(entry.kind)
+			if int(entry.uid)==0:
+				if str(p.kind)!=kind: return "%s已经不在原处" % town_name(kind)
+				if int(p.get("building_level",1))>1: return "%s已经升级，请改用出售" % town_name(kind)
+				var busy=_town_building_in_use(plot,{"kind":kind,"level":1})
+				if not busy.is_empty(): return busy
+				p.kind="empty"; p.erase("at"); p.building_level=1
+				coins+=float(entry.paid)
+				return ""
+			var item=town_item(plot,int(entry.uid))
+			if item.is_empty(): return "%s已经不在原处" % town_name(kind)
+			if Town.is_building(kind):
+				if int(item.level)>1: return "%s已经升级，请改用出售" % town_name(kind)
+				var busy=_town_building_in_use(plot,item)
+				if not busy.is_empty(): return busy
+			_town_take_back(item)
+			p.items.erase(item)
+			if bool(entry.toolbox): storage.decorations[kind]=int(storage.decorations.get(kind,0))+1
+			else: coins+=float(entry.paid)
+			return ""
+		"move":
+			var message=town_move(plot,int(entry.uid),int(entry.from),int(entry.x),int(entry.z),int(entry.rot))
+			return "" if message.contains("已挪到") else message
+		"store":
+			var item: Dictionary=entry.item.duplicate(true)
+			var kind=str(item.kind)
+			if int(storage.decorations.get(kind,0))<=0: return "工具箱里的%s已经用掉了" % town_name(kind)
+			var error=town_fits(plot,kind,Vector2i(int(item.x),int(item.z)),int(item.get("rot",0)))
+			if not error.is_empty(): return error
+			storage.decorations[kind]=int(storage.decorations[kind])-1
+			if item.has("show"): item.show={}
+			p.items.append(item)
+			return ""
+	return ""
+
 ## Cross-plot save rules: unique uids and exhibits that really exist exactly once.
 func _valid_town(data: Dictionary) -> bool:
+	if not Town.valid_island(data.plots): return false
 	var uids={}
 	var shown={}
 	var boxes: Dictionary=data.get("planet",{}).get("v2",{}).get("construction",{}).get("miniatures",{})

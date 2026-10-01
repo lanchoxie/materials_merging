@@ -49,8 +49,7 @@ func run():
 	var view=CampusView.new(); view.setup(model,island); view.set_process(false)
 	check(view.actors.size()==24 and model.campus.people.size()==40,"render budget preserves all logical residents")
 	check(view.static_rebuilds==1,"initial static geometry built once")
-	var road=view.scenery.get_node("ConnectedRoads")
-	check(road is MultiMeshInstance3D and road.multimesh.instance_count==5,"connected road hubs and links share one MultiMesh")
+	check(view.scenery.get_node_or_null("ConnectedRoads")==null,"v0.31: no drawn edge roads; neighbouring plots meet as one lawn")
 	var rebuilds=view.avatar_rebuilds
 	for repeat in range(30): view.sync()
 	check(view.static_rebuilds==1 and view.avatar_rebuilds==rebuilds,"idle sync rebuilds neither geometry nor residents")

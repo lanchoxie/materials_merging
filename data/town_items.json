@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "note": "v0.27 Hometown. Each 3 m plot is a 12x12 grid of 0.25 m tiles; the last row and column stay clear for the edge road. Prices are game rules. 'join' items connect to orthogonal neighbours of the same join group; 'paint' items can be laid by dragging.",
+  "note": "v0.27 Hometown. Each 3 m plot is a 12x12 grid of 0.25 m tiles, all buildable since v0.31; footprints may spill onto unlocked neighbours. Prices are game rules. 'join' items connect to orthogonal neighbours of the same join group; 'paint' items can be laid by dragging.",
   "tile": 0.25,
   "grid": 12,
-  "usable": 11,
+  "usable": 12,
   "sell_ratio": 0.5,
   "max_items_per_plot": 96,
   "reactor_footprint": [2, 2, 8, 8],

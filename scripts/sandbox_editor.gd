@@ -46,6 +46,10 @@ var apply_button: Button
 var undo_button: Button
 var delete_button: Button
 var replace_button: Button
+var add_button: Button
+## v0.31: opened for a reactor with no installing doctor, composition tools are locked.
+var composition_locked := false
+var doctor_banner: Label
 var save_button: Button
 var updating := false
 var repeat_preview := false
@@ -113,6 +117,7 @@ func setup(model, structure: Dictionary, index: int = -1) -> void:
 	_build_stage()
 	_build_tools()
 	_build_footer()
+	_apply_gates()
 	confirmation = ConfirmationDialog.new()
 	confirmation.title = "自由造物"
 	confirmation.ok_button_text = "确认"
@@ -226,7 +231,8 @@ func _build_tools() -> void:
 		element_buttons[symbol] = button
 	if not state.elements.has(element_choice) and not symbols.is_empty(): element_choice = str(symbols[0])
 	var actions := UI.row(body, 6)
-	actions.add_child(UI.button("＋ 添加原子", _add_atom, true))
+	add_button = UI.button("＋ 添加原子", _add_atom, true)
+	actions.add_child(add_button)
 	replace_button = UI.button("替换选中", _replace_atom)
 	actions.add_child(replace_button)
 	delete_button = UI.button("删除选中", _delete_atom)
@@ -347,6 +353,7 @@ func _choose_element(symbol: String) -> void:
 	_update_readout()
 
 func _add_atom() -> void:
+	if composition_locked: _message("没有装炉博士时只能微调坐标"); return
 	if draft.atoms.size() >= MAX_ATOMS:
 		_message("最多 64 个原子；可以先删除一个原子。")
 		return
@@ -365,6 +372,7 @@ func _add_atom() -> void:
 	_message("已添加 %s · 草稿尚未消耗库存" % element_choice)
 
 func _replace_atom() -> void:
+	if composition_locked: _message("没有装炉博士时只能微调坐标"); return
 	if selected < 0 or draft.atoms[selected] == element_choice: return
 	_checkpoint()
 	draft.atoms[selected] = element_choice
@@ -372,6 +380,7 @@ func _replace_atom() -> void:
 	_rebuild()
 
 func _delete_atom() -> void:
+	if composition_locked: _message("没有装炉博士时只能微调坐标"); return
 	if selected < 0: return
 	_checkpoint()
 	var removed := selected
@@ -475,6 +484,25 @@ func _save() -> void:
 		original = draft.duplicate(true)
 		saved.emit()
 
+## v0.31: for a reactor, elements with no stock (and not already in the reactor) can't be chosen,
+## and without an installing doctor only coordinates may change.
+func _apply_gates() -> void:
+	if reactor_index < 0: return
+	var held: Array = state.reactor_work(state.reactors[reactor_index]).atoms
+	for symbol in element_buttons:
+		if int(state.element_inventory.get(symbol, 0)) <= 0 and not held.has(symbol):
+			var button: Button = element_buttons[symbol]
+			button.disabled = true
+			button.tooltip_text = "%s · 仓库没有。来源：%s" % [str(state.elements[symbol].get("name", symbol)), state.refinery.how_to_get(str(symbol))]
+	var gate: Dictionary = state.install_status()
+	composition_locked = not gate.ok
+	if composition_locked:
+		add_button.disabled = true
+		doctor_banner = UI.paragraph("⚠ %s。现在只能拖动、微调坐标；添加、替换、删除原子和改连接要等博士装炉。" % gate.message, 13, UI.GOLD)
+		doctor_banner.name = "DoctorBanner"
+		doctor_banner.position = Vector2(260, 790); doctor_banner.size = Vector2(700, 46)
+		add_child(doctor_banner)
+
 func _quote() -> Dictionary:
 	if reactor_index < 0: return {"ready": false, "message": "先在小岛选中反应炉，再打开作品即可应用。", "fee": 0, "required": {}}
 	if not state.has_method("sandbox_reactor_quote"): return {"ready": false, "message": "该反应炉暂不支持应用作品。", "fee": 0, "required": {}}
@@ -533,8 +561,8 @@ func _update_readout() -> void:
 	if selected_label == null: return
 	summary_label.text = "%s  ·  %d / 64 原子  ·  %d 连接" % [state.sandbox_formula(draft), draft.atoms.size(), draft.bonds.size()]
 	selected_label.text = "尚未选择原子" if selected < 0 else "%s #%02d    %.2f, %.2f, %.2f Å" % [draft.atoms[selected], selected + 1, draft.positions[selected][0], draft.positions[selected][1], draft.positions[selected][2]]
-	delete_button.disabled = selected < 0
-	replace_button.disabled = selected < 0
+	delete_button.disabled = selected < 0 or composition_locked
+	replace_button.disabled = selected < 0 or composition_locked
 	undo_button.disabled = history.is_empty()
 	save_button.disabled = draft.atoms.is_empty()
 	var id := str(draft.get("baseline_id", ""))

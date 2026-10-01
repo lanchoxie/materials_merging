@@ -10,6 +10,14 @@ static func install(state) -> void:
 			state._finish_logistics([{"kind":"install","reactor":i,"person":temporary.id}])
 	state.campus.people.erase(temporary)
 
+## v0.31: new reactors, template swaps and element edits need an installing doctor on the island.
+static func doctor(state) -> Dictionary:
+	for person in state.campus.people:
+		if person.role=="doctor" and str(person.get("post","auto")) in ["auto","logistics"]: return person
+	var hired=state.campus._new_person("doctor",-1,true)
+	state.campus.people.append(hired)
+	return hired
+
 static func same(a, b) -> bool:
 	if (a is int or a is float) and (b is int or b is float): return absf(float(a)-float(b))<1e-10
 	if a is Array and b is Array:

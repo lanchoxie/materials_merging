@@ -1,5 +1,6 @@
 extends SceneTree
 const Main=preload("res://scripts/main.gd")
+const Fixtures=preload("res://tests/fixtures_v09.gd")
 var game
 func _initialize() -> void:
 	root.size=Vector2i(1440,900)
@@ -20,6 +21,7 @@ func _run() -> void:
 	game.state.deliveries=3
 	game.state.place_decoration(3,"sculpture")
 	game.state.place_decoration(7,"house")
+	Fixtures.doctor(game.state); game.state.element_inventory["H"]=10
 	game.state.place_reactor(5,"hydrogen")
 	game.state.reactors[1].build_left=0
 	game.state.reactors[1].positions[1][0]+=0.20

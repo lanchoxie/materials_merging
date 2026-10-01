@@ -40,6 +40,8 @@ func _initialize() -> void:
 	check(s.initial_positions("water", "R001") == s.reactors[0].positions, "starter uses the same generation rule")
 	check(s.new_sandbox_structure("草稿", "water").positions == s.sandbox_from_baseline("water").positions, "alternate draft API uses the same start")
 	s.coins = 10000
+	Fixtures.doctor(s)
+	for symbol in s.elements: s.element_inventory[symbol] = 100
 	s.place_reactor(3, "hydrogen")
 	check(s.quality(s.reactors[-1]) < 0.85, "public construction path does not grant full match")
 	var r: Dictionary = s.reactors[0]

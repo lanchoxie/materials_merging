@@ -14,6 +14,8 @@ const Town=preload("res://scripts/island_town.gd")
 var town_build=TownBuild.new()
 ## Courtyard item picked in the world or sidebar: its uid, 0 for the main building, -1 for none.
 var selected_item: int=-1
+## v0.31: plot whose recycle button was tapped once (a second tap confirms); -1 when none.
+var town_recycle_armed: int=-1
 var town_shop_category="building"
 const CampusView = preload("res://scripts/campus_view.gd")
 const IslandPanel=preload("res://scripts/island_panel.gd")
@@ -199,7 +201,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.30.0 制造台  ·  真实硬度做镐头 · 带隙做太阳能板 · 铁与锡", 11, UI.MUTED)
+	save_label = UI.label("v0.31.0 建造家  ·  跨地块摆放 · 撤销与一键回收 · 博士装炉", 11, UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -428,19 +430,23 @@ func _pick_world(local_position: Vector2) -> void:
 	var screen_position = local_position * Vector2(world_viewport.size) / world_box.size
 	var plot_index: int = world.screen_pick(screen_position)
 	if plot_index >= 0:
-		var item=_item_under(screen_position, plot_index)
-		_select_plot(plot_index, item)
+		# v0.31: a footprint can spill over a plot edge, so the tap selects the item's own plot.
+		var hit: Array = _item_under(screen_position)
+		if hit.is_empty(): _select_plot(plot_index, -1)
+		else: _select_plot(int(hit[0]), int(hit[1]))
 		_tap_harvest(plot_index)
 
-## Courtyard item under a tap: uid, 0 for the main building, -1 for open ground.
-func _item_under(screen_position: Vector2, plot_index: int) -> int:
-	var p: Dictionary = state.plots[plot_index]
+## Courtyard item under a tap: [owner plot, uid] (uid 0 = main building), or [] for open ground.
+func _item_under(screen_position: Vector2) -> Array:
 	var point = world.screen_point(screen_position)
-	if point == null or not p.unlocked or p.kind == "plaza" or p.kind in Town.LEGACY_WHOLE: return -1
-	var owner = Town.occupancy(p).get(Town.tile_at(point - Vector3(float(p.x) * 3, 0, float(p.z) * 3)), null)
-	if owner is int: return owner
-	if owner == "p" and Town.is_building(str(p.kind)): return 0
-	return -1
+	if point == null: return []
+	var hit: Dictionary = state.town_at(Town.global_at(point))
+	if hit.is_empty(): return []
+	var p: Dictionary = state.plots[int(hit.plot)]
+	if not p.unlocked or p.kind == "plaza" or p.kind in Town.LEGACY_WHOLE: return []
+	if str(hit.id).is_valid_int(): return [int(hit.plot), int(hit.id)]
+	if hit.id == "p" and Town.is_building(str(p.kind)): return [int(hit.plot), 0]
+	return []
 
 ## Tapping a reactor that has something ready collects it right there in the world.
 func _tap_harvest(plot_index: int) -> void:
@@ -467,6 +473,7 @@ func _enter_light_bridge() -> void:
 
 func _select_plot(index: int, item: int=-1) -> void:
 	if index < 0 or index >= state.plots.size(): return
+	if index != selected_plot: town_recycle_armed = -1
 	selected_plot = index
 	selected_item = item
 	selected_reactor = int(state.plots[index].rid) if state.plots[index].kind == "reactor" else -1
@@ -499,12 +506,13 @@ func _rebuild_sidebar() -> void:
 		side.add_child(UI.paragraph("选一个新邻居，让小岛热闹起来。"))
 		UI.spacer(side,15)
 		side.add_child(UI.label("生产设施",15,UI.GOLD))
-		side.add_child(UI.button("＋  反应炉   100 金币",func(): _show_templates(true),true))
-		side.add_child(UI.paragraph("选择初始结构；工程师会来建造。\n基础建造时间12秒，多人协作更快。",13))
+		side.add_child(UI.button("＋  反应炉   100 金币 + 元素",func(): _show_templates(true),true))
+		var gate: Dictionary = state.install_status()
+		side.add_child(UI.paragraph("选择初始结构，消耗结构里的元素；工程师建炉，博士装炉。\n基础建造时间12秒，多人协作更快。" if gate.ok else "⚠ " + str(gate.message),13,UI.MUTED if gate.ok else UI.GOLD))
 		UI.spacer(side,18)
 		side.add_child(UI.label("给小岛一点温度",15,UI.LILAC))
 		side.add_child(UI.button("住宅 · 院所 · 食堂 · 公园",_show_campus.bind("build"),true))
-		side.add_child(UI.paragraph("一块地是11×11格：可以并排盖好几栋建筑，再摆装饰、围栅栏、放展台。边缘一格是自动连通的小路。",13))
+		side.add_child(UI.paragraph("一块地是12×12格，每一格都能用：可以并排盖好几栋建筑，再摆装饰、围栅栏、放展台。建筑和装饰可以跨过地块边缘。",13))
 	elif p.kind != "reactor":
 		var building=state.layout.building_info(p.kind)
 		side.add_child(UI.label("迎客广场" if p.kind=="plaza" else str(building.get("name",state.DECORATIONS.get(p.kind,{"name":"岛屿装饰"}).name)),24,UI.LILAC))
@@ -899,17 +907,29 @@ func _dialog(title: String, subtitle: String, wide: bool = false, height: int = 
 	return body
 
 func _show_templates(build: bool) -> void:
-	var body = _dialog("选择初始结构", "新炉包含初始元素，键长与角度需要自己调节。更换配方预付25金币，等待博士装炉；旧批次保留。")
+	var body = _dialog("选择初始结构", "新炉需要100金币和结构里的全部元素，由博士装炉；键长与角度需要自己调节。更换配方预付25金币和新增的元素，等待博士装炉；旧批次保留。")
+	var gate: Dictionary = state.install_status()
+	if not gate.ok:
+		var banner = UI.paragraph("⚠ " + str(gate.message) + "。没有博士时不能建新炉、换配方或替换元素，只能在原子工作台微调坐标。",15,UI.GOLD)
+		banner.name = "DoctorBanner"
+		body.add_child(banner)
 	for key in state.templates:
 		if state.templates[key].get("substitution_only",false) and key not in state.campus.unlocked_materials: continue
 		var tpl: Dictionary = state.templates[key]
+		var quote: Dictionary = state.reactor_quote(selected_plot,key) if build else state.template_quote(selected_reactor,key)
 		var panel = PanelContainer.new()
 		body.add_child(panel)
 		var v = UI.column(panel,6)
 		v.add_child(UI.label("%s   %s" % [tpl.formula,tpl.name],20,Color(tpl.color)))
 		var profile: Dictionary = state.economy.profile(tpl)
 		v.add_child(UI.paragraph("%s章节  ·  %d个可编辑原子\n复杂度 %.2f  ·  满匹配Lv.1产出 %.2f金币/秒" % [tpl.chapter,tpl.atoms.size(),profile.complexity,profile.base_rate],13))
-		v.add_child(UI.button("建造此反应炉  ·  100金币" if build else "装载初始结构  ·  25金币",_choose_template.bind(key,build)))
+		var needs: Array = []
+		for symbol in quote.required: needs.append("%s×%d（有%d）" % [symbol,int(quote.required[symbol]),int(state.element_inventory.get(symbol,0))])
+		v.add_child(UI.paragraph("需要元素：" + ("、".join(needs) if not needs.is_empty() else "无新增"),13,UI.MINT if quote.ready else UI.MUTED))
+		var choose = UI.button("建造此反应炉  ·  100金币" if build else "装载初始结构  ·  25金币",_choose_template.bind(key,build))
+		choose.disabled = not quote.ready
+		v.add_child(choose)
+		if not quote.ready and quote.message != str(gate.message): v.add_child(UI.paragraph(str(quote.message),12,Color("ffb4a8")))
 
 func _show_map(_frontier: bool=true) -> void:
 	# Expansion is performed on the island, never in a separate matrix.
@@ -1542,9 +1562,12 @@ func _notification(what: int) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if light_bridge_busy: return
+	var undo_key: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_Z and event.is_command_or_control_pressed()
 	if town_build.active and not is_instance_valid(modal):
 		if event.is_action_pressed("ui_cancel"): town_build.finish(); return
 		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R and town_build.rotatable(): town_build.rotate(); return
+		if undo_key: town_build.undo(); return
+	if undo_key and not is_instance_valid(modal) and not state.town_journal.is_empty(): _town_undo(); return
 	if event.is_action_pressed("ui_cancel"):
 		if is_instance_valid(modal) and modal.has_method("handle_back") and modal.handle_back(): return
 		_close_modal()
@@ -1558,6 +1581,9 @@ func _capture_demo() -> void:
 
 func _run_visual_test() -> void:
 	await get_tree().create_timer(1.0).timeout
+	# v0.31: building reactors needs an installing doctor and the recipe's elements.
+	if not state.install_status().ok: state.campus.people.append(state.campus._new_person("doctor",-1,true))
+	for symbol in state.elements: state.element_inventory[symbol] = 500
 	# Exercise real Godot input dispatch, not just model methods.
 	var plot_screen: Vector2 = world.camera.unproject_position(Vector3(-3,0.08,-3))
 	await _test_pointer(world_box.get_global_transform() * plot_screen, true)
@@ -1839,6 +1865,17 @@ func _town_sidebar(p: Dictionary) -> void:
 	var items: Array = p.get("items",[])
 	side.add_child(UI.label("庭院 · %d件" % items.size(),15,UI.LILAC))
 	side.add_child(UI.button("布置庭院 · 商店",_show_town_shop,true))
+	var tools = UI.row(side,6)
+	tools.add_child(UI.button("擦除小路/装饰",town_build.start_erase))
+	var last: String = state.town_undo_text()
+	if not last.is_empty():
+		var undo_button = UI.button("↶ 撤销",_town_undo)
+		undo_button.tooltip_text = "撤销：" + last
+		tools.add_child(undo_button)
+	var recyclable: int = state.town_recyclable(selected_plot).size()
+	if recyclable > 0:
+		var armed: bool = town_recycle_armed == selected_plot
+		side.add_child(UI.button("再点一次确认回收%d件" % recyclable if armed else "回收本地块装饰与小路（%d）" % recyclable,_town_recycle.bind(selected_plot),armed))
 	if selected_item >= 0: _town_item_actions(p)
 	var buildings: Array = []
 	var decor: Dictionary = {}
@@ -1858,6 +1895,19 @@ func _town_sidebar(p: Dictionary) -> void:
 		var names: Array = []
 		for kind in decor: names.append("%s×%d" % [state.town_name(str(kind)),int(decor[kind])])
 		side.add_child(UI.paragraph("、".join(names) + "\n点世界里的装饰可单独挪动、收起或出售。",12))
+
+## v0.31 one-click recycle: the first tap arms, the second puts everything in the toolbox.
+func _town_recycle(plot: int) -> void:
+	if town_recycle_armed != plot:
+		town_recycle_armed = plot; _rebuild_sidebar(); return
+	town_recycle_armed = -1
+	selected_item = -1
+	_action(state.town_recycle(plot))
+
+func _town_undo() -> void:
+	town_recycle_armed = -1
+	selected_item = -1
+	_action(state.town_undo())
 
 func _pick_item(uid: int) -> void:
 	selected_item = uid
@@ -1913,7 +1963,7 @@ func _town_item_actions(p: Dictionary) -> void:
 			shows.add_child(UI.button("收回",func(): _action(state.town_unexhibit(plot,uid))))
 
 func _show_town_shop() -> void:
-	var body = _dialog("庭院商店","选好后点地块上的空格摆放。绿色格子可以放，红色是被占用或压到了边缘小路。收起的装饰进入工具箱，再次摆放免费；出售退回一半金币。",true)
+	var body = _dialog("庭院商店","选好后点地块上的空格摆放，可以跨过地块边缘。绿色格子可以放，红色是被占用或超出了已开拓的土地。摆错了点「↶ 撤销」（Ctrl+Z）；收起的装饰进入工具箱，再次摆放免费；出售退回一半金币。",true)
 	var tabs = UI.row(body,8)
 	for category in Town.rules().categories:
 		var id = str(category.id)

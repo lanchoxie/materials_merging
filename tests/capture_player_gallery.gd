@@ -10,6 +10,7 @@ func capture(file: String) -> void:
 func _run() -> void:
 	game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var s=game.state; s.coins=3200; s.materials=[80,80,80]
+	s.campus.people.append(s.campus._new_person("doctor",-1,true)); s.element_inventory["H"]=10
 	s.place_reactor(5,"hydrogen"); s.reactors.back().build_left=0
 	s.place_decoration(3,"garden"); s.place_decoration(7,"house")
 	game._sync_world(); game._select_plot(4)

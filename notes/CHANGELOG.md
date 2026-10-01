@@ -30,6 +30,25 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.31.0 "Builder": easier building, real doctor and element gates
+The user asked for a tidy pass before Earth (2026-10-01). Full notes: [13-builder.md](13-builder.md).
+- **Seamless island.**
+  - All 12×12 tiles of a plot can be built on, and the grass of neighbouring plots meets edge to edge.
+  - Items (and extra buildings) may cross a plot edge onto unlocked land; an item belongs to the plot holding its anchor.
+  - Reactor plots now accept decor and extra buildings on their rim.
+- **Undo.** ↶ 撤销 in the build HUD and the plot sidebar, plus Ctrl+Z. It covers placing, moving, storing, recycling and whole drag strokes.
+- **Eraser and one-click recycle.**
+  - 擦除 drags paths/decor into the toolbox.
+  - 回收本地块装饰与小路 (two taps) and 回收全岛小路; both are undoable.
+- **Doctor gate.** Building a reactor, changing a template, swapping elements or changing a sandbox composition needs an installing doctor (post 自动/物流).
+  - Without one, only coordinate tuning works, and banners explain how to get a doctor.
+- **Element gate.**
+  - A new reactor costs 100 coins plus its template's atoms; a template change costs 25 coins plus the net new atoms (refunded on cancel).
+  - The template list shows the stock per element and disables what you can't afford.
+  - Palettes disable elements with 0 stock and point to the refinery source.
+- Save **v27** (items may spill across plots); v26 and older load.
+- Tests: new `test_builder` and `test_builder_ui`; tests that build reactors now hire a doctor and stock elements.
+
 ## v0.30.0 "Fabricator": real properties become gear
 The user asked for the next version after the v0.29 APK. Full notes: [12-fabricator.md](12-fabricator.md).
 - **制造台 (Fabricator).** Stored crystals the index recognises become gear, with numbers from their real data.

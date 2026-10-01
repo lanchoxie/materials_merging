@@ -69,8 +69,15 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.30 "Fabricator" (tag `v0.30.0`; see [12-fabricator.md](12-fabricator.md)): crystals → pick heads (hardness from
   MP elastic moduli, Chen 2011) and refinery solar panels (Shockley–Queisser at the MP gap); rocks slow a soft pick;
   Fe and Sn smelting. Machines and emitters move to v0.31.
-- v0.31 "Earth": environment field (planet + region grid), emitters, biome shifts.
-- v0.31 "Specimens": extractor on creatures and native buildings, island museum, specimen codex.
+- ✅ v0.31 "Builder" (tag `v0.31.0`; see [13-builder.md](13-builder.md)), inserted at the user's request: seamless
+  12×12 plots with items crossing plot edges, undo/Ctrl+Z, eraser and one-click recycle, doctor and element gates
+  for reactors, templates and element swaps.
+- v0.32 "Earth": environment field (planet + region grid), emitters, biome shifts, plus the machines deferred from v0.30.
+- v0.32.x visual polish pass (user request): first-person models, island residents, planet creatures and materials.
+- Phase 2 "浮岛2.0 / Starforge Isle" (see [14-industry-island.md](14-industry-island.md)): a second island with an
+  industry chain molecule → material → chip → energy → goods → vehicles → gear → space; products go to the backpack
+  for use on the planet. Draft numbering v0.34–v0.41; how it interleaves with the eras below is an open question.
+- "Specimens": extractor on creatures and native buildings, island museum, specimen codex.
 - v0.32 "Ice Age": timeline framework, mammoths and a tribe, time gate.
 - v0.33 "Settlers" · v0.34 "Bronze" (tech diffusion) · v0.35 "Clash" (event director, first wars).
 - v0.36–0.38 more eras · v0.39 wrap-around big world · v0.40+ star map and a second planet.

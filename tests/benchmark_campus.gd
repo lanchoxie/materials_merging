@@ -14,6 +14,8 @@ func _run() -> void:
 			if state.can_expand(i): next=i; break
 		if next<0: break
 		state.buy_plot(next)
+	state.campus.people.append(state.campus._new_person("doctor",-1,true))
+	for symbol in state.elements: state.element_inventory[symbol]=500
 	for i in range(state.plots.size()):
 		if not state.plots[i].unlocked or state.plots[i].kind!="empty": continue
 		state.campus_road(i)

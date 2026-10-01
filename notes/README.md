@@ -18,6 +18,8 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [10-refinery.md](10-refinery.md) | v0.28: navigation stack, refinery, reactor tiers and phases, first-time tours |
 | [11-index.md](11-index.md) | v0.29: offline MP/PubChem chemistry index, honest matching, index browser, credits |
 | [12-fabricator.md](12-fabricator.md) | v0.30: crystals → pick heads (Chen hardness) and solar panels (Shockley–Queisser); Fe/Sn smelting |
+| [13-builder.md](13-builder.md) | v0.31: seamless plots, items across plot edges, undo/eraser/recycle, doctor and element gates |
+| [14-industry-island.md](14-industry-island.md) | Phase 2 plan: Starforge Isle industry chain (materials → chips → energy → vehicles → gear → space) |
 | [CHANGELOG.md](CHANGELOG.md) | Running log of what has actually been shipped on this track |
 
 Quick commands:

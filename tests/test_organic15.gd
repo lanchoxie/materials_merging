@@ -12,8 +12,12 @@ func _initialize() -> void:
 	check(not r.has("installation") and s.coins==coins,"missing elements cannot silently start or charge a molecule")
 	s.planet.v2.nature.minerals["coal"]=1; s.refinery.start(s,"coal_coking"); s.refinery.tick(s,120)
 	check(s.coins==coins and flow.stock(s,"urea")==0 and s.reference_id(r)=="water" and flow.status(s,0,"urea").missing.is_empty(),"refining coal and air separation fill stock without coins, never synthesize or replace the reactor")
+	check(not flow.status(s,0,"urea").start_ready and flow.status(s,0,"urea").message.contains("需要装炉博士"),"v0.31: with elements but no doctor, the molecule can't be queued")
+	# A doctor is on the island while the job is queued, then leaves: the pending job explains the gap.
+	var stand_in=s.campus._new_person("doctor",-1,true); s.campus.people.append(stand_in)
 	q=flow.status(s,0,"urea"); coins=s.coins; var elements=s.element_inventory.duplicate()
 	flow.start(s,0,"urea")
+	s.campus.people.erase(stand_in)
 	check(s.coins==coins-s.edit_cost(r) and r.has("installation"),"submit reserves actual level-dependent reactor edit fee")
 	check(s.element_inventory.C==elements.C-q.required.C and s.element_inventory.N==elements.N-q.required.N and s.element_inventory.H==elements.H-q.required.H,"installation reserves exact net new elements")
 	check(s.reference_id(r)=="water" and flow.stock(s,"urea")==0,"pending install continues old water instead of granting target molecule")

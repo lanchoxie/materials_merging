@@ -55,11 +55,15 @@ func _run() -> void:
 	check(not is_equal_approx(rings.rotation.y,spin),"plasma rings rotate every frame without a rebuild")
 	var builds=world.geometry_rebuilds
 	# Doctor install: one orb per element, hovering high, sinking as the doctor works.
+	# v0.31: a doctor must be on the island and the elements in stock to queue it.
+	var helper=s.campus._new_person("doctor",-1,true); s.campus.people.append(helper)
+	s.element_inventory["O"]=5; s.element_inventory["H"]=5
 	s.coins=1000; s.change_template(0,"water")
+	s.campus.people.erase(helper)
 	check(not r.get("installation",{}).is_empty(),"changing the recipe queues a doctor installation")
 	world.setup(s); await process_frame
 	var orbs: Node3D=find(world,"InstallOrbs")
-	check(orbs!=null and orbs.get_child_count()==s.reactor_views()[0].install_elements.size() and orbs.get_child_count()>=2 and world.geometry_rebuilds==builds+1,"install orbs appear, one per reserved element, with a single rebuild")
+	check(orbs!=null and orbs.get_child_count()==s.reactor_views()[0].install_elements.size() and orbs.get_child_count()>=1 and world.geometry_rebuilds==builds+1,"install orbs appear, one per reserved (net new) element, with a single rebuild")
 	for i in range(10): await process_frame
 	var high=orbs.get_child(0).position.y
 	r.installation.remaining=float(s.island_rules.logistics.installation_seconds)*0.1

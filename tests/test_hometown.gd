@@ -35,9 +35,10 @@ func _initialize() -> void:
 	var coins=s.coins
 	message=s.town_place(home,"bench",1,1)
 	check(message=="这里已经被占用了" and s.coins==coins,"overlapping placement is refused without charge")
-	message=s.town_place(home,"bench",10,8)
-	check(message.contains("超出地块边界") and s.coins==coins,"the road band on the plot edge stays clear")
-	check(s.town_place(home,"street_lamp",11,0).contains("超出"),"last tile row belongs to the edge road")
+	message=s.town_place(home,"bench",12,8)
+	check(message.contains("所选地块内") and s.coins==coins,"an anchor outside the plot is refused without charge")
+	check(s.town_place(home,"street_lamp",11,0).contains("已摆放"),"v0.31: the last tile row is buildable (no edge-road band)")
+	coins=s.coins
 	# Decorations cost coins, store to the toolbox and come back free.
 	message=s.town_place(home,"stone_path",6,6)
 	var path=_uid(s,home,"stone_path")
@@ -84,7 +85,7 @@ func _initialize() -> void:
 	var reactor_plot=int(s.reactors[0].plot)
 	check(s.town_place(reactor_plot,"bench",4,4)=="这里已经被占用了","reactor keeps its central footprint")
 	check(s.town_place(reactor_plot,"street_lamp",0,0).contains("已摆放"),"reactor plot rim takes decorations")
-	check(s.town_place(reactor_plot,"engineer_house",0,0).contains("反应炉"),"reactor plots hold no extra buildings")
+	check(s.town_place(reactor_plot,"engineer_house",0,0).contains("占用"),"v0.31: buildings may use the reactor rim, never its core")
 	s.buy_plot(0)
 	s.town_place(0,"bush",5,5)
 	check(s.place_reactor(0,"water").contains("8×8") and s.plots[0].kind=="empty","a new reactor needs a clear centre")
@@ -127,7 +128,8 @@ func _initialize() -> void:
 	var orphan=data.duplicate(true); orphan.planet.v2.construction.miniatures[mini_id].plot=-1
 	check(not s._valid_town(orphan),"an exhibit must own its miniature")
 	var bad=s.plots[home].duplicate(true); bad.items.append({"uid":999,"kind":"bench","x":0,"z":0,"rot":0})
-	check(not Town.valid_plot(bad,s.layout.building_kinds()),"overlapping saved items are rejected")
+	var island=s.plots.duplicate(true); island[home]=bad
+	check(Town.valid_plot(bad,s.layout.building_kinds()) and not Town.valid_island(island),"overlapping saved items are rejected island-wide")
 	# Taking the miniature back.
 	message=s.town_unexhibit(home,turntable)
 	check(int(c.miniatures[mini_id].plot)==-1 and s.town_item(home,turntable).show.is_empty(),"unexhibit returns the miniature to the backpack")

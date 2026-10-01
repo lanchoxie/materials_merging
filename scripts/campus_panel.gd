@@ -126,7 +126,7 @@ func _buildings() -> void:
 		for kind in building_choices:
 			var info: Dictionary=state.layout.building_info(kind)
 			var card=_card("%s · %d金币 · 初始容量%d人 · 占地%d×%d格" % [info.name,info.cost,info.capacity,Town.size(kind).x,Town.size(kind).y])
-			var room=plot.kind=="empty" or Town.first_fit(plot,kind).x>=0
+			var room=state.town_spot(selected_plot,kind).x>=0
 			card.add_child(UI.paragraph(info.description if room else "这块地剩余空间放不下它；可在庭院商店里挪开装饰后再建。",15))
 			var build=UI.button("在所选地块建造",_build.bind(kind)); build.disabled=not room; card.add_child(build)
 		body.add_child(UI.paragraph("想自己决定位置？在右侧面板打开「布置庭院 · 商店」，建筑、小路、围栏、展台都可以逐格摆放。",15,UI.GOLD))

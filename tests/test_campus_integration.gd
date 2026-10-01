@@ -36,6 +36,7 @@ func _initialize() -> void:
 	for n in range(480): s.tick(1)
 	check("perovskite_chloride" in s.campus.unlocked_materials,"arrived scientific team completes recipe")
 	check(s.reactors[0].positions==positions,"research never adjusts player atom coordinates")
+	for symbol in ["Cs","Pb","Cl"]: s.element_inventory[symbol]=10
 	s.change_template(0,"perovskite_chloride")
 	s.campus.elapsed=(int(s.campus.elapsed/480)+1)*480+100
 	for n in range(60): s.tick(1)

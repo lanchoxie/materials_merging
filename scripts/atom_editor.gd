@@ -37,6 +37,9 @@ var apply_button: Button
 var palette: Control
 var replace_group: bool = false
 var palette_buttons: Dictionary = {}
+## v0.31: element swaps need an installing doctor; without one the swap button stays disabled.
+var swap_button: Button
+var doctor_banner: Label
 var return_button: Button
 # Feel: the match meter sings while you drag and celebrates a perfect fit.
 const Codex = preload("res://scripts/codex.gd")
@@ -166,9 +169,19 @@ func _build_sidebar() -> void:
 	v.add_child(position_label)
 	context_label = UI.paragraph("",13,UI.MUTED)
 	v.add_child(context_label)
-	var swap_button = UI.button("替换这个位点的元素   ⇄",_show_palette,true)
+	swap_button = UI.button("替换这个位点的元素   ⇄",_show_palette,true)
 	swap_button.custom_minimum_size.y = 50
 	v.add_child(swap_button)
+	var gate: Dictionary = state.install_status()
+	if not gate.ok:
+		swap_button.disabled = true
+		swap_button.text = "替换元素需要装炉博士"
+		swap_button.tooltip_text = str(gate.message)
+		# The banner sits on the stage so the sidebar's match score stays in view.
+		doctor_banner = UI.paragraph("⚠ %s。现在只能微调坐标，替换元素要等博士到岗。" % gate.message,15,UI.GOLD)
+		doctor_banner.name = "DoctorBanner"
+		doctor_banner.position = Vector2(66, 128); doctor_banner.size = Vector2(880, 48)
+		add_child(doctor_banner)
 	for axis in range(3):
 		var h = UI.row(v)
 		var l = UI.label(["X · 左右", "Y · 上下", "Z · 深度"][axis], 14)
@@ -577,9 +590,16 @@ func _show_palette() -> void:
 	grid.add_theme_constant_override("h_separation",12)
 	grid.add_theme_constant_override("v_separation",12)
 	body.add_child(grid)
+	var original: Array = state.atom_symbols(state.reactors[reactor_index])
 	for symbol in state.elements:
 		var element: Dictionary = state.elements[symbol]
-		var b = UI.button("%s  %s\n仓库 %d 份" % [symbol,element.name,state.element_inventory.get(symbol,0)],_replace_element.bind(symbol))
+		var stock: int = int(state.element_inventory.get(symbol,0))
+		var b = UI.button("%s  %s\n仓库 %d 份" % [symbol,element.name,stock],_replace_element.bind(symbol))
+		# v0.31: an element with no stock can't be picked (putting the original atom back is free).
+		if stock <= 0 and symbol != str(original[picked]):
+			b.disabled = true
+			b.text = "%s  %s\n仓库没有 · 去精炼厂" % [symbol,element.name]
+			b.tooltip_text = "来源：" + state.refinery.how_to_get(symbol)
 		b.add_theme_color_override("font_color",Color(element.color))
 		b.add_theme_font_size_override("font_size",20)
 		b.custom_minimum_size = Vector2(225,118)

@@ -92,21 +92,13 @@ func _rebuild_static() -> void:
 	var previous: Dictionary=_levels
 	_levels=_town_levels()
 	var joins: Dictionary=_join_map()
-	var links: Dictionary=state.layout.road_links(state.plots)
+	# v0.31: no drawn edge roads; neighbouring plots are one lawn and players lay their own paths.
+	# Connectivity is still plot adjacency (campus_layout.road_links).
 	var road_transforms: Array=[]
 	for i in range(state.plots.size()):
 		var p: Dictionary=state.plots[i]
 		if not p.unlocked: continue
 		var base=Vector3(float(p.x)*3,0,float(p.z)*3)
-		if true:
-			# Road hubs sit at parcel corners, clear of building footprints.
-			var hub=state.layout.hub(state.plots,i)
-			if world._visible_plots.has(i): road_transforms.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.3,0.025,0.3)),hub))
-			for neighbor in links.get(i,[]):
-				if int(neighbor)<i: continue
-				if not world._visible_plots.has(i) and not world._visible_plots.has(int(neighbor)): continue
-				var next=state.layout.hub(state.plots,int(neighbor))
-				road_transforms.append(Transform3D(Basis.IDENTITY.scaled(Vector3(absf(next.x-hub.x)+0.3,0.025,absf(next.z-hub.z)+0.3)),(hub+next)*0.5))
 		if not world._visible_plots.has(i): continue
 		var detail=world._detailed_plots.has(i)
 		var node=Node3D.new(); node.name="Plot_%d" % i; scenery.add_child(node); node.position=base

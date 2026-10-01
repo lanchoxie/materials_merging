@@ -88,6 +88,9 @@ func _initialize():
 	var coins_after_harvest = state.coins
 	state.harvest(0)
 	check(state.coins == coins_after_harvest, "harvest cannot collect coins twice")
+	# v0.31: template swaps and new reactors need an installing doctor and the recipe elements.
+	Fixtures.doctor(state)
+	for symbol in state.elements: state.element_inventory[symbol] = maxi(int(state.element_inventory.get(symbol,0)), 50)
 	state.change_template(0, "methane")
 	Fixtures.install(state)
 	state.apply_edit(0, state.templates.methane.positions.duplicate(true))
@@ -172,7 +175,7 @@ func _initialize():
 	valid_file.plots[0].rid = 0
 	check(not loaded._validate_save(valid_file), "save rejects inconsistent plot ownership")
 	var baseline = JSON.parse_string(FileAccess.get_file_as_string(save_path + ".bak"))
-	check(int(baseline.version) == 26 and baseline.refinery.level == 1 and baseline.index_found is Array and baseline.fabricator is Dictionary, "new saves use version twenty-six with the refinery, the index and the fabricator")
+	check(int(baseline.version) == 27 and baseline.refinery.level == 1 and baseline.index_found is Array and baseline.fabricator is Dictionary, "new saves use version twenty-seven with the refinery, the index and the fabricator")
 	valid_file = baseline.duplicate(true)
 	valid_file.plots[9].x = valid_file.plots[4].x
 	valid_file.plots[9].z = valid_file.plots[4].z
@@ -231,6 +234,7 @@ func _initialize():
 		stable = stable and frontier.plot_at(x, 0) == identities[x]
 	check(stable, "appending frontier keeps every existing plot identity stable")
 	var distant_plot = frontier.plot_at(10, 0)
+	Fixtures.doctor(frontier); frontier.element_inventory["H"] = 10
 	frontier.place_reactor(distant_plot, "hydrogen")
 	for x in range(2,11): frontier.campus_road(frontier.plot_at(x,0))
 	for n in range(90): frontier.tick(1.0)
@@ -336,6 +340,7 @@ func _test_element_workflow() -> void:
 	s.refinery.tick(s,1.0)
 	check(s.element_inventory.Cl == inventory.Cl+2 and s.element_inventory.Na == inventory.Na+2 and s.refinery.jobs.is_empty(), "one halite block gives exactly Na×2 and Cl×2")
 	s.element_inventory = inventory.duplicate(true)
+	Fixtures.doctor(s)
 	var r: Dictionary = s.reactors[0]
 	var old_positions: Array = r.positions.duplicate(true)
 	var old_signature: String = s.signature(r)

@@ -234,7 +234,8 @@ func _build_foundation() -> void:
 	# to a handful of draw calls instead of allocating a large slab or 600 nodes.
 	var positions: Array[Vector3] = []
 	var grass_colors: Array[Color] = []
-	var shades: Array[Color] = [Color("80bba0"), Color("91c7a6"), Color("78b697")]
+	# v0.31: unlocked grass tiles meet edge to edge; the shades differ only slightly so plots still read.
+	var shades: Array[Color] = [Color("86bfa2"), Color("8cc3a5"), Color("82bb9e")]
 	for index in range(_plots.size()):
 		positions.append(_plot_position(index))
 		grass_colors.append(shades[index % shades.size()] if bool(_plot_data(index).get("unlocked", false)) else Color("628c7b"))
@@ -244,7 +245,7 @@ func _build_foundation() -> void:
 	_batch_boxes(Vector3(3.04, 0.12, 3.04), Vector3(0, -0.10, 0), positions, _mat(Color("aeb995")))
 	var grass_material: StandardMaterial3D = _mat(Color.WHITE).duplicate()
 	grass_material.vertex_color_use_as_albedo = true
-	_batch_boxes(Vector3(2.82, 0.12, 2.82), Vector3.ZERO, positions, grass_material, grass_colors)
+	_batch_boxes(Vector3(3.0, 0.12, 3.0), Vector3.ZERO, positions, grass_material, grass_colors)
 	var along_x: Array[Vector3] = []
 	var along_z: Array[Vector3] = []
 	for index in range(_plots.size()):
@@ -320,7 +321,7 @@ func _build_plot_raw(index: int) -> void:
 		return
 	var kind: String = str(data.get("kind", "empty"))
 	if campus_life_enabled and kind in ["plaza","institute","engineer_house","doctor_dorm","professor_apartment","academician_villa","canteen","park","garden","house"]: return
-	if kind == "empty" and not (data.get("items", []) as Array).is_empty(): return
+	if kind == "empty" and (not (data.get("items", []) as Array).is_empty() or _neighbour_furnished(index)): return
 	var reactor: Dictionary = _reactor_on_plot(index, data)
 	if not _detailed_plots.has(index):
 		_build_simple_plot(plot_root, kind, not reactor.is_empty())
@@ -339,6 +340,17 @@ func _build_plot_raw(index: int) -> void:
 		_build_sculpture(plot_root)
 	else:
 		_build_empty_plot(plot_root, index)
+
+
+## v0.31: footprints may spill over plot edges, so an empty plot beside a furnished one stays bare
+## grass instead of drawing its ready-to-build marker under someone else's path.
+func _neighbour_furnished(index: int) -> bool:
+	var coord: Vector2i = _plot_coord(index)
+	for dx in [-1, 0, 1]:
+		for dz in [-1, 0, 1]:
+			var other: int = int(_coord_lookup.get(coord + Vector2i(dx, dz), -1))
+			if other >= 0 and other != index and not (_plot_data(other).get("items", []) as Array).is_empty(): return true
+	return false
 
 
 func _build_frontier_plot(parent: Node3D, index: int) -> void:
