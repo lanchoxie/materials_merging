@@ -17,6 +17,8 @@ var phase_notice: Dictionary={}
 var coach_seen: Dictionary={}
 ## Off for script-driven runs (tests, screenshots) so they never touch the player's own save slot.
 var default_slot_enabled: bool=true
+## The 测试版 sets this to save_test.json so a test session never touches the player's save.
+var save_name: String="save.json"
 ## v0.29 chemistry index: entries the player has made (index key -> true); see chem_index.gd.
 const ChemIndex=preload("res://scripts/chem_index.gd")
 var index_found: Dictionary={}
@@ -1210,7 +1212,7 @@ func save_game(path: String = "") -> String:
 	var root = save_root_for_platform(OS.get_name())
 	if path.is_empty():
 		if not default_slot_enabled: return "测试运行不写入玩家存档"
-		path = root + "/save.json"
+		path = root + "/" + save_name
 	if not _save_path_allowed(path):
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
@@ -1448,7 +1450,7 @@ func _validate_save(data) -> bool:
 func load_game(path: String = "") -> bool:
 	if path.is_empty() and not default_slot_enabled: return false
 	if path.is_empty():
-		path = save_root_for_platform(OS.get_name()) + "/save.json"
+		path = save_root_for_platform(OS.get_name()) + "/" + save_name
 	if not _save_path_allowed(path):
 		return false
 	var data = null

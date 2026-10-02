@@ -89,7 +89,7 @@ func _run() -> void:
 	check(f.stock.grain==3 and not f.gardens.has(planter_key),"harvest input carries crop into backpack once")
 	await _build_cabin(panel)
 	game._close_modal(); game._show_toolbox(); game.modal._tab("materials"); await process_frame; await process_frame
-	check(button(game.modal,"取1份送入星球粮仓")!=null,"returned harvest is available in island toolbox")
+	check(button(game.modal,"取1份做成口粮")!=null,"returned harvest is available in island toolbox")
 	await capture("field-island-return")
 	game.queue_free(); await process_frame
 	print("RIVER FIELD UI: ",checks," checks, ",failures.size()," failures")

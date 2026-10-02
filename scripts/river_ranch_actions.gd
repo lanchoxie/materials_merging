@@ -4,6 +4,7 @@ static func command(state,action: String,p: Dictionary) -> String:
 	var v=state.planet.v2; var r=v.ranch
 	if not v.active: return "请先进入星球"
 	if action=="v2_ranch_water": return water(state,p)
+	if action=="v2_depot_stock": return stock_up(state)
 	if action=="v2_ranch_transfer":
 		var item=str(p.get("item","")); var amount=p.get("amount",0)
 		if item not in r.ITEMS or item=="water" or not amount is int or amount not in [-5,-1,1,5]: return "请选择1份或5份物资"
@@ -44,6 +45,39 @@ static func command(state,action: String,p: Dictionary) -> String:
 		r.remember(l,"你与我交换过谷穗和树种")
 		return "交出2份谷穗，得到1颗松树种子；这位旅人本次余货%d" % (int(spec.stock_per_visit)-used-1)
 	return "未知村庄操作"
+
+## v0.33.1: aim at the 公共仓库 and press E. Stores what the era checklist asks for from the
+## player's own pack: up to 5 food (口粮 first, then 谷穗, then 野果) and 1 water if the depot has
+## less than the era needs. Seeds and building stock stay in the pack.
+static func stock_up(state) -> String:
+	var v=state.planet.v2; var r=v.ranch; r.sync(v)
+	var moved=0
+	for item in ["ration","grain","fruit"]:
+		while moved<5 and r.depot[item]<int(r.rules.depot_capacity):
+			var have=int(v.world.food) if item=="ration" else int(v.field.stock.get(item,0))
+			if have<1: break
+			if item=="ration": v.world.food-=1
+			else: v.field.stock[item]-=1
+			r.depot[item]+=1; moved+=1
+	var text=[]
+	if moved>0:
+		r.revision+=1; v.field.revision+=1
+		text.append("存入%d份食物" % moved)
+	var need_water=int(v.settlement.rules.modern.depot_water)+int(v.settlement.rules.recruitment.water)
+	if r.depot.water<need_water:
+		var p={}
+		for batch in state.storage.batches:
+			if batch.quantity>0 and state.sandbox_reference(batch.work).get("reference_id")=="water": p={"batch_id":batch.id}; break
+		if p.is_empty():
+			for product in state.planet.products:
+				if product.recipe=="standard_water_crate": p={"product_id":product.id}; break
+		if not p.is_empty():
+			p.token=state.planet.shipment_serial
+			if water(state,p).begins_with("已消耗"): text.append("存入1份水")
+	var now="仓库现有 食物%d · 水%d" % [v.settlement.stored_food(),int(r.depot.water)]
+	if text.is_empty():
+		return "背包里没有可存的口粮、谷穗、野果或水样。收获作物得口粮/谷穗，采果丛得野果；水样来自浮岛反应釜。"+now
+	return "公共仓库：" + "，".join(text) + " · " + now
 
 static func water(state,p: Dictionary,key: String="") -> String:
 	var program=state.planet; var v=program.v2; var r=v.ranch; r.sync(v)

@@ -61,10 +61,18 @@ func _scenery(s: Dictionary) -> Mesh:
 		G.cube(st,Vector3(p.x,h+size/2,p.y),Vector3(0.3,size,0.32),Color("95b970"))
 		if s.flora>=mature: G.cube(st,Vector3(p.x,h+size,p.y),Vector3(0.13,0.1,0.13),Color("e5b367"))
 	if s.id not in ["wetland","riverbank"]:
-		var spring=c+Vector2(-4,3); var y=terrain.ground(spring)
-		G.cube(wet,Vector3(spring.x,y+0.025,spring.y),Vector3(1.5,0.045,1.1),Color("70bbca"))
-		G.cube(st,Vector3(spring.x,y+0.005,spring.y),Vector3(1.5,0.01,1.1),Color("6f6a55"))
-		for x in [-0.9,0.9]: G.cube(st,Vector3(spring.x+x,y+0.1,spring.y),Vector3(0.3,0.2,1.3),Color("9dac9b"))
+		# v0.33.1: a small spring pool sitting in one ground cell (it used to float as a pale slab
+		# across uneven cells): muddy rim, a ring of stones and reeds, so it reads as water.
+		var spring=(c+Vector2(-4,3)).round(); var y=terrain.ground(spring)
+		G.cube(st,Vector3(spring.x,y+0.006,spring.y),Vector3(1.3,0.012,1.3),Color("5b4e3c"))
+		G.cube(wet,Vector3(spring.x,y+0.02,spring.y),Vector3(0.96,0.02,0.96),Color("3f7f8c"))
+		for i in range(8):
+			var a=i*TAU/8.0+0.3; var r=0.6+0.06*float(i%3)
+			var stone=Vector3(spring.x+cos(a)*r,y+0.07,spring.y+sin(a)*r)
+			G.cube(st,stone,Vector3(0.22+0.05*float(i%2),0.14,0.2),Color("8d9488").darkened(0.08*float(i%3)))
+		for i in range(3):
+			var reed=Vector2(spring.x+0.75,spring.y-0.4+i*0.35)
+			G.cube(st,Vector3(reed.x,y+0.3,reed.y),Vector3(0.04,0.6,0.04),Color("6f8f4a")); G.cube(st,Vector3(reed.x,y+0.58,reed.y),Vector3(0.07,0.16,0.07),Color("7a5a3a"))
 	if s.camp:
 		var p=c+Vector2(-3,-2); var h=terrain.ground(p)
 		var style=era if s.home else 0

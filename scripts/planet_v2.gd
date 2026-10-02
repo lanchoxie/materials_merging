@@ -199,7 +199,7 @@ func _step() -> void:
 
 func collect_wild(at: Vector2) -> String:
 	if not population.harvest(at): return "走近成熟野生植被再采集；采集后需要等待再生"
-	world.food+=1; _event("采集了一份野生植物，已放入星球粮仓；原处开始缓慢再生。")
+	world.food+=1; _event("采集了一份野生植物，做成1份口粮放进背包；原处开始缓慢再生。")
 	return "获得1份饲料，野生植被减少"
 
 func _breed(r: Dictionary) -> void:
@@ -235,12 +235,12 @@ func harvest() -> String:
 	region().crops=remaining; world.seeds+=seeds; world.food+=food
 	settlement.harvests+=ready
 	_event("%s收获%d块作物，获得%d份饲料与%d份种子。" % [region().name,ready,food,seeds])
-	return "收获已进入星球粮仓"
+	return "收获做成了口粮，放进背包"
 
 func toggle_pen() -> String:
 	if not region().buildings.has("frame_bundle"): return "先从浮岛带来结构构件包，建造围栏"
 	region().enclosed=not region().enclosed
-	return "围栏关闭，小兽会消耗粮仓饲料" if region().enclosed else "围栏打开，小兽恢复自然觅食"
+	return "围栏关闭，小兽会吃背包里的口粮" if region().enclosed else "围栏打开，小兽恢复自然觅食"
 
 func quote(region_id: String,recipe_id: String) -> String:
 	if not world.regions.has(region_id): return "这个区域不存在"

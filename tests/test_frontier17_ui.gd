@@ -26,7 +26,7 @@ func _run() -> void:
 	var count=v.journey.points.size(); river._open_journey(); await process_frame; button(river,"记住当前位置").pressed.emit(); await process_frame
 	check(v.journey.points.size()==count,"repeat button does not duplicate nearby waypoint")
 	river._travel("home"); river._tab("era"); await process_frame; await process_frame
-	check(river.widgets.era.text.contains("实际作物收获") and river.widgets.era_advance.disabled,"fresh era panel explains progress and disables premature promotion")
+	check(river.widgets.has("era_row:harvests") and river.widgets["era_row:harvests"][0].text.contains("实际作物收获") and river.widgets.era_advance.disabled,"fresh era panel explains progress and disables premature promotion")
 	var helper=Fixture.new(); var c=v.construction; var y=c.base(Vector3i(15,0,14))
 	c.sources["1"]={"product":{"id":1,"recipe":"field_wall","recipe_version":1,"source_batch":"field:1"},"remaining":2}
 	for cell in [Vector3i(15,y,14),Vector3i(15,y+1,14),Vector3i(15,y+2,14),Vector3i(15,y+3,14),Vector3i(16,y+3,14),Vector3i(17,y+3,14)]:

@@ -204,14 +204,14 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			if not v2.active: return "请先进入星球"
 			v2.ranch.sync(v2)
 			return v2.construction.interact("place" if action=="v2_build" else "remove",str(payload.get("kind","block")),products,v2.actor,str(payload.get("recipe","")))
-		"v2_ranch_transfer", "v2_ranch_water", "v2_ranch_trade", "v2_ranch_empty":
+		"v2_ranch_transfer", "v2_ranch_water", "v2_ranch_trade", "v2_ranch_empty", "v2_depot_stock":
 			return preload("res://scripts/river_ranch_actions.gd").command(state,action,payload)
 		"v2_field_collect", "v2_field_plant", "v2_field_feed", "v2_field_water":
 			return _field_action(state,action,payload)
 		"v2_field_pantry":
 			var id=str(payload.get("resource",""))
 			if id not in ["fruit","grain"] or int(v2.field.stock.get(id,0))<1: return "背包中没有这种收获"
-			v2.field.stock[id]-=1; v2.world.food+=1; v2.field.revision+=1; return "取出1份收获送入星球粮仓"
+			v2.field.stock[id]-=1; v2.world.food+=1; v2.field.revision+=1; return "取出1份收获做成口粮，放在背包里"
 		"v2_repack":
 			return v2.construction.repack(str(payload.get("source_id","")),products,int(config.workshop.product_limit))
 		"v2_next_era":

@@ -1,6 +1,7 @@
 extends RefCounted
 ## Describe the selected action, not a generic instruction for every target.
 static func button_text(action: Dictionary,target: Dictionary) -> String:
+	if target.get("type")=="depot" and action.get("type","") in ["collect","feed","sample","product","plant"]: return "存入 E"
 	match action.get("type",""):
 		"collect": return "查看 E" if target.has("entity") or target.get("kind") in ["trough","feeder","mixing_tank"] else "采集 E"
 		"strike": return "攻击 E"
@@ -13,6 +14,7 @@ static func button_text(action: Dictionary,target: Dictionary) -> String:
 		"organic_solution": return "倒回 E" if target.get("kind")=="mixing_tank" or action.get("reference","urea")!="urea" else "施肥 E"
 		"organic_sample": return "加料 E"
 		"feed": return "喂食 E"
+		"mini_pack": return "装盒 E"
 	return "使用 E"
 
 static func prompt(v,item: Dictionary,target: Dictionary,fallback: String) -> String:

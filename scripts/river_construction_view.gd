@@ -17,6 +17,15 @@ func _ready() -> void:
 	ghost_material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 	ghost.material_override=ghost_material; add_child(ghost); ghost.hide()
 
+## v0.33.1: the 微缩器 shows the whole build it would box (green) or why it can't (red).
+func preview_box(found: Dictionary) -> void:
+	if not found.has("low"): ghost.hide(); return
+	var low: Vector3i=found.low; var high: Vector3i=found.high
+	ghost.scale=Vector3(high-low)+Vector3.ONE
+	ghost.position=(Vector3(low)+Vector3(high))*0.5+Vector3(0,0.5,0)
+	ghost_material.albedo_color=Color(0.4,0.95,0.7,0.22) if found.error.is_empty() else Color(1,0.5,0.4,0.22)
+	ghost.show()
+
 func sync(model,at: Vector2) -> void:
 	var signature=str([model.revision,Vector2i(floori(at.x/16),floori(at.y/16))])
 	if seen==signature: return
@@ -59,7 +68,7 @@ func _effect(b: Dictionary) -> CPUParticles3D:
 	return fx
 
 func preview(model,actor: Dictionary,mode: String,products: Array,recipe_id: String="") -> String:
-	ghost.hide()
+	ghost.hide(); ghost.scale=Vector3.ONE
 	if actor.is_empty() or mode=="observe": return "E 采集成熟野草 · B 打开背包 · 1—9切换物品"
 	var hit: Dictionary=model.trace(actor.eye,actor.direction)
 	if hit.is_empty() or hit.has("blocked"): return "瞄准5米内的地面或自建构件"

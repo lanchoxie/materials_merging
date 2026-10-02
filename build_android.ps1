@@ -1,4 +1,4 @@
-param([switch]$SkipImport, [string]$Version = '0.20.0', [int]$VersionCode = 0)
+param([switch]$SkipImport, [string]$Version = '0.20.0', [int]$VersionCode = 0, [switch]$Test)
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 foreach ($relative in @('.runtime/AppData','.runtime/LocalAppData','.runtime/Temp','.runtime/android','builds','artifacts')) {
@@ -37,7 +37,9 @@ if (-not $SkipImport) {
     & $godot --headless --path $PSScriptRoot --editor --import --quit --log-file (Join-Path $PSScriptRoot 'artifacts/android-import.log')
     if ($LASTEXITCODE -ne 0 -or (Select-String -LiteralPath artifacts/android-import.log -Pattern 'SCRIPT ERROR:' -Quiet)) { throw 'Godot import failed.' }
 }
-$apk = Join-Path $PSScriptRoot ('builds/AtomAtelier-' + $Version + '-android.apk')
+# -Test builds the test edition: its own app id and name (installs beside the normal game), the
+# `testbuild` feature that shows the test panel, and its own save file.
+$apk = Join-Path $PSScriptRoot ('builds/AtomAtelier-' + $Version + $(if ($Test) { '-test' } else { '' }) + '-android.apk')
 if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$' -or $VersionCode -lt 0) { throw 'Invalid Android version.' }
 if (Test-Path -LiteralPath $apk) { throw 'An APK with this name already exists; use a new version rather than replacing a delivered package.' }
 # A requested preview gets its own Android identity without advancing the formal source version.
@@ -46,8 +48,15 @@ $projectPath = Join-Path $PSScriptRoot 'project.godot'
 $presetBytes = [IO.File]::ReadAllBytes($presetPath)
 $projectBytes = [IO.File]::ReadAllBytes($projectPath)
 try {
+    if ($Test) {
+        $testText = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($presetPath))
+        $testText = ([regex]'(?m)^custom_features=""').Replace($testText,'custom_features="testbuild"',1)
+        $testText = $testText -replace '(?m)^package/unique_name="org\.atomatelier\.demo"', 'package/unique_name="org.atomatelier.demo.test"'
+        $testText = $testText -replace '(?m)^package/name="([^"]+)"', ('package/name="$1 ' + [string][char]0x6D4B + [char]0x8BD5 + [char]0x7248 + '"')
+        [IO.File]::WriteAllText($presetPath,$testText,[Text.UTF8Encoding]::new($false))
+    }
     if ($VersionCode -gt 0) {
-        $presetText = [Text.Encoding]::UTF8.GetString($presetBytes)
+        $presetText = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($presetPath))
         $presetText = $presetText -replace '(?m)^version/code=\d+', ('version/code=' + $VersionCode)
         $presetText = $presetText -replace '(?m)^version/name="[^"]+"', ('version/name="' + $Version + '"')
         [IO.File]::WriteAllText($presetPath,$presetText,[Text.UTF8Encoding]::new($false))

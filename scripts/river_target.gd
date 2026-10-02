@@ -62,6 +62,14 @@ static func query(v) -> Dictionary:
 		var d=_distance(box,eye,direction)
 		if d>=0 and d<limit and d<=reach:
 			limit=d; best={"type":"animal" if e.type=="animal" else "creature","entity":e,"region":e.get("region",""),"id":e.id,"fish":e.fish,"health":e.row.get("health",1),"hunger":e.row.get("hunger",0),"name":e.name,"distance":d,"point":eye+direction*d}
+	# The 公共仓库 crates beside the camp (river_settlement_view draws them at the same spot). They
+	# have no collision, so they only take the aim when nothing else is under the crosshair.
+	if v.ranch!=null and (best.is_empty() or best.type=="terrain"):
+		var crate=v.ranch.depot_at(v)+Vector2(0,-1.3)
+		if crate.distance_to(at)<reach+2:
+			var d=_distance(AABB(Vector3(crate.x-1.05,c.terrain.ground(crate),crate.y-0.4),Vector3(2.1,1.35,0.8)),eye,direction)
+			if d>0 and d<limit and d<=reach:
+				best={"type":"depot","name":"公共仓库","distance":d,"point":eye+direction*d}
 	return best
 
 static func _distance(box: AABB,eye: Vector3,direction: Vector3) -> float:
@@ -89,6 +97,7 @@ static func prompt(v,target: Dictionary) -> String:
 			return text+" · 装备拆卸锤可收回"
 		"creature": return text+" · 血量%.0f%% · %s" % [target.health*100,v.combat.reaction(target.entity)]
 		"animal": return text+" · 健康%.0f%% · %s" % [target.health*100,"观察水质与溶氧" if target.fish else "装备野果喂食"]
+		"depot": return text+" · 食物%d · 水%d · E 把背包里的口粮/谷穗/野果和水样存进来" % [v.settlement.stored_food(),int(v.ranch.depot.water)]
 		"facility": return text+(" · E 开关围栏" if target.recipe=="frame_bundle" else " · 背包补充相应运行材料")
 		"tree": return text+(" · 装备斧头砍伐，掉落木料与树种" if target.growth>=0.99 else " · 生长%.0f%% · 水样可以浇灌" % (target.growth*100))
 		"terrain":

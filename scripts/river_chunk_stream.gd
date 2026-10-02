@@ -76,8 +76,11 @@ func _height(c: Vector3i,voxels: Dictionary,tops: Dictionary) -> float:
 func _decor(st: SurfaceTool,p: Vector2,top: float,v: Vector4,roll: float) -> void:
 	var b=Vector3(p.x+(roll*50-0.5)*0.4,top,p.y+(fposmod(roll*977,1)-0.5)*0.4)
 	if v.y<2.0:
-		G.cube(st,b+Vector3(0,0.06,0),Vector3(0.9,0.12,0.7),Color("f2f6f7"))
-		if roll<0.008: G.cube(st,b+Vector3(0.2,0.22,0.1),Vector3(0.35,0.3,0.3),Color("b8d4e0"))
+		# Snow drifts lie flat on the ground; the odd boulder wears a snow cap.
+		G.cube(st,b+Vector3(0,0.012,0),Vector3(0.9,0.024,0.7),Color("eef3f4"))
+		if roll<0.008:
+			G.cube(st,b+Vector3(0.2,0.16,0.1),Vector3(0.4,0.3,0.34),Color("8a8f8c"))
+			G.cube(st,b+Vector3(0.2,0.33,0.1),Vector3(0.42,0.06,0.36),Color("f4f7f8"))
 	elif v.x<0.25:
 		if roll<0.01:
 			G.cube(st,b+Vector3(0,0.75,0),Vector3(0.26,1.5,0.26),Color("5d8a4a"))

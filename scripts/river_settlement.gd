@@ -58,8 +58,9 @@ func ready(world: Dictionary, construction) -> bool:
 	var rows=checklist(world,construction)
 	return not rows.is_empty() and rows.all(func(row): return row.complete)
 
-func advance_era(world: Dictionary, construction) -> String:
-	if not ready(world,construction): return "还需要完成："+requirements(world,construction)
+## `force` is only for the 测试版 panel: it skips the building requirements.
+func advance_era(world: Dictionary, construction, force: bool=false) -> String:
+	if not force and not ready(world,construction): return "还需要完成："+requirements(world,construction)
 	era+=1
 	if era==1:
 		for i in range(2): people.append({"id":i+1,"name":["禾苗","石川"][i],"health":0.9,"hunger":0.1,"x":13.0+i,"z":13.0,"task":"安家"})

@@ -21,6 +21,10 @@ var construction_view
 var settlement_view
 var organic_view
 var field_view
+var journey_view
+## v0.33.1: the god view looks at where the player last walked, not always at the home bend.
+## Vector2.ZERO means the classic home overview with its four regions.
+var overview_at=Vector2.ZERO
 var camera: Camera3D
 var terrain_root: Node3D
 var sun: DirectionalLight3D
@@ -84,6 +88,7 @@ func _ready() -> void:
 	settlement_view=preload("res://scripts/river_settlement_view.gd").new(); settlement_view.material=mat; settlement_view.terrain=terrain; terrain_root.add_child(settlement_view)
 	field_view=preload("res://scripts/river_field_view.gd").new(); field_view.material=mat; terrain_root.add_child(field_view)
 	organic_view=preload("res://scripts/river_organic_view.gd").new(); organic_view.material=mat; terrain_root.add_child(organic_view)
+	journey_view=preload("res://scripts/journey_view.gd").new(); journey_view.material=mat; journey_view.terrain=terrain; terrain_root.add_child(journey_view)
 	var ring=TorusMesh.new(); ring.inner_radius=4.8; ring.outer_radius=4.9; ring.rings=32; ring.ring_segments=4
 	marker=MeshInstance3D.new(); marker.mesh=ring; var m=StandardMaterial3D.new(); m.albedo_color=Color("f5d789"); m.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED; marker.material_override=m; add_child(marker)
 	_camera(1.0)
@@ -101,7 +106,10 @@ func _height(x: float,z: float) -> float:
 	return terrain.height_at(Vector2(x,z))
 
 func _terrain(season: int) -> void:
-	stream.schedule(walker.position if first_person else Vector2.ZERO,season)
+	stream.schedule(observer(),season)
+
+func observer() -> Vector2:
+	return walker.position if first_person else overview_at
 
 func _water(id: String,r: Dictionary) -> void:
 	var st=G.surface(water_mat); var count=0
@@ -112,8 +120,9 @@ func _water(id: String,r: Dictionary) -> void:
 		_cube(st,Vector3(x,0.1+r.water*0.15,z),Vector3(width,0.06,1.02),Color("59aab8").lerp(Color("85965a"),r.pollution*0.7))
 		count+=1
 	if id in ["meadow","highland"]:
-		var c: Vector3=CENTERS[id]+Vector3(-1,0,0.8); c.y=_height(c.x,c.z)+0.09
-		_cube(st,c,Vector3(0.2+r.water*1.1,0.045,0.25+r.water*1.2),Color("7bb6bb"))
+		# The region's little pond grows with its water level; it sits flush in the ground.
+		var c: Vector3=CENTERS[id]+Vector3(-1,0,0.8); c=c.round(); c.y=_height(c.x,c.z)+0.02
+		_cube(st,c,Vector3(0.2+r.water*0.75,0.02,0.25+r.water*0.75),Color("3f7f8c"))
 		count+=1
 	water_nodes[id].visible=count>0 and r.water>0.02
 	if count>0: water_nodes[id].mesh=st.commit()
@@ -203,7 +212,7 @@ func _entity_shape(shapes: Dictionary,key: String,node: MeshInstance3D) -> void:
 
 func focus(id: String,enter: bool=true) -> void:
 	var changed=selected!=id
-	selected=id; close_view=enter; zoom=1.0
+	selected=id; close_view=enter; zoom=1.0; overview_at=Vector2.ZERO
 	if changed:
 		if first_person: walker.enter(id)
 		else: has_walk_position=false
@@ -211,6 +220,7 @@ func focus(id: String,enter: bool=true) -> void:
 func set_first_person(enabled: bool) -> void:
 	if first_person==enabled: return
 	first_person=enabled; walker.stop(); hands.visible=enabled
+	if not enabled: overview_at=walker.position if has_walk_position and walker.position.length()>40 else Vector2.ZERO
 	camera.projection=Camera3D.PROJECTION_PERSPECTIVE if enabled else Camera3D.PROJECTION_ORTHOGONAL
 	camera.near=0.06; camera.far=180; camera.fov=72
 	if enabled and not has_walk_position: walker.enter(selected); has_walk_position=true
@@ -252,6 +262,7 @@ func _camera(dt: float) -> void:
 		if id!=selected: selected=id; region_selected.emit(id)
 		return
 	var target: Vector3=CENTERS[selected] if close_view else Vector3.ZERO
+	if overview_at!=Vector2.ZERO: target=Vector3(overview_at.x,0,overview_at.y)
 	target.y=_height(target.x,target.z)*0.5
 	var distance=16.0 if close_view else 67.0
 	var offset=Vector3(sin(yaw)*distance,distance*0.9,cos(yaw)*distance)
@@ -259,7 +270,7 @@ func _camera(dt: float) -> void:
 	camera.size=lerpf(camera.size,(15.0 if close_view else 66.0)*zoom,minf(1,dt*7))
 	camera.look_at(target)
 	marker.position=CENTERS[selected]+Vector3(0,0.3+_height(CENTERS[selected].x,CENTERS[selected].z),0)
-	marker.visible=not close_view
+	marker.visible=not close_view and overview_at==Vector2.ZERO
 
 ## Tool impact: a short camera dip that settles within a few frames (never moves the walker).
 func kick(amount: float=1.0) -> void:

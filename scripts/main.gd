@@ -104,6 +104,7 @@ var index_count: Label
 var index_pager: HBoxContainer
 var index_credits_button: Button
 const Milestones=preload("res://scripts/milestones.gd")
+const TestMode=preload("res://scripts/test_mode.gd")
 const DayCycle = preload("res://scripts/core/day_cycle.gd")
 var goal_button: Button
 var goal_bar: ProgressBar
@@ -111,6 +112,7 @@ var welcome: Dictionary={}
 
 func _ready() -> void:
 	if Engine.get_main_loop().get_script() != null: state.default_slot_enabled = false
+	if TestMode.enabled(): state.save_name = TestMode.SAVE_NAME
 	if OS.has_feature("web"):
 		state.layout.config.performance.visible_people=int(state.layout.config.performance.web_visible_people)
 		state.layout.config.performance.visible_buildings=int(state.layout.config.performance.web_visible_buildings)
@@ -184,6 +186,10 @@ func _build_ui() -> void:
 	var save = UI.button("保存", func(): _toast(state.save_game()))
 	save.custom_minimum_size.x = 66
 	h.add_child(save)
+	if TestMode.enabled():
+		var tester = UI.button("测试", _show_test_panel)
+		tester.custom_minimum_size.x = 66
+		h.add_child(tester)
 	_build_left()
 	_build_world()
 	var side_panel = UI.box(self, Rect2(1086,126,330,654))
@@ -201,7 +207,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.33.0 精美化  ·  新人物与动物 · 光影天空 · 流水", 11, UI.MUTED)
+	save_label = UI.label("v0.33.1 精美化  ·  新人物与动物 · 光影天空 · 流水" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -1080,6 +1086,7 @@ func _show_planet_v2() -> void:
 	panel.acted.connect(_action)
 	panel.workshop_requested.connect(_show_factory)
 	panel.synthesis_requested.connect(func(): _show_organic_synthesis())
+	panel.test_requested.connect(func(): _show_test_panel(panel))
 	_ambience("amb_river")
 	panel.dismissed.connect(func():
 		_screen_closed(panel)
@@ -1513,6 +1520,60 @@ func _show_help() -> void:
 	body.add_child(UI.button("重新播放新手指引",_replay_coach))
 	body.add_child(UI.button("数据来源与致谢",_show_index_credits))
 	body.add_child(UI.button("开始我的小岛",_close_modal,true))
+
+## v0.33.1 测试版 panel. From the planet, `planet` is that panel, so teleports can use its view.
+func _show_test_panel(planet: Control = null) -> void:
+	var from_planet: bool = planet != null and is_instance_valid(planet)
+	var body = _overlay_dialog("测试面板", "测试版专用 · 存档写入 %s，不影响正式存档" % TestMode.SAVE_NAME) if from_planet else _dialog("测试面板", "测试版专用 · 存档写入 %s，不影响正式存档" % TestMode.SAVE_NAME, true)
+	var run = func(message: String) -> void:
+		if from_planet: planet.acted.emit(message); planet._sync()
+		else: _action(message)
+	body.add_child(UI.label("资源", 20, UI.GOLD))
+	var row = UI.row(body, 8)
+	row.add_child(UI.button("金币 +10万", func(): run.call(TestMode.grant_coins(state, 100000))))
+	row.add_child(UI.button("建材各 +500", func(): run.call(TestMode.grant_materials(state, 500))))
+	row.add_child(UI.button("元素各 +500", func(): run.call(TestMode.grant_elements(state, 500))))
+	row.add_child(UI.button("矿物各 +50", func(): run.call(TestMode.grant_minerals(state, 50))))
+	row.add_child(UI.button("星球原料 +50", func(): run.call(TestMode.grant_planet_stock(state, 50))))
+	body.add_child(UI.label("浮岛", 20, UI.GOLD))
+	row = UI.row(body, 8)
+	row.add_child(UI.button("开拓 +9 块地", func(): run.call(TestMode.unlock_plots(state, 9))))
+	row.add_child(UI.button("精炼厂满级", func(): run.call(TestMode.max_refinery(state))))
+	row.add_child(UI.button("招募博士", func(): run.call(state.campus_hire("doctor"))))
+	row.add_child(UI.button("招募工程师", func(): run.call(state.campus_hire("engineer"))))
+	row = UI.row(body, 8)
+	row.add_child(UI.button("浮岛快进 1 小时", func(): run.call(TestMode.skip_island(state, 3600))))
+	row.add_child(UI.button("浮岛快进 8 小时", func(): run.call(TestMode.skip_island(state, 8 * 3600))))
+	body.add_child(UI.label("地球", 20, UI.GOLD))
+	row = UI.row(body, 8)
+	row.add_child(UI.button("快进 1 天", func(): run.call(TestMode.skip_planet(state, 60))))
+	row.add_child(UI.button("快进 1 季", func(): run.call(TestMode.skip_planet(state, 240))))
+	row.add_child(UI.button("推进时代", func(): run.call(TestMode.force_era(state))))
+	if from_planet:
+		body.add_child(UI.label("传送（进入第一人称）", 16, UI.MUTED))
+		row = UI.row(body, 8)
+		var close = func(): body.get_meta("overlay").queue_free()
+		row.add_child(UI.button("营地", func(): close.call(); planet.test_teleport(Vector2(14, 16), "营地")))
+		var env = state.planet.v2.environment
+		for biome in TestMode.BIOMES:
+			var spot: Vector2 = TestMode.biome_spot(env, biome)
+			if spot == Vector2.INF: continue
+			var label: String = env.biome_name(biome)
+			row.add_child(UI.button(label, func(): close.call(); planet.test_teleport(spot, label)))
+		body.add_child(UI.button("关闭", close, true))
+	else:
+		body.add_child(UI.paragraph("在地球界面右上角也有「测试」按钮，可以快进时间、传送到各个群系。", 14))
+		body.add_child(UI.button("关闭", _close_modal, true))
+
+## A dialog drawn over the current modal instead of replacing it (the planet stays open underneath).
+func _overlay_dialog(title: String, subtitle: String) -> VBoxContainer:
+	var shade = ColorRect.new(); shade.color = Color(0, 0, 0, 0.55); shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP; add_child(shade)
+	var box = UI.box(shade, Rect2(240, 120, 960, 640))
+	var body = UI.column(box, 10)
+	body.add_child(UI.label(title, 26, UI.GOLD)); body.add_child(UI.paragraph(subtitle, 14))
+	body.set_meta("overlay", shade)
+	return body
 
 func _open_editor() -> void:
 	if selected_reactor < 0:

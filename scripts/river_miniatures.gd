@@ -1,24 +1,35 @@
 extends RefCounted
 ## Owns no inventory: packed cells stay in Construction's finite source ledger.
-static func pack(c,target: Dictionary) -> String:
-	if target.get("type")!="block": return "用微缩器瞄准自己搭建的作品"
-	if c.miniatures.size()>=16: return "展示盒已满，先展开一个作品"
+## The connected build the aimed block belongs to, without changing anything. Used for the aim
+## prompt and the box preview as well as for packing. `error` is empty when it can be packed.
+static func survey(c,target: Dictionary) -> Dictionary:
+	if target.get("type")!="block": return {"error":"微缩器 · 瞄准你自己搭的建筑（构件、屋顶、种植箱、光伏），E 把整座装盒带回浮岛"}
+	if c.miniatures.size()>=16: return {"error":"展示盒已满，先展开一个作品"}
 	var chosen={}; var queue=[str(target.key)]; var index=0
 	while index<queue.size():
 		var k=queue[index]; index+=1
 		if chosen.has(k): continue
-		if chosen.size()>=64: return "一盒最多收纳64块；先拆开作品之间的连接"
-		if c.occupied.has(k): return "先收获作品里种植箱的作物"
+		if chosen.size()>=64: return {"error":"一盒最多收纳64块；先用拆卸锤拆开作品之间的连接"}
+		if c.occupied.has(k): return {"error":"先收获作品里种植箱的作物"}
 		chosen[k]=c.blocks[k]
 		for n in c.neighbors(c.cell(c.blocks[k])):
 			var next=c.key(n)
 			if c.blocks.has(next) and not chosen.has(next): queue.append(next)
 	var low=Vector3i(99999,99999,99999); var high=-low
 	for b in chosen.values(): low=low.min(c.cell(b)); high=high.max(c.cell(b))
-	if (high-low).x>7 or (high-low).y>7 or (high-low).z>7: return "作品需要放进8×8×8的微缩盒"
+	var result={"error":"","chosen":chosen,"low":low,"high":high}
+	if (high-low).x>7 or (high-low).y>7 or (high-low).z>7: result.error="作品超过8×8×8的微缩盒（%d×%d×%d），先拆小一些" % [(high-low).x+1,(high-low).y+1,(high-low).z+1]; return result
 	var rest=c.blocks.duplicate()
 	for k in chosen: rest.erase(k)
-	if not c.connected(rest): return "这件作品还支撑着其他建筑，请先拆开连接"
+	if not c.connected(rest): result.error="这件作品还支撑着其他建筑，请先拆开连接"
+	return result
+
+static func pack(c,target: Dictionary) -> String:
+	var found=survey(c,target)
+	if not found.error.is_empty(): return found.error
+	var chosen: Dictionary=found.chosen; var low: Vector3i=found.low
+	var rest=c.blocks.duplicate()
+	for k in chosen: rest.erase(k)
 	var cells=[]
 	for b in chosen.values():
 		var copy=b.duplicate(); var at=c.cell(b)-low; copy.x=at.x; copy.y=at.y; copy.z=at.z; cells.append(copy)

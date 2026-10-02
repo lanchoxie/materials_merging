@@ -28,7 +28,7 @@ void fragment() {
 		base *= 0.8;
 	}
 	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
-	ALBEDO = mix(base, sky_tint.rgb, fres * 0.45) + vec3(streak * 0.1);
+	ALBEDO = mix(base, sky_tint.rgb, fres * 0.3) + vec3(streak * 0.08);
 	ALPHA = mix(0.8, 0.95, fres);
 	ROUGHNESS = 0.16;
 	SPECULAR = 0.55;

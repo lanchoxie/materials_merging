@@ -30,6 +30,27 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.33.1 "Test build + Earth usability" (测试版 · 地球易用性)
+The user asked for a test version and reported Earth problems (2026-10-01). Full notes: [17-testbuild-earth-ux.md](17-testbuild-earth-ux.md).
+- **测试版.**
+  - `build_android.ps1 -Test` builds 「原子工坊 测试版」, a separate app with its own save (`save_test.json`). On desktop, use `--test-mode`.
+  - The 测试 panel grants resources, opens plots, maxes the refinery, hires staff, fast-forwards the island and the planet, forces the next era, and teleports to every biome.
+- **公共仓库.** Aim at the depot crates and press E to store food and water from your pack. 「粮仓口粮 / 饲料」 is now just 口粮.
+- **时代 page.**
+  - Every requirement has a progress bar and buttons that do it.
+  - While walking, the next goal shows top-left.
+- **微缩器.** It previews the whole build it would box (green or red) and explains why it can't when it can't.
+- **God view, beacons and route.**
+  - The god view centres on where you last walked.
+  - Waypoints are cairns with a gold light beam and a name.
+  - The walked route is recorded and drawn.
+- **世界地图.** Biomes, river, landmarks, beacons (tap to travel), your buildings, your route and you, with zoom and pan.
+- **Sky-blue fixes.**
+  - Spring pools no longer float as pale tiles.
+  - The meadow pond sits flush.
+  - Tundra ice cubes became snow-capped boulders.
+- **Tests.** New: `test_test_mode`, `test_earth_ux`; screenshot helper: `capture_earth_ux`.
+
 ## v0.33.0 "Polish": nicer people, creatures, light and water
 The user asked for a visual pass after Earth (2026-10-01). Full notes: [16-polish.md](16-polish.md). Display only; saves unchanged.
 - **Light.**

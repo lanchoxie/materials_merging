@@ -105,7 +105,7 @@ func _materials() -> void:
 	for id in field.stock:
 		gathered.add_child(UI.label("%s ×%d" % [field.rules.resources[id].name,field.stock[id]],18,UI.MINT))
 		if id in ["fruit","grain"]:
-			gathered.add_child(UI.button("取1份送入星球粮仓",func(): _done(state.planet.command(state,"v2_field_pantry",{"resource":id}))))
+			gathered.add_child(UI.button("取1份做成口粮",func(): _done(state.planet.command(state,"v2_field_pantry",{"resource":id}))))
 	gathered.add_child(UI.button("工艺车间 · 加工采集材料",func(): factory_requested.emit(),true))
 	body.add_child(UI.paragraph("建材用于向浮岛边缘开拓；催化晶用于反应炉升级。它们与摆件和生活补给分别存放。",19))
 	for i in range(3):

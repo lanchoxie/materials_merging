@@ -3,6 +3,7 @@ signal dismissed
 signal acted(message: String)
 signal workshop_requested(recipe_id: String)
 signal synthesis_requested
+signal test_requested
 const UI=preload("res://scripts/ui.gd")
 const View=preload("res://scripts/planet_v2_view.gd")
 const ExplorationInput=preload("res://scripts/river_exploration_input.gd")
@@ -27,6 +28,9 @@ var camera_bar: HBoxContainer
 var right_panel: PanelContainer
 var inspect_button: Button
 var hint: Label
+var map_button: Button
+## v0.33.1: the next unfinished era requirement, shown while walking.
+var goal_label: Label
 var show_details=false
 var selected_region="wetland"
 var section="observe"
@@ -84,14 +88,17 @@ func setup(model) -> void:
 	encounter_hud=preload("res://scripts/encounter_hud.gd").new(); encounter_hud.v=state.planet.v2; encounter_hud.position=viewport_box.position; encounter_hud.size=viewport_box.size; add_child(encounter_hud); encounter_hud.hide()
 	faint_button=UI.button("回营地休息",func(): state.planet.v2.combat.respawn(); _travel("home")); faint_button.position=Vector2(650,430); faint_button.hide(); add_child(faint_button)
 	world_title=UI.label("",18,UI.MINT); world_title.position=Vector2(48,180); add_child(world_title)
+	goal_label=UI.label("",14,UI.GOLD); goal_label.position=Vector2(48,342); goal_label.size=Vector2(560,48); goal_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	goal_label.add_theme_constant_override("outline_size",5); goal_label.add_theme_color_override("font_outline_color",Color(0,0,0,0.75)); add_child(goal_label)
 	hint=UI.label("点选地形 · 滚轮缩放 · 第一人称走进去",13,UI.TEXT); hint.position=Vector2(48,705); add_child(hint)
-	camera_bar=UI.row(self,8); camera_bar.position=Vector2(590,676)
+	camera_bar=UI.row(self,8); camera_bar.position=Vector2(470,676)
 	camera_bar.add_child(UI.button("近看",func(): view.focus(selected_region,not view.close_view); _live()))
 	camera_bar.add_child(UI.button("↶",func(): view.orbit(-0.4)))
 	camera_bar.add_child(UI.button("↷",func(): view.orbit(0.4)))
 	camera_bar.add_child(UI.button("＋",func(): view.zoom=clampf(view.zoom-0.15,0.65,1.4)))
 	camera_bar.add_child(UI.button("－",func(): view.zoom=clampf(view.zoom+0.15,0.65,1.4)))
 	camera_bar.add_child(UI.button("环境图",toggle_earth_map))
+	camera_bar.add_child(UI.button("世界地图",_open_world_map))
 	var time_box=UI.box(self,Rect2(28,748,928,91))
 	var time_row=UI.row(time_box,10)
 	pause_button=UI.button("暂停",func(): _act("v2_pause",{"paused":not state.planet.v2.world.paused})); time_row.add_child(pause_button)
@@ -106,6 +113,9 @@ func setup(model) -> void:
 	scroll=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; col.add_child(scroll)
 	body=UI.column(scroll,10); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	inspect_button=UI.button("世界 / 远行",_toggle_details); inspect_button.position=Vector2(1240,170); inspect_button.size=Vector2(148,44); inspect_button.hide(); add_child(inspect_button)
+	if preload("res://scripts/test_mode.gd").enabled():
+		var tester=UI.button("测试",func(): test_requested.emit()); tester.focus_mode=Control.FOCUS_NONE; tester.position=Vector2(1150,108); tester.size=Vector2(80,40); add_child(tester)
+	map_button=UI.button("地图",_open_world_map); map_button.focus_mode=Control.FOCUS_NONE; map_button.size=Vector2(148,44); map_button.hide(); add_child(map_button)
 	attack_button=UI.button("攻击 F",_attack); attack_button.focus_mode=Control.FOCUS_NONE; attack_button.size=Vector2(148,44); attack_button.hide(); add_child(attack_button)
 	status=UI.paragraph("M前往采集坡 · 用手套采集原料 → 工艺车间加工 → 背包搭建、播种和浇水。",15,UI.GOLD); status.position=Vector2(32,853); status.size=Vector2(1370,35); add_child(status)
 	play_bar=UI.row(self,4); play_bar.position=Vector2(300,656)
@@ -118,6 +128,13 @@ func setup(model) -> void:
 	play_bar.hide()
 	aim_label=UI.label("",15,UI.GOLD); aim_label.position=Vector2(350,606); add_child(aim_label); aim_label.hide()
 	_refresh_hotbar(); _redraw(); _sync.call_deferred()
+
+## v0.33.1 世界地图: trail, waypoints, buildings and where I am, over the whole Earth.
+func _open_world_map() -> void:
+	explore_input.clear_input()
+	var map=preload("res://scripts/planet_world_map.gd").new(); add_child(map); map.setup(state,view)
+	map.travel_requested.connect(_travel_waypoint)
+	map.closed.connect(func(): if view.first_person: explore_input.grab_focus())
 
 func toggle_earth_map() -> void:
 	if is_instance_valid(earth_map) and earth_map.env==state.planet.v2.environment:
@@ -162,6 +179,7 @@ func _exploration_layout() -> void:
 	right_panel.visible=not wide; camera_bar.visible=not view.first_person
 	inspect_button.visible=view.first_person; inspect_button.position.x=1240 if wide else 790
 	attack_button.visible=view.first_person; attack_button.position=Vector2(1240 if wide else 790,224)
+	map_button.visible=view.first_person; map_button.position=Vector2(1240 if wide else 790,278)
 	inspect_button.text="收起面板" if show_details else "世界 / 远行"
 	play_bar.visible=view.first_person; aim_label.visible=view.first_person
 	play_bar.position.x=300 if wide else 56; aim_label.position.x=350 if wide else 220
@@ -174,7 +192,7 @@ func _in_wilderness() -> bool:
 	return view!=null and view.first_person and view.walker.position.length()>float(view.terrain.rules.home_radius)+2
 
 func _observer_position() -> Vector2:
-	return view.walker.position if view.first_person else Vector2.ZERO
+	return view.observer()
 
 func _open_journey() -> void:
 	show_details=true; explore_input.clear_input(); _exploration_layout(); _tab("explore")
@@ -184,6 +202,14 @@ func _travel(id: String) -> void:
 	view.travel(destination.at); explore_input.set_walking(true)
 	show_details=false; _exploration_layout(); message="抵达"+str(destination.name)+"。M查看旅途，成熟的金色野草可以采集。"
 	if id=="homestead": message="采集坡：装备手套，瞄准枯枝堆、散石或果丛按E；原料可带回工艺车间。"
+	_redraw(); _sync()
+
+## 测试版 only: jump to any point of the 16 km world.
+func test_teleport(at: Vector2, label: String) -> void:
+	if not view.first_person: _enter()
+	if not view.travel(at): message="测试传送失败：%s附近没有落脚点" % label; _live(); return
+	explore_input.set_walking(true)
+	show_details=false; _exploration_layout(); message="测试传送：%s（%.0f, %.0f 米）" % [label,at.x,at.y]
 	_redraw(); _sync()
 
 func _travel_waypoint(id: String) -> void:
@@ -232,6 +258,8 @@ func _use_item(id: String,alternate: String="") -> void:
 	if type=="strike": _attack(); return
 	var target=state.planet.v2.Target.query(state.planet.v2)
 	if alternate=="pantry": _act("v2_field_pantry",{"resource":action.get("resource","")}); return
+	if target.get("type")=="depot" and type in ["collect","feed","sample","product","plant"]:
+		view.hands.swing(); _act("v2_depot_stock"); return
 	if alternate=="deploy" and type=="build": type="product"
 	view.hands.set_tool(type+(":"+str(item.get("color","")) if type=="place_rock" else "")); view.hands.swing()
 	if type in ["axe","dig","fill","place_rock","scan","tree_plant","mini_pack","mini_unfold"]:
@@ -353,6 +381,10 @@ func _aim() -> void:
 			var water=action.get("reference")=="water" or action.get("recipe")=="standard_water_crate"
 			aim_label.text=str(item.get("name","已用完"))+ (" · E 浇水" if water and (target.get("kind") in ["planter","trough"] or target.get("type")=="tree") else (" · 这里需要水" if (target.get("kind") in ["planter","trough"] or target.get("type")=="tree") else " · E 使用于"+str(v.region().name)))
 		elif action.get("type")=="plant": aim_label.text=v.Target.prompt(v,target)+" · E 播种"
+	if action.get("type")=="mini_pack":
+		var found: Dictionary=preload("res://scripts/river_miniatures.gd").survey(v.construction,target)
+		view.construction_view.preview_box(found)
+		aim_label.text=found.error if not found.error.is_empty() else "微缩器 · 这座作品%d块 · E 装进微缩盒，回浮岛「河湾作品」里摆放" % found.chosen.size()
 	aim_label.text=InteractionHelp.prompt(v,item,target,aim_label.text)
 	action_button.text=InteractionHelp.button_text(action,target)
 	attack_button.text="收拳中…" if v.combat.attack_left>0 else "攻击 F"
@@ -381,6 +413,18 @@ func _feel(action: String) -> void:
 		return
 	if sfx and ACTION_SOUNDS.has(action): sfx.play(ACTION_SOUNDS[action][0],ACTION_SOUNDS[action][1])
 	if view and view.first_person and KICK_ACTIONS.has(action): view.kick(KICK_ACTIONS[action])
+
+func _next_goal() -> String:
+	var v=state.planet.v2; var s=v.settlement
+	for row in s.checklist(v.world,v.construction):
+		if row.complete: continue
+		return "时代目标 · %s %s/%s
+%s" % [row.label,_amount(row.value),_amount(row.required),str(row.hint).split("；")[0]]
+	if s.era<2: return "时代目标 · 条件已满足！打开「时代」页建立"+str(s.rules.eras[s.era+1].name)
+	return ""
+
+func _amount(x: float) -> String:
+	return str(int(round(x))) if absf(x-round(x))<0.05 else "%.1f" % x
 
 func _card(title: String) -> VBoxContainer:
 	var p=PanelContainer.new(); body.add_child(p); var col=UI.column(p,7); col.add_child(UI.paragraph(title,19,UI.MINT)); return col
@@ -427,7 +471,7 @@ func _observation() -> void:
 	row.add_child(UI.button("播芦苇 · 1种",func(): _act("v2_plant",{"crop":"reed"})))
 	crops.add_child(UI.button("收获成熟作物",func(): _act("v2_harvest")))
 	var pen=_card("圈养与设施")
-	pen.add_child(UI.paragraph("从浮岛带来结构构件包搭围栏。关门后，小兽从粮仓取食；开门后恢复自然觅食。遮荫棚保水，但会减慢作物生长。",15))
+	pen.add_child(UI.paragraph("从浮岛带来结构构件包搭围栏。关门后，小兽吃背包里的口粮；开门后恢复自然觅食。遮荫棚保水，但会减慢作物生长。",15))
 	pen.add_child(UI.button("打开围栏" if r.enclosed else "关闭围栏",func(): _act("v2_pen")))
 	pen.add_child(UI.button("从背包带材料过来",func(): _tab("bag"),true))
 	var family=_card("动物个体与后代")
@@ -436,6 +480,7 @@ func _observation() -> void:
 
 func _journey() -> void:
 	var destinations=_card("沿河而行")
+	destinations.add_child(UI.button("打开世界地图 · 路线 / 路标 / 建筑",_open_world_map,true))
 	destinations.add_child(UI.paragraph("直径约16公里，面积约为旧地图256倍。附近地形随行加载，走远后卸载画面；砍树、挖土、建筑与栖地记录仍保留。",15))
 	for id in view.terrain.LANDMARKS:
 		var item=view.terrain.LANDMARKS[id]
@@ -480,6 +525,15 @@ func _era() -> void:
 	var card=_card(s.title())
 	card.add_child(UI.paragraph(s.rules.eras[s.era].story,16))
 	widgets.era=UI.paragraph("",15,UI.GOLD); card.add_child(widgets.era)
+	# v0.33.1: one row per requirement, each with its progress and a button that does or starts it.
+	for row in s.checklist(state.planet.v2.world,state.planet.v2.construction):
+		var box=VBoxContainer.new(); box.add_theme_constant_override("separation",3); card.add_child(box)
+		var title=UI.label("",16,UI.TEXT); box.add_child(title)
+		var bar=ProgressBar.new(); bar.show_percentage=false; bar.custom_minimum_size=Vector2(0,8); bar.max_value=1.0; box.add_child(bar)
+		box.add_child(UI.paragraph(str(row.hint),13))
+		var buttons=UI.row(box,6)
+		for b in _era_actions(str(row.id)): buttons.add_child(UI.button(b[0],b[1]))
+		widgets["era_row:"+str(row.id)]=[title,bar]
 	if s.era==0: card.add_child(UI.paragraph("住处是你实际搭的建筑，不是要找一个叫‘屋檐’的物品。用木构搭立柱，再横接屋顶；屋顶正下方至少留2格空地，每格都能站直、不被方块堵住。屋顶旁露天的地面不算住处。",14))
 	if s.era<2:
 		var promote=UI.button("建立"+str(s.rules.eras[s.era+1].name),func(): _act("v2_next_era"),true); card.add_child(promote); widgets.era_advance=promote
@@ -492,6 +546,26 @@ func _era() -> void:
 	card.add_child(UI.button("回草甸营地",func(): _travel("home"); _tool("observe")))
 	widgets.residents=UI.paragraph("",15); card.add_child(widgets.residents)
 	card.add_child(UI.paragraph("这是同一世界的游戏时代章节，保留动物个体和你的建筑。史前物种、完整工业时代与未来科技仍待扩展。",13,UI.MUTED))
+
+## Buttons for one era requirement row: the shortest route to actually doing it.
+func _era_actions(id: String) -> Array:
+	var era=int(state.planet.v2.settlement.era)
+	var store=["存入公共仓库",func(): _act("v2_depot_stock")]
+	match id:
+		"blocks": return [["去车间做木墙",func(): workshop_requested.emit("field_wall")],["背包装备构件",_open_backpack]]
+		"shelter": return [["去车间做屋顶",func(): workshop_requested.emit("field_roof")],["回营地",func(): _travel("home"); _tool("observe")]]
+		"harvests": return [["去车间做种植箱",func(): workshop_requested.emit("field_planter")],["去采集坡",_travel.bind("homestead")]]
+		"food": return [store,["去采集坡",_travel.bind("homestead")]]
+		"meals": return [store]
+		"water": return [store] if era>=1 else [["倒1份水样进草甸",_water_meadow]]
+		"solar": return [["去车间做光伏",func(): workshop_requested.emit("modern_silicon")],["背包装备光伏",_open_backpack]]
+	return []
+
+func _water_meadow() -> void:
+	for batch in state.storage.batches:
+		if batch.quantity>0 and state.sandbox_reference(batch.work).get("reference_id")=="water":
+			_act("v2_deploy_sample",{"batch_id":batch.id,"region_id":"meadow","token":state.planet.shipment_serial}); return
+	message="背包里没有水样。回浮岛让反应釜产出水（H₂O），收获后就会出现在背包。"; _live()
 
 func _nearby_text() -> String:
 	var at=_observer_position(); var v=state.planet.v2; var s=v.population.nearest(at)
@@ -536,15 +610,27 @@ func _live() -> void:
 		info.text="远郊探索\n林地 · 河流 · 营地"
 		if view.walker.position.length()>float(view.terrain.rules.radius)-28:
 			world_title.text="边界 · 当前探索区直径约16公里，可用M返回路标"
-	counters.text="种子 %d · 饲料 %d\n1分钟=1天 · 每4天换季" % [v.world.seeds,v.world.food]
+	counters.text="种子 %d · 口粮 %d\n1分钟=1天 · 每4天换季" % [v.world.seeds,v.world.food]
 	if not message.is_empty(): status.text=message
+	goal_label.visible=view.first_person and not show_details
+	if goal_label.visible: goal_label.text=_next_goal()
 	for key in regions: regions[key].modulate=UI.MINT if key==selected_region and not _in_wilderness() else Color.WHITE
 	for key in tabs: tabs[key].modulate=UI.MINT if key==section else Color.WHITE
 	if widgets.has("explore"): widgets.explore.text=_nearby_text()
 	if widgets.has("era"):
 		if widgets.has("era_recruit"): widgets.era_recruit.disabled=not v.settlement.recruit_error(v.construction).is_empty()
 		if widgets.has("era_advance"): widgets.era_advance.disabled=not v.settlement.ready(v.world,v.construction)
-		widgets.era.text=v.settlement.requirements(v.world,v.construction)+"\n太阳能服务点 %.1f/60 · %s" % [v.settlement.energy,"灌溉运行中" if v.settlement.irrigation else "待机"]
+		var rows=v.settlement.checklist(v.world,v.construction); var done=0; var todo=[]
+		for row in rows:
+			if row.complete: done+=1
+			else: todo.append(str(row.label))
+			var w=widgets.get("era_row:"+str(row.id),[])
+			if w.is_empty(): continue
+			w[0].text=("✓ " if row.complete else "○ ")+str(row.label)+" · %s / %s" % [_amount(row.value),_amount(row.required)]
+			w[0].modulate=UI.MINT if row.complete else Color.WHITE
+			w[1].value=clampf(row.value/maxf(row.required,0.001),0,1)
+		widgets.era.text=("下一时代：完成 %d / %d 项" % [done,rows.size()]+("
+待完成："+"、".join(todo) if not todo.is_empty() else "") if not rows.is_empty() else v.settlement.requirements(v.world,v.construction))+"\n太阳能服务点 %.1f/60 · %s" % [v.settlement.energy,"灌溉运行中" if v.settlement.irrigation else "待机"]
 		var residents=""
 		for p in v.settlement.people: residents+="%s · %s · 健康%.0f%% / 饥饿%.0f%%\n" % [p.name,p.task,p.health*100,p.hunger*100]
 		widgets.residents.text=residents if not residents.is_empty() else "满足住处、作物与水源条件后，旅人愿意定居。"
@@ -590,6 +676,7 @@ func _sync() -> void:
 	view.settlement_view.depot_position=v.ranch.depot_at(v)
 	view.settlement_view.sync(v.settlement,at)
 	view.life_view.era=v.settlement.era
+	view.journey_view.sync(v.journey,at,not view.first_person)
 	_live(); _aim()
 
 func _process(dt: float) -> void:
@@ -597,6 +684,7 @@ func _process(dt: float) -> void:
 	var v=state.planet.v2
 	if view.first_person and not is_instance_valid(backpack):
 		_update_actor()
+		if v.journey.track(view.walker.position): view.journey_view.sync(v.journey,view.walker.position,false)
 		v.combat.tick(minf(dt,0.1),v,not v.world.paused)
 		if v.combat.player_health<=0: explore_input.clear_input()
 		faint_button.visible=v.combat.player_health<=0
