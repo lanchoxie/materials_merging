@@ -276,7 +276,24 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize()}
+	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize()}
+
+## Every x/z an old save placed something at: built blocks and edited voxels.
+func _legacy_points(data: Dictionary) -> Array:
+	var points=[]
+	var blocks=data.get("construction",{}).get("blocks",{}) if data.get("construction") is Dictionary else {}
+	if blocks is Dictionary:
+		for b in blocks.values():
+			if b is Dictionary and (b.get("x") is float or b.get("x") is int) and (b.get("z") is float or b.get("z") is int): points.append(Vector2(b.x,b.z))
+	var n=data.get("nature",{})
+	if n is Dictionary:
+		for k in (n.get("voxels",{}) if n.get("voxels") is Dictionary else {}):
+			var parts=str(k).split(":")
+			if parts.size()==3 and parts[0].is_valid_int() and parts[2].is_valid_int(): points.append(Vector2(int(parts[0]),int(parts[2])))
+		for k in (n.get("edits",{}) if n.get("edits") is Dictionary else {}):
+			var parts=str(k).split(":")
+			if parts.size()==2 and parts[0].is_valid_int() and parts[1].is_valid_int(): points.append(Vector2(int(parts[0]),int(parts[1])))
+	return points
 
 func _number(v,lo: float,hi: float,whole: bool=false) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
@@ -345,6 +362,10 @@ func restore(data) -> bool:
 	if data.has("population") and not restored_population.restore(data.population): return false
 	var restored_nature=Nature.new()
 	var restored_construction=Construction.new()
+	# v0.33.2: saves made before relief existed keep their old ground where they built or dug.
+	if data.has("terrain"):
+		if not restored_construction.terrain.pads_restore(data.terrain): return false
+	else: restored_construction.terrain.set_pads(restored_construction.terrain.legacy_pads(_legacy_points(data)))
 	if data.has("nature") and not restored_nature.restore(data.nature,restored_construction.terrain): return false
 	restored_construction.terrain.nature=restored_nature
 	var restored_combat=Combat.new()

@@ -21,7 +21,7 @@ func sync(journey,at: Vector2,overview: bool) -> void:
 	if journey.revision!=seen_points: _beacons(journey); seen_points=journey.revision
 	for id in beacons:
 		var n: Node3D=beacons[id]; var d=at.distance_to(Vector2(n.position.x,n.position.z))
-		n.visible=d<(220.0 if overview else 900.0)
+		n.visible=d<(700.0 if overview else 900.0)
 		n.get_node("Label").visible=n.visible and (overview or d>6.0)
 	trail_node.visible=overview
 	if not overview: return
@@ -55,7 +55,7 @@ func _trail(trail: Array,at: Vector2) -> Mesh:
 		var a: Array=trail[i-1]; var b: Array=trail[i]
 		if a[2]!=b[2]: continue
 		var pa=Vector2(a[0],a[1]); var pb=Vector2(b[0],b[1])
-		if pa.distance_to(at)>150 and pb.distance_to(at)>150: continue
+		if pa.distance_to(at)>700 and pb.distance_to(at)>700: continue
 		var steps=maxi(1,int(pa.distance_to(pb)/2.0))
 		for k in range(steps):
 			if k%2==1: continue

@@ -65,7 +65,9 @@ func _top(c: Vector3i,tops: Dictionary) -> float:
 
 func _solid(c: Vector3i,voxels: Dictionary,tops: Dictionary,bedrock: int) -> bool:
 	if voxels.has(c): return voxels[c]!=""
-	return c.y<=bedrock or c.y<ceili(_top(c,tops))
+	if c.y<=bedrock: return true
+	if c.y>=ceili(_top(c,tops)): return false
+	return not terrain.cave(c)
 
 func _height(c: Vector3i,voxels: Dictionary,tops: Dictionary) -> float:
 	if voxels.has(c): return 1.0
@@ -139,9 +141,9 @@ func _build(key: Vector2i) -> Mesh:
 			tiles+=1
 			var col=Vector2i(ix,iz); var top: float=tops[col]; var river=terrain.river_cell(p)
 			var x0=p.x-cell/2; var x1=p.x+cell/2; var z0=p.y-cell/2; var z1=p.y+cell/2
-			var near_edit=columns.has(col)
+			var near_edit=columns.has(col) or terrain.column_has_cave(ix,iz)
 			for d in DIRS:
-				if columns.has(col+Vector2i(d.x,d.z)): near_edit=true
+				if columns.has(col+Vector2i(d.x,d.z)) or terrain.column_has_cave(ix+d.x,iz+d.z): near_edit=true
 			var shade=(sin(p.x*13+p.y*17)+1)*0.035
 			var tile_grass=grass
 			if env!=null:
@@ -174,6 +176,7 @@ func _build(key: Vector2i) -> Mesh:
 				if columns.has(n):
 					for y in columns[n]: lo=mini(lo,y)
 			if edge: lo=mini(lo,ceili(top)-3)
+			if terrain.column_has_cave(ix,iz): lo=mini(lo,ceili(top-float(terrain.rules.cave_depth))-1)
 			lo=maxi(lo,bedrock)
 			for y in range(lo,hi+1):
 				var c=Vector3i(ix,y,iz)
@@ -195,6 +198,7 @@ func _build(key: Vector2i) -> Mesh:
 	for iz in range(key.y*span,(key.y+1)*span):
 		var z=float(iz)*cell; var x=terrain.river_x(z)
 		if absf(z)<=29 or terrain.chunk_at(Vector2(x,z)).x!=key.x or not terrain.inside(Vector2(x,z),1.0): continue
+		if not terrain.river_cell(terrain.cell_center(Vector2(x,z))): continue
 		G.cube(wet,Vector3(x,0.20,z),Vector3(2.85,0.06,cell+0.02),Color("59aab8")); rivers+=1
 	for item in decor: _decor(st,item[0],item[1],item[2],item[3])
 	for tree in terrain.tree_records(key):

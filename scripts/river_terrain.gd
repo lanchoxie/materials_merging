@@ -8,6 +8,15 @@ var nature
 var environment
 var trees: Array[Vector2]=[]
 var tree_cache={}
+## v0.33.2 legacy pads: chunk keys where a pre-v0.33.2 save already built or dug far from home.
+## Relief and caves ease back to the old flat ground around them, so nothing gets buried.
+const PAD_FLAT=24.0
+const PAD_RAMP=64.0
+var pads: Dictionary={}
+var _pad_near: Dictionary={}
+var _cave_columns: Dictionary={}
+## v0.33.2: natural column tops are pure functions of x/z (and the pads), so they are cached.
+var _height_cache: Dictionary={}
 const LANDMARKS={"home":{"name":"起始河湾","at":Vector2(10,15)},"homestead":{"name":"采集坡 · 小屋营地","at":Vector2(16,22)},"camp":{"name":"旅人林间营地","at":Vector2(68,68)},"woods":{"name":"西岸林地","at":Vector2(-124,68)},"ridge":{"name":"远方高原","at":Vector2(196,-188)},"frontier":{"name":"千米林海 · 远征起点","at":Vector2(1348,1348)},"far_river":{"name":"六公里外 · 上游河谷","at":Vector2(-8,-6140)}}
 
 func _init() -> void:
@@ -71,9 +80,13 @@ func height_at(p: Vector2) -> float:
 ## floored to half metres so the top cell is a full block or a slab. floor() keeps every old
 ## building's base cell (floor of the old ground) exactly where it was.
 func natural_height(p: Vector2) -> float:
-	var c=cell_center(p)
-	if river_cell(c): return 0.0
-	return maxf(0.5,floor((legacy_height(c)+0.055)*2.0)/2.0)
+	var c=cell_center(p); var k=Vector2i(roundi(c.x),roundi(c.y))
+	var cached=_height_cache.get(k)
+	if cached!=null: return cached
+	var h=0.0 if river_cell(c) else maxf(0.5,floor((legacy_height(c)+0.055)*2.0)/2.0)
+	if _height_cache.size()>=120000: _height_cache.clear()
+	_height_cache[k]=h
+	return h
 
 func river_cell(c: Vector2) -> bool:
 	return absf(c.x-river_x(c.y))<2.0
@@ -86,7 +99,12 @@ func _edited(x: int,z: int) -> bool:
 
 func top_at(x: int,z: int) -> float:
 	var natural=natural_height(Vector2(x,z))
-	if not _edited(x,z): return natural
+	if not _edited(x,z):
+		if not column_has_cave(x,z): return natural
+		# A cave mouth carves the top cells: the standing surface is the first solid cell below.
+		var cy=ceili(natural)-1
+		while cy>Geology.bedrock_y() and not natural_solid(Vector3i(x,cy,z)): cy-=1
+		return natural if cy==ceili(natural)-1 else float(cy+1)
 	var ys: Dictionary=nature.columns[Vector2i(x,z)]; var top=-INF
 	for y in ys:
 		if nature.voxels[Vector3i(x,y,z)]!="": top=maxf(top,y+1)
@@ -95,7 +113,9 @@ func top_at(x: int,z: int) -> float:
 	return maxf(top,natural if y==ceili(natural)-1 else float(y+1))
 
 func natural_solid(c: Vector3i) -> bool:
-	return c.y<=Geology.bedrock_y() or c.y<ceili(natural_height(Vector2(c.x,c.z)))
+	if c.y<=Geology.bedrock_y(): return true
+	if c.y>=ceili(natural_height(Vector2(c.x,c.z))): return false
+	return not cave(c)
 
 func solid(c: Vector3i) -> bool:
 	if nature!=null and nature.voxels.has(c): return nature.voxels[c]!=""
@@ -121,9 +141,15 @@ func natural_material(c: Vector3i) -> String:
 
 ## Highest standing surface in one column at or below `ceiling`.
 func floor_below(x: int,z: int,ceiling: float) -> float:
-	if not _edited(x,z):
+	if not _edited(x,z) and not column_has_cave(x,z):
 		var top=natural_height(Vector2(x,z))
 		return top if top<=ceiling+0.001 else float(floori(ceiling+0.001))
+	if not _edited(x,z):
+		var y=floori(ceiling+0.001)
+		while y>Geology.bedrock_y():
+			if natural_solid(Vector3i(x,y,z)): return float(y+1)
+			y-=1
+		return float(Geology.bedrock_y()+1)
 	var y=floori(ceiling+0.001)
 	while y>Geology.bedrock_y():
 		var c=Vector3i(x,y,z)
@@ -136,8 +162,12 @@ func overlaps(p: Vector2,feet: float,height: float) -> bool:
 	var radius=float(rules.player_radius)
 	for x in range(floori(p.x-radius+0.5),floori(p.x+radius+0.5)+1):
 		for z in range(floori(p.y-radius+0.5),floori(p.y+radius+0.5)+1):
-			if not _edited(x,z):
+			if not _edited(x,z) and not column_has_cave(x,z):
 				if natural_height(Vector2(x,z))>feet+0.001: return true
+				continue
+			if not _edited(x,z):
+				for y in range(floori(feet+0.001),floori(feet+height-0.001)+1):
+					if natural_solid(Vector3i(x,y,z)): return true
 				continue
 			for y in range(floori(feet+0.001),floori(feet+height-0.001)+1):
 				var c=Vector3i(x,y,z)
@@ -153,7 +183,104 @@ func legacy_height(c: Vector2) -> float:
 		var edge=clampf(minf(c.x,-c.y)/24.0,0,1)
 		h+=floor(plateau*lerpf(1.0,edge,far))*0.28
 	h+=floor((sin(c.x*0.025)*cos(c.y*0.027)+1)*7*far)*0.16
+	h+=relief(c)
 	return maxf(h,0.27)
+
+## v0.33.2 relief: rolling hills and ridges that stay flat inside the start bend (so home, the
+## river, placed buildings and field nodes never move) and fade in beyond it. Floored to whole
+## metres so hillsides read as clean voxel steps the walker can climb or route around.
+func relief(c: Vector2) -> float:
+	var fade=clampf((c.length()-float(rules.relief_begin))/float(rules.relief_fade),0.0,1.0)
+	if fade<=0.0: return 0.0
+	# The river keeps a wide valley instead of cutting a slot canyon through the mountains.
+	fade*=pad_mask(c)*smoothstep(3.0,90.0,absf(c.x-river_x(c.y)))
+	if fade<=0.0: return 0.0
+	var hills=(sin(c.x*0.013+cos(c.y*0.011)*2.0)+cos(c.y*0.015+sin(c.x*0.009)*2.0)+2.0)*0.25
+	var detail=(sin(c.x*0.043+c.y*0.017)*cos(c.y*0.039-c.x*0.011)+1.0)*0.5
+	# Ridged mountains: sharp crests where the fold lines meet, in broad bands across the map.
+	var fold=1.0-absf(sin(c.x*0.0047+sin(c.y*0.0031)*1.6)*cos(c.y*0.0043-sin(c.x*0.0029)*1.4))
+	var band=smoothstep(0.15,0.75,sin(c.x*0.0011+0.6)*cos(c.y*0.0013-0.4)*0.5+0.5)
+	var ridge=fold*fold*fold*band
+	return floor((hills*float(rules.relief_hills)+detail*float(rules.relief_detail)+ridge*float(rules.relief_ridge))*fade)
+
+## v0.33.2 caves: hollow cells carved out of the rock below the top crust, beyond the start bend.
+## Two tunnel fields intersect into connected galleries; a hillside slices them open as cave mouths.
+func cave(c: Vector3i) -> bool:
+	if c.y<=Geology.bedrock_y()+1: return false
+	if not column_has_cave(c.x,c.z): return false
+	return _cave_at(c,natural_height(Vector2(c.x,c.z)))
+
+func _cave_at(c: Vector3i,top: float) -> bool:
+	# A roof of at least 2 m, except in sparse mouth patches where tunnels break the surface.
+	var roof=0.0 if cave_mouth(Vector2(c.x,c.z)) else 2.0
+	if float(c.y)>top-roof-0.001 or float(c.y)<top-float(rules.cave_depth) or c.y<=Geology.bedrock_y()+1: return false
+	var worm=sin(c.x*0.063+c.y*0.021)+sin(c.z*0.058-c.y*0.019)+sin((c.x+c.z)*0.037)
+	var seam=cos(c.x*0.044-c.z*0.051)+sin(c.y*0.1)
+	return absf(worm)<float(rules.cave_width) and absf(seam)<1.05
+
+## Sparse patches (roughly one every few hundred metres) where the cave opens to the sky.
+func cave_mouth(p: Vector2) -> bool:
+	return sin(p.x*0.021+0.7)*cos(p.y*0.017-1.3)+0.35*sin((p.x-p.y)*0.009)>float(rules.cave_mouth)
+
+## True if a column might contain a carved cell, so the mesher scans it the slow way instead of
+## the heightmap fast path. Cheap radius reject keeps the whole start area on the fast path.
+func column_has_cave(x: int,z: int) -> bool:
+	var p=Vector2(x,z)
+	if p.length()<float(rules.cave_begin) or river_cell(p) or pad_mask(p)<1.0: return false
+	var k=Vector2i(x,z)
+	if _cave_columns.has(k): return _cave_columns[k]
+	var top=natural_height(p); var found=false
+	for y in range(ceili(top-float(rules.cave_depth)),ceili(top)):
+		if _cave_at(Vector3i(x,y,z),top): found=true; break
+	if _cave_columns.size()>=60000: _cave_columns.clear()
+	_cave_columns[k]=found
+	return found
+
+## 0 on a legacy pad, easing to 1 at PAD_RAMP metres away.
+func pad_mask(c: Vector2) -> float:
+	if _pad_near.is_empty(): return 1.0
+	var near=_pad_near.get(chunk_at(c))
+	if near==null: return 1.0
+	var d=INF
+	for at in near: d=minf(d,c.distance_to(at))
+	return smoothstep(PAD_FLAT,PAD_RAMP,d)
+
+func set_pads(keys: Array) -> void:
+	pads={}; _pad_near={}; _cave_columns.clear(); _height_cache.clear(); tree_cache.clear()
+	var span=float(rules.cell_size)*int(rules.chunk_cells); var reach=ceili((PAD_RAMP+span)/span)
+	for key in keys:
+		pads[key]=true
+		var at=(Vector2(key)+Vector2(0.5,0.5))*span
+		for dz in range(-reach,reach+1):
+			for dx in range(-reach,reach+1):
+				var k=key+Vector2i(dx,dz)
+				if not _pad_near.has(k): _pad_near[k]=[]
+				_pad_near[k].append(at)
+
+## Far chunks an old save touched (placed blocks, dug or placed voxels). Home stays untouched anyway.
+func legacy_pads(points: Array) -> Array:
+	var seen={}
+	for p in points:
+		if p.length()<float(rules.relief_begin)-PAD_RAMP: continue
+		seen[chunk_at(p)]=true
+	return seen.keys()
+
+func pads_serialize() -> Dictionary:
+	var flat=[]
+	for key in pads: flat.append_array([key.x,key.y])
+	return {"version":1,"pads":flat}
+
+func pads_restore(data) -> bool:
+	if not data is Dictionary or data.get("version")!=1 or not data.get("pads") is Array: return false
+	var flat: Array=data.pads
+	if flat.size()%2!=0 or flat.size()>8192: return false
+	var keys=[]; var limit=ceili(float(rules.radius)/(float(rules.cell_size)*int(rules.chunk_cells)))+1
+	for i in range(0,flat.size(),2):
+		for v in [flat[i],flat[i+1]]:
+			if not (v is int or v is float) or v!=floor(v) or absf(v)>limit: return false
+		keys.append(Vector2i(int(flat[i]),int(flat[i+1])))
+	set_pads(keys)
+	return true
 
 func bridge(p: Vector2) -> bool:
 	return absf(p.y)<1.0 and absf(p.x-river_x(0))<3.3

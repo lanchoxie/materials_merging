@@ -57,7 +57,7 @@ func _describe() -> void:
 	var v=state.planet.v2; var at: Vector2=view.observer()
 	info.text="我在 %.0f, %.0f 米 · %s · 路标 %d 个 · 路线记录 %d 段点 · 建筑 %d 块" % [at.x,at.y,v.environment.biome_name(v.environment.biome_at(at)),v.journey.points.size(),v.journey.trail.size(),v.construction.blocks.size()]
 
-## One pixel per climate cell, smoothed and masked to the land disc.
+## One pixel per climate cell, smoothed, hill-shaded from the relief and masked to the land disc.
 func _biome_texture() -> ImageTexture:
 	var env=state.planet.v2.environment; var image=Image.create(env.size,env.size,false,Image.FORMAT_RGB8)
 	for j in range(env.size):
@@ -68,9 +68,15 @@ func _biome_texture() -> ImageTexture:
 	# Smooth the 256 m cells, then paint the sea outside the 8 km disc.
 	var k=4; image.resize(env.size*k,env.size*k,Image.INTERPOLATE_CUBIC)
 	var radius=float(view.terrain.rules.radius); var px=radius*2.0/(env.size*k)
+	# v0.33.2: hill shading from the real relief, lit from the north-west.
+	var t=view.terrain
 	for j in range(env.size*k):
 		for i in range(env.size*k):
-			if Vector2(-radius+(i+0.5)*px,-radius+(j+0.5)*px).length()>radius: image.set_pixel(i,j,Color("1d4a63"))
+			var p=Vector2(-radius+(i+0.5)*px,-radius+(j+0.5)*px)
+			if p.length()>radius: image.set_pixel(i,j,Color("1d4a63")); continue
+			var h=t.relief(p); var slope=(h-t.relief(p-Vector2(px,px)*0.5))/px*6.0
+			var c: Color=image.get_pixel(i,j)
+			image.set_pixel(i,j,(c.lightened(clampf(slope,0,0.35)) if slope>0 else c.darkened(clampf(-slope,0,0.35))).lerp(Color("eef1ec"),smoothstep(26.0,40.0,h)*0.6))
 	return ImageTexture.create_from_image(image)
 
 func to_screen(p: Vector2) -> Vector2:

@@ -25,8 +25,8 @@ static func build(panel) -> void:
 		if target.entity.type=="visitor":
 			card.add_child(UI.paragraph("本次余货 %d/2；每2份谷穗换1颗松树种子。" % (2-int(r.trades.get(target.entity.key,0))),15))
 			card.add_child(UI.button("交换树种",func(): panel._act("v2_ranch_trade")))
-	var depot=panel._card("公共仓库 · 玩家自行补给")
-	depot.add_child(UI.paragraph("村民只使用这里的补给；背包中的东西仍属于你。\n水：%d / %d份 · 喂村民用野果或谷穗" % [r.depot.water,r.rules.depot_capacity],15))
+	var depot=panel._card("公共仓库（＝公用粮仓）· 玩家自行补给")
+	depot.add_child(UI.paragraph("这里就是时代条件里说的「公共仓库／粮仓」。用下面的「存」把背包里的口粮、谷穗、野果和水样放进来；村民只吃这里的东西，走到仓库吃掉才算一次用餐。背包里的东西仍属于你。\n水：%d / %d份 · 喂村民用野果或谷穗" % [r.depot.water,r.rules.depot_capacity],15))
 	var names={"seed":"种子","timber":"木料","stone":"散石","fruit":"野果","grain":"谷穗","ration":"口粮"}
 	for item in names:
 		var available=v.world.seeds if item=="seed" else (v.world.food if item=="ration" else v.field.stock[item])

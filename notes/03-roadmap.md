@@ -81,7 +81,11 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.33.1 "Test build + Earth usability" (tag `v0.33.1`; see [17-testbuild-earth-ux.md](17-testbuild-earth-ux.md)), user
   request: 测试版 with its own save and test panel; depot by E, era rows with action buttons, 微缩器 preview, god view
   that follows you, beacons, walked trail, 世界地图; floating sky-blue springs and tundra ice fixed.
-- Next: v0.33.2 "Terrain & caves" (user request), then the interleaved plan in [14-industry-island.md](14-industry-island.md).
+- ✅ v0.33.2 "Terrain & caves" (tag `v0.33.2`; see [18-terrain-caves.md](18-terrain-caves.md)), user request: real
+  relief beyond the start area, ridged mountains, a river valley, karst caves with open mouths; old far builds keep their ground.
+- Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
+  more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,
+  and the remaining eras.
 - Phase 2 "浮岛2.0 / Starforge Isle" (see [14-industry-island.md](14-industry-island.md)): a second island with an
   industry chain molecule → material → chip → energy → goods → vehicles → gear → space; products go to the backpack
   for use on the planet. Draft numbering v0.34–v0.41; how it interleaves with the eras below is an open question.

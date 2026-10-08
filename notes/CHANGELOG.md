@@ -30,6 +30,19 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.33.2 "Terrain & caves" (地形与洞穴)
+The user said Earth had no terrain and no caves (2026-10-01). Full notes: [18-terrain-caves.md](18-terrain-caves.md).
+- **Relief.** Beyond 120 m from home the ground rises into rolling hills, ridged mountain bands up to ~45 m and small detail;
+  home is unchanged. Hillsides are 1 m steps (auto-jump), with rare ≤2 m cliffs on crests.
+- **River valley.** Relief tapers to the river over 90 m, so the river runs in a valley, not a slot canyon.
+- **Caves.** Karst tunnels 2–14 m under the surface beyond 180 m, opening to the sky in sparse gorges. Walls show the
+  real geology (limestone, coal, galena, fluorite…); walking, digging and aiming all work inside.
+- **Old saves.** Far chunks where an old save built or dug keep their old flat ground (legacy pads, saved in `terrain`).
+- **世界地图** is hill-shaded from the relief; high peaks show snow.
+- **Fixes.** Continued-river water only draws on real river cells; trail and beacons show from 700 m in the god view.
+- **Speed.** Column heights are cached; a far chunk builds in ~20 ms.
+- **Tests.** New `test_terrain_caves` (14 checks); screenshot helper `capture_terrain`.
+
 ## v0.33.1 "Test build + Earth usability" (测试版 · 地球易用性)
 The user asked for a test version and reported Earth problems (2026-10-01). Full notes: [17-testbuild-earth-ux.md](17-testbuild-earth-ux.md).
 - **测试版.**
