@@ -1584,6 +1584,7 @@ func _show_test_panel(planet: Control = null) -> void:
 	row = UI.row(body, 8)
 	row.add_child(UI.button("浮岛快进 1 小时", func(): run.call(TestMode.skip_island(state, 3600))))
 	row.add_child(UI.button("浮岛快进 8 小时", func(): run.call(TestMode.skip_island(state, 8 * 3600))))
+	row.add_child(UI.button("硅钙磷原料包", func(): run.call(TestMode.silicon_kit(state))))
 	body.add_child(UI.label("地球", 20, UI.GOLD))
 	row = UI.row(body, 8)
 	row.add_child(UI.button("快进 1 天", func(): run.call(TestMode.skip_planet(state, 60))))

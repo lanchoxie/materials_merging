@@ -1,0 +1,458 @@
+{
+  "version": 1,
+  "note": "v0.37 material property model v1 (notes/20-material-model.md). Continuous properties from real anchors and simplified textbook laws; gameplay constants are tagged 游戏数值. Pure data; laws in scripts/material_model.gd.",
+  "model_uncertainty": 0.08,
+  "scatter": 0.03,
+  "max_lots": 24,
+  "measure": {
+    "coins": 30,
+    "xp": 3,
+    "report_bonus": 1.15
+  },
+  "price": {
+    "min": 0.5,
+    "max": 2.0,
+    "power": 0.8
+  },
+  "families": {
+    "carbon_steel": {
+      "name": "碳钢（正火态）",
+      "knobs": {
+        "C": {
+          "label": "碳含量",
+          "unit": "wt%",
+          "min": 0.1,
+          "max": 1.2,
+          "step": 0.05,
+          "default": 0.45
+        }
+      },
+      "show": [
+        "hv",
+        "tough",
+        "rho"
+      ],
+      "score": {
+        "hv": 1.0,
+        "tough": 0.4
+      },
+      "ferrite_hv": 90,
+      "pearlite_hv": 280,
+      "eutectoid": 0.77,
+      "cementite_hv_per_wt": 150,
+      "laws": [
+        {
+          "text": "杠杆定律：珠光体比例 ≈ C/0.77，硬度在铁素体 HV 90 与珠光体 HV 280 之间线性变化；过共析的网状渗碳体再加硬、变脆",
+          "tag": "简化模型",
+          "source": "krauss2015"
+        },
+        {
+          "text": "密度：铁素体 7.874 与渗碳体 Fe₃C 7.69 g/cm³ 按体积混合",
+          "tag": "近似精确",
+          "source": "krauss2015"
+        }
+      ]
+    },
+    "steel_tool": {
+      "name": "淬火回火工具钢",
+      "knobs": {
+        "T": {
+          "label": "回火温度",
+          "unit": "°C",
+          "min": 150,
+          "max": 650,
+          "step": 10,
+          "default": 200
+        }
+      },
+      "inherit": {
+        "C": "steel_ingot"
+      },
+      "inherit_default": {
+        "C": 0.6
+      },
+      "show": [
+        "hv",
+        "tough",
+        "edge"
+      ],
+      "score": {
+        "edge": 1.0
+      },
+      "martensite": [
+        [
+          0.1,
+          390
+        ],
+        [
+          0.2,
+          500
+        ],
+        [
+          0.3,
+          580
+        ],
+        [
+          0.4,
+          650
+        ],
+        [
+          0.5,
+          720
+        ],
+        [
+          0.6,
+          770
+        ],
+        [
+          0.8,
+          820
+        ],
+        [
+          1.0,
+          840
+        ],
+        [
+          1.2,
+          840
+        ]
+      ],
+      "hollomon": {
+        "hours": 1.0,
+        "constant": 20,
+        "start": 8000,
+        "end": 18500
+      },
+      "tme": {
+        "center": 300,
+        "width": 45,
+        "depth": 0.1
+      },
+      "chip_tough": 0.25,
+      "laws": [
+        {
+          "text": "马氏体硬度随碳含量陡升，约 0.6 wt% 以上趋平（Krauss 曲线）",
+          "tag": "真实数据",
+          "source": "krauss2015"
+        },
+        {
+          "text": "回火软化按 Hollomon–Jaffe 参数 P = T(20 + lg t) 平滑下降",
+          "tag": "简化模型",
+          "source": "hollomon1945"
+        },
+        {
+          "text": "约 260–370 °C 回火会出现回火马氏体脆性（韧性反而下降）",
+          "tag": "简化模型",
+          "source": "krauss2015"
+        },
+        {
+          "text": "韧性低于 0.25 时刃口会崩：刃口硬度 = 硬度 × √(韧性/0.25)",
+          "tag": "游戏数值",
+          "source": ""
+        }
+      ],
+      "inherit_knobs": {
+        "C": {
+          "label": "碳含量（来自碳钢锭）",
+          "unit": "wt%"
+        }
+      }
+    },
+    "tin_bronze": {
+      "name": "锡青铜",
+      "knobs": {
+        "Sn": {
+          "label": "锡含量",
+          "unit": "wt%",
+          "min": 4,
+          "max": 22,
+          "step": 0.5,
+          "default": 12
+        }
+      },
+      "inputs_by_knob": {
+        "el:Sn": {
+          "knob": "Sn",
+          "per": 12,
+          "min": 1
+        }
+      },
+      "show": [
+        "hv",
+        "tough",
+        "rho"
+      ],
+      "score": {
+        "hv": 1.0,
+        "tough": 0.5
+      },
+      "base_hv": 48,
+      "ss_k": 15,
+      "solubility": 13.5,
+      "delta_hv_per_wt": 7,
+      "laws": [
+        {
+          "text": "固溶强化：ΔH ∝ c^½（Fleischer/Labusch）",
+          "tag": "简化模型",
+          "source": "labusch1970"
+        },
+        {
+          "text": "锡超过约 13.5 wt% 析出硬脆的 δ 相：更硬，但很快变脆（钟铜约 20–23 % Sn）",
+          "tag": "简化模型",
+          "source": "abtew2000"
+        },
+        {
+          "text": "密度：铜 8.96 与锡 7.29 g/cm³ 按体积混合",
+          "tag": "近似精确",
+          "source": ""
+        }
+      ]
+    },
+    "duralumin": {
+      "name": "硬铝（Al-4Cu 人工时效）",
+      "knobs": {
+        "t": {
+          "label": "190 °C 时效时间",
+          "unit": "h",
+          "min": 0.25,
+          "max": 200,
+          "step": 0.01,
+          "default": 12,
+          "log": true
+        }
+      },
+      "show": [
+        "hv",
+        "tough",
+        "rho"
+      ],
+      "score": {
+        "hv": 1.0,
+        "tough": 0.3
+      },
+      "ss_hv": 75,
+      "peak_hv": 140,
+      "peak_hours": 10,
+      "width": 1.1,
+      "overaged_keep": 0.25,
+      "rho": 2.78,
+      "laws": [
+        {
+          "text": "析出强化的时效曲线：先升、在峰值时效达到最硬、再过时效变软（θ″→θ′→θ 粗化）",
+          "tag": "简化模型",
+          "source": "polmear2017"
+        },
+        {
+          "text": "欠时效与过时效都更韧一些",
+          "tag": "简化模型",
+          "source": "polmear2017"
+        }
+      ]
+    },
+    "al_li": {
+      "name": "铝锂合金",
+      "knobs": {
+        "Li": {
+          "label": "锂含量",
+          "unit": "wt%",
+          "min": 0.5,
+          "max": 2.8,
+          "step": 0.1,
+          "default": 1.0
+        }
+      },
+      "inputs_by_knob": {
+        "el:Li": {
+          "knob": "Li",
+          "per": 1.0,
+          "min": 1
+        }
+      },
+      "show": [
+        "E",
+        "rho",
+        "specific",
+        "tough"
+      ],
+      "score": {
+        "specific": 1.0,
+        "tough": 0.5
+      },
+      "base_rho": 2.78,
+      "base_E": 73,
+      "rho_per_wt": 0.03,
+      "E_per_wt": 0.06,
+      "li_limit": 1.8,
+      "laws": [
+        {
+          "text": "每加 1 wt% 锂，密度约降 3 %、弹性模量约升 6 %",
+          "tag": "真实数据",
+          "source": "rioja2012"
+        },
+        {
+          "text": "锂超过约 1.8 % 时 δ′ 相导致平面滑移，韧性明显下降（所以第三代铝锂合金锂都 < 2 %）",
+          "tag": "简化模型",
+          "source": "rioja2012"
+        }
+      ]
+    },
+    "soda_lime_glass": {
+      "name": "钠钙玻璃",
+      "knobs": {
+        "Na2O": {
+          "label": "Na₂O 含量",
+          "unit": "mol%",
+          "min": 12,
+          "max": 18,
+          "step": 0.5,
+          "default": 15
+        }
+      },
+      "inputs_by_knob": {
+        "el:Na": {
+          "knob": "Na2O",
+          "per": 7,
+          "min": 1
+        }
+      },
+      "seconds_by_knob": {
+        "knob": "Na2O",
+        "at": [
+          [
+            12,
+            1.5
+          ],
+          [
+            15,
+            1.0
+          ],
+          [
+            18,
+            0.75
+          ]
+        ]
+      },
+      "show": [
+        "n",
+        "T_work",
+        "durab"
+      ],
+      "score": {
+        "durab": 1.0
+      },
+      "cao": 10,
+      "appen": {
+        "SiO2": 1.475,
+        "Na2O": 1.59,
+        "CaO": 1.73
+      },
+      "laws": [
+        {
+          "text": "折射率按 Appen 加和法则：n = Σ xᵢ·nᵢ（SiO₂ 1.475，Na₂O 1.590，CaO 1.730）",
+          "tag": "真实数据",
+          "source": "appen1949"
+        },
+        {
+          "text": "纯碱是助熔剂：Na₂O 越多，工作温度越低、熔得越快",
+          "tag": "简化模型",
+          "source": "shelby2005"
+        },
+        {
+          "text": "但 Na⁺ 会被水慢慢浸出：Na₂O 越多，玻璃越不耐候（发雾）",
+          "tag": "简化模型",
+          "source": "shelby2005"
+        }
+      ]
+    },
+    "n_wafer": {
+      "name": "N 型单晶硅片",
+      "knobs": {
+        "N": {
+          "label": "磷掺杂浓度 lg(N/cm⁻³)",
+          "unit": "",
+          "min": 14,
+          "max": 19,
+          "step": 0.1,
+          "default": 17
+        }
+      },
+      "show": [
+        "rho_ohm",
+        "mu",
+        "eff"
+      ],
+      "score": {
+        "eff": 1.0
+      },
+      "mobility": {
+        "min": 68.5,
+        "max": 1414,
+        "nref": 9.2e+16,
+        "alpha": 0.711
+      },
+      "eff_peak": 0.26,
+      "eff_best": 15.7,
+      "eff_width": 2.3,
+      "eff_floor": 0.06,
+      "laws": [
+        {
+          "text": "电子迁移率随掺杂下降：μ = 68.5 + 1346/(1+(N/9.2×10¹⁶)^0.711) cm²/V·s",
+          "tag": "真实数据拟合",
+          "source": "masetti1983"
+        },
+        {
+          "text": "电阻率 ρ = 1/(q·N·μ)：掺得越多越导电",
+          "tag": "近似精确",
+          "source": "sze2007"
+        },
+        {
+          "text": "电池效率在约 1 Ω·cm（N≈5×10¹⁵）附近最好：掺太少开路电压低，掺太多俄歇复合缩短少子寿命",
+          "tag": "简化模型",
+          "source": "green1982"
+        },
+        {
+          "text": "硅带隙实测 1.12 eV，Shockley–Queisser 极限约 33%；Materials Project 的 PBE 计算给出约 0.45 eV，是 DFT 的已知低估",
+          "tag": "真实数据",
+          "source": "sze2007"
+        }
+      ]
+    },
+    "solar_panel": {
+      "name": "太阳能板",
+      "knobs": {},
+      "inherit": {
+        "N": "wafer"
+      },
+      "inherit_default": {
+        "N": 17
+      },
+      "inherit_knobs": {
+        "N": {
+          "label": "硅片掺杂 lg N",
+          "unit": ""
+        }
+      },
+      "show": [
+        "eff",
+        "watt"
+      ],
+      "score": {
+        "eff": 1.0
+      },
+      "module_loss": 0.92,
+      "area_m2": 1.6,
+      "laws": [
+        {
+          "text": "组件效率 ≈ 电池效率 × 0.92（玻璃反射、串联电阻、片间空隙）",
+          "tag": "简化模型",
+          "source": "green1982"
+        },
+        {
+          "text": "标准测试条件 1000 W/m²：1.6 m² 组件功率 = 效率 × 1600 W",
+          "tag": "近似精确",
+          "source": ""
+        }
+      ]
+    }
+  }
+}

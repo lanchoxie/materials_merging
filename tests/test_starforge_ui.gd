@@ -54,7 +54,7 @@ func _run() -> void:
 	check(s.coins>coins,"selling pays coins")
 	s.industry.items["steel_bit"]=1; panel._tab("gear"); await process_frame
 	button(panel,"装备到星球").pressed.emit(); await process_frame
-	check(s.industry.bit=="steel_bit" and is_equal_approx(s.planet.v2.nature.pick_hv,7.4),"the gear tab equips the bit for the planet")
+	check(s.industry.bit=="steel_bit" and is_equal_approx(s.planet.v2.nature.pick_hv,s.industry.gear_hv("steel_bit")),"the gear tab equips the bit for the planet")
 	game._xp_pop(); check(s.industry.pending_xp==0,"XP pops are consumed by the top bar")
 	# v0.35: the 科研小镇 晋升 tab approves a promotion into a 星锻公寓 bed.
 	s.coins=30000; s.industry.plots=6; s.industry.build(s,5,"staff_housing")

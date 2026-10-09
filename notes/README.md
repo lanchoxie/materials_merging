@@ -23,6 +23,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [15-earth.md](15-earth.md) | v0.32: climate field, biomes, environment machines, warming, 环境图 |
 | [16-polish.md](16-polish.md) | v0.33: sky and shadows, shaded hands and tools, chibi residents, rigged planet creatures, water shader |
 | [22-incidents-specimens.md](22-incidents-specimens.md) | v0.36: data-driven era framework, storms/floods/droughts with warnings and preparation, PVC pipes, 标本图鉴 |
+| [23-silicon-materials.md](23-silicon-materials.md) | v0.37: Si/Ca/P and apatite, MP rebuild, material property model v1 (knobs, lots, laws, test bench), inorganic works, silicon foundry |
 | [21-home-market.md](21-home-market.md) | v0.35: promotion pipeline (service years, 延毕, approval), 星锻公寓, senior staff, 未来家居工坊, rubber, contracts + airship |
 | [20-material-model.md](20-material-model.md) | design: continuous material properties from real anchors + simplified laws (doping, processing), test bench, gear mapping; v0.37 → v0.43 |
 | [19-starforge.md](19-starforge.md) | v0.34: 星锻岛 — 岛主 XP bar, 工业信用, deck plots, metallurgy and polymer works, trade hub, steel drill bit, Blender pipeline |

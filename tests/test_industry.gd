@@ -74,7 +74,7 @@ func _initialize() -> void:
 	ind.start(s,0,"steel_bit"); ind.tick(s,60.0)
 	check(ind.equip("steel_bit").contains("已装备"),"the steel bit can be equipped")
 	s.sync_gear()
-	check(is_equal_approx(s.planet.v2.nature.pick_hv,7.4) and s.planet.v2.nature.pick_name=="碳钢钻头","the bit sets the planet dig hardness")
+	check(is_equal_approx(s.planet.v2.nature.pick_hv,ind.gear_hv("steel_bit")) and s.planet.v2.nature.pick_hv>5.43 and s.planet.v2.nature.pick_name=="碳钢钻头","the bit sets the planet dig hardness")
 	check(ind.sell(s,"steel_bit",1).contains("不能卖"),"the equipped bit cannot be sold")
 	# --- Save round trip and validation.
 	var data=ind.serialize(); var again=Industry.new()

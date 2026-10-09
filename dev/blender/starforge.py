@@ -190,4 +190,50 @@ def airship():
         cyl(0.1, 0.05, (-0.37, s * 0.45, -0.8), mat("jet", CYAN, emit=4.0), rot=(0, math.pi / 2, 0))
     export("airship")
 
-for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship): build()
+# --- v0.37 材料测试台 Test Bench: lab block with a Vickers indenter column and a glowing readout.
+def test_bench():
+    clear(); plinth(w=2.4, d=2.4, accent="9fe7ff")
+    white = mat("white", "e6ebf0", metal=0.2, rough=0.35); gm = mat("gun", GUN, metal=0.6, rough=0.45)
+    box((1.8, 1.0, 0.9), (0, 0.35, 0.63), white)
+    box((1.82, 1.02, 0.06), (0, 0.35, 1.1), gm)
+    cyl(0.09, 1.3, (-0.45, 0.35, 1.75), mat("steel", STEEL, metal=0.85, rough=0.3), verts=10)
+    box((0.5, 0.36, 0.32), (-0.45, 0.35, 2.3), gm)
+    cyl(0.05, 0.3, (-0.45, 0.35, 1.3), mat("tip", "9fe7ff", emit=4.0), r2=0.0)
+    box((0.7, 0.05, 0.45), (0.45, -0.15, 1.45), mat("screen", "9fe7ff", emit=3.0), rot=(0.25, 0, 0))
+    box((0.3, 0.3, 0.3), (0.55, 0.45, 1.28), mat("sample", "c98b4a", metal=0.7, rough=0.3))
+    holo_logo(2.9, "9fe7ff"); export("test_bench")
+
+# --- v0.37 无机材料厂 Inorganic Works: rotary cement kiln on piers, glass furnace with a molten glow.
+def inorganic_works():
+    clear(); plinth(accent="ff9a5c")
+    gm = mat("gun", GUN, metal=0.6, rough=0.45); clay = mat("clay", "c98a5a", rough=0.8)
+    cyl(0.32, 2.3, (0, 0.6, 0.95), mat("kiln", "9aa1aa", metal=0.5, rough=0.45), verts=14, rot=(0, math.pi / 2 - 0.12, 0))
+    for x in (-0.7, 0.0, 0.7): box((0.18, 0.35, 0.6 + x * 0.1), (x, 0.6, 0.45), gm)
+    for x in (-0.4, 0.4): torus(0.36, 0.04, (x, 0.6, 0.95 - x * 0.12), mat("ring", "ff9a5c", emit=3.0), rot=(0, math.pi / 2, 0), seg=16)
+    box((1.1, 0.8, 0.8), (-0.45, -0.55, 0.58), clay)
+    box((1.12, 0.82, 0.12), (-0.45, -0.55, 1.03), gm)
+    box((0.5, 0.06, 0.28), (-0.45, -0.97, 0.5), mat("melt", HOT, emit=6.0))
+    cyl(0.14, 1.4, (-0.85, -0.3, 1.7), gm, verts=8)
+    cyl(0.3, 0.9, (0.7, -0.55, 0.65), mat("silo", "d9dee5", metal=0.3, rough=0.4), verts=12)
+    box((0.5, 0.5, 0.04), (0.7, -0.55, 1.12), mat("pane", "bfe6ef", metal=0.1, rough=0.05))
+    holo_logo(2.8, "ff9a5c"); export("inorganic_works")
+
+# --- v0.37 硅材料厂 Silicon Foundry: clean-room box, Czochralski puller tower, a tilted solar array.
+def silicon_works():
+    clear(); plinth(accent="8fd3ff")
+    white = mat("white", "eef1f4", metal=0.2, rough=0.3); gm = mat("gun", GUN, metal=0.6, rough=0.45)
+    box((1.4, 1.2, 0.9), (-0.45, 0.4, 0.63), white)
+    box((1.42, 0.05, 0.3), (-0.45, -0.21, 0.8), mat("window", "8fd3ff", emit=2.5))
+    cyl(0.32, 0.7, (0.75, 0.55, 0.55), mat("crucible", "c9ced6", metal=0.7, rough=0.3), verts=14)
+    cyl(0.12, 1.5, (0.75, 0.55, 1.6), gm, verts=10)
+    cyl(0.16, 0.5, (0.75, 0.55, 1.05), mat("ingot", "7d8590", metal=0.9, rough=0.2), verts=12)
+    torus(0.34, 0.03, (0.75, 0.55, 0.92), mat("glow", "8fd3ff", emit=4.0), seg=16)
+    for i in range(3):
+        box((0.62, 0.4, 0.03), (-0.75 + i * 0.66, -0.75, 0.55), mat("cell", "2d3f73", metal=0.3, rough=0.15), rot=(0.55, 0, 0))
+        box((0.64, 0.02, 0.02), (-0.75 + i * 0.66, -0.75, 0.66), mat("busbar", "c9ced6", metal=0.9))
+    holo_logo(3.0, "8fd3ff"); export("silicon_works")
+
+import sys
+only = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship, test_bench, inorganic_works, silicon_works):
+    if not only or build.__name__ in only: build()

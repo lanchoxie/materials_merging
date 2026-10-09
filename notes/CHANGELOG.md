@@ -30,6 +30,24 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.37.0 "Silicon & Materials" (硅与材料)
+Industry release. Full notes: [23-silicon-materials.md](23-silicon-materials.md).
+- **Si, P and Ca.** 19 elements. Apatite (Ca₅(PO₄)₃F) is the phosphorus ore. The refinery gains three real routes: an
+  arc furnace for Si, Davy's molten-salt electrolysis for Ca, and Wöhler's electric furnace for P.
+- **Index rebuild.** Materials Project now has 2 733 crystals (was 1 835), adding Poisson's ratio and refractive index.
+  Every old id is kept. PubChem gains 10 Si/P molecules (116 in total).
+- **Material property model v1.** Steel carbon, temper temperature, bronze tin, duralumin ageing time and Al-Li lithium
+  are sliders. Properties follow continuous textbook laws with sweet spots and trade-offs, and each law is shown with its
+  tag and source. Products are lots with ±3 % scatter. A new **材料测试台** measures a lot, and the report raises its price.
+  The drill bit now cuts with its modelled edge hardness, so a brittle bit chips.
+- **无机材料厂.** Soda-lime glass (Na₂O slider: faster melting vs durability), cement (after making CaO), tiles, and
+  superphosphate (after making H₃PO₄). Fertiliser goes to Earth for +12 % nutrients.
+- **硅材料厂.** Siemens polysilicon (after making SiHCl₃), P-doped wafers (a doping slider with Masetti mobility and an
+  efficiency sweet spot near 1 Ω·cm), and solar panels that add power to the island grid.
+- **Other.** A 沙漠光伏电站 buyer. Blender models for three new buildings. A 测试版 「硅钙磷原料包」.
+- **UI fixes.** The deck build buttons and the refinery titles now wrap.
+- **Tests.** New: `test_material_model` (34 checks) and `test_silicon` (35).
+
 ## v0.36.0 "Weather & Specimens" (天气与标本)
 Planet release. Full notes: [22-incidents-specimens.md](22-incidents-specimens.md).
 - **Era framework.** Requirements and weather now come from data per era. Later eras get more frequent and harsher weather.

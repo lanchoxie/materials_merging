@@ -1626,9 +1626,20 @@ func lay_pipe() -> String:
 	if int(industry.items.get("pvc",0))<need: return "需要星锻岛高分子工厂做的 PVC 管材 ×%d" % need
 	var message: String=planet.v2.incidents.lay_pipe()
 	if message.begins_with("铺设"):
-		industry.items["pvc"]=int(industry.items.pvc)-need
-		if int(industry.items.pvc)<=0: industry.items.erase("pvc")
+		industry.take_item("pvc",need)
 	return message
+
+## v0.37: superphosphate from 星锻岛 raises the nutrients of every Earth region that has crops.
+func fertilize() -> String:
+	if int(industry.items.get("fertilizer",0))<1: return "需要星锻岛无机材料厂做的过磷酸钙磷肥"
+	var v=planet.v2; var gain=float(Industry.rules().fertilizer.nutrients); var touched=[]
+	for id in v.world.regions:
+		var region=v.world.regions[id]
+		if not region.get("crops",[]).is_empty() and float(region.nutrients)<1.0:
+			region.nutrients=minf(1.0,float(region.nutrients)+gain); touched.append(str(region.get("name",id)))
+	if touched.is_empty(): return "地球上有作物的地区养分已满，暂时不用施肥"
+	industry.take_item("fertilizer",1)
+	return "磷肥送到地球：%s 养分 +%d%%" % ["、".join(touched),int(round(gain*100))]
 
 ## v0.35: the player approves a graduate's promotion to 星锻岛.
 func campus_promote(id: int) -> String:

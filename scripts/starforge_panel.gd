@@ -6,6 +6,7 @@ signal dismissed
 signal acted(message: String)
 const UI=preload("res://scripts/ui.gd")
 const View=preload("res://scripts/starforge_view.gd")
+const Model=preload("res://scripts/material_model.gd")
 var state
 var view
 var header: Label
@@ -17,6 +18,7 @@ var section="deck"
 var fingerprint=""
 var clock=0.0
 var bars: Array=[]
+var laws_open: Dictionary={}   # recipe id -> showing its property laws
 
 func setup(model) -> void:
 	state=model
@@ -46,7 +48,7 @@ func _act(message: String) -> void:
 
 func _fingerprint() -> String:
 	var ind=state.industry
-	return JSON.stringify([section,ind.unlocked,ind.rank(),ind.credits,ind.plots,ind.buildings.keys(),ind.buildings.values().map(func(b): return [b.kind,b.level,b.jobs.size()]),ind.items,ind.bit,int(state.coins)/50,state.materials,state.element_inventory.hash(),state.storage.batches.size(),
+	return JSON.stringify([section,ind.unlocked,ind.rank(),ind.credits,ind.plots,ind.buildings.keys(),ind.buildings.values().map(func(b): return [b.kind,b.level,b.jobs.size()]),ind.items,ind.lots.hash(),ind.bit,int(state.coins)/50,state.materials,state.element_inventory.hash(),state.storage.batches.size(),
 		ind.staff,ind.furnished,ind.contracts.map(func(c): return c.id),ind.airship.is_empty(),ind.arrears>0,ind.candidates(state).map(func(c): return [c.ready,c.delayed]),state.campus.people.size()])
 
 func _process(dt: float) -> void:
@@ -121,7 +123,8 @@ func _deck() -> void:
 			if int(bld.level)<int(spec.max_level):
 				plot.add_child(UI.button("升级 · %d金币" % int(spec.upgrade_costs[int(bld.level)-1]),func(): _act(ind.upgrade(state,i))))
 		else:
-			var choices=UI.row(plot,6)
+			# v0.37: eight kinds of building — the build buttons wrap instead of widening the panel.
+			var choices=HFlowContainer.new(); choices.add_theme_constant_override("h_separation",6); choices.add_theme_constant_override("v_separation",6); plot.add_child(choices)
 			for kind in R.buildings:
 				var spec: Dictionary=R.buildings[kind]; var err=ind.build_error(state,i,kind)
 				var btn=UI.button("建%s\n%d金币+%d信用" % [spec.name,int(spec.cost.coins),int(spec.cost.credits)],func(): view.selected=i; _act(ind.build(state,i,kind)))
@@ -138,24 +141,60 @@ func _factories() -> void:
 			var r: Dictionary=R.recipes[job.recipe]
 			card.add_child(UI.label("▶ %s" % r.name,15,UI.TEXT))
 			var bar=ProgressBar.new(); bar.max_value=1.0; bar.show_percentage=false; bar.custom_minimum_size=Vector2(0,8); card.add_child(bar)
-			var total=float(r.seconds)
+			var total=ind.job_seconds(job)
 			bars.append([bar,func(): return 1.0-float(job.left)/total])
 		for id in R.recipes:
 			var r: Dictionary=R.recipes[id]
 			if r.building!=bld.kind: continue
 			var q=ind.quote(state,plot,id)
 			var line=VBoxContainer.new(); line.add_theme_constant_override("separation",2); card.add_child(line)
-			var ins=[]
-			for k in r.inputs: ins.append("%s×%d" % [ind.input_name(state,k),int(r.inputs[k])])
+			var ins=[]; var amounts=ind.inputs(id)
+			for k in amounts: ins.append("%s×%d" % [ind.input_name(state,k),int(amounts[k])])
 			var outs=[]
 			for k in r.outputs: outs.append("%s×%d" % [R.items[k].name,int(r.outputs[k])])
 			line.add_child(UI.label("%s%s" % ["🔒 " if q.get("locked",false) else "",r.name],16,UI.MUTED if q.get("locked",false) else UI.MINT))
 			line.add_child(UI.paragraph("%s → %s\n%s · %s" % ["＋".join(ins),"＋".join(outs),r.method,r.equation],12))
+			if r.has("model") and not q.get("locked",false): _knobs(line,id,str(r.model))
 			var go=UI.button("投料" if q.ready else str(q.message),func(): _act(ind.start(state,plot,id)))
 			go.disabled=not q.ready; go.add_theme_font_size_override("font_size",13); line.add_child(go)
 	if not any:
 		var c=_card("还没有工厂")
 		c.add_child(UI.paragraph("在「甲板」页选一块地，建冶金工厂或高分子工厂。",15))
+
+## v0.37 material model: one slider per knob and a live prediction of the lot's properties.
+func _knobs(line: VBoxContainer,recipe_id: String,fam: String) -> void:
+	var ind=state.industry; var f=Model.family(fam)
+	var predict=UI.paragraph("",13,UI.GOLD)
+	var refresh=func():
+		var k=ind.recipe_knobs(recipe_id)
+		for knob in f.get("inherit",{}):
+			var mean=ind._take_lots("item:"+str(f.inherit[knob]),int(ind.inputs(recipe_id).get("item:"+str(f.inherit[knob]),1)),true)
+			if mean.has(knob): k[knob]=float(mean[knob])
+		predict.text="预测：%s\n%s" % [Model.describe(fam,k,1.0,false),"（%s）" % Model.knob_text(fam,k)]
+	for knob in f.get("knobs",{}):
+		var spec: Dictionary=f.knobs[knob]; var log_scale=bool(spec.get("log",false))
+		var row=UI.row(line,6)
+		row.add_child(UI.label(str(spec.label),13,UI.TEXT))
+		var slider=HSlider.new(); slider.size_flags_horizontal=Control.SIZE_EXPAND_FILL; slider.custom_minimum_size=Vector2(220,32)
+		var lo=float(spec.min); var hi=float(spec.max); var now=float(ind.recipe_knobs(recipe_id)[knob])
+		if log_scale: slider.min_value=log(lo); slider.max_value=log(hi); slider.step=0.01; slider.value=log(now)
+		else: slider.min_value=lo; slider.max_value=hi; slider.step=float(spec.step); slider.value=now
+		var shown=UI.label("",13,UI.MINT); shown.custom_minimum_size=Vector2(86,0)
+		var show_value=func(v: float): shown.text="%s %s" % [String.num(v,2) if v<10.0 else str(int(round(v))),str(spec.unit)]
+		show_value.call(now)
+		slider.value_changed.connect(func(x: float):
+			var v=exp(x) if log_scale else x
+			ind.set_knob(recipe_id,knob,v); show_value.call(v); refresh.call())
+		row.add_child(slider); row.add_child(shown)
+	refresh.call(); line.add_child(predict)
+	var open=bool(laws_open.get(recipe_id,false))
+	var toggle=UI.button("收起规律" if open else "规律（为什么是这个数）",func(): laws_open[recipe_id]=not open; _redraw())
+	toggle.add_theme_font_size_override("font_size",12); line.add_child(toggle)
+	if open:
+		var src: Dictionary={}
+		for s in state.industry.rules().sources: src[str(s.id)]=str(s.cite)
+		for law in f.get("laws",[]):
+			line.add_child(UI.paragraph("· %s（%s）%s" % [law.text,law.tag,"\n　来源："+src.get(str(law.source),"") if src.has(str(law.source)) else ""],12,UI.LILAC))
 
 func _staff() -> void:
 	var ind=state.industry; var R=ind.rules()
@@ -195,6 +234,7 @@ func _market() -> void:
 		var n=int(ind.items.get(id,0))
 		if n<1: continue
 		any=true; var it: Dictionary=R.items[id]
+		if ind.modelled(id)!="": _lot_rows(id); continue
 		var row=_card("%s × %d" % [it.name,n])
 		row.add_child(UI.paragraph("当前出价 %d 金币（基础 %d · 需求 %d%%）" % [ind.price(id),int(it.sell),int(100*(1.0-float(ind.saturation.get(id,0.0))))],13))
 		var h=UI.row(row,6)
@@ -202,6 +242,23 @@ func _market() -> void:
 			var b=UI.button("卖 %d" % k,func(): _act(ind.sell(state,id,k))); b.disabled=n-(1 if ind.bit==id else 0)<k; h.add_child(b)
 		if it.has("furniture"): h.add_child(UI.button("送回浮岛 Ⅰ 摆放",func(): _act(ind.ship_home(state,id))))
 	if not any: hub.add_child(UI.paragraph("仓库里还没有工业品。去「生产」页投料吧。",15))
+
+## v0.37: a modelled item lists its lots, each with its properties, price and a test-bench button.
+func _lot_rows(id: String) -> void:
+	var ind=state.industry; var it: Dictionary=ind.rules().items[id]; var fam=ind.modelled(id)
+	var list: Array=ind.lots_of(id)
+	var card=_card("%s × %d · %d 个批次" % [it.name,int(ind.items.get(id,0)),list.size()])
+	for i in range(list.size()):
+		var lot: Dictionary=list[i]
+		card.add_child(UI.label("批次 %d × %d · %s%s" % [i+1,int(lot.n),Model.knob_text(fam,lot.k),"  · 已检测 ✓" if lot.m else ""],14,UI.MINT if lot.m else UI.TEXT))
+		card.add_child(UI.paragraph("%s · 出价 %d 金币" % [Model.describe(fam,lot.k,float(lot.q),bool(lot.m)),ind.lot_price(id,i)],13))
+		var h=UI.row(card,6); var spare=ind.lot_spare(id,i)
+		var one=UI.button("卖 1",func(): _act(ind.sell(state,id,1,i))); one.disabled=spare<1; h.add_child(one)
+		if spare>1: h.add_child(UI.button("全卖 %d" % spare,func(): _act(ind.sell(state,id,spare,i))))
+		if not lot.m:
+			var err=ind.measure_error(state,id,i)
+			var m=UI.button("送检 · %d金币" % int(Model.rules().measure.coins) if err.is_empty() else err,func(): _act(ind.measure(state,id,i)))
+			m.disabled=not err.is_empty(); m.add_theme_font_size_override("font_size",13); h.add_child(m)
 
 func _contracts() -> void:
 	var ind=state.industry
@@ -227,10 +284,23 @@ func _gear() -> void:
 	var ind=state.industry; var R=ind.rules()
 	var card=_card("星球装备")
 	card.add_child(UI.paragraph("工业钻头装上后，星球上的采掘镐用它的硬度：钻头比岩石硬就挖得快。制造台做的晶体镐更硬时，仍然用更硬的那把。\n现在星球采掘：%s · %.2f GPa" % [state.planet.v2.nature.pick_name,float(state.planet.v2.nature.pick_hv)],14))
+	# v0.37: solar panels feed the island grid; superphosphate goes down to Earth's fields.
+	var sun=_card("岛心电网 · 太阳能板 %d/%d" % [ind.solar.size(),int(R.solar.max)],Color("8fd3ff"))
+	sun.add_child(UI.paragraph("硅材料厂做的太阳能板装在岛心：每 20%% 的效率给电网 +1。现在太阳能 +%d，电网 %d/%d。" % [ind.solar_power(),ind.power_use(),ind.power_cap()],14))
+	var panel_btn=UI.button("装一块（自动挑效率最高的批次）· 仓库 %d" % int(ind.items.get("solar_panel",0)),func(): _act(ind.install_solar()))
+	panel_btn.disabled=int(ind.items.get("solar_panel",0))<1 or ind.solar.size()>=int(R.solar.max); sun.add_child(panel_btn)
+	var farm=_card("送往地球 · 磷肥",Color("cfd8a0"))
+	farm.add_child(UI.paragraph("无机材料厂做的过磷酸钙磷肥：一份让地球上每块有作物的地区养分 +%d%%。仓库 %d 份。" % [int(float(R.fertilizer.nutrients)*100),int(ind.items.get("fertilizer",0))],14))
+	var fert=UI.button("施一份磷肥",func(): _act(state.fertilize()))
+	fert.disabled=int(ind.items.get("fertilizer",0))<1; farm.add_child(fert)
 	for id in R.items:
 		var it: Dictionary=R.items[id]
 		if not it.has("gear"): continue
 		var row=_card("%s × %d%s" % [it.name,int(ind.items.get(id,0)),"（已装备）" if ind.bit==id else ""])
-		row.add_child(UI.paragraph("硬度 %.1f GPa · %s" % [float(it.gear.hv),it.gear.note],13))
+		if ind.modelled(id)!="" and ind.best_lot(id)>=0:
+			var lot: Dictionary=ind.lots[id][ind.best_lot(id)]
+			var head="刃口硬度 %.2f GPa（已检测）" % ind.gear_hv(id) if lot.m else "刃口硬度约 %.2f GPa（未检测：送检后显示实测值）" % float(Model.props(ind.modelled(id),lot.k).edge)
+			row.add_child(UI.paragraph("%s\n最好的一批：%s\n%s\n%s" % [head,Model.knob_text(ind.modelled(id),lot.k),Model.describe(ind.modelled(id),lot.k,float(lot.q),bool(lot.m)),it.gear.note],13))
+		else: row.add_child(UI.paragraph("硬度 %.1f GPa · %s" % [float(it.gear.hv),it.gear.note],13))
 		var b=UI.button("卸下" if ind.bit==id else "装备到星球",func(): _act(ind.equip("" if ind.bit==id else id)); state.sync_gear(); _redraw())
 		b.disabled=int(ind.items.get(id,0))<1 and ind.bit!=id; row.add_child(b)

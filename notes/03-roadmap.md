@@ -89,7 +89,10 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   星锻公寓, senior staff, home goods studio, contracts + airship.
 - ✅ v0.36 "Weather & Specimens" (tag `v0.36.0`; see [22-incidents-specimens.md](22-incidents-specimens.md)): era framework in data,
   storm/flood/drought incidents with a day of warning and measured preparation, PVC pipes, 标本图鉴.
-- Next: v0.37 industry — Si/Ca/P, MP refetch (more fields), ceramics/glass, silicon foundry, material property model v1.
+- ✅ v0.37 "Silicon & Materials" (tag `v0.37.0`; see [23-silicon-materials.md](23-silicon-materials.md)): Si/Ca/P + apatite,
+  MP rebuild (2 733 crystals, Poisson + n), material property model v1 (knobs, lots, laws, 材料测试台), inorganic works,
+  silicon foundry, solar grid power, fertiliser to Earth.
+- Next: v0.38 industry — chip fab + packaging (doped Si devices, LEDs from the band gap and alloy bowing).
 - Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
   more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,
   and the remaining eras.

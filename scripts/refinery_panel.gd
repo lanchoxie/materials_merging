@@ -145,7 +145,9 @@ func _processes() -> void:
 		var p: Dictionary=r.process(id); var q=r.quote(state,id)
 		var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(UI.INNER,12,UI.MINT if q.ready else UI.LINE)); processes.add_child(card)
 		var c=UI.column(card,4)
-		c.add_child(UI.label("%s · %s" % [p.name,p.method],18,UI.TEXT))
+		var title=UI.label("%s · %s" % [p.name,p.method],18,UI.TEXT)
+		# v0.37: longer route names (Wöhler furnace, molten-salt calcium) wrap instead of widening the column.
+		title.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; title.custom_minimum_size.x=360; c.add_child(title)
 		var inputs=[]
 		for m in p.inputs:
 			var have=int(stock.get(m,0))

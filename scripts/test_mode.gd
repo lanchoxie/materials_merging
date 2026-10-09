@@ -63,6 +63,18 @@ static func open_starforge(s,credits: int) -> String:
 	ind.credits=mini(ind.credits+credits,int(ind.rules().credits.max)); ind.gain(500)
 	return "测试：星锻岛已开放 · 工业信用 +%d · 岛主经验 +500" % credits
 
+## v0.37: Si/Ca/P elements, the new ores from the planet, and the compounds that unlock the kiln
+## and foundry recipes (CaO, SiHCl₃, Si, H₃PO₄), so every v0.37 recipe can be tried at once.
+static func silicon_kit(s) -> String:
+	for el in ["Si","Ca","P","Na","H","Cl","S","O"]: s.element_inventory[el]=int(s.element_inventory.get(el,0))+30
+	var m: Dictionary=s.planet.v2.nature.minerals
+	for id in ["sand","limestone","clay","apatite"]: m[id]=int(m.get(id,0))+30
+	var Industry=preload("res://scripts/industry.gd")
+	for f in ["CaO","Cl3HSi","Si","H3O4P"]:
+		var keys: Array=Industry._keys_for(f)
+		if not keys.is_empty(): s.index_found[keys[0]]=true
+	return "测试：硅钙磷原料包 · 元素各 +30，石英砂/石灰岩/黏土/磷灰石各 +30，CaO、SiHCl₃、Si、H₃PO₄ 已记入索引"
+
 ## v0.35: every engineer and 博士生 reaches their service years (延毕 rolls still apply).
 static func finish_service(s) -> String:
 	var ind=s.industry; var n=0

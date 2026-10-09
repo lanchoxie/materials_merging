@@ -1,6 +1,7 @@
 # 20 · Material property model: continuous properties from real anchors (design)
 
-Status: **design, agreed direction** (user, 2026-10-09). This is not built yet. It is the design goal for the later phase:
+Status: **design, agreed direction** (user, 2026-10-09). **v1 built in v0.37** (see [23-silicon-materials.md](23-silicon-materials.md)):
+steel, bronze, duralumin, Al-Li, glass and P-doped Si; gear beyond the drill bit follows in v0.43. It is the design goal for the later phase:
 first the v0.37 material-model release, then v0.43 gear, which builds on it.
 
 ## The user's requirement

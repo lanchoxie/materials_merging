@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "note": "星锻岛 (v0.34–v0.35). Equations, processes and hardness are real (sources); prices, seconds, power, yields, XP, wages, service years and costs are game rules (游戏数值).",
   "rank": {
     "base": 60,
@@ -156,6 +156,63 @@
       "capacity_per_level": 2,
       "no_licence": true,
       "story": "错落的胶囊公寓。从浮岛 Ⅰ 晋升来的高级工程师和研发博士住在这里；摆上家具，他们干活更起劲。"
+    },
+    "test_bench": {
+      "name": "材料测试台",
+      "en": "Materials Test Bench",
+      "accent": "9fe7ff",
+      "model": "test_bench",
+      "cost": {
+        "coins": 1500,
+        "credits": 8
+      },
+      "power": 1,
+      "xp": 20,
+      "max_level": 1,
+      "upgrade_costs": [],
+      "speed_per_level": 0.0,
+      "queue_base": 0,
+      "story": "维氏硬度计、冲击试验机和密度天平。送检一个批次，模型预测的误差带收窄成实测值；带质检报告的货卖得更好。"
+    },
+    "inorganic_works": {
+      "name": "无机材料厂",
+      "en": "Inorganic Works",
+      "accent": "ff9a5c",
+      "model": "inorganic_works",
+      "cost": {
+        "coins": 4500,
+        "credits": 30
+      },
+      "power": 3,
+      "xp": 30,
+      "max_level": 3,
+      "upgrade_costs": [
+        8000,
+        18000
+      ],
+      "speed_per_level": 0.25,
+      "queue_base": 2,
+      "story": "玻璃熔炉、水泥回转窑和瓷砖隧道窑：石英砂、石灰石、黏土在一千多度下变成玻璃、水泥和瓷；磷灰石用硫酸分解成磷肥。"
+    },
+    "silicon_works": {
+      "name": "硅材料厂",
+      "en": "Silicon Foundry",
+      "accent": "8fd3ff",
+      "model": "silicon_works",
+      "cost": {
+        "coins": 8000,
+        "credits": 50
+      },
+      "power": 4,
+      "xp": 40,
+      "max_level": 3,
+      "upgrade_costs": [
+        12000,
+        26000
+      ],
+      "speed_per_level": 0.25,
+      "queue_base": 2,
+      "story": "西门子法把冶金级硅提纯到 99.9999999%，直拉法拉成单晶并掺磷，切成硅片，再和玻璃、硬铝框组装成太阳能板。"
     }
   },
   "licences": {
@@ -166,7 +223,7 @@
     "carbon_steel": {
       "name": "碳钢锭",
       "building": "metal_works",
-      "method": "碱性氧气转炉 · 脱碳到碳含量 <2.1 wt%",
+      "method": "碱性氧气转炉 · 碳含量可调（< 2.1 wt% 为钢）",
       "inputs": {
         "el:Fe": 6,
         "el:C": 1
@@ -179,12 +236,13 @@
       },
       "seconds": 40,
       "equation": "Fe + C → 铁素体 + Fe₃C（渗碳体）",
-      "source": "worldsteel"
+      "source": "worldsteel",
+      "model": "carbon_steel"
     },
     "bronze": {
       "name": "锡青铜",
       "building": "metal_works",
-      "method": "铜锡合熔 · 约 Cu-12Sn",
+      "method": "铜锡合熔 · 锡含量可调",
       "inputs": {
         "el:Cu": 6,
         "el:Sn": 1
@@ -197,7 +255,8 @@
       },
       "seconds": 35,
       "equation": "Cu + Sn → α-青铜 + Cu₃Sn 析出",
-      "source": "abtew2000"
+      "source": "abtew2000",
+      "model": "tin_bronze"
     },
     "solder": {
       "name": "锡铅焊料",
@@ -218,7 +277,7 @@
     "duralumin": {
       "name": "硬铝",
       "building": "metal_works",
-      "method": "Al-4Cu 固溶 + 时效硬化",
+      "method": "Al-4Cu 固溶 + 人工时效（时效时间可调）",
       "inputs": {
         "el:Al": 9,
         "el:Cu": 1
@@ -231,12 +290,13 @@
       },
       "seconds": 45,
       "equation": "Al(Cu) 过饱和固溶体 → θ'-Al₂Cu 析出强化",
-      "source": "rioja2012"
+      "source": "rioja2012",
+      "model": "duralumin"
     },
     "al_li": {
       "name": "铝锂合金",
       "building": "metal_works",
-      "method": "Al-Li 2195 型 · 更轻更刚",
+      "method": "Al-Li 2195 型 · 锂含量可调",
       "inputs": {
         "el:Al": 9,
         "el:Li": 1,
@@ -250,12 +310,13 @@
       },
       "seconds": 55,
       "equation": "Al + Li → δ'-Al₃Li 析出",
-      "source": "rioja2012"
+      "source": "rioja2012",
+      "model": "al_li"
     },
     "steel_bit": {
       "name": "碳钢钻头",
       "building": "metal_works",
-      "method": "碳钢锭锻造 + 淬火回火",
+      "method": "碳钢锭锻造 · 淬火 + 回火温度可调",
       "inputs": {
         "item:steel_ingot": 3
       },
@@ -266,8 +327,9 @@
         "steel_bit": 1
       },
       "seconds": 50,
-      "equation": "奥氏体 → 马氏体（淬火），硬度约 HV 750",
-      "source": "worldsteel"
+      "equation": "奥氏体 → 马氏体（淬火）→ 回火马氏体",
+      "source": "worldsteel",
+      "model": "steel_tool"
     },
     "polyethylene": {
       "name": "聚乙烯粒料",
@@ -441,6 +503,134 @@
       "seconds": 30,
       "equation": "喷涂 PTFE 后烧结；约 260 °C 以下安全使用",
       "source": "plunkett1941"
+    },
+    "soda_lime_glass": {
+      "name": "钠钙玻璃",
+      "building": "inorganic_works",
+      "method": "玻璃熔炉 · Na₂O 含量可调（钠以纯碱加入，简化）",
+      "inputs": {
+        "min:sand": 3,
+        "min:limestone": 1,
+        "el:Na": 2
+      },
+      "evidence": [],
+      "outputs": {
+        "glass": 2
+      },
+      "seconds": 40,
+      "equation": "Na₂CO₃ + CaCO₃ + 6SiO₂ → Na₂O·CaO·6SiO₂ + 2CO₂（约 1500 °C）",
+      "source": "shelby2005",
+      "model": "soda_lime_glass"
+    },
+    "cement": {
+      "name": "硅酸盐水泥",
+      "building": "inorganic_works",
+      "method": "回转窑 1450 °C 煅烧熟料 + 磨粉",
+      "inputs": {
+        "min:limestone": 3,
+        "min:clay": 1
+      },
+      "evidence": [
+        "CaO"
+      ],
+      "outputs": {
+        "cement": 3
+      },
+      "seconds": 35,
+      "equation": "CaCO₃ → CaO + CO₂；3CaO + SiO₂ → Ca₃SiO₅（阿利特，水泥强度的主要来源）",
+      "source": "taylor1997"
+    },
+    "ceramic_tile": {
+      "name": "瓷砖",
+      "building": "inorganic_works",
+      "method": "黏土 + 石英砂 · 1200 °C 隧道窑烧结",
+      "inputs": {
+        "min:clay": 3,
+        "min:sand": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "ceramic_tile": 2
+      },
+      "seconds": 30,
+      "equation": "3(Al₂O₃·2SiO₂) → 3Al₂O₃·2SiO₂（莫来石针晶）+ 4SiO₂",
+      "source": "carty1998"
+    },
+    "superphosphate": {
+      "name": "过磷酸钙磷肥",
+      "building": "inorganic_works",
+      "method": "磷灰石 + 硫酸分解（硫酸由硫、氧、氢制得，简化）",
+      "inputs": {
+        "min:apatite": 2,
+        "el:S": 2,
+        "el:O": 3,
+        "el:H": 2
+      },
+      "evidence": [
+        "H3O4P"
+      ],
+      "outputs": {
+        "fertilizer": 3
+      },
+      "seconds": 35,
+      "equation": "2Ca₅(PO₄)₃F + 7H₂SO₄ → 3Ca(H₂PO₄)₂ + 7CaSO₄ + 2HF",
+      "source": "gilmour2013"
+    },
+    "polysilicon": {
+      "name": "多晶硅（西门子法）",
+      "building": "silicon_works",
+      "method": "三氯氢硅精馏 + 氢还原沉积在硅芯上，纯度 9N",
+      "inputs": {
+        "el:Si": 4,
+        "el:H": 2,
+        "el:Cl": 3
+      },
+      "evidence": [
+        "Cl3HSi"
+      ],
+      "outputs": {
+        "polysilicon": 2
+      },
+      "seconds": 60,
+      "equation": "Si + 3HCl → SiHCl₃ + H₂；SiHCl₃ + H₂ → Si + 3HCl（约 1100 °C）",
+      "source": "omara1990"
+    },
+    "n_wafer": {
+      "name": "N 型硅片",
+      "building": "silicon_works",
+      "method": "直拉法单晶 + 磷掺杂（浓度可调）→ 线锯切片",
+      "inputs": {
+        "item:polysilicon": 2,
+        "el:P": 1
+      },
+      "evidence": [
+        "Si"
+      ],
+      "outputs": {
+        "wafer": 3
+      },
+      "seconds": 50,
+      "equation": "Si(熔体) + 微量 P → n 型单晶锭：每个 P 多一个电子",
+      "source": "sze2007",
+      "model": "n_wafer"
+    },
+    "solar_panel": {
+      "name": "太阳能板",
+      "building": "silicon_works",
+      "method": "电池片串焊 · 钢化玻璃 + EVA 层压 · 硬铝边框",
+      "inputs": {
+        "item:wafer": 2,
+        "item:glass": 1,
+        "item:duralumin": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "solar_panel": 1
+      },
+      "seconds": 45,
+      "equation": "pn 结：光子 → 电子–空穴对 → 电流",
+      "source": "green1982",
+      "model": "solar_panel"
     }
   },
   "items": {
@@ -449,14 +639,16 @@
       "icon": "ingot",
       "color": "8b95a3",
       "sell": 40,
-      "xp": 6
+      "xp": 6,
+      "model": "carbon_steel"
     },
     "bronze_ingot": {
       "name": "锡青铜锭",
       "icon": "ingot",
       "color": "c98b4a",
       "sell": 36,
-      "xp": 6
+      "xp": 6,
+      "model": "tin_bronze"
     },
     "solder": {
       "name": "焊料丝",
@@ -470,14 +662,16 @@
       "icon": "ingot",
       "color": "c8d0da",
       "sell": 58,
-      "xp": 8
+      "xp": 8,
+      "model": "duralumin"
     },
     "al_li": {
       "name": "铝锂合金板",
       "icon": "ingot",
       "color": "d9e6f2",
       "sell": 80,
-      "xp": 10
+      "xp": 10,
+      "model": "al_li"
     },
     "steel_bit": {
       "name": "碳钢钻头",
@@ -487,8 +681,9 @@
       "xp": 15,
       "gear": {
         "hv": 7.4,
-        "note": "淬火回火碳素工具钢约 HV 750 ≈ 7.4 GPa（真实量级）；比起步镐（5.43 GPa）更快挖开花岗岩"
-      }
+        "note": "硬度由碳含量和回火温度决定（材料性质模型）；太脆会崩刃"
+      },
+      "model": "steel_tool"
     },
     "pe": {
       "name": "聚乙烯粒料",
@@ -575,6 +770,60 @@
         "town": "sf_kitchen",
         "comfort": 1
       }
+    },
+    "glass": {
+      "name": "钠钙玻璃板",
+      "icon": "board",
+      "color": "bfe6ef",
+      "sell": 30,
+      "xp": 5,
+      "model": "soda_lime_glass"
+    },
+    "cement": {
+      "name": "硅酸盐水泥",
+      "icon": "pellet",
+      "color": "a7a39b",
+      "sell": 18,
+      "xp": 3
+    },
+    "ceramic_tile": {
+      "name": "瓷砖",
+      "icon": "board",
+      "color": "e9e2d4",
+      "sell": 26,
+      "xp": 4
+    },
+    "fertilizer": {
+      "name": "过磷酸钙磷肥",
+      "icon": "pellet",
+      "color": "cfd8a0",
+      "sell": 20,
+      "xp": 3,
+      "planet": "fertilizer"
+    },
+    "polysilicon": {
+      "name": "多晶硅棒",
+      "icon": "ingot",
+      "color": "7d8590",
+      "sell": 70,
+      "xp": 9
+    },
+    "wafer": {
+      "name": "N 型硅片",
+      "icon": "board",
+      "color": "3d4a6b",
+      "sell": 90,
+      "xp": 10,
+      "model": "n_wafer"
+    },
+    "solar_panel": {
+      "name": "太阳能板",
+      "icon": "board",
+      "color": "2d3f73",
+      "sell": 260,
+      "xp": 20,
+      "model": "solar_panel",
+      "solar": true
     }
   },
   "sources": [
@@ -614,6 +863,61 @@
     {
       "id": "goodyear1844",
       "cite": "Goodyear, US Patent 3,633 (1844), vulcanisation of rubber"
+    },
+    {
+      "id": "krauss2015",
+      "cite": "Krauss, Steels: Processing, Structure, and Performance, 2nd ed., ASM International (2015)"
+    },
+    {
+      "id": "hollomon1945",
+      "cite": "Hollomon & Jaffe, Time-temperature relations in tempering steel, Trans. AIME 162, 223–249 (1945)"
+    },
+    {
+      "id": "labusch1970",
+      "cite": "Labusch, A statistical theory of solid solution hardening, Phys. Status Solidi B 41, 659–669 (1970)",
+      "doi": "10.1002/pssb.19700410221"
+    },
+    {
+      "id": "polmear2017",
+      "cite": "Polmear, StJohn, Nie & Qian, Light Alloys, 5th ed., Butterworth-Heinemann (2017)"
+    },
+    {
+      "id": "appen1949",
+      "cite": "Appen, Additive calculation of glass properties (1949); see Fluegel, Glass Technol. 48, 13–30 (2007)"
+    },
+    {
+      "id": "shelby2005",
+      "cite": "Shelby, Introduction to Glass Science and Technology, 2nd ed., RSC (2005)"
+    },
+    {
+      "id": "taylor1997",
+      "cite": "Taylor, Cement Chemistry, 2nd ed., Thomas Telford (1997)"
+    },
+    {
+      "id": "carty1998",
+      "cite": "Carty & Senapati, Porcelain—raw materials, processing, phase evolution, and mechanical behavior, J. Am. Ceram. Soc. 81, 3–20 (1998)",
+      "doi": "10.1111/j.1151-2916.1998.tb02290.x"
+    },
+    {
+      "id": "gilmour2013",
+      "cite": "Gilmour, Phosphoric Acid: Purification, Uses, Technology, and Economics, CRC Press (2013)"
+    },
+    {
+      "id": "omara1990",
+      "cite": "O'Mara, Herring & Hunt, Handbook of Semiconductor Silicon Technology, Noyes (1990)"
+    },
+    {
+      "id": "sze2007",
+      "cite": "Sze & Ng, Physics of Semiconductor Devices, 3rd ed., Wiley (2007)"
+    },
+    {
+      "id": "masetti1983",
+      "cite": "Masetti, Severi & Solmi, IEEE Trans. Electron Devices 30, 764–769 (1983)",
+      "doi": "10.1109/T-ED.1983.21207"
+    },
+    {
+      "id": "green1982",
+      "cite": "Green, Solar Cells: Operating Principles, Technology and System Applications, Prentice-Hall (1982)"
     }
   ],
   "staff": {
@@ -696,7 +1000,9 @@
           "desk_board",
           "sofa_float",
           "ptfe_pan",
-          "pe"
+          "pe",
+          "glass",
+          "ceramic_tile"
         ]
       },
       {
@@ -707,7 +1013,8 @@
           "solder",
           "rubber",
           "pvc",
-          "bronze_ingot"
+          "bronze_ingot",
+          "cement"
         ]
       },
       {
@@ -727,9 +1034,32 @@
           "particleboard",
           "uf_resin",
           "steel_ingot",
-          "pvc"
+          "pvc",
+          "cement",
+          "ceramic_tile",
+          "glass",
+          "fertilizer"
+        ]
+      },
+      {
+        "name": "沙漠光伏电站",
+        "story": "新电站扩建，需要硅片、太阳能板和玻璃。",
+        "wants": [
+          "wafer",
+          "solar_panel",
+          "glass",
+          "polysilicon"
         ]
       }
     ]
+  },
+  "solar": {
+    "max": 12,
+    "power_per_eff": 0.2,
+    "note": "每装一块板，岛心电网 +（效率/20%）份；向下取整后加到电网上限"
+  },
+  "fertilizer": {
+    "nutrients": 0.12,
+    "note": "一份磷肥让地球上每块有作物的地区养分 +12%（上限 100%）"
   }
 }
