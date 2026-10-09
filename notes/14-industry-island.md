@@ -57,7 +57,7 @@ User request (2026-10-01, condensed):
 | v0.34 | industry | 星锻岛 opens: XP bar, 工业信用 + fusing, bridge/switcher, plots, metal + polymer works, trade hub, Blender pipeline |
 | v0.35 | industry | Promotion pipeline (service years, 延毕, approval), island Ⅱ housing, home goods, market |
 | v0.36 | planet | Specimens (标本) + era framework and first incidents (storms, floods, droughts) |
-| v0.37 | industry | Si/Ca/P: real minerals, refinery routes, MP rebuild; ceramics/glass/cement; silicon foundry |
+| v0.37 | industry | Si/Ca/P: real minerals, refinery routes, MP rebuild (more fields); ceramics/glass/cement; silicon foundry; **material property model v1** (continuous properties from composition, doping and processing; test bench; see [20-material-model.md](20-material-model.md)) |
 | v0.38 | industry | Chip fab + packaging (P-doped Si, LEDs from the band gap) |
 | v0.39 | planet | 冰河期 + time gate; harsher incidents |
 | v0.40 | industry | Energy: batteries (lead-acid → LiFePO₄), energy park |

@@ -22,6 +22,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [14-industry-island.md](14-industry-island.md) | Phase 2 plan: Starforge Isle industry chain (materials → chips → energy → vehicles → gear → space) |
 | [15-earth.md](15-earth.md) | v0.32: climate field, biomes, environment machines, warming, 环境图 |
 | [16-polish.md](16-polish.md) | v0.33: sky and shadows, shaded hands and tools, chibi residents, rigged planet creatures, water shader |
+| [20-material-model.md](20-material-model.md) | design: continuous material properties from real anchors + simplified laws (doping, processing), test bench, gear mapping; v0.37 → v0.43 |
 | [19-starforge.md](19-starforge.md) | v0.34: 星锻岛 — 岛主 XP bar, 工业信用, deck plots, metallurgy and polymer works, trade hub, steel drill bit, Blender pipeline |
 | [18-terrain-caves.md](18-terrain-caves.md) | v0.33.2: hills, ridged mountains, river valley, karst caves with mouths, legacy pads for old far builds, hill-shaded 世界地图 |
 | [17-testbuild-earth-ux.md](17-testbuild-earth-ux.md) | v0.33.1: 测试版 build and panel, depot by E, era action rows, 微缩器 preview, god view follows you, beacons, trail, 世界地图, sky-blue fixes |
