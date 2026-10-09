@@ -45,7 +45,7 @@ func _initialize() -> void:
 
 func _geology() -> void:
 	var all: Dictionary=Geology.rules().materials
-	check(all.size()==18,"eighteen real ground materials are defined")
+	check(all.size()==19,"nineteen real ground materials are defined")
 	for id in all:
 		var m: Dictionary=all[id]
 		var plain=str(m.formula)

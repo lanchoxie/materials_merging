@@ -39,6 +39,8 @@ static func natural(c: Vector3i,top: float,river: bool) -> String:
 		if c.y<=-4 and c.y>=-7 and _blob(c,Vector3i(6,1,6),41,0.16): return "coal"
 		if _blob(c,Vector3i(2,3,2),51,0.035): return "galena"
 		if _blob(c,Vector3i(2,3,2),61,0.035): return "fluorite"
+		# v0.37: sedimentary phosphorite, the phosphorus ore (Ca₅(PO₄)₃F).
+		if c.y<=-6 and _blob(c,Vector3i(3,2,3),121,0.04): return "apatite"
 		return "limestone"
 	if c.y>-22:
 		if c.y<-17 and _blob(c,Vector3i(2,2,2),71,0.012): return "pollucite"

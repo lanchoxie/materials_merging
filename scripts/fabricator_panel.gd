@@ -8,7 +8,7 @@ const UI=preload("res://scripts/ui.gd")
 const Fabricator=preload("res://scripts/fabricator.gd")
 const ChemIndex=preload("res://scripts/chem_index.gd")
 const Geology=preload("res://scripts/planet_geology.gd")
-const ROCKS=["limestone","malachite","basalt","hematite","granite","cassiterite","spodumene","pollucite"]
+const ROCKS=["limestone","malachite","basalt","hematite","granite","cassiterite","spodumene","pollucite","apatite"]
 var state
 var close_button: Button
 var sources_button: Button

@@ -70,6 +70,13 @@ MOLECULES = [
     ("bromomethane", "溴甲烷", "卤代烃"), ("vinyl chloride", "氯乙烯", "卤代烃"),
     ("tetrafluoroethylene", "四氟乙烯", "卤代烃"), ("chloroethane", "氯乙烷", "卤代烃"),
     ("1,1,1,2-tetrafluoroethane", "1,1,1,2-四氟乙烷 (R-134a)", "卤代烃"),
+    # v0.37: silicon and phosphorus chemistry.
+    ("silane", "硅烷", "硅磷化合物"), ("silicon tetrachloride", "四氯化硅", "硅磷化合物"),
+    ("silicon tetrafluoride", "四氟化硅", "硅磷化合物"), ("trichlorosilane", "三氯氢硅（西门子法原料）", "硅磷化合物"),
+    ("dichlorodimethylsilane", "二甲基二氯硅烷（有机硅单体）", "硅磷化合物"),
+    ("phosphine", "磷化氢", "硅磷化合物"), ("phosphorus trichloride", "三氯化磷", "硅磷化合物"),
+    ("phosphorus pentachloride", "五氯化磷", "硅磷化合物"), ("phosphoryl chloride", "三氯氧磷", "硅磷化合物"),
+    ("phosphoric acid", "磷酸", "硅磷化合物"),
 ]
 
 

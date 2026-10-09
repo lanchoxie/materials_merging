@@ -1,61 +1,323 @@
 {
   "version": 1,
-  "note": "Equations and process names follow standard industrial chemistry (sources below). Seconds, yields, caps and coin prices are game values. One mined block counts as two formula units of its mineral; only elements that exist as game atoms are recovered, everything else (Si, Ca, K…) leaves as slag.",
+  "note": "Equations and process names follow standard industrial chemistry (sources below). Seconds, yields, caps and coin prices are game values. One mined block counts as two formula units of its mineral; only elements that exist as game atoms are recovered, everything else (K…) leaves as slag.",
   "sources": [
-    {"name": "Greenwood & Earnshaw, Chemistry of the Elements, 2nd ed. (1997) — production chapters for each element"},
-    {"name": "Wikipedia: Downs cell", "url": "https://en.wikipedia.org/wiki/Downs_cell"},
-    {"name": "Wikipedia: Bayer process", "url": "https://en.wikipedia.org/wiki/Bayer_process"},
-    {"name": "Wikipedia: Hall–Héroult process", "url": "https://en.wikipedia.org/wiki/Hall%E2%80%93H%C3%A9roult_process"},
-    {"name": "Wikipedia: Frasch process", "url": "https://en.wikipedia.org/wiki/Frasch_process"},
-    {"name": "Wikipedia: Air separation", "url": "https://en.wikipedia.org/wiki/Air_separation"},
-    {"name": "Wikipedia: Bromine — production", "url": "https://en.wikipedia.org/wiki/Bromine"},
-    {"name": "Wikipedia: Lithium — production", "url": "https://en.wikipedia.org/wiki/Lithium"},
-    {"name": "Wikipedia: Caesium — production", "url": "https://en.wikipedia.org/wiki/Caesium"},
-    {"name": "Wikipedia: Blast furnace", "url": "https://en.wikipedia.org/wiki/Blast_furnace"},
-    {"name": "Wikipedia: Cassiterite — tin smelting", "url": "https://en.wikipedia.org/wiki/Cassiterite"}
+    {
+      "name": "Greenwood & Earnshaw, Chemistry of the Elements, 2nd ed. (1997) — production chapters for each element"
+    },
+    {
+      "name": "Wikipedia: Downs cell",
+      "url": "https://en.wikipedia.org/wiki/Downs_cell"
+    },
+    {
+      "name": "Wikipedia: Bayer process",
+      "url": "https://en.wikipedia.org/wiki/Bayer_process"
+    },
+    {
+      "name": "Wikipedia: Hall–Héroult process",
+      "url": "https://en.wikipedia.org/wiki/Hall%E2%80%93H%C3%A9roult_process"
+    },
+    {
+      "name": "Wikipedia: Frasch process",
+      "url": "https://en.wikipedia.org/wiki/Frasch_process"
+    },
+    {
+      "name": "Wikipedia: Air separation",
+      "url": "https://en.wikipedia.org/wiki/Air_separation"
+    },
+    {
+      "name": "Wikipedia: Bromine — production",
+      "url": "https://en.wikipedia.org/wiki/Bromine"
+    },
+    {
+      "name": "Wikipedia: Lithium — production",
+      "url": "https://en.wikipedia.org/wiki/Lithium"
+    },
+    {
+      "name": "Wikipedia: Caesium — production",
+      "url": "https://en.wikipedia.org/wiki/Caesium"
+    },
+    {
+      "name": "Wikipedia: Blast furnace",
+      "url": "https://en.wikipedia.org/wiki/Blast_furnace"
+    },
+    {
+      "name": "Wikipedia: Cassiterite — tin smelting",
+      "url": "https://en.wikipedia.org/wiki/Cassiterite"
+    }
   ],
   "max_level": 5,
-  "upgrade_costs": [300, 800, 2000, 4500],
+  "upgrade_costs": [
+    300,
+    800,
+    2000,
+    4500
+  ],
   "speed_per_level": 0.25,
   "queue_base": 3,
   "extractor_cap": 12,
   "extractor_cap_per_level": 6,
   "extractors": {
-    "salt_pan": {"name": "海水盐田", "every": 60, "outputs": {"Na": 1, "Cl": 1},
-      "equation": "海水蒸发 → NaCl 结晶", "detail": "浮岛周围的海水在盐田里晒干，析出食盐，拆分为钠与氯的原子份额。"},
-    "bromine_tower": {"name": "溴素吹出塔", "every": 180, "outputs": {"Br": 1},
-      "equation": "2Br⁻ + Cl₂ → Br₂ + 2Cl⁻", "detail": "盐田剩下的苦卤里有溴离子，用氯气氧化后以空气吹出溴。海水是溴最主要的来源。"},
-    "air_separation": {"name": "空气分离塔", "every": 60, "outputs": {"N": 1, "O": 1},
-      "equation": "液化空气分馏：N₂ −196 °C / O₂ −183 °C", "detail": "把空气压缩降温成液体，按沸点不同分馏出氮和氧（林德法）。"},
-    "electrolyzer": {"name": "电解水槽", "every": 45, "outputs": {"H": 2, "O": 1},
-      "equation": "2H₂O → 2H₂ + O₂", "detail": "用浮岛的电把水分解，氢与氧按 2:1 产出。"},
-    "carbon_capture": {"name": "碳捕集器", "every": 120, "outputs": {"C": 1},
-      "equation": "捕集 CO₂ → 还原为碳（简化）", "detail": "从空气中吸附二氧化碳，再还原成可用的碳。真实工厂更常直接用煤或焦炭。"}
+    "salt_pan": {
+      "name": "海水盐田",
+      "every": 60,
+      "outputs": {
+        "Na": 1,
+        "Cl": 1
+      },
+      "equation": "海水蒸发 → NaCl 结晶",
+      "detail": "浮岛周围的海水在盐田里晒干，析出食盐，拆分为钠与氯的原子份额。"
+    },
+    "bromine_tower": {
+      "name": "溴素吹出塔",
+      "every": 180,
+      "outputs": {
+        "Br": 1
+      },
+      "equation": "2Br⁻ + Cl₂ → Br₂ + 2Cl⁻",
+      "detail": "盐田剩下的苦卤里有溴离子，用氯气氧化后以空气吹出溴。海水是溴最主要的来源。"
+    },
+    "air_separation": {
+      "name": "空气分离塔",
+      "every": 60,
+      "outputs": {
+        "N": 1,
+        "O": 1
+      },
+      "equation": "液化空气分馏：N₂ −196 °C / O₂ −183 °C",
+      "detail": "把空气压缩降温成液体，按沸点不同分馏出氮和氧（林德法）。"
+    },
+    "electrolyzer": {
+      "name": "电解水槽",
+      "every": 45,
+      "outputs": {
+        "H": 2,
+        "O": 1
+      },
+      "equation": "2H₂O → 2H₂ + O₂",
+      "detail": "用浮岛的电把水分解，氢与氧按 2:1 产出。"
+    },
+    "carbon_capture": {
+      "name": "碳捕集器",
+      "every": 120,
+      "outputs": {
+        "C": 1
+      },
+      "equation": "捕集 CO₂ → 还原为碳（简化）",
+      "detail": "从空气中吸附二氧化碳，再还原成可用的碳。真实工厂更常直接用煤或焦炭。"
+    }
   },
   "processes": {
-    "halite_electrolysis": {"name": "岩盐熔融电解", "method": "当斯电解槽 · 约600 °C", "inputs": {"halite": 1}, "outputs": {"Na": 2, "Cl": 2}, "seconds": 20,
-      "equation": "2NaCl(l) → 2Na(l) + Cl₂(g)", "detail": "加入 CaCl₂ 降低熔点，钠在阴极、氯在阳极析出。"},
-    "coal_coking": {"name": "煤干馏焦化", "method": "隔绝空气加热", "inputs": {"coal": 1}, "outputs": {"C": 2}, "seconds": 15,
-      "equation": "煤 → 焦炭 C + 煤气", "detail": "煤是炼铜、炼铝、炼铅时的还原剂，也可以直接焦化得到碳。"},
-    "limestone_calcination": {"name": "石灰石煅烧", "method": "石灰窑 · 约900 °C", "inputs": {"limestone": 1}, "outputs": {"C": 2, "O": 4}, "seconds": 25,
-      "equation": "CaCO₃ → CaO + CO₂", "detail": "放出的二氧化碳回收成碳与氧；生石灰 CaO 留作炉渣（游戏中还没有钙原子）。"},
-    "sulfur_melting": {"name": "自然硫熔炼", "method": "弗拉施法", "inputs": {"sulfur": 1}, "outputs": {"S": 2}, "seconds": 12,
-      "equation": "S₈(s) → S₈(l)，约115 °C", "detail": "用过热水把地下的自然硫熔化后抽出，冷却即得高纯硫。"},
-    "malachite_smelting": {"name": "孔雀石炼铜", "method": "焙烧 + 碳还原", "inputs": {"malachite": 1, "coal": 1}, "outputs": {"Cu": 4}, "seconds": 30,
-      "equation": "Cu₂CO₃(OH)₂ → 2CuO + CO₂ + H₂O；2CuO + C → 2Cu + CO₂", "detail": "人类最早的炼铜方法之一：先把孔雀石烧成氧化铜，再用木炭还原。"},
-    "gibbsite_aluminium": {"name": "铝土矿炼铝", "method": "拜耳法 + 霍尔–埃鲁电解", "inputs": {"gibbsite": 1, "coal": 1}, "outputs": {"Al": 2}, "seconds": 40,
-      "equation": "2Al(OH)₃ → Al₂O₃ + 3H₂O；2Al₂O₃ + 3C → 4Al + 3CO₂", "detail": "氧化铝溶在约960 °C 的冰晶石熔盐里电解，碳阳极被消耗。"},
-    "galena_smelting": {"name": "方铅矿冶炼", "method": "焙烧 + 碳还原", "inputs": {"galena": 1, "coal": 1}, "outputs": {"Pb": 2, "S": 2}, "seconds": 30,
-      "equation": "2PbS + 3O₂ → 2PbO + 2SO₂；PbO + C → Pb + CO", "detail": "焙烧放出的二氧化硫可以回收制硫酸，这里折算成硫。"},
-    "fluorite_fluorine": {"name": "萤石制氟", "method": "硫酸分解 + 熔盐电解", "inputs": {"fluorite": 1, "sulfur": 1}, "outputs": {"F": 4}, "seconds": 45,
-      "equation": "CaF₂ + H₂SO₄ → CaSO₄ + 2HF；2HF → H₂ + F₂（KF·2HF 电解）", "detail": "硫酸由硫经接触法制得。氟气极活泼，只能靠电解得到（莫瓦桑法）。"},
-    "spodumene_lithium": {"name": "锂辉石提锂", "method": "硫酸焙烧 + LiCl 熔盐电解", "inputs": {"spodumene": 1, "sulfur": 1}, "outputs": {"Li": 2}, "seconds": 50,
-      "equation": "锂辉石 → Li₂SO₄ → Li₂CO₃ → LiCl；2LiCl → 2Li + Cl₂", "detail": "先在约1050 °C 把锂辉石转成易反应的 β 型，再用硫酸焙烧浸出锂。"},
-    "pollucite_cesium": {"name": "铯榴石提铯", "method": "酸浸 + 金属钙真空还原", "inputs": {"pollucite": 1, "limestone": 1}, "outputs": {"Cs": 4}, "seconds": 60,
-      "equation": "2CsCl + Ca → 2Cs + CaCl₂（真空，约750 °C）", "detail": "铯榴石几乎是铯唯一的工业矿物；还原用的钙由石灰石提供（简化）。"},
-    "hematite_iron": {"name": "赤铁矿炼铁", "method": "高炉 · 焦炭还原", "inputs": {"hematite": 1, "coal": 1}, "outputs": {"Fe": 4}, "seconds": 35,
-      "equation": "2C + O₂ → 2CO；Fe₂O₃ + 3CO → 2Fe + 3CO₂", "detail": "焦炭燃烧生成一氧化碳，把氧化铁还原成铁水；石灰石助熔带走脉石（这里省略）。"},
-    "cassiterite_tin": {"name": "锡石炼锡", "method": "碳还原 · 约1200 °C", "inputs": {"cassiterite": 1, "coal": 1}, "outputs": {"Sn": 2}, "seconds": 30,
-      "equation": "SnO₂ + C → Sn + CO₂", "detail": "锡石几乎是锡唯一的工业矿物。青铜时代的人把锡加进铜里，得到比纯铜更硬的青铜。"}
+    "halite_electrolysis": {
+      "name": "岩盐熔融电解",
+      "method": "当斯电解槽 · 约600 °C",
+      "inputs": {
+        "halite": 1
+      },
+      "outputs": {
+        "Na": 2,
+        "Cl": 2
+      },
+      "seconds": 20,
+      "equation": "2NaCl(l) → 2Na(l) + Cl₂(g)",
+      "detail": "加入 CaCl₂ 降低熔点，钠在阴极、氯在阳极析出。"
+    },
+    "coal_coking": {
+      "name": "煤干馏焦化",
+      "method": "隔绝空气加热",
+      "inputs": {
+        "coal": 1
+      },
+      "outputs": {
+        "C": 2
+      },
+      "seconds": 15,
+      "equation": "煤 → 焦炭 C + 煤气",
+      "detail": "煤是炼铜、炼铝、炼铅时的还原剂，也可以直接焦化得到碳。"
+    },
+    "limestone_calcination": {
+      "name": "石灰石煅烧",
+      "method": "石灰窑 · 约900 °C",
+      "inputs": {
+        "limestone": 1
+      },
+      "outputs": {
+        "C": 2,
+        "O": 4
+      },
+      "seconds": 25,
+      "equation": "CaCO₃ → CaO + CO₂",
+      "detail": "放出的二氧化碳回收成碳与氧；生石灰 CaO 留作炉渣（金属钙另由「熔盐电解制钙」获得）。"
+    },
+    "sulfur_melting": {
+      "name": "自然硫熔炼",
+      "method": "弗拉施法",
+      "inputs": {
+        "sulfur": 1
+      },
+      "outputs": {
+        "S": 2
+      },
+      "seconds": 12,
+      "equation": "S₈(s) → S₈(l)，约115 °C",
+      "detail": "用过热水把地下的自然硫熔化后抽出，冷却即得高纯硫。"
+    },
+    "malachite_smelting": {
+      "name": "孔雀石炼铜",
+      "method": "焙烧 + 碳还原",
+      "inputs": {
+        "malachite": 1,
+        "coal": 1
+      },
+      "outputs": {
+        "Cu": 4
+      },
+      "seconds": 30,
+      "equation": "Cu₂CO₃(OH)₂ → 2CuO + CO₂ + H₂O；2CuO + C → 2Cu + CO₂",
+      "detail": "人类最早的炼铜方法之一：先把孔雀石烧成氧化铜，再用木炭还原。"
+    },
+    "gibbsite_aluminium": {
+      "name": "铝土矿炼铝",
+      "method": "拜耳法 + 霍尔–埃鲁电解",
+      "inputs": {
+        "gibbsite": 1,
+        "coal": 1
+      },
+      "outputs": {
+        "Al": 2
+      },
+      "seconds": 40,
+      "equation": "2Al(OH)₃ → Al₂O₃ + 3H₂O；2Al₂O₃ + 3C → 4Al + 3CO₂",
+      "detail": "氧化铝溶在约960 °C 的冰晶石熔盐里电解，碳阳极被消耗。"
+    },
+    "galena_smelting": {
+      "name": "方铅矿冶炼",
+      "method": "焙烧 + 碳还原",
+      "inputs": {
+        "galena": 1,
+        "coal": 1
+      },
+      "outputs": {
+        "Pb": 2,
+        "S": 2
+      },
+      "seconds": 30,
+      "equation": "2PbS + 3O₂ → 2PbO + 2SO₂；PbO + C → Pb + CO",
+      "detail": "焙烧放出的二氧化硫可以回收制硫酸，这里折算成硫。"
+    },
+    "fluorite_fluorine": {
+      "name": "萤石制氟",
+      "method": "硫酸分解 + 熔盐电解",
+      "inputs": {
+        "fluorite": 1,
+        "sulfur": 1
+      },
+      "outputs": {
+        "F": 4
+      },
+      "seconds": 45,
+      "equation": "CaF₂ + H₂SO₄ → CaSO₄ + 2HF；2HF → H₂ + F₂（KF·2HF 电解）",
+      "detail": "硫酸由硫经接触法制得。氟气极活泼，只能靠电解得到（莫瓦桑法）。"
+    },
+    "spodumene_lithium": {
+      "name": "锂辉石提锂",
+      "method": "硫酸焙烧 + LiCl 熔盐电解",
+      "inputs": {
+        "spodumene": 1,
+        "sulfur": 1
+      },
+      "outputs": {
+        "Li": 2
+      },
+      "seconds": 50,
+      "equation": "锂辉石 → Li₂SO₄ → Li₂CO₃ → LiCl；2LiCl → 2Li + Cl₂",
+      "detail": "先在约1050 °C 把锂辉石转成易反应的 β 型，再用硫酸焙烧浸出锂。"
+    },
+    "pollucite_cesium": {
+      "name": "铯榴石提铯",
+      "method": "酸浸 + 金属钙真空还原",
+      "inputs": {
+        "pollucite": 1,
+        "limestone": 1
+      },
+      "outputs": {
+        "Cs": 4
+      },
+      "seconds": 60,
+      "equation": "2CsCl + Ca → 2Cs + CaCl₂（真空，约750 °C）",
+      "detail": "铯榴石几乎是铯唯一的工业矿物；还原用的钙由石灰石提供（简化）。"
+    },
+    "hematite_iron": {
+      "name": "赤铁矿炼铁",
+      "method": "高炉 · 焦炭还原",
+      "inputs": {
+        "hematite": 1,
+        "coal": 1
+      },
+      "outputs": {
+        "Fe": 4
+      },
+      "seconds": 35,
+      "equation": "2C + O₂ → 2CO；Fe₂O₃ + 3CO → 2Fe + 3CO₂",
+      "detail": "焦炭燃烧生成一氧化碳，把氧化铁还原成铁水；石灰石助熔带走脉石（这里省略）。"
+    },
+    "cassiterite_tin": {
+      "name": "锡石炼锡",
+      "method": "碳还原 · 约1200 °C",
+      "inputs": {
+        "cassiterite": 1,
+        "coal": 1
+      },
+      "outputs": {
+        "Sn": 2
+      },
+      "seconds": 30,
+      "equation": "SnO₂ + C → Sn + CO₂",
+      "detail": "锡石几乎是锡唯一的工业矿物。青铜时代的人把锡加进铜里，得到比纯铜更硬的青铜。"
+    },
+    "quartz_silicon": {
+      "name": "石英砂还原硅",
+      "method": "埋弧电炉 · 碳热还原（冶金级硅）",
+      "inputs": {
+        "sand": 2,
+        "coal": 2
+      },
+      "outputs": {
+        "Si": 2
+      },
+      "seconds": 45,
+      "equation": "SiO₂ + 2C → Si + 2CO（约 1900 °C）",
+      "detail": "石英砂和焦炭在电弧炉里反应，得到约 98–99% 的冶金级硅；做芯片还要在硅材料厂进一步提纯。"
+    },
+    "calcium_electrolysis": {
+      "name": "熔盐电解制钙",
+      "method": "石灰石 → 氯化钙 → 熔盐电解",
+      "inputs": {
+        "limestone": 2,
+        "halite": 2
+      },
+      "outputs": {
+        "Ca": 2,
+        "Cl": 1
+      },
+      "seconds": 50,
+      "equation": "CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂；CaCl₂(熔融) → Ca + Cl₂",
+      "detail": "盐酸由食盐制得（这里简化）。熔融氯化钙电解得到金属钙，这是戴维 1808 年首次分离钙的方法。"
+    },
+    "apatite_phosphorus": {
+      "name": "磷灰石电炉制磷",
+      "method": "电炉 · 硅石 + 焦炭还原（Wöhler 法）",
+      "inputs": {
+        "apatite": 2,
+        "sand": 2,
+        "coal": 2
+      },
+      "outputs": {
+        "P": 3
+      },
+      "seconds": 55,
+      "equation": "2Ca₃(PO₄)₂ + 6SiO₂ + 10C → P₄ + 6CaSiO₃ + 10CO",
+      "detail": "石英砂把钙结合成硅酸钙炉渣，焦炭把磷还原成磷蒸气后冷凝。白磷有毒易燃，工厂在水下保存它。"
+    }
   }
 }

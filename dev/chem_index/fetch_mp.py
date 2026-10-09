@@ -26,6 +26,7 @@ FIELDS = ",".join([
     "energy_above_hull", "formation_energy_per_atom", "band_gap", "is_gap_direct", "is_metal",
     "is_magnetic", "ordering", "total_magnetization", "theoretical", "database_IDs",
     "bulk_modulus", "shear_modulus", "structure", "deprecated", "composition_reduced",
+    "homogeneous_poisson", "n",
 ])
 
 
@@ -123,6 +124,13 @@ def compact(doc: dict) -> dict:
         value = (doc.get(key) or {}).get("vrh")
         if value is not None and 0.0 < float(value) < 1000.0:
             entry[name] = round(float(value), 1)
+    # v0.37 material model: Poisson's ratio (toughness proxy) and the refractive index (glass).
+    poisson = doc.get("homogeneous_poisson")
+    if poisson is not None and -1.0 < float(poisson) < 0.5:
+        entry["poisson"] = round(float(poisson), 3)
+    n = doc.get("n")
+    if n is not None and 1.0 < float(n) < 6.0:
+        entry["n"] = round(float(n), 3)
     return entry
 
 

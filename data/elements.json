@@ -33,7 +33,7 @@
   ],
   "note": "元素是种类；半径属于具体成键环境。radius 为展示默认值，结构中的 atom_contexts 优先。分子共价半径的 oxidation_state=null 表示本展示未指派形式氧化态，并非零价。未知数据不能自动当作零能量或精品。",
   "units": "Å",
-  "version": 5,
+  "version": 6,
   "elements": {
     "H": {
       "name": "氢",
@@ -210,6 +210,36 @@
       "oxidation_state": null,
       "coordination": null,
       "source": "https://periodic-table.rsc.org/element/50/tin ; display only, not metallic nearest-neighbor distance"
+    },
+    "Si": {
+      "name": "硅",
+      "atomic_number": 14,
+      "radius": 1.11,
+      "radius_type": "共价半径",
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J",
+      "color": "f0c8a0"
+    },
+    "P": {
+      "name": "磷",
+      "atomic_number": 15,
+      "radius": 1.07,
+      "radius_type": "共价半径",
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J",
+      "color": "ff8000"
+    },
+    "Ca": {
+      "name": "钙",
+      "atomic_number": 20,
+      "radius": 1.76,
+      "radius_type": "共价半径",
+      "oxidation_state": null,
+      "coordination": null,
+      "source": "Cordero et al. 2008, Table 2; https://doi.org/10.1039/B801115J",
+      "color": "3dff00"
     }
   }
 }

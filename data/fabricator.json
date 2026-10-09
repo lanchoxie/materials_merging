@@ -117,7 +117,8 @@
     "no_alkali": [
       "Li",
       "Na",
-      "Cs"
+      "Cs",
+      "Ca"
     ],
     "no_anions": [
       "F",

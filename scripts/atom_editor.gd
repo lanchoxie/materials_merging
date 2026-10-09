@@ -586,10 +586,15 @@ func _show_palette() -> void:
 	group.toggled.connect(func(enabled:bool): replace_group = enabled)
 	body.add_child(group)
 	var grid = GridContainer.new()
-	grid.columns = 4
-	grid.add_theme_constant_override("h_separation",12)
-	grid.add_theme_constant_override("v_separation",12)
-	body.add_child(grid)
+	# v0.37: 19 elements -> 5 columns inside a scroll box so the palette never runs off the panel.
+	grid.columns = 5
+	grid.add_theme_constant_override("h_separation",10)
+	grid.add_theme_constant_override("v_separation",10)
+	var scroll = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	body.add_child(scroll)
+	scroll.add_child(grid)
 	var original: Array = state.atom_symbols(state.reactors[reactor_index])
 	for symbol in state.elements:
 		var element: Dictionary = state.elements[symbol]
@@ -601,8 +606,8 @@ func _show_palette() -> void:
 			b.text = "%s  %s\n仓库没有 · 去精炼厂" % [symbol,element.name]
 			b.tooltip_text = "来源：" + state.refinery.how_to_get(symbol)
 		b.add_theme_color_override("font_color",Color(element.color))
-		b.add_theme_font_size_override("font_size",20)
-		b.custom_minimum_size = Vector2(225,118)
+		b.add_theme_font_size_override("font_size",18)
+		b.custom_minimum_size = Vector2(176,96)
 		grid.add_child(b)
 		palette_buttons[symbol] = b
 	body.add_child(UI.paragraph("试试 O→S 得到H₂S；H₂中的一个H→Cl得到HCl；CsPbBr₃的全部Br→Cl得到教学CsPbCl₃。其他组合可能暂时无法识别。",15,UI.LILAC))
