@@ -100,7 +100,7 @@ func _run() -> void:
 		if FileAccess.file_exists(f): DirAccess.remove_absolute(ProjectSettings.globalize_path(f))
 	check(s.save_game(path).begins_with("已保存"),"builder save succeeds")
 	var raw: Dictionary=JSON.parse_string(FileAccess.get_file_as_string(path))
-	check(int(raw.version)==27,"saves are version 27")
+	check(int(raw.version)==28,"saves are version 28")
 	var loaded=State.new()
 	check(loaded.load_game(path) and loaded.town_journal.is_empty() and not loaded.town_at(Town.to_global(loaded.plots[middle],Vector2i(0,4))).is_empty(),"spilled footprints survive save and load; the undo journal does not")
 	var bad: Dictionary=raw.duplicate(true)

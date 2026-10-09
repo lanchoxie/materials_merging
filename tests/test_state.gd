@@ -175,7 +175,7 @@ func _initialize():
 	valid_file.plots[0].rid = 0
 	check(not loaded._validate_save(valid_file), "save rejects inconsistent plot ownership")
 	var baseline = JSON.parse_string(FileAccess.get_file_as_string(save_path + ".bak"))
-	check(int(baseline.version) == 27 and baseline.refinery.level == 1 and baseline.index_found is Array and baseline.fabricator is Dictionary, "new saves use version twenty-seven with the refinery, the index and the fabricator")
+	check(int(baseline.version) == 28 and baseline.industry is Dictionary and baseline.refinery.level == 1 and baseline.index_found is Array and baseline.fabricator is Dictionary, "new saves use version twenty-eight with the industry island, the refinery, the index and the fabricator")
 	valid_file = baseline.duplicate(true)
 	valid_file.plots[9].x = valid_file.plots[4].x
 	valid_file.plots[9].z = valid_file.plots[4].z

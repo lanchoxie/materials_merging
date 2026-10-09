@@ -30,6 +30,21 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.34.0 "Starforge Isle" (星锻岛 · 浮岛 Ⅱ)
+The first phase-2 release, following the plan the user confirmed (2026-10-09). Full notes: [19-starforge.md](19-starforge.md).
+- **岛主等级.** A visible XP bar sits in the top bar, with "+XP" pops and a level-up banner. Old progress converts to XP once.
+- **星锻岛.**
+  - Unlocking it opens a second island with a 4–16 plot deck, a power grid and factory licences.
+  - **工业信用:** 星砂, 晶露 and 合金片 fuse into it (one-way).
+- **冶金工厂.** Carbon steel, tin bronze, solder, duralumin, Al–Li and the carbon-steel drill bit.
+- **高分子工厂.** PE, PVC, PTFE and UF resin.
+- Each recipe unlocks only after the player has really made the compound (Fe₃C, Cu₃Sn, Al₂Cu, LiAl, C₂H₄, C₂H₃Cl, C₂F₄, CH₂O).
+- **星港交易所.** It buys industry goods with a saturating, recovering price.
+- **碳钢钻头.** A 7.4 GPa bit that becomes the planet pick whenever it is harder.
+- **Blender pipeline.** Portable Blender plus `dev/blender/starforge.py` produce the factory, deck and thruster models (glb).
+- **Save v28.** Adds the `industry` section. Older saves load with the island locked.
+- **Tests.** New: `test_industry` (30 checks) and `test_starforge_ui` (12 checks). Screenshot helper: `capture_starforge`.
+
 ## v0.33.2 "Terrain & caves" (地形与洞穴)
 The user said Earth had no terrain and no caves (2026-10-01). Full notes: [18-terrain-caves.md](18-terrain-caves.md).
 - **Relief.** Beyond 120 m from home the ground rises into rolling hills, ridged mountain bands up to ~45 m and small detail;

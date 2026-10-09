@@ -56,6 +56,13 @@ static func max_refinery(s) -> String:
 		grant_coins(s,r.upgrade_cost()); r.upgrade(s); steps+=1
 	return "测试：精炼厂升到 Lv%d" % r.level
 
+## v0.34: open 星锻岛 without its unlock conditions, with credits and XP to try every factory.
+static func open_starforge(s,credits: int) -> String:
+	var ind=s.industry
+	if not ind.unlocked: ind.unlocked=true; ind.plots=int(ind.rules().plots.start)
+	ind.credits=mini(ind.credits+credits,int(ind.rules().credits.max)); ind.gain(500)
+	return "测试：星锻岛已开放 · 工业信用 +%d · 岛主经验 +500" % credits
+
 ## Island production and the refinery run as if the game had been closed for `seconds`.
 static func skip_island(s,seconds: int) -> String:
 	var now=int(Time.get_unix_time_from_system())

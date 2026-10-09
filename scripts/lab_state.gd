@@ -30,6 +30,10 @@ var fabricator=Fabricator.new()
 ## v0.28: minerals → elements; replaces the coin element shop.
 var refinery=Refinery.new()
 var refinery_notice: String=""
+## v0.34 星锻岛: 岛主等级 XP, 工业信用, island Ⅱ factories and industry items (industry.gd).
+const Industry=preload("res://scripts/industry.gd")
+var industry=Industry.new()
+var industry_notice: String=""
 var island_rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/island_balance.json"))
 
 const CampusSim = preload("res://scripts/campus_sim.gd")
@@ -602,6 +606,9 @@ func tick(delta: float):
 	sync_gear()
 	var refined: Array=refinery.tick(self,delta)
 	if not refined.is_empty(): refinery_notice="；".join(refined)
+	industry.sync_legacy(self)
+	var made: Array=industry.tick(self,delta)
+	if not made.is_empty(): industry_notice="星锻岛："+"；".join(made)
 	visitor_cooldown = maxf(0.0, visitor_cooldown - delta)
 	_produce(delta)
 
@@ -650,7 +657,7 @@ func offline_catch_up(now: int) -> Dictionary:
 	var left := simulated
 	sync_gear()
 	while left > 0.0:
-		_produce(minf(left, 10.0)); refinery.tick(self, minf(left, 10.0)); left -= 10.0
+		_produce(minf(left, 10.0)); refinery.tick(self, minf(left, 10.0)); industry.tick(self, minf(left, 10.0)); left -= 10.0
 	saved_at = now
 	var units := 0; var stored := 0.0
 	for r in reactors: units += int(r.pending); stored += float(r.stored_coins)
@@ -1217,7 +1224,7 @@ func save_game(path: String = "") -> String:
 		return "保存失败：存档只能写入专用的saves目录"
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(root)) != OK:
 		return "保存失败：无法创建存档目录"
-	var snapshot = {"version": 27, "fabricator": fabricator.serialize(), "index_found": index_found.keys(), "refinery": refinery.serialize(), "coach": coach_seen.keys(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
+	var snapshot = {"version": 28, "industry": industry.serialize(), "fabricator": fabricator.serialize(), "index_found": index_found.keys(), "refinery": refinery.serialize(), "coach": coach_seen.keys(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
 		"discovered": discovered, "plots": plots, "reactors": reactors,
@@ -1279,8 +1286,9 @@ func _valid_science_record(record) -> bool:
 	return true
 
 func _validate_save(data) -> bool:
-	if not data is Dictionary or not _number_ok(data.get("version"), 1, 27, true):
+	if not data is Dictionary or not _number_ok(data.get("version"), 1, 28, true):
 		return false
+	if int(data.version)>=28 and not Industry.new().restore(data.get("industry")): return false
 	if int(data.version)>=26 and not Fabricator.new().restore(data.get("fabricator")): return false
 	if int(data.version)>=25 and (not data.get("index_found") is Array or data.index_found.size()>4096 or data.index_found.any(func(id): return not id is String or str(id).length()>40)): return false
 	if int(data.version)>=24 and not Refinery.new().restore(data.get("refinery"),elements): return false
@@ -1486,6 +1494,9 @@ func load_game(path: String = "") -> bool:
 	for id in data.get("index_found",[]): index_found[str(id)]=true
 	fabricator=Fabricator.new()
 	if int(data.version) >= 26: fabricator.restore(data.fabricator)
+	# Older saves start island Ⅱ locked; their old progress converts to 岛主 XP on the first tick.
+	industry=Industry.new()
+	if int(data.version) >= 28: industry.restore(data.industry)
 	materials = [int(data.materials[0]), int(data.materials[1]), int(data.materials[2])]
 	upgrades = int(data.upgrades)
 	engineers = int(data.engineers)
@@ -1726,6 +1737,9 @@ func batch_index(batch: Dictionary) -> Dictionary:
 func sync_gear() -> void:
 	planet.v2.nature.pick_hv=fabricator.pick_hv()
 	planet.v2.nature.pick_name=fabricator.pick_name()
+	# v0.34: an industry drill bit from 星锻岛 counts when it is harder than the fabricator pick.
+	if industry.bit_hv()>planet.v2.nature.pick_hv:
+		planet.v2.nature.pick_hv=industry.bit_hv(); planet.v2.nature.pick_name=str(Industry.rules().items[industry.bit].name)
 	refinery.power_gain=fabricator.refinery_gain()
 
 func _queue_install(r: Dictionary, payload: Dictionary, quote: Dictionary) -> String:

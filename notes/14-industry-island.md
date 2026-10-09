@@ -1,6 +1,6 @@
 # 14 · Phase 2 "Industry Island" (浮岛 2.0): from molecules to rockets
 
-Status: **plan, decisions taken** (2026-10-01; see "Decisions from the user"). Nothing here is built yet. Numbers marked *(game)* are balance values to tune.
+Status: **in progress** — v0.34 (slot I1) shipped, see [19-starforge.md](19-starforge.md). Decisions: see "Decisions from the user". Nothing here is built yet. Numbers marked *(game)* are balance values to tune.
 Numbers marked *(real)* come from the sources in §11.
 
 User request (2026-10-01, condensed):

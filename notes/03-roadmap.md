@@ -83,6 +83,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   that follows you, beacons, walked trail, 世界地图; floating sky-blue springs and tundra ice fixed.
 - ✅ v0.33.2 "Terrain & caves" (tag `v0.33.2`; see [18-terrain-caves.md](18-terrain-caves.md)), user request: real
   relief beyond the start area, ridged mountains, a river valley, karst caves with open mouths; old far builds keep their ground.
+- ✅ v0.34 "Starforge Isle" 星锻岛 (tag `v0.34.0`; see [19-starforge.md](19-starforge.md)): phase-2 slot I1 —
+  岛主 XP bar, 工业信用, island Ⅱ deck, metallurgy + polymer works, trade hub, steel drill bit, Blender models.
+- Next: v0.35 (promotion pipeline, island Ⅱ housing, home goods, market contracts), then v0.36 eras + incidents.
 - Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
   more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,
   and the remaining eras.

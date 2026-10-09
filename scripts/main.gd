@@ -24,6 +24,7 @@ const PlanetV2Panel=preload("res://scripts/planet_v2_panel.gd")
 const IslandWalk=preload("res://scripts/island_walk_panel.gd")
 const RefineryPanel=preload("res://scripts/refinery_panel.gd")
 const FabricatorPanel=preload("res://scripts/fabricator_panel.gd")
+const StarforgePanel=preload("res://scripts/starforge_panel.gd")
 const ReactorLook=preload("res://scripts/reactor_look.gd")
 const Coach=preload("res://scripts/coach.gd")
 const CoachTours=preload("res://scripts/coach_tours.gd")
@@ -38,6 +39,8 @@ var world_viewport: SubViewport
 var selected_plot: int = 4
 var selected_reactor: int = 0
 var side: VBoxContainer
+var rank_label: Label
+var rank_bar: ProgressBar
 var gold_label: Label
 var material_label: Label
 var people_label: Label
@@ -164,8 +167,15 @@ func _build_ui() -> void:
 	gold.add_child(UI.label("◇  金币", 12, UI.GOLD))
 	gold_label = UI.label("220", 25, UI.GOLD)
 	gold.add_child(gold_label)
+	# v0.34 岛主等级: a visible XP bar; "+XP" pops rise from it.
+	var rank_box = UI.column(h, 4)
+	rank_box.custom_minimum_size.x = 176
+	rank_label = UI.label("岛主 Lv.1", 12, UI.LILAC)
+	rank_box.add_child(rank_label)
+	rank_bar = ProgressBar.new(); rank_bar.show_percentage = false; rank_bar.custom_minimum_size = Vector2(170, 12); rank_bar.max_value = 1.0
+	rank_box.add_child(rank_bar)
 	var supplies = UI.column(h, 3)
-	supplies.custom_minimum_size.x = 298
+	supplies.custom_minimum_size.x = 250
 	supplies.add_child(UI.label("岛屿建材", 12, UI.MUTED))
 	material_label = UI.label("", 17)
 	supplies.add_child(material_label)
@@ -207,7 +217,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.33.2 地形与洞穴  ·  山脉 · 河谷 · 溶洞" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.34 星锻岛  ·  岛主等级 · 工业信用 · 冶金与高分子工厂" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -343,6 +353,7 @@ func _build_toolbar() -> void:
 		["工具箱", _show_toolbox],
 		["精炼厂", _show_refinery],
 		["制造台", _show_fabricator],
+		["星锻岛", _show_starforge],
 		["□  结构工坊", _show_sandbox]
 	]
 	for entry in buttons:
@@ -613,6 +624,9 @@ func _process(delta: float) -> void:
 	if not state.refinery_notice.is_empty():
 		_toast(state.refinery_notice)
 		state.refinery_notice=""
+	if not covered and not state.industry_notice.is_empty():
+		_toast(state.industry_notice); state.industry_notice=""
+	_xp_pop()
 	if not state.phase_notice.is_empty():
 		_announce_phase(state.phase_notice)
 		state.phase_notice={}
@@ -733,6 +747,9 @@ func _update_labels() -> void:
 		return
 	if shown_coins < 0.0: gold_label.text = "%s" % int(state.coins)
 	material_label.text = "星砂 %d   晶露 %d   合金 %d" % state.materials
+	var standing: Dictionary = state.industry.rank_of(state.industry.xp)
+	rank_label.text = "岛主 Lv.%d  ·  %d / %d XP" % [standing.rank, standing.into, standing.need]
+	rank_bar.value = float(standing.into) / maxf(1.0, float(standing.need))
 	if live_badge != null and world != null: live_badge.text = "●  LIVE  /  %s" % DayCycle.label(world.day_phase)
 	people_label.text = "工程师 %d   科研 %d" % [state.engineers,state.campus.people.size()-state.engineers]
 	income_label.text = "%.1f / s" % state.total_income()
@@ -1119,6 +1136,27 @@ func _show_refinery(symbol: String="") -> void:
 	panel.dismissed.connect(_screen_closed.bind(panel))
 	panel.planet_requested.connect(_show_planet_v2)
 	_coach("refinery")
+
+## v0.34: the second island. Locked saves see the unlock card; open saves see the factories.
+func _show_starforge() -> void:
+	_replace_modal()
+	var panel=StarforgePanel.new(); add_child(panel); modal=panel
+	panel.setup(state)
+	_label_return(panel)
+	panel.acted.connect(_action)
+	panel.dismissed.connect(_screen_closed.bind(panel))
+
+## "+N XP" rises from the rank bar, and a banner marks each new 岛主 rank.
+func _xp_pop() -> void:
+	var ind=state.industry
+	if ind.pending_xp<=0 or rank_bar==null: return
+	var before: int=ind.rank_of(ind.xp-ind.pending_xp).rank
+	var fx = get_node_or_null("/root/Fx")
+	if fx:
+		fx.pop_text(rank_bar.global_position+Vector2(rank_bar.size.x*0.5,0),"+%d XP" % ind.pending_xp,UI.LILAC)
+		if ind.rank()>before: fx.banner("岛主升级！","岛主等级 Lv.%d" % ind.rank(),UI.LILAC)
+	ind.pending_xp=0
+	_update_labels()
 
 ## v0.30: stored crystals → pick heads (hardness) and solar panels (band gap) with real properties.
 func _show_fabricator() -> void:
@@ -1541,6 +1579,7 @@ func _show_test_panel(planet: Control = null) -> void:
 	row.add_child(UI.button("精炼厂满级", func(): run.call(TestMode.max_refinery(state))))
 	row.add_child(UI.button("招募博士", func(): run.call(state.campus_hire("doctor"))))
 	row.add_child(UI.button("招募工程师", func(): run.call(state.campus_hire("engineer"))))
+	row.add_child(UI.button("开放星锻岛 +300信用", func(): run.call(TestMode.open_starforge(state, 300))))
 	row = UI.row(body, 8)
 	row.add_child(UI.button("浮岛快进 1 小时", func(): run.call(TestMode.skip_island(state, 3600))))
 	row.add_child(UI.button("浮岛快进 8 小时", func(): run.call(TestMode.skip_island(state, 8 * 3600))))
