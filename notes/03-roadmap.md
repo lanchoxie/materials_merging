@@ -87,7 +87,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   岛主 XP bar, 工业信用, island Ⅱ deck, metallurgy + polymer works, trade hub, steel drill bit, Blender models.
 - ✅ v0.35 "Home & Market" (tag `v0.35.0`; see [21-home-market.md](21-home-market.md)): promotions with 延毕 and approval,
   星锻公寓, senior staff, home goods studio, contracts + airship.
-- Next: v0.36 planet — specimens, era framework, first incidents (storms, floods, droughts), PVC irrigation pipe.
+- ✅ v0.36 "Weather & Specimens" (tag `v0.36.0`; see [22-incidents-specimens.md](22-incidents-specimens.md)): era framework in data,
+  storm/flood/drought incidents with a day of warning and measured preparation, PVC pipes, 标本图鉴.
+- Next: v0.37 industry — Si/Ca/P, MP refetch (more fields), ceramics/glass, silicon foundry, material property model v1.
 - Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
   more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,
   and the remaining eras.

@@ -194,13 +194,26 @@ func scan(aim: Dictionary,v) -> String:
 		"terrain":
 			var c: Vector3i=aim.voxel; var id=v.construction.terrain.material(c)
 			return "分析仪 · %s · 深度 y=%d%s" % [Geology.summary(id),c.y,_discover(id)]
-		"tree": return "分析仪 · %s\n木材：纤维素 (C₆H₁₀O₅)ₙ + 半纤维素 + 木质素（混合物）" % aim.name
+		"tree":
+			var tree=lookup(str(aim.get("tree_id","")),v.construction.terrain)
+			var found=v.specimens.record(str(tree.get("species","")),_biome(v,Vector2(tree.get("x",0.0),tree.get("z",0.0)))) if not tree.is_empty() else ""
+			return "分析仪 · %s\n木材：纤维素 (C₆H₁₀O₅)ₙ + 半纤维素 + 木质素（混合物）%s" % [aim.name,found]
 		"resource":
 			var kinds={"timber":"枯枝：木材（纤维素 + 木质素，混合物）","stone":"散石：风化岩块（混合物，成分随母岩而异）","fiber":"纤维草：植物纤维，主要为纤维素 (C₆H₁₀O₅)ₙ","fruit":"野果：水分 + 糖类 + 纤维（混合物）"}
 			return "分析仪 · "+str(kinds.get(aim.node.kind,aim.name))
-		"animal","creature": return "分析仪 · %s\n生物扫描与标本将在后续版本开放；现在可以观察它的健康与习性。" % aim.name
+		"animal","creature":
+			var e: Dictionary=aim.get("entity",{})
+			if e.get("type","") in ["resident","visitor"]: return "分析仪 · %s\n这是你的伙伴，不做标本。" % aim.name
+			var species=str(e.get("row",{}).get("species",""))
+			var spec: Dictionary=v.specimens.rules.species.get(species,{})
+			var found=v.specimens.record(species,_biome(v,e.get("position",Vector2.ZERO)))
+			if spec.is_empty(): return "分析仪 · %s" % aim.name
+			return "分析仪 · %s · 原型 %s\n健康 %d%%%s" % [aim.name,spec.prototype,roundi(float(aim.get("health",1))*100),found if not found.is_empty() else "\n"+str(spec.facts)]
 		"block": return "分析仪 · %s\n自建构件：材料来自浮岛工坊，来源编号保存在建造记录里。" % aim.name
 	return "分析仪 · 瞄准5米内的岩土、树木或采集点"
+
+func _biome(v,p: Vector2) -> String:
+	return v.environment.biome_name(v.environment.biome_at(p)) if v.environment!=null else ""
 
 func _discover(id: String) -> String:
 	if id=="" or discovered.has(id): return ""

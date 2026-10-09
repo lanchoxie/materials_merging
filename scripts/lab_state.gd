@@ -1620,6 +1620,16 @@ func _campus_transaction(result: Dictionary) -> String:
 func campus_hire(role: String) -> String:
 	return _campus_transaction(campus.hire(role,campus_context()))
 
+## v0.36: lay a PVC irrigation line on Earth from 星锻岛 PVC stock (drought preparation).
+func lay_pipe() -> String:
+	var need=int(planet.v2.incidents.rules.pipe.pvc)
+	if int(industry.items.get("pvc",0))<need: return "需要星锻岛高分子工厂做的 PVC 管材 ×%d" % need
+	var message: String=planet.v2.incidents.lay_pipe()
+	if message.begins_with("铺设"):
+		industry.items["pvc"]=int(industry.items.pvc)-need
+		if int(industry.items.pvc)<=0: industry.items.erase("pvc")
+	return message
+
 ## v0.35: the player approves a graduate's promotion to 星锻岛.
 func campus_promote(id: int) -> String:
 	var message: String=industry.promote(self,id)

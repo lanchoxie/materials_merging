@@ -24,6 +24,11 @@ var journey=Journey.new()
 ## v0.32 Earth: climate field, atmosphere and machines.
 const Climate=preload("res://scripts/planet_environment.gd")
 var environment=Climate.new()
+## v0.36: weather incidents (storm / flood / drought) and the 标本图鉴.
+const Incidents=preload("res://scripts/planet_incidents.gd")
+var incidents=Incidents.new()
+const Specimens=preload("res://scripts/planet_specimens.gd")
+var specimens=Specimens.new()
 var actor: Dictionary={}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_v2.json"))
 var world: Dictionary={}
@@ -121,6 +126,7 @@ func _step() -> void:
 	field.tick(world,construction,organics)
 	organics.tick(field,construction)
 	settlement.tick(world,construction)
+	incidents.step(self)
 	var ds=float(rules.clock.day_seconds)
 	var changed_season=int(world.elapsed)%(int(ds)*int(rules.clock.season_days))==0
 	if changed_season: _event("%s季来了：水位、光照与食物会随季节改变。" % rules.clock.seasons[season()])
@@ -132,7 +138,11 @@ func _step() -> void:
 		var rain=float(rules.ecology.rain[season()])*(1.0 if id in ["wetland","riverbank"] else 0.5)
 		var shade=r.buildings.has("shade_canopy")
 		var evaporation=float(rules.ecology.evaporation[season()])*(0.55 if shade else 1.0)
+		var weather: Dictionary=incidents.region_mods(id)
+		rain=0.0 if float(weather.rain)<0 else rain+float(weather.rain)*(1.0 if id in ["wetland","riverbank"] else 0.6)
+		evaporation*=float(weather.evaporation)
 		r.water=clampf(r.water+(rain-evaporation)/ds,0,1)
+		if weather.flood: r.water=minf(1.0,r.water+0.5/ds)
 		r.moisture=clampf(r.moisture+(r.water-r.moisture)*0.06/ds,0,1)
 		var at: Vector3=construction.terrain.CENTERS[id]
 		r.temperature=float(base.temperature)+float(rules.ecology.temperature[season()])+sin(float(world.elapsed)/ds*TAU)*2+environment.warming()+environment.local_heat(Vector2(at.x,at.z))
@@ -146,9 +156,13 @@ func _step() -> void:
 			var c=crop(plot.crop)
 			var water_ok=r.moisture>=c.moisture_min and r.moisture<=c.moisture_max
 			var warm=r.temperature>=c.temperature_min and r.temperature<=c.temperature_max
-			if water_ok and warm and r.nutrients>0.08:
+			# Flattened by a storm or standing in flood water: an unprotected crop stops growing.
+			if water_ok and warm and r.nutrients>0.08 and float(weather.crop_loss)<=0.0:
 				plot.growth=minf(1,plot.growth+(0.8 if shade else 1.0)*environment.co2_growth()/(float(c.days)*ds))
 				r.nutrients=maxf(0,r.nutrients-float(c.nutrient_use)/(float(c.days)*ds))
+			if float(weather.crop_loss)>0.0:
+				var lost=minf(float(plot.growth),float(weather.crop_loss)/ds)
+				plot.growth=float(plot.growth)-lost; incidents.record_crop_loss(lost)
 			if plot.growth>=1:
 				plot.ready=true; _event("%s的%s成熟了，可以收获留种。" % [r.name,c.name])
 		var survivors=[]
@@ -276,7 +290,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize()}
+	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize()}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -384,9 +398,14 @@ func restore(data) -> bool:
 	if data.has("organics") and not restored_organics.restore(data.organics,restored_construction): return false
 	var restored_environment=Climate.new()
 	if data.has("environment") and not restored_environment.restore(data.environment): return false
+	var restored_incidents=Incidents.new()
+	if data.has("incidents") and not restored_incidents.restore(data.incidents,int(w.elapsed)): return false
+	var restored_specimens=Specimens.new()
+	if data.has("specimens") and not restored_specimens.restore(data.specimens): return false
 	var restored_journey=Journey.new()
 	if data.has("journey") and not restored_journey.restore(data.journey,restored_construction.terrain): return false
 	journey=restored_journey
+	incidents=restored_incidents; specimens=restored_specimens
 	environment=restored_environment
 	organics=restored_organics
 	ranch=restored_ranch

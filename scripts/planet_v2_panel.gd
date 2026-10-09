@@ -416,11 +416,13 @@ func _feel(action: String) -> void:
 
 func _next_goal() -> String:
 	var v=state.planet.v2; var s=v.settlement
+	var weather: String=v.incidents.status_line(v)
+	if not weather.is_empty(): return weather+"\n打开「时代」页看怎么准备"
 	for row in s.checklist(v.world,v.construction):
 		if row.complete: continue
 		return "时代目标 · %s %s/%s
 %s" % [row.label,_amount(row.value),_amount(row.required),str(row.hint).split("；")[0]]
-	if s.era<2: return "时代目标 · 条件已满足！打开「时代」页建立"+str(s.rules.eras[s.era+1].name)
+	if s.era<s.last_era(): return "时代目标 · 条件已满足！打开「时代」页建立"+str(s.rules.eras[s.era+1].name)
 	return ""
 
 func _amount(x: float) -> String:
@@ -435,7 +437,7 @@ func _key() -> String:
 	var life=[]; var crops=[]
 	for a in r.animals: life.append(a.id)
 	for c in r.crops: crops.append([c.crop,c.ready])
-	return str([selected_region,section,_in_wilderness(),v.population.enabled,stock,state.planet.products,life,crops,r.buildings,r.enclosed,v.world.events.size(),v.world.events[0],v.world.seeds,v.world.food,v.construction.revision,v.field.revision,v.ranch.revision,v.organics.revision,v.journey.revision,v.nature.discovered.size(),v.settlement.era,v.settlement.people.map(func(p): return [p.id,p.get("generation",0)])])
+	return str([selected_region,section,_in_wilderness(),v.population.enabled,stock,state.planet.products,life,crops,r.buildings,r.enclosed,v.world.events.size(),v.world.events[0],v.world.seeds,v.world.food,v.construction.revision,v.field.revision,v.ranch.revision,v.organics.revision,v.journey.revision,v.nature.discovered.size(),v.settlement.era,v.settlement.people.map(func(p): return [p.id,p.get("generation",0)]),v.incidents.revision,v.specimens.revision])
 
 func _redraw(reset_scroll: bool=false) -> void:
 	if body==null: return
@@ -522,6 +524,7 @@ func _building() -> void:
 
 func _era() -> void:
 	var s=state.planet.v2.settlement
+	_weather_card()
 	var card=_card(s.title())
 	card.add_child(UI.paragraph(s.rules.eras[s.era].story,16))
 	widgets.era=UI.paragraph("",15,UI.GOLD); card.add_child(widgets.era)
@@ -535,7 +538,7 @@ func _era() -> void:
 		for b in _era_actions(str(row.id)): buttons.add_child(UI.button(b[0],b[1]))
 		widgets["era_row:"+str(row.id)]=[title,bar]
 	if s.era==0: card.add_child(UI.paragraph("住处是你实际搭的建筑，不是要找一个叫‘屋檐’的物品。用木构搭立柱，再横接屋顶；屋顶正下方至少留2格空地，每格都能站直、不被方块堵住。屋顶旁露天的地面不算住处。",14))
-	if s.era<2:
+	if s.era<s.last_era():
 		var promote=UI.button("建立"+str(s.rules.eras[s.era+1].name),func(): _act("v2_next_era"),true); card.add_child(promote); widgets.era_advance=promote
 	card.add_child(UI.button("打开村庄 · 公共仓库补给",func(): _tab("ranch")))
 	card.add_child(UI.button("去车间制作屋顶",func(): workshop_requested.emit("field_roof")))
@@ -546,6 +549,28 @@ func _era() -> void:
 	card.add_child(UI.button("回草甸营地",func(): _travel("home"); _tool("observe")))
 	widgets.residents=UI.paragraph("",15); card.add_child(widgets.residents)
 	card.add_child(UI.paragraph("这是同一世界的游戏时代章节，保留动物个体和你的建筑。史前物种、完整工业时代与未来科技仍待扩展。",13,UI.MUTED))
+
+## v0.36: the current or announced incident, how prepared the camp is, and what to build.
+func _weather_card() -> void:
+	var v=state.planet.v2; var inc=v.incidents
+	var kind=str(inc.active.get("kind",inc.pending.get("kind","")))
+	var card=_card("天气与灾害" if kind=="" else "⚠ "+str(inc.kind_info(kind).name))
+	if kind=="":
+		card.add_child(UI.paragraph("春夏有暴风雨和河水上涨，夏秋可能干旱；每次都会提前一天预警（年鉴和左上角）。准备得越好损失越小，扛住后有岛主经验。现在%s的时代可能遇到：%s。" % [s_title(v),"、".join(v.settlement.incident_kinds().map(func(k): return inc.kind_info(k).name))],14))
+	else:
+		card.add_child(UI.label(inc.status_line(v),16,UI.GOLD))
+		card.add_child(UI.paragraph("怎么准备："+str(inc.kind_info(kind).prepare),14))
+	var rows=[["暴风雨 · 营地屋顶下净空","storm"],["河水上涨 · 沿河堤坝构件","flood"],["干旱 · 洒水器 + 灌溉管","drought"]]
+	for row in rows:
+		var p=inc.preparation(v,str(row[1]))
+		var line=UI.row(card,8)
+		line.add_child(UI.label("%s %d%%" % [row[0],roundi(p*100)],14,UI.MINT if p>=0.5 else UI.TEXT))
+	card.add_child(UI.button("铺设灌溉管 %d/%d · 星锻岛 PVC×%d" % [inc.pipes,int(inc.rules.pipe.max),int(inc.rules.pipe.pvc)],func(): message=state.lay_pipe(); _redraw()))
+	card.add_child(UI.button("去车间做屋顶或堤坝木墙",func(): workshop_requested.emit("field_roof")))
+	if not inc.history.is_empty(): card.add_child(UI.paragraph("上一次："+str(inc.history[0].text),13))
+
+func s_title(v) -> String:
+	return str(v.settlement.title())
 
 ## Buttons for one era requirement row: the shortest route to actually doing it.
 func _era_actions(id: String) -> Array:
@@ -580,6 +605,17 @@ func _nearby_text() -> String:
 
 func _journal() -> void:
 	var v=state.planet.v2; var Geology=v.nature.Geology; var all: Dictionary=Geology.rules().materials
+	var book=v.specimens; var all_species: Dictionary=book.rules.species
+	var specimens=_card("标本图鉴 · %d / %d" % [book.count(),all_species.size()])
+	specimens.add_child(UI.paragraph("手持分析仪，瞄准动物或树木按 E。同一物种在新的群系里再扫一次，会记下新的栖地。卡片写着它在真实世界的原型。",14,UI.GOLD))
+	for id in all_species:
+		var sp: Dictionary=all_species[id]
+		if book.found.has(id):
+			specimens.add_child(UI.paragraph("◆ %s · %s · 原型 %s\n%s\n见于：%s" % [sp.name,sp.group,sp.prototype,sp.facts,"、".join(book.found[id]).replace("、、","、")],14,UI.TEXT))
+		else: specimens.add_child(UI.paragraph("◇ ？？？ · %s" % sp.group,14))
+	if not v.incidents.history.is_empty():
+		var storms=_card("灾害记录 · 稳住了 %d 次" % v.incidents.weathered)
+		for h in v.incidents.history: storms.add_child(UI.paragraph("第%d天  ·  %s" % [int(h.day)+1,h.text],14,UI.TEXT))
 	var codex=_card("矿物图鉴 · %d / %d" % [v.nature.discovered.size(),all.size()])
 	codex.add_child(UI.paragraph("用采掘镐向下挖，或用分析仪扫描岩壁，第一次遇到的岩土和矿物会记在这里。成分来自真实矿物学数据。",14,UI.GOLD))
 	for id in all:
@@ -677,6 +713,7 @@ func _sync() -> void:
 	view.settlement_view.sync(v.settlement,at)
 	view.life_view.era=v.settlement.era
 	view.journey_view.sync(v.journey,at,not view.first_person)
+	view.weather=v.incidents.sky(v)
 	_live(); _aim()
 
 func _process(dt: float) -> void:

@@ -65,7 +65,9 @@ static func legacy_score(state) -> int:
 	return int(state.milestones_claimed.size())*int(w.milestone)+int(state.star_rewards)*int(w.codex_star)\
 		+int(state.index_found.size())*int(w.index_find)+levels*int(w.reactor_level)\
 		+int(state.unlocked_plot_count())*int(w.plot)+int(state.refinery.level)*int(w.refinery_level)\
-		+int(state.fabricator.serial)*int(w.fabricated)
+		+int(state.fabricator.serial)*int(w.fabricated)\
+		+int(state.planet.v2.specimens.count())*int(w.get("specimen",0))+int(state.planet.v2.specimens.biomes())*int(w.get("specimen_biome",0))\
+		+int(state.planet.v2.incidents.weathered)*int(w.get("weathered",0))
 
 ## Called on tick: the first call converts old saves once; later growth of old progress adds XP.
 func sync_legacy(state) -> int:

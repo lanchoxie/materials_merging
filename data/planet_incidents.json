@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "note": "v0.36 incidents. Seasons, warnings and preparations follow real causes (storm rain, spring floods, summer droughts, floodplain silt); chances, durations, damage and thresholds are game rules (游戏数值).",
+  "first_day": 3,
+  "cooldown_days": 3,
+  "warning_seconds": 60,
+  "kinds": {
+    "storm": {
+      "name": "暴风雨",
+      "seasons": [
+        0,
+        1,
+        2
+      ],
+      "days": [
+        1,
+        1
+      ],
+      "warn": "预警：明天有暴风雨。营地屋顶下的净空越多，作物和居民越安全。",
+      "start": "暴风雨来了：雨水灌满河湾，狂风吹打田里的作物。",
+      "prepare": "营地14米内屋顶下可站立的空地（4格＝完全防护）",
+      "rain": 0.45,
+      "crop_loss": 0.25,
+      "health": 0.0025,
+      "sky": {
+        "dark": 0.7,
+        "rain": 1.0,
+        "haze": 0.0
+      }
+    },
+    "flood": {
+      "name": "河水上涨",
+      "seasons": [
+        0,
+        1
+      ],
+      "days": [
+        1,
+        2
+      ],
+      "warn": "预警：上游融雪/降雨，河水明天会漫过河岸。沿河筑堤（河边3–9米内的构件）可以挡水。",
+      "start": "河水上涨：湿地和砾石河岸被淹，岸边的作物泡在水里。",
+      "prepare": "起始河段（南北40米内）距河3–9米的堤坝构件（16块＝完全挡住）",
+      "regions": [
+        "wetland",
+        "riverbank"
+      ],
+      "crop_loss": 0.4,
+      "silt": 0.15,
+      "sky": {
+        "dark": 0.3,
+        "rain": 0.5,
+        "haze": 0.0
+      }
+    },
+    "drought": {
+      "name": "干旱",
+      "seasons": [
+        1,
+        2
+      ],
+      "days": [
+        2,
+        3
+      ],
+      "warn": "预警：接下来几天高温少雨，水位会快速下降。洒水器和 PVC 灌溉管能减少损失。",
+      "start": "干旱开始：不下雨，蒸发加快，湿地和草甸在变干。",
+      "prepare": "洒水器（环境设备）与已铺设的 PVC 灌溉管（合计4＝完全）",
+      "evaporation": 2.5,
+      "sky": {
+        "dark": 0.0,
+        "rain": 0.0,
+        "haze": 0.85
+      }
+    }
+  },
+  "levee": {
+    "near": 3.0,
+    "far": 9.0,
+    "span": 40.0,
+    "full": 16
+  },
+  "shelter_full": 4,
+  "irrigation_full": 4,
+  "pipe": {
+    "pvc": 2,
+    "max": 4,
+    "cut": 0.15
+  },
+  "max_history": 16
+}

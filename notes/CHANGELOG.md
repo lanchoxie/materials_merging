@@ -30,6 +30,23 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.36.0 "Weather & Specimens" (天气与标本)
+Planet release. Full notes: [22-incidents-specimens.md](22-incidents-specimens.md).
+- **Era framework.** Requirements and weather now come from data per era. Later eras get more frequent and harsher weather.
+- **暴风雨 / 河水上涨 / 干旱.** Each is announced a day ahead. Preparation is measured from your build: roofed shelter, a
+  riverside levee, sprinklers and PVC pipe. Better preparation means less crop and health loss.
+  Floods leave fertile silt. Every incident is recorded in the 年鉴, and weathering one well pays 岛主 XP.
+- **Visuals.** Storms bring a dark sky with rain; droughts bring a warm haze.
+- **PVC 灌溉管.** Made from 星锻岛 PVC and laid on Earth.
+- **标本图鉴.** The analyser records animals and trees with their real prototypes and the habitats where they were found, and pays XP.
+- **测试版.** Can trigger each incident.
+- **Performance.**
+  - Crosshair aiming went from 64 to 4.5 ms (tree lists cached per chunk), and walking from 2 to 0.25 ms per substep.
+  - Cold cave chunks went from 23 to 13 ms. The planet now holds 60 fps at home, and the worst 5 % of frames in the hills
+    went from 128 to 29 ms.
+  - There are three new probes: `benchmark_frames`, `benchmark_planet_parts` and `benchmark_chunks`.
+- **Tests.** New: `test_incidents` (27 checks).
+
 ## v0.35.0 "Home & Market" (家与市)
 Phase-2 slot I2 plus the promotion pipeline. Full notes: [21-home-market.md](21-home-market.md).
 - **晋升.** Engineers serve 2 学年 and 博士生 3 学年. Some get a seeded 延毕 with a reason. The player approves each

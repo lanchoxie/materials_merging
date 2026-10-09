@@ -217,7 +217,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.35 家与市  ·  晋升与延毕 · 星锻公寓 · 家居工坊 · 合同飞艇" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.36 天气与标本  ·  暴风雨 · 洪水 · 干旱 · 标本图鉴" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -1589,6 +1589,8 @@ func _show_test_panel(planet: Control = null) -> void:
 	row.add_child(UI.button("快进 1 天", func(): run.call(TestMode.skip_planet(state, 60))))
 	row.add_child(UI.button("快进 1 季", func(): run.call(TestMode.skip_planet(state, 240))))
 	row.add_child(UI.button("推进时代", func(): run.call(TestMode.force_era(state))))
+	for kind in [["storm","暴风雨"],["flood","洪水"],["drought","干旱"]]:
+		row.add_child(UI.button("10秒后%s" % kind[1], func(): run.call("测试："+state.planet.v2.incidents.warn(state.planet.v2,kind[0],10.0))))
 	if from_planet:
 		body.add_child(UI.label("传送（进入第一人称）", 16, UI.MUTED))
 		row = UI.row(body, 8)

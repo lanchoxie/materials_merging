@@ -12,7 +12,10 @@
       "reactor_level": 5,
       "plot": 8,
       "refinery_level": 50,
-      "fabricated": 25
+      "fabricated": 25,
+      "specimen": 25,
+      "specimen_biome": 10,
+      "weathered": 30
     }
   },
   "unlock": {

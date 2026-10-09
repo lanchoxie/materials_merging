@@ -18,29 +18,44 @@ func center() -> Vector2:
 func title() -> String:
 	return rules.eras[era].name
 
+## v0.36 era framework: each era lists its requirements in data (eras[i].requires): a metric id,
+## a threshold path into the rules, a label and a hint. A new era is a new data entry plus, if it
+## needs one, a new metric below. The last era has no requirements.
 func checklist(world: Dictionary, construction) -> Array:
-	var rows=[]; var shelter=construction.shelter_cells(center(),rules.radius)
-	if era==0:
-		var r: Dictionary=rules.agrarian
-		rows.append(_condition("blocks","营地木构",construction.count_kind("block",center(),rules.radius),r.blocks,"采木料 → 工艺车间木墙包；放在草甸营地14米内"))
-		rows.append(_condition("shelter","屋顶下可站立空地",shelter,r.shelter_cells,"立柱撑起屋顶；正下方留足1.75米，不能用实心堆块代替"))
-		rows.append(_condition("harvests","实际作物收获",harvests,r.harvests,"种植箱或河湾田地成熟后收获；采野果不算作物收获"))
-		rows.append(_condition("food","粮食储备",world.food+stored_food(),r.food,"田地收获入口粮；箱中谷穗可存公共仓库，也计入储备"))
-		rows.append(_condition("water","草甸水位（%）",world.regions.meadow.water*100,r.water*100,"背包水样 → 起始草甸区域补水；给种植箱浇水不改变区域水位"))
-	elif era==1:
-		var r: Dictionary=rules.modern
-		rows.append(_condition("shelter","仍可使用的住处",shelter,r.shelter_cells,"保留营地内的屋顶与净空；拆掉住处后不能晋级"))
-		rows.append(_condition("solar","营地已安装光伏",construction.count_kind("solar",center(),rules.radius),r.solar,"工艺车间制造光伏 → 背包装备 → 营地14米内放置"))
-		rows.append(_condition("harvests","累计作物收获",harvests,r.harvests,"持续种植并收获；已有收获保留"))
-		rows.append(_condition("meals","居民实际用餐",meals,r.meals,"把口粮、谷穗或野果存公共仓库；居民走到仓库吃掉才计次"))
-		var residents=0
-		for p in people:
-			if p.health>=r.health and p.hunger<=r.hunger_max: residents+=1
-		rows.append(_condition("residents","安居居民",residents,r.residents,"至少一位健康≥50%、饥饿≤65%的居民；保留水源、住房和食物"))
-		rows.append(_condition("food","公共仓库食物",stored_food(),r.depot_food,"村庄页存入口粮、谷穗或野果；背包里的食物尚未供给居民"))
-		rows.append(_condition("water","公共仓库水样",ranch.depot.water if ranch!=null else 0,r.depot_water,"村庄页存入反应釜生产并收获的水样；区域水位不能替代仓库水"))
-		rows.append(_condition("energy","已积蓄太阳能服务点",energy,r.energy,"白天实际发电积蓄到2点；暂停或夜间不发电"))
+	var rows=[]
+	if era<0 or era>=rules.eras.size(): return rows
+	for spec in rules.eras[era].get("requires",[]):
+		var path: Array=spec.required; var need=float(rules[path[0]][path[1]])*float(spec.get("scale",1))
+		rows.append(_condition(str(spec.get("id",spec.metric)),str(spec.label),metric(str(spec.metric),world,construction)*float(spec.get("scale",1)),need,str(spec.hint)))
 	return rows
+
+func metric(id: String,world: Dictionary,construction) -> float:
+	match id:
+		"blocks": return construction.count_kind("block",center(),rules.radius)
+		"shelter": return construction.shelter_cells(center(),rules.radius)
+		"solar": return construction.count_kind("solar",center(),rules.radius)
+		"harvests": return harvests
+		"meals": return meals
+		"food_total": return world.food+stored_food()
+		"meadow_water": return world.regions.meadow.water
+		"depot_food": return stored_food()
+		"depot_water": return ranch.depot.water if ranch!=null else 0
+		"energy": return energy
+		"residents":
+			var r: Dictionary=rules.modern; var n=0
+			for p in people:
+				if p.health>=r.health and p.hunger<=r.hunger_max: n+=1
+			return n
+	return 0.0
+
+func last_era() -> int:
+	return rules.eras.size()-1
+
+func incident_kinds() -> Array:
+	return rules.eras[era].get("incidents",[])
+
+func incident_chance() -> float:
+	return float(rules.eras[era].get("incident_chance",0.0))
 
 func stored_food() -> int:
 	return int(ranch.depot.ration+ranch.depot.grain+ranch.depot.fruit) if ranch!=null else 0
@@ -122,7 +137,7 @@ func restore(data) -> bool:
 	if not data is Dictionary or data.get("version")!=1: return false
 	if not _num(data.get("recruit_serial",1),1,1e12,true): return false
 	for field in ["era","harvests","meals"]:
-		if not _num(data.get(field),0,2 if field=="era" else 1e12,true): return false
+		if not _num(data.get(field),0,last_era() if field=="era" else 1e12,true): return false
 	if not _num(data.get("energy"),0,rules.energy_capacity) or not data.get("people") is Array or data.people.size()>(0 if data.era==0 else 2): return false
 	var ids=[]
 	for p in data.people:

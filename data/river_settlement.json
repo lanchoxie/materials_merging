@@ -12,17 +12,161 @@
     {
       "id": "wild",
       "name": "原野营地",
-      "story": "旅人沿河游历，先留出动物的栖地。搭建自己的住处，收获第一批作物。"
+      "story": "旅人沿河游历，先留出动物的栖地。搭建自己的住处，收获第一批作物。",
+      "incidents": [
+        "storm",
+        "flood"
+      ],
+      "incident_chance": 0.1,
+      "requires": [
+        {
+          "metric": "blocks",
+          "label": "营地木构",
+          "required": [
+            "agrarian",
+            "blocks"
+          ],
+          "hint": "采木料 → 工艺车间木墙包；放在草甸营地14米内"
+        },
+        {
+          "metric": "shelter",
+          "label": "屋顶下可站立空地",
+          "required": [
+            "agrarian",
+            "shelter_cells"
+          ],
+          "hint": "立柱撑起屋顶；正下方留足1.75米，不能用实心堆块代替"
+        },
+        {
+          "metric": "harvests",
+          "label": "实际作物收获",
+          "required": [
+            "agrarian",
+            "harvests"
+          ],
+          "hint": "种植箱或河湾田地成熟后收获；采野果不算作物收获"
+        },
+        {
+          "metric": "food_total",
+          "label": "粮食储备",
+          "required": [
+            "agrarian",
+            "food"
+          ],
+          "hint": "田地收获入口粮；箱中谷穗可存公共仓库，也计入储备",
+          "id": "food"
+        },
+        {
+          "metric": "meadow_water",
+          "label": "草甸水位（%）",
+          "required": [
+            "agrarian",
+            "water"
+          ],
+          "scale": 100,
+          "hint": "背包水样 → 起始草甸区域补水；给种植箱浇水不改变区域水位",
+          "id": "water"
+        }
+      ]
     },
     {
       "id": "agrarian",
       "name": "农耕聚落",
-      "story": "两位旅人留下生活。粮仓供餐、干净的水与住处决定他们能否安居。"
+      "story": "两位旅人留下生活。粮仓供餐、干净的水与住处决定他们能否安居。",
+      "incidents": [
+        "storm",
+        "flood",
+        "drought"
+      ],
+      "incident_chance": 0.16,
+      "requires": [
+        {
+          "metric": "shelter",
+          "label": "仍可使用的住处",
+          "required": [
+            "modern",
+            "shelter_cells"
+          ],
+          "hint": "保留营地内的屋顶与净空；拆掉住处后不能晋级"
+        },
+        {
+          "metric": "solar",
+          "label": "营地已安装光伏",
+          "required": [
+            "modern",
+            "solar"
+          ],
+          "hint": "工艺车间制造光伏 → 背包装备 → 营地14米内放置"
+        },
+        {
+          "metric": "harvests",
+          "label": "累计作物收获",
+          "required": [
+            "modern",
+            "harvests"
+          ],
+          "hint": "持续种植并收获；已有收获保留"
+        },
+        {
+          "metric": "meals",
+          "label": "居民实际用餐",
+          "required": [
+            "modern",
+            "meals"
+          ],
+          "hint": "把口粮、谷穗或野果存公共仓库；居民走到仓库吃掉才计次"
+        },
+        {
+          "metric": "residents",
+          "label": "安居居民",
+          "required": [
+            "modern",
+            "residents"
+          ],
+          "hint": "至少一位健康≥50%、饥饿≤65%的居民；保留水源、住房和食物"
+        },
+        {
+          "metric": "depot_food",
+          "label": "公共仓库食物",
+          "required": [
+            "modern",
+            "depot_food"
+          ],
+          "hint": "村庄页存入口粮、谷穗或野果；背包里的食物尚未供给居民",
+          "id": "food"
+        },
+        {
+          "metric": "depot_water",
+          "label": "公共仓库水样",
+          "required": [
+            "modern",
+            "depot_water"
+          ],
+          "hint": "村庄页存入反应釜生产并收获的水样；区域水位不能替代仓库水",
+          "id": "water"
+        },
+        {
+          "metric": "energy",
+          "label": "已积蓄太阳能服务点",
+          "required": [
+            "modern",
+            "energy"
+          ],
+          "hint": "白天实际发电积蓄到2点；暂停或夜间不发电"
+        }
+      ]
     },
     {
       "id": "modern",
       "name": "现代生态站",
-      "story": "同一片聚落引入浮岛光伏器件。白天积蓄服务能量，用有限的水进行灌溉，居民开始维护与观察生态。"
+      "story": "同一片聚落引入浮岛光伏器件。白天积蓄服务能量，用有限的水进行灌溉，居民开始维护与观察生态。",
+      "incidents": [
+        "storm",
+        "flood",
+        "drought"
+      ],
+      "incident_chance": 0.22,
+      "requires": []
     }
   ],
   "agrarian": {

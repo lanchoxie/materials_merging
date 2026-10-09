@@ -50,6 +50,10 @@ var fill: DirectionalLight3D
 var sky_material: ProceduralSkyMaterial
 var sky_phase=-1.0
 var stride=0.0
+## v0.36 weather from the incident director: {dark, rain, haze}. Rain streaks follow the camera.
+var weather: Dictionary={"dark":0.0,"rain":0.0,"haze":0.0}
+var rain: CPUParticles3D
+var weather_now=Vector3.ZERO
 
 func _ready() -> void:
 	mat=StandardMaterial3D.new(); mat.vertex_color_use_as_albedo=true; mat.roughness=0.92; mat.metallic_specular=0.25
@@ -91,6 +95,13 @@ func _ready() -> void:
 	journey_view=preload("res://scripts/journey_view.gd").new(); journey_view.material=mat; journey_view.terrain=terrain; terrain_root.add_child(journey_view)
 	var ring=TorusMesh.new(); ring.inner_radius=4.8; ring.outer_radius=4.9; ring.rings=32; ring.ring_segments=4
 	marker=MeshInstance3D.new(); marker.mesh=ring; var m=StandardMaterial3D.new(); m.albedo_color=Color("f5d789"); m.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED; marker.material_override=m; add_child(marker)
+	rain=CPUParticles3D.new(); rain.amount=700; rain.lifetime=0.9; rain.emitting=false; rain.local_coords=false
+	rain.emission_shape=CPUParticles3D.EMISSION_SHAPE_BOX; rain.emission_box_extents=Vector3(14,0.5,14)
+	rain.direction=Vector3(0.15,-1,0.05); rain.spread=4.0; rain.gravity=Vector3(0,-30,0); rain.initial_velocity_min=16; rain.initial_velocity_max=20
+	var drop=QuadMesh.new(); drop.size=Vector2(0.025,0.55); rain.mesh=drop
+	var dm=StandardMaterial3D.new(); dm.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED; dm.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA
+	dm.albedo_color=Color(0.78,0.86,0.95,0.45); dm.billboard_mode=BaseMaterial3D.BILLBOARD_FIXED_Y; dm.cull_mode=BaseMaterial3D.CULL_DISABLED; rain.material_override=dm
+	add_child(rain)
 	_camera(1.0)
 
 func _surface() -> SurfaceTool:
@@ -300,6 +311,28 @@ func _birds(sun_phase: float) -> void:
 		b.rotation=Vector3(0,PI-a,sin(t+i)*0.15)
 		var flap=sin(t*(8.0+i)+i)*0.7 if fmod(t*0.4+i*0.37,1.0)<0.55 else 0.12
 		for w in b.get_meta("wings"): w.rotation.z=flap*signf(w.scale.x)
+## Storms darken the sky and sun and pull the fog in; droughts add a warm haze. Eased so a warning
+## hour slowly clouds over. Rain only falls where the camera is.
+func _weather(dt: float) -> void:
+	var target=Vector3(float(weather.get("dark",0.0)),float(weather.get("rain",0.0)),float(weather.get("haze",0.0)))
+	weather_now=weather_now.lerp(target,minf(1.0,dt*0.6))
+	var dark=weather_now.x; var haze=weather_now.z
+	sun.light_energy*=1.0-dark*0.7
+	if first_person:
+		env.fog_depth_begin=lerpf(26.0,10.0,dark); env.fog_depth_end=lerpf(48.0,30.0,dark)
+		env.fog_depth_begin=lerpf(env.fog_depth_begin,14.0,haze*0.6)
+		env.fog_light_color=env.fog_light_color.lerp(Color("4c5560"),dark).lerp(Color("dcc28a"),haze*0.9)
+		env.ambient_light_color=env.ambient_light_color.lerp(Color("66737f"),dark).lerp(Color("ecd29a"),haze*0.6)
+		sky_material.sky_top_color=sky_material.sky_top_color.lerp(Color("343e49"),dark).lerp(Color("cdb88a"),haze*0.45)
+		sky_material.sky_horizon_color=sky_material.sky_horizon_color.lerp(Color("5f6873"),dark).lerp(Color("e8cf98"),haze*0.8)
+	else: env.background_color=env.background_color.lerp(Color("1a222b"),dark*0.6)
+	sky_phase=-1.0 if dark>0.01 or haze>0.01 else sky_phase
+	rain.emitting=weather_now.y>0.05
+	if rain.emitting: rain.material_override.albedo_color.a=0.45*clampf(weather_now.y,0.0,1.0)
+	if rain.emitting:
+		var at=walker.eye() if first_person else camera.global_position.lerp(Vector3(camera.global_position.x,0,camera.global_position.z),0.7)
+		rain.global_position=at+Vector3(0,9,0)
+
 func _daylight(phase: float,day: float) -> void:
 	var arc=fposmod(day,1.0)
 	sun.rotation_degrees=Vector3(-lerpf(14.0,58.0,phase),lerpf(-110.0,70.0,clampf(arc*1.3-0.15,0,1)),0)
@@ -334,6 +367,7 @@ func _process(dt: float) -> void:
 	if not first_person: env.fog_light_color=env.background_color
 	env.fog_light_energy=1.0
 	_daylight(sun_phase,float(snapshot.elapsed)/60.0)
+	_weather(dt)
 	_birds(sun_phase)
 	for node in animal_nodes.values():
 		var a: Dictionary=node.get_meta("animal"); var id=str(node.get_meta("region")); var c: Vector3=CENTERS[id]

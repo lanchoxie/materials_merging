@@ -17,6 +17,8 @@ var _pad_near: Dictionary={}
 var _cave_columns: Dictionary={}
 ## v0.33.2: natural column tops are pure functions of x/z (and the pads), so they are cached.
 var _height_cache: Dictionary={}
+var _trunks: Dictionary={}
+var _cave_cells: Dictionary={}
 const LANDMARKS={"home":{"name":"起始河湾","at":Vector2(10,15)},"homestead":{"name":"采集坡 · 小屋营地","at":Vector2(16,22)},"camp":{"name":"旅人林间营地","at":Vector2(68,68)},"woods":{"name":"西岸林地","at":Vector2(-124,68)},"ridge":{"name":"远方高原","at":Vector2(196,-188)},"frontier":{"name":"千米林海 · 远征起点","at":Vector2(1348,1348)},"far_river":{"name":"六公里外 · 上游河谷","at":Vector2(-8,-6140)}}
 
 func _init() -> void:
@@ -47,11 +49,17 @@ func chunk_tree_origins(key: Vector2i) -> Array[Vector2]:
 	tree_cache[key]=result
 	return result
 
+## Standing trunks per chunk. Cached against nature.revision (every chop, planting and growth
+## stage bumps it): walking and aiming ask this hundreds of times a second.
 func chunk_trees(key: Vector2i) -> Array[Vector2]:
 	if nature==null: return chunk_tree_origins(key)
+	var hit=_trunks.get(key)
+	if hit!=null and int(hit[0])==int(nature.revision): return hit[1]
 	var result: Array[Vector2]=[]
 	for tree in nature.records(key,self):
 		if not tree.cut and tree.growth>=0.5: result.append(Vector2(tree.x,tree.z))
+	if _trunks.size()>=96: _trunks.clear()
+	_trunks[key]=[int(nature.revision),result]
 	return result
 
 func tree_records(key: Vector2i) -> Array:
@@ -211,6 +219,14 @@ func cave(c: Vector3i) -> bool:
 	return _cave_at(c,natural_height(Vector2(c.x,c.z)))
 
 func _cave_at(c: Vector3i,top: float) -> bool:
+	var hit=_cave_cells.get(c)
+	if hit!=null: return hit
+	var carved=_cave_shape(c,top)
+	if _cave_cells.size()>=400000: _cave_cells.clear()
+	_cave_cells[c]=carved
+	return carved
+
+func _cave_shape(c: Vector3i,top: float) -> bool:
 	# A roof of at least 2 m, except in sparse mouth patches where tunnels break the surface.
 	var roof=0.0 if cave_mouth(Vector2(c.x,c.z)) else 2.0
 	if float(c.y)>top-roof-0.001 or float(c.y)<top-float(rules.cave_depth) or c.y<=Geology.bedrock_y()+1: return false
@@ -230,6 +246,14 @@ func column_has_cave(x: int,z: int) -> bool:
 	var k=Vector2i(x,z)
 	if _cave_columns.has(k): return _cave_columns[k]
 	var top=natural_height(p); var found=false
+	# The tunnel field changes by at most ~0.04 per metre of depth, so one sample at mid-depth
+	# rules out most columns without testing every cell.
+	var mid=top-float(rules.cave_depth)*0.5
+	var worm=sin(x*0.063+mid*0.021)+sin(z*0.058-mid*0.019)+sin((x+z)*0.037)
+	if absf(worm)>float(rules.cave_width)+0.04*float(rules.cave_depth)*0.5+0.05:
+		if _cave_columns.size()>=60000: _cave_columns.clear()
+		_cave_columns[k]=false
+		return false
 	for y in range(ceili(top-float(rules.cave_depth)),ceili(top)):
 		if _cave_at(Vector3i(x,y,z),top): found=true; break
 	if _cave_columns.size()>=60000: _cave_columns.clear()
@@ -246,7 +270,7 @@ func pad_mask(c: Vector2) -> float:
 	return smoothstep(PAD_FLAT,PAD_RAMP,d)
 
 func set_pads(keys: Array) -> void:
-	pads={}; _pad_near={}; _cave_columns.clear(); _height_cache.clear(); tree_cache.clear()
+	pads={}; _pad_near={}; _cave_columns.clear(); _cave_cells.clear(); _height_cache.clear(); tree_cache.clear(); _trunks.clear()
 	var span=float(rules.cell_size)*int(rules.chunk_cells); var reach=ceili((PAD_RAMP+span)/span)
 	for key in keys:
 		pads[key]=true
