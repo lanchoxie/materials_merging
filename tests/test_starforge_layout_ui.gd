@@ -21,16 +21,16 @@ func _run() -> void:
 	game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var s=game.state; var ind=s.industry
 	await process_frame; await RenderingServer.frame_post_draw
-	preload("res://scripts/test_mode.gd").open_starforge(s,900); ind.gain(Industry.step(14)); ind.solar=[0.3,0.3,0.3,0.3,0.3,0.3]
+	preload("res://scripts/test_mode.gd").open_starforge(s,900); ind.gain(Industry.step(14)); ind.solar=[0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4]
 	s.coins=900000; ind.plots=12
-	var kinds=["metal_works","polymer_works","trade_hub","home_studio","staff_housing","inorganic_works","silicon_works","test_bench"]
+	var kinds=["metal_works","polymer_works","trade_hub","home_studio","staff_housing","inorganic_works","silicon_works","test_bench","chip_fab","packaging_plant"]
 	for i in range(kinds.size()): ind.build(s,i,kinds[i])
 	preload("res://scripts/test_mode.gd").finish_service(s)
 	for i in range(3): s.campus_hire("engineer")
 	preload("res://scripts/test_mode.gd").finish_service(s)
 	for row in ind.candidates(s):
 		if row.ready: s.campus_promote(int(row.id))
-	ind.items={"steel_ingot":3,"duralumin":2,"glass":2,"pe":4,"chair_nova":1}
+	ind.items={"steel_ingot":3,"duralumin":2,"glass":2,"pe":4,"chair_nova":1,"led_chip":3,"headlamp":1,"control_board":1}
 	for id in ind.items.keys(): ind._reconcile(id)
 	ind.tick(s,0.1)
 	game._show_starforge(); var panel=game.modal

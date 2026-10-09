@@ -54,6 +54,10 @@ var stride=0.0
 var weather: Dictionary={"dark":0.0,"rain":0.0,"haze":0.0}
 var rain: CPUParticles3D
 var weather_now=Vector3.ZERO
+## v0.38 LED headlamp from 星锻岛: {nm, color, range, lumens} or {} — lights up at night, in storms and caves.
+var lamp_spec: Dictionary={}
+var lamp: SpotLight3D
+var lamp_on=false
 
 func _ready() -> void:
 	mat=StandardMaterial3D.new(); mat.vertex_color_use_as_albedo=true; mat.roughness=0.92; mat.metallic_specular=0.25
@@ -73,6 +77,7 @@ func _ready() -> void:
 	fill=DirectionalLight3D.new(); fill.rotation_degrees=Vector3(-28,150,0); fill.light_color=Color("bfe2ea"); fill.light_energy=0.22; fill.sky_mode=DirectionalLight3D.SKY_MODE_LIGHT_ONLY; add_child(fill)
 	camera=Camera3D.new(); camera.projection=Camera3D.PROJECTION_ORTHOGONAL; camera.size=21; add_child(camera); camera.current=true
 	hands=preload("res://scripts/first_person_hands.gd").new(); camera.add_child(hands); hands.hide()
+	lamp=SpotLight3D.new(); lamp.spot_angle=38.0; lamp.spot_attenuation=0.6; lamp.shadow_enabled=false; lamp.position=Vector3(0,0.05,0); camera.add_child(lamp); lamp.hide()
 	terrain_root=Node3D.new(); add_child(terrain_root)
 	var sea=MeshInstance3D.new(); var ocean=PlaneMesh.new()
 	ocean.size=Vector2.ONE*float(terrain.rules.radius)*6
@@ -333,6 +338,20 @@ func _weather(dt: float) -> void:
 		var at=walker.eye() if first_person else camera.global_position.lerp(Vector3(camera.global_position.x,0,camera.global_position.z),0.7)
 		rain.global_position=at+Vector3(0,9,0)
 
+## Dark enough for the headlamp: night, a storm sky, or standing more than 2 m below the natural surface.
+func lamp_needed(sun_phase: float) -> bool:
+	if not first_person or lamp_spec.is_empty(): return false
+	var eye=walker.eye()
+	var under=eye.y<terrain.natural_height(Vector2(eye.x,eye.z))-0.4
+	return sun_phase<0.3 or weather_now.x>0.5 or under
+
+func _lamp(sun_phase: float) -> void:
+	lamp_on=lamp_needed(sun_phase)
+	lamp.visible=lamp_on
+	if not lamp_on: return
+	lamp.light_color=lamp_spec.color; lamp.spot_range=float(lamp_spec.range)
+	lamp.light_energy=clampf(1.2+float(lamp_spec.lumens)/60.0,1.2,5.0)
+
 func _daylight(phase: float,day: float) -> void:
 	var arc=fposmod(day,1.0)
 	sun.rotation_degrees=Vector3(-lerpf(14.0,58.0,phase),lerpf(-110.0,70.0,clampf(arc*1.3-0.15,0,1)),0)
@@ -367,7 +386,10 @@ func _process(dt: float) -> void:
 	if not first_person: env.fog_light_color=env.background_color
 	env.fog_light_energy=1.0
 	_daylight(sun_phase,float(snapshot.elapsed)/60.0)
+	# v0.38: first-person nights are darker, so a headlamp matters (day stays at the v0.33 ambient).
+	if first_person: env.ambient_light_energy=lerpf(0.28,0.55,smoothstep(0.0,0.35,sun_phase))
 	_weather(dt)
+	_lamp(sun_phase)
 	_birds(sun_phase)
 	for node in animal_nodes.values():
 		var a: Dictionary=node.get_meta("animal"); var id=str(node.get_meta("region")); var c: Vector3=CENTERS[id]

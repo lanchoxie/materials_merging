@@ -233,7 +233,43 @@ def silicon_works():
         box((0.64, 0.02, 0.02), (-0.75 + i * 0.66, -0.75, 0.66), mat("busbar", "c9ced6", metal=0.9))
     holo_logo(3.0, "8fd3ff"); export("silicon_works")
 
+# --- v0.38 晶圆芯片厂 Chip Fab: sawtooth clean-room hall, a lithography lens tower firing a violet beam
+# onto a wafer disc, gas cabinets.
+def chip_fab():
+    clear(); plinth(accent="b18cff")
+    white = mat("white", "eef1f4", metal=0.2, rough=0.3); gm = mat("gun", GUN, metal=0.6, rough=0.45)
+    violet = mat("beam", "b18cff", emit=5.0)
+    box((1.9, 1.2, 0.7), (-0.25, 0.45, 0.53), white)
+    for i in range(4):
+        box((0.46, 1.22, 0.06), (-1.0 + i * 0.5, 0.45, 0.98), mat("tooth", "c9d3de", metal=0.3, rough=0.3), rot=(0, 0.45, 0))
+        box((0.04, 1.2, 0.22), (-0.8 + i * 0.5, 0.45, 1.0), mat("skylight", "b18cff", emit=2.0))
+    cyl(0.22, 1.6, (0.85, -0.55, 1.0), gm, verts=12)
+    cyl(0.34, 0.25, (0.85, -0.55, 1.9), mat("lens", "dfe7ff", metal=0.1, rough=0.05), verts=16)
+    cyl(0.05, 0.75, (0.85, -0.55, 0.55), violet, verts=8)
+    cyl(0.3, 0.03, (0.85, -0.55, 0.2), mat("wafer", "3d4a6b", metal=0.8, rough=0.15), verts=24)
+    for k in range(3): box((0.06, 0.6, 0.02), (0.75 + k * 0.1, -0.55, 0.22), mat("die", "b18cff", emit=1.5))
+    for x in (-0.9, -0.6): cyl(0.1, 0.6, (x, -0.75, 0.48), mat("gas", "ffd36b", metal=0.5), verts=10)
+    holo_logo(3.0, "b18cff"); export("chip_fab")
+
+# --- v0.38 封测电路板厂 Packaging & Board Plant: a slab building skinned as a green PCB with copper
+# traces, roof fins as chip pins, and a black IC block with glowing pads.
+def packaging_plant():
+    clear(); plinth(accent="5fe0c8")
+    pcb = mat("pcb", "1f7a55", rough=0.6); copper = mat("trace", "e0a050", emit=1.5, metal=0.8)
+    box((2.0, 1.6, 0.8), (0, 0.1, 0.58), pcb)
+    for i in range(5):
+        box((1.6, 0.04, 0.02), (0, -0.55 + i * 0.32, 0.99), copper)
+        box((0.04, 0.04, 0.6), (-0.95, -0.55 + i * 0.32, 0.58), copper)
+    box((0.9, 0.9, 0.22), (0.2, 0.1, 1.1), mat("ic", "23262e", metal=0.3, rough=0.4))
+    for i in range(6):
+        for s in (-1, 1):
+            box((0.06, 0.16, 0.04), (-0.18 + i * 0.15, 0.1 + s * 0.52, 1.02), mat("pin", "c9ced6", metal=0.9))
+    sphere(0.06, (0.55, 0.45, 1.24), mat("led", "7cff9a", emit=5.0), seg=8)
+    box((0.5, 0.3, 0.5), (-0.6, -0.75, 0.43), mat("reel", GUN, metal=0.6))
+    cyl(0.2, 0.08, (-0.6, -0.92, 0.6), mat("tape", "5fe0c8", emit=1.0), rot=(math.pi / 2, 0, 0))
+    holo_logo(2.7, "5fe0c8"); export("packaging_plant")
+
 import sys
 only = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship, test_bench, inorganic_works, silicon_works):
+for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship, test_bench, inorganic_works, silicon_works, chip_fab, packaging_plant):
     if not only or build.__name__ in only: build()

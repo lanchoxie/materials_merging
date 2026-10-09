@@ -30,6 +30,21 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.38.0 "Chips & Light" (芯片与光)
+Industry release. Full notes: [25-chips-light.md](25-chips-light.md).
+- **晶圆芯片厂.**
+  - Logic chips have a linewidth slider. Rayleigh limit + Stapper defects + Poisson yield give an optimum near 0.5 µm;
+    the 386 is the anchor.
+  - Power diodes.
+  - Perovskite LEDs have a Cl/Br slider: colour from alloy bowing and λ = 1240/E_g, brightness from V(λ).
+- **封测电路板厂.** FR-4 boards, IC packaging, factory control boards (+25 % speed) and the LED headlamp.
+- **Polymer works.** Photoresist (after making phenol) and epoxy.
+- **Headlamp on Earth.** It lights up at night, in storms and underground, in the colour of your LED. First-person nights
+  are darker.
+- **Inherited properties.** Products that inherit a property now use the best input lots.
+- **Other.** Electronics buyer, Blender models, 测试版 「芯片原料包」.
+- **Tests.** New: `test_chips` (32 checks) and `test_headlamp_ui`. The layout test covers the new buildings.
+
 ## v0.37.1 playtest fixes
 Fixes from the user's phone play. Full notes: [24-playtest-fixes.md](24-playtest-fixes.md).
 - **星锻岛.** 「返回浮岛 Ⅰ」 and Android back now really return to the main island. Rows and labels wrap, so no tab runs off the

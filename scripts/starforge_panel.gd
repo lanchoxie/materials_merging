@@ -145,6 +145,10 @@ func _deck() -> void:
 						furn.add_child(UI.button("摆%s" % ind.rules().items[id].name,func(): _act(ind.furnish(i,id))))
 			if int(bld.level)<int(spec.max_level):
 				plot.add_child(UI.button("升级 · %d金币" % int(spec.upgrade_costs[int(bld.level)-1]),func(): _act(ind.upgrade(state,i))))
+			# v0.38: a factory control board automates the line.
+			if bld.kind in ind.FACTORIES:
+				if bld.get("board",false): plot.add_child(UI.label("⚙ 已装工厂控制板 · 速度 +%d%%" % int(float(R.automation.speed)*100),14,UI.MINT))
+				elif int(ind.items.get("control_board",0))>0: plot.add_child(UI.button("装控制板 · 速度 +%d%%（仓库 %d 块）" % [int(float(R.automation.speed)*100),int(ind.items.control_board)],func(): _act(ind.install_board(i))))
 		else:
 			# v0.37: eight kinds of building — the build buttons wrap instead of widening the panel.
 			var choices=HFlowContainer.new(); choices.add_theme_constant_override("h_separation",6); choices.add_theme_constant_override("v_separation",6); plot.add_child(choices)
@@ -205,6 +209,8 @@ func _knobs(line: VBoxContainer,recipe_id: String,fam: String) -> void:
 			var mean=ind._take_lots("item:"+str(f.inherit[knob]),int(ind.inputs(recipe_id).get("item:"+str(f.inherit[knob]),1)),true)
 			if mean.has(knob): k[knob]=float(mean[knob])
 		predict.text="预测：%s\n%s" % [Model.describe(fam,k,1.0,false),"（%s）" % Model.knob_text(fam,k)]
+		var shown_p=Model.props(fam,k)
+		if shown_p.has("wavelength"): predict.add_theme_color_override("font_color",Model.wavelength_color(float(shown_p.wavelength)).lerp(Color.WHITE,0.25))
 	for knob in f.get("knobs",{}):
 		var spec: Dictionary=f.knobs[knob]; var log_scale=bool(spec.get("log",false))
 		var row=UI.row(line,6)
@@ -284,7 +290,9 @@ func _lot_rows(id: String) -> void:
 	var card=_card("%s × %d · %d 个批次" % [it.name,int(ind.items.get(id,0)),list.size()])
 	for i in range(list.size()):
 		var lot: Dictionary=list[i]
-		card.add_child(UI.label("批次 %d × %d · %s%s" % [i+1,int(lot.n),Model.knob_text(fam,lot.k),"  · 已检测 ✓" if lot.m else ""],14,UI.MINT if lot.m else UI.TEXT))
+		var lot_p: Dictionary=ind.lot_props(id,lot)
+		var head_color=Model.wavelength_color(float(lot_p.wavelength)) if lot_p.has("wavelength") else (UI.MINT if lot.m else UI.TEXT)
+		card.add_child(UI.label("%s批次 %d × %d · %s%s" % ["■ " if lot_p.has("wavelength") else "",i+1,int(lot.n),Model.knob_text(fam,lot.k),"  · 已检测 ✓" if lot.m else ""],14,head_color))
 		card.add_child(UI.paragraph("%s · 出价 %d 金币" % [Model.describe(fam,lot.k,float(lot.q),bool(lot.m)),ind.lot_price(id,i)],13))
 		var h=_flow(card); var spare=ind.lot_spare(id,i)
 		var one=UI.button("卖 1",func(): _act(ind.sell(state,id,1,i))); one.disabled=spare<1; h.add_child(one)
@@ -327,6 +335,15 @@ func _gear() -> void:
 	farm.add_child(UI.paragraph("无机材料厂做的过磷酸钙磷肥：一份让地球上每块有作物的地区养分 +%d%%。仓库 %d 份。" % [int(float(R.fertilizer.nutrients)*100),int(ind.items.get("fertilizer",0))],14))
 	var fert=UI.button("施一份磷肥",func(): _act(state.fertilize()))
 	fert.disabled=int(ind.items.get("fertilizer",0))<1; farm.add_child(fert)
+	for id in R.items:
+		if not R.items[id].get("lamp",false) or int(ind.items.get(id,0))<1: continue
+		var on=ind.lamp==id; var best=ind.best_lot(id)
+		var lamp_card=_card("%s × %d%s" % [R.items[id].name,int(ind.items[id]),"（已戴上）" if on else ""],Color("ffe08a"))
+		if best>=0:
+			var lot: Dictionary=ind.lots[id][best]; var p=ind.lot_props(id,lot)
+			lamp_card.add_child(UI.label("■ %s" % Model.value_text("wavelength",float(p.wavelength)),16,Model.wavelength_color(float(p.wavelength))))
+			lamp_card.add_child(UI.paragraph("最好的一批：%s\n%s\n星球上夜里、暴风雨天和地下洞穴里自动亮起，光的颜色就是 LED 的发光波长。" % [Model.knob_text(ind.modelled(id),lot.k),Model.describe(ind.modelled(id),lot.k,float(lot.q),bool(lot.m))],13))
+		lamp_card.add_child(UI.button("收起头灯" if on else "戴上（星球第一人称）",func(): _act(ind.equip_lamp("" if on else id))))
 	for id in R.items:
 		var it: Dictionary=R.items[id]
 		if not it.has("gear"): continue

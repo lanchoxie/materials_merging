@@ -719,6 +719,7 @@ func _sync() -> void:
 	view.life_view.era=v.settlement.era
 	view.journey_view.sync(v.journey,at,not view.first_person)
 	view.weather=v.incidents.sky(v)
+	view.lamp_spec=state.industry.lamp_spec()
 	_live(); _aim()
 
 func _process(dt: float) -> void:

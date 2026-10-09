@@ -94,7 +94,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   silicon foundry, solar grid power, fertiliser to Earth.
 - ✅ v0.37.1 playtest fixes (tag `v0.37.1`; see [24-playtest-fixes.md](24-playtest-fixes.md)): leave 星锻岛, layout,
   miniatures from any side + 复刻, batch/loop production.
-- Next: v0.38 industry — chip fab + packaging (doped Si devices, LEDs from the band gap and alloy bowing).
+- ✅ v0.38 "Chips & Light" (tag `v0.38.0`; see [25-chips-light.md](25-chips-light.md)): chip fab, packaging plant, perovskite
+  LEDs, control boards, the headlamp on Earth.
+- Next: v0.39 planet — 冰河期 era + time gate, harsher incidents (plan in 14-industry-island.md).
 - Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
   more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,
   and the remaining eras.

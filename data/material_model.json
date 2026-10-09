@@ -453,6 +453,208 @@
           "source": ""
         }
       ]
+    },
+    "lithography": {
+      "name": "逻辑芯片（光刻）",
+      "knobs": {
+        "L": {
+          "label": "线宽",
+          "unit": "µm",
+          "min": 0.35,
+          "max": 5,
+          "step": 0.01,
+          "default": 1.5,
+          "log": true
+        }
+      },
+      "show": [
+        "transistors",
+        "yield",
+        "clock"
+      ],
+      "score": {
+        "good": 1.0
+      },
+      "wavelength_nm": 365,
+      "na": 0.6,
+      "k1": 0.6,
+      "die_mm2": 25,
+      "cell_f2": 100,
+      "d0_per_cm2": 0.5,
+      "d0_at_um": 1.0,
+      "clock_mhz_at_1um": 25,
+      "laws": [
+        {
+          "text": "瑞利分辨率极限 R = k₁·λ/NA：i 线汞灯 365 nm、NA 0.6、k₁ 0.6 → 约 0.37 µm；线宽越接近它，图形越难印准",
+          "tag": "真实数据",
+          "source": "mack2007"
+        },
+        {
+          "text": "一个逻辑单元约占 100 F²：25 mm² 的芯片在 1.5 µm 线宽能放约 11 万个晶体管（1985 年 Intel 386 是 1.5 µm、27.5 万个）",
+          "tag": "简化模型",
+          "source": "mack2007"
+        },
+        {
+          "text": "致命缺陷的尺寸分布 ∝ 1/x³（Stapper）：线宽减半，致命缺陷密度变成 4 倍；良率按泊松模型 Y = e^(−D·A)",
+          "tag": "简化模型",
+          "source": "stapper1983"
+        },
+        {
+          "text": "Dennard 缩放：线宽缩小，晶体管更快，时钟频率 ∝ 1/L",
+          "tag": "简化模型",
+          "source": "dennard1974"
+        },
+        {
+          "text": "价值看「良品晶体管数」= 晶体管数 × 良率：太粗放不下，太细良率崩，中间有最佳点",
+          "tag": "游戏数值",
+          "source": ""
+        }
+      ]
+    },
+    "packaged_ic": {
+      "name": "封装芯片",
+      "knobs": {},
+      "inherit": {
+        "L": "logic_chip"
+      },
+      "inherit_default": {
+        "L": 1.5
+      },
+      "inherit_knobs": {
+        "L": {
+          "label": "芯片线宽",
+          "unit": "µm"
+        }
+      },
+      "show": [
+        "transistors",
+        "clock"
+      ],
+      "score": {
+        "good": 1.0
+      },
+      "laws": [
+        {
+          "text": "封装不改变芯片本身：性能来自晶圆厂那一批的线宽和良率",
+          "tag": "近似精确",
+          "source": ""
+        },
+        {
+          "text": "倒装焊：锡焊球与铜焊盘反应生成 Cu₆Sn₅ 金属间化合物",
+          "tag": "真实数据",
+          "source": "abtew2000"
+        }
+      ]
+    },
+    "perovskite_led": {
+      "name": "钙钛矿 LED 芯片",
+      "knobs": {
+        "x": {
+          "label": "Cl 占卤素比例 x",
+          "unit": "",
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "default": 0
+        }
+      },
+      "inputs_by_knob": {
+        "el:Br": {
+          "knob": "x",
+          "base": 3,
+          "slope": -3,
+          "min": 0
+        },
+        "el:Cl": {
+          "knob": "x",
+          "base": 0,
+          "slope": 3,
+          "min": 0
+        }
+      },
+      "show": [
+        "wavelength",
+        "eg",
+        "eqe",
+        "efficacy"
+      ],
+      "score": {
+        "efficacy": 1.0
+      },
+      "eg_br": 2.38,
+      "eg_cl": 3.02,
+      "bowing": 0.1,
+      "eqe_br": 0.2,
+      "eqe_cl": 0.05,
+      "laws": [
+        {
+          "text": "CsPb(Br₁₋ₓClₓ)₃ 的带隙按合金弯曲公式：E_g(x) = (1−x)·2.38 + x·3.02 − 0.1·x(1−x) eV",
+          "tag": "简化模型",
+          "source": "protesescu2015"
+        },
+        {
+          "text": "发光波长 λ(nm) = 1240 / E_g(eV)：纯溴约 521 nm 绿光，纯氯约 410 nm 紫光",
+          "tag": "近似精确",
+          "source": "protesescu2015"
+        },
+        {
+          "text": "蓝紫光钙钛矿 LED 的外量子效率远低于绿光（目前最好的绿光 >20%，蓝光只有几个百分点）",
+          "tag": "简化模型",
+          "source": "liu2021"
+        },
+        {
+          "text": "人眼明视觉灵敏度 V(λ) 在 555 nm 最高：同样的光功率，绿光看起来比紫光亮得多（光效 = 683 lm/W × V(λ) × 外量子效率）",
+          "tag": "真实数据",
+          "source": "cie1931"
+        },
+        {
+          "text": "Materials Project 的 PBE 带隙会低估实测值，所以这里用实验带隙；索引里的计算值只作对照",
+          "tag": "真实数据",
+          "source": "protesescu2015"
+        }
+      ]
+    },
+    "headlamp": {
+      "name": "LED 头灯",
+      "knobs": {},
+      "inherit": {
+        "x": "led_chip"
+      },
+      "inherit_default": {
+        "x": 0
+      },
+      "inherit_knobs": {
+        "x": {
+          "label": "LED 的 Cl 比例",
+          "unit": ""
+        }
+      },
+      "show": [
+        "wavelength",
+        "efficacy",
+        "beam"
+      ],
+      "score": {
+        "efficacy": 1.0
+      },
+      "watts": 3.0,
+      "laws": [
+        {
+          "text": "头灯 3 W：光通量 = 光效 × 3 W",
+          "tag": "近似精确",
+          "source": ""
+        },
+        {
+          "text": "照明距离按平方反比：照度 E = I/d²，所以照得远近 ∝ √光通量",
+          "tag": "近似精确",
+          "source": ""
+        },
+        {
+          "text": "光的颜色就是 LED 的发光波长",
+          "tag": "真实数据",
+          "source": "protesescu2015"
+        }
+      ]
     }
   }
 }

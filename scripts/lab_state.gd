@@ -1788,6 +1788,7 @@ func sync_gear() -> void:
 	if industry.bit_hv()>planet.v2.nature.pick_hv:
 		planet.v2.nature.pick_hv=industry.bit_hv(); planet.v2.nature.pick_name=str(Industry.rules().items[industry.bit].name)
 	refinery.power_gain=fabricator.refinery_gain()
+	if industry.lamp!="" and int(industry.items.get(industry.lamp,0))<1: industry.lamp=""
 
 func _queue_install(r: Dictionary, payload: Dictionary, quote: Dictionary) -> String:
 	r["installation"]={"payload":payload.duplicate(true),"remaining":float(island_rules.logistics.installation_seconds),"fee":int(quote.fee),"elements":quote.required.duplicate()}

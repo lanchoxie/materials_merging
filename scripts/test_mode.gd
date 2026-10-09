@@ -75,6 +75,18 @@ static func silicon_kit(s) -> String:
 		if not keys.is_empty(): s.index_found[keys[0]]=true
 	return "测试：硅钙磷原料包 · 元素各 +30，石英砂/石灰岩/黏土/磷灰石各 +30，CaO、SiHCl₃、Si、H₃PO₄ 已记入索引"
 
+## v0.38: everything the chip fab and packaging plant need, plus the phenol and CsPbBr₃ gates.
+static func chip_kit(s) -> String:
+	for el in ["Cs","Pb","Br","Cl","Cu","F","Al","O","C","H","Sn"]: s.element_inventory[el]=int(s.element_inventory.get(el,0))+40
+	var ind=s.industry
+	for id in ["wafer","glass","duralumin","solder"]:
+		ind.items[id]=mini(int(ind.items.get(id,0))+6,9999); ind._reconcile(id)
+	var Industry=preload("res://scripts/industry.gd")
+	for f in ["CsPbBr3","C6H6O"]:
+		var keys: Array=Industry._keys_for(f)
+		if not keys.is_empty(): s.index_found[keys[0]]=true
+	return "测试：芯片原料包 · 元素各 +40，硅片/玻璃/硬铝/焊料各 +6，苯酚和 CsPbBr₃ 已记入索引"
+
 ## v0.35: every engineer and 博士生 reaches their service years (延毕 rolls still apply).
 static func finish_service(s) -> String:
 	var ind=s.industry; var n=0

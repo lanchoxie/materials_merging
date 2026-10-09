@@ -82,6 +82,24 @@ static func props(id: String,given: Dictionary={},q: float=1.0) -> Dictionary:
 			p.n=(si*float(a.SiO2)+na*float(a.Na2O)+ca*float(a.CaO))/100.0
 			p.T_work=1040.0-25.0*(na-15.0)
 			p.durab=clampf((1.0-0.07*(na-12.0))*q,0.05,1.0)
+		"lithography","packaged_ic":
+			var g: Dictionary=family("lithography"); var l=float(k.L)
+			var limit=float(g.k1)*float(g.wavelength_nm)/1000.0/float(g.na)
+			p.transistors=float(g.die_mm2)*1e6/(float(g.cell_f2)*l*l)
+			var print_ok=clampf(1.0-exp(-4.0*(l/limit-0.9)),0.0,1.0)
+			var defects=float(g.d0_per_cm2)*pow(float(g.d0_at_um)/l,2.0)
+			p["yield"]=clampf(print_ok*exp(-defects*float(g.die_mm2)/100.0)*q,0.0,1.0)
+			p.clock=float(g.clock_mhz_at_1um)/l
+			p.good=float(p.transistors)*float(p["yield"])
+		"perovskite_led","headlamp":
+			var e: Dictionary=family("perovskite_led"); var x=float(k.x)
+			p.eg=(1.0-x)*float(e.eg_br)+x*float(e.eg_cl)-float(e.bowing)*x*(1.0-x)
+			p.wavelength=1239.84/float(p.eg)
+			p.eqe=(float(e.eqe_br)*(1.0-x)+float(e.eqe_cl)*x)*q
+			p.efficacy=683.0*luminosity(float(p.wavelength))*float(p.eqe)
+			if id=="headlamp":
+				p.lumens=float(p.efficacy)*float(f.watts)
+				p.beam=3.0+1.2*sqrt(float(p.lumens))
 		"n_wafer","solar_panel":
 			var w: Dictionary=family("n_wafer"); var mob: Dictionary=w.mobility; var n=pow(10.0,float(k.N))
 			p.mu=float(mob.min)+(float(mob.max)-float(mob.min))/(1.0+pow(n/float(mob.nref),float(mob.alpha)))
@@ -96,6 +114,31 @@ static func props(id: String,given: Dictionary={},q: float=1.0) -> Dictionary:
 		# A blade below the chipping toughness loses its edge: usable hardness falls as √(tough/limit).
 		p.edge=float(p.gpa)*sqrt(minf(1.0,float(p.tough)/float(f.get("chip_tough",0.25))))
 	return p
+
+## CIE photopic luminosity V(λ), Gaussian fit (peak 1 at 555 nm).
+static func luminosity(nm: float) -> float:
+	return clampf(1.019*exp(-285.4*pow(nm/1000.0-0.559,2.0)),0.0,1.0)
+
+## Visible-spectrum colour for a wavelength (Bruton's piecewise approximation), for swatches and light.
+static func wavelength_color(nm: float) -> Color:
+	var r=0.0; var g=0.0; var b=0.0
+	if nm<440.0: r=-(nm-440.0)/60.0; b=1.0
+	elif nm<490.0: g=(nm-440.0)/50.0; b=1.0
+	elif nm<510.0: g=1.0; b=-(nm-510.0)/20.0
+	elif nm<580.0: r=(nm-510.0)/70.0; g=1.0
+	elif nm<645.0: r=1.0; g=-(nm-645.0)/65.0
+	else: r=1.0
+	var fade=0.3+0.7*(nm-380.0)/40.0 if nm<420.0 else (0.3+0.7*(780.0-nm)/80.0 if nm>700.0 else 1.0)
+	return Color(clampf(r*fade,0,1),clampf(g*fade,0,1),clampf(b*fade,0,1))
+
+static func color_name(nm: float) -> String:
+	if nm<450.0: return "紫"
+	if nm<490.0: return "蓝"
+	if nm<505.0: return "青"
+	if nm<570.0: return "绿"
+	if nm<590.0: return "黄"
+	if nm<620.0: return "橙"
+	return "红"
 
 ## Recipe time factor from a knob (glass: more soda melts faster).
 static func seconds_factor(id: String,given: Dictionary) -> float:
@@ -124,7 +167,8 @@ static func quality(serial: int) -> float:
 
 # --- Text -----------------------------------------------------------------------------------
 const NAMES={"hv":"硬度","gpa":"硬度","tough":"韧性","rho":"密度","E":"弹性模量","specific":"比刚度","edge":"刃口硬度",
-	"eff":"转换效率","rho_ohm":"电阻率","n":"折射率","durab":"耐候性","mu":"电子迁移率","T_work":"工作温度","watt":"组件功率"}
+	"eff":"转换效率","rho_ohm":"电阻率","n":"折射率","durab":"耐候性","mu":"电子迁移率","T_work":"工作温度","watt":"组件功率",
+	"transistors":"晶体管","yield":"良率","clock":"时钟","wavelength":"波长","eg":"带隙","eqe":"外量子效率","efficacy":"光效","beam":"照明距离"}
 
 static func value_text(key: String,v: float) -> String:
 	match key:
@@ -139,6 +183,14 @@ static func value_text(key: String,v: float) -> String:
 		"mu": return "%d cm²/V·s" % int(round(v))
 		"T_work": return "%d °C" % int(round(v))
 		"watt": return "%d W" % int(round(v))
+		"transistors": return ("%.1f 万个" % (v/10000.0)) if v<1e8 else ("%.2f 亿个" % (v/1e8))
+		"yield": return "%d%%" % int(round(v*100))
+		"clock": return "%.0f MHz" % v
+		"wavelength": return "%d nm（%s光）" % [int(round(v)),color_name(v)]
+		"eg": return "%.2f eV" % v
+		"eqe": return "%.1f%%" % (v*100)
+		"efficacy": return "%.1f lm/W" % v
+		"beam": return "%.0f m" % v
 		"n": return "%.3f" % v
 	return String.num(v,3)
 
@@ -155,7 +207,7 @@ static func describe(id: String,given: Dictionary,q: float,measured: bool) -> St
 	var p=props(id,given,q if measured else 1.0); var u=float(rules().model_uncertainty)
 	for key in f.get("show",[]):
 		var v=float(p.get(key,0.0))
-		if measured or key in ["rho","tough","n","T_work","mu","rho_ohm"]: shown.append("%s %s" % [NAMES.get(key,key),value_text(key,v)])
+		if measured or key in ["rho","tough","n","T_work","mu","rho_ohm","transistors","clock","wavelength","eg"]: shown.append("%s %s" % [NAMES.get(key,key),value_text(key,v)])
 		else: shown.append("%s %s ±%d%%" % [NAMES.get(key,key),value_text(key,v),int(round(u*100))])
 	return " · ".join(shown)
 

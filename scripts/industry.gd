@@ -7,7 +7,7 @@ const Model=preload("res://scripts/material_model.gd")
 const Geology=preload("res://scripts/planet_geology.gd")
 static var _rules: Dictionary={}
 static var _formula_keys: Dictionary={}
-const FACTORIES=["metal_works","polymer_works","home_studio","inorganic_works","silicon_works"]
+const FACTORIES=["metal_works","polymer_works","home_studio","inorganic_works","silicon_works","chip_fab","packaging_plant"]
 
 var unlocked=false
 var xp=0
@@ -44,7 +44,8 @@ var pending_xp=0
 var lots: Dictionary={}
 var settings: Dictionary={}
 var lot_serial=1
-var solar: Array=[]            # efficiencies of panels installed on the island grid
+var solar: Array=[]
+var lamp=""                    # v0.38: equipped headlamp item id ("" = none)            # efficiencies of panels installed on the island grid
 
 static func rules() -> Dictionary:
 	if _rules.is_empty(): _rules=JSON.parse_string(FileAccess.get_file_as_string("res://data/industry.json"))
@@ -209,7 +210,22 @@ func queue_limit(b: Dictionary) -> int:
 
 func speed(b: Dictionary,plot: int=-1) -> float:
 	var base=1.0+float(rules().buildings[b.kind].speed_per_level)*(int(b.level)-1)
+	# v0.38: a factory control board automates the line.
+	if b.get("board",false): base*=1.0+float(rules().automation.speed)
 	return base*(1.0+staff_bonus(plot,"speed"))
+
+## v0.38: one factory control board per factory, +25 % speed (game value).
+func install_board(plot: int) -> String:
+	var b: Dictionary=buildings.get(str(plot),{})
+	if b.is_empty() or b.kind not in FACTORIES: return "只有工厂能装控制板"
+	if b.get("board",false): return "这座工厂已经装了控制板"
+	if int(items.get("control_board",0))<1: return "需要封测电路板厂做的工厂控制板"
+	take_item("control_board",1); b["board"]=true; gain(20)
+	return "%s装上了控制板：自动化生产，速度 +%d%%" % [rules().buildings[b.kind].name,int(float(rules().automation.speed)*100)]
+
+## Items held back from sale and recipes: the equipped bit and headlamp.
+func reserved(id: String) -> int:
+	return 1 if (id==bit or id==lamp) and id!="" else 0
 
 # --- Evidence: the player must have made the real compound ---------------------------------
 static func _keys_for(formula: String) -> Array:
@@ -230,7 +246,7 @@ func available(state,key: String) -> int:
 	var kind=key.get_slice(":",0); var id=key.get_slice(":",1)
 	match kind:
 		"el": return int(state.element_inventory.get(id,0))
-		"item": return int(items.get(id,0))-(1 if id==bit else 0)
+		"item": return int(items.get(id,0))-reserved(id)
 		"raw": return int(state.planet.v2.field.stock.get(id,0))
 		"min": return int(state.planet.v2.nature.minerals.get(id,0))
 		"batch":
@@ -282,20 +298,27 @@ func quote(state,plot: int,recipe_id: String) -> Dictionary:
 func start(state,plot: int,recipe_id: String) -> String:
 	var q=quote(state,plot,recipe_id)
 	if not q.ready: return q.message
-	var r: Dictionary=rules().recipes[recipe_id]; var ins=inputs(recipe_id)
+	var r: Dictionary=rules().recipes[recipe_id]; var ins=inputs(recipe_id); var handled={}
 	var job={"recipe":recipe_id,"left":float(r.seconds)}
 	var fam=str(r.get("model",""))
 	if fam!="":
 		var k=recipe_knobs(recipe_id)
 		# Inherited knobs (the bit's carbon) come from the lots actually consumed.
+		# v0.38: a product that inherits a property is made from the best lots (sales take the worst).
 		var inherit: Dictionary=Model.family(fam).get("inherit",{})
 		for key in ins:
-			var used=_take_lots(key,int(ins[key]),true)
 			for knob in inherit:
-				if key=="item:"+str(inherit[knob]) and not used.is_empty(): k[knob]=float(used.get(knob,k.get(knob,0.0)))
+				if key!="item:"+str(inherit[knob]) or handled.has(key): continue
+				var id=key.get_slice(":",1)
+				var used=_take_lots(key,int(ins[key]),false,true,true)
+				items[id]=int(items.get(id,0))-int(ins[key])
+				if int(items[id])<=0: items.erase(id); lots.erase(id)
+				handled[key]=true
+				if not used.is_empty(): k[knob]=float(used.get(knob,k.get(knob,0.0)))
 		job["k"]=Model.knobs(fam,k)
 		job.left=job_seconds(job)
-	for key in ins: _take(state,key,int(ins[key]))
+	for key in ins:
+		if not handled.has(key): _take(state,key,int(ins[key]))
 	buildings[str(plot)].jobs.append(job)
 	return "已投料：%s%s" % [r.name,"（%s）" % Model.knob_text(fam,job.k) if job.has("k") else ""]
 
@@ -342,8 +365,10 @@ func inputs(recipe_id: String) -> Dictionary:
 	var k=recipe_knobs(recipe_id)
 	var scaled: Dictionary=Model.family(fam).get("inputs_by_knob",{})
 	for key in scaled:
-		var s: Dictionary=scaled[key]
-		out[key]=maxi(int(s.min),int(round(float(k.get(s.knob,0.0))/float(s.per))))
+		var s: Dictionary=scaled[key]; var v=float(k.get(s.knob,0.0))
+		var n=int(round(float(s.base)+float(s.slope)*v)) if s.has("base") else int(round(v/float(s.per)))
+		out[key]=maxi(int(s.min),n)
+		if int(out[key])<=0: out.erase(key)
 	return out
 
 func recipe_knobs(recipe_id: String) -> Dictionary:
@@ -388,13 +413,13 @@ func _add_lot(id: String,n: int,k: Dictionary,q: float,measured: bool=false) -> 
 
 ## Removes n units, worst lots first (so the best bit stays equipped); returns the mean knobs used.
 ## `dry` only reports what would be taken.
-func _take_lots(key: String,n: int,dry: bool=false,sync: bool=true) -> Dictionary:
+func _take_lots(key: String,n: int,dry: bool=false,sync: bool=true,best_first: bool=false) -> Dictionary:
 	if not key.begins_with("item:"): return {}
 	var id=key.get_slice(":",1)
 	if modelled(id)=="": return {}
 	if sync: _reconcile(id)
 	var list: Array=lots.get(id,[]).duplicate()
-	list.sort_custom(func(a,b): return lot_score(id,a)<lot_score(id,b))
+	list.sort_custom(func(a,b): return lot_score(id,a)>lot_score(id,b) if best_first else lot_score(id,a)<lot_score(id,b))
 	var sums={}; var taken=0; var left=n
 	for lot in list:
 		if left<=0: break
@@ -688,7 +713,7 @@ func deliver_error(id: int) -> String:
 	var c=_find_contract(id)
 	if c.is_empty(): return "这份合同已经结束"
 	for item in c.lines:
-		var spare=int(items.get(item,0))-(1 if bit==item else 0)
+		var spare=int(items.get(item,0))-reserved(item)
 		if spare<int(c.lines[item]): return "还缺%s %d/%d" % [rules().items[item].name,spare,int(c.lines[item])]
 	return ""
 
@@ -737,7 +762,7 @@ func lot_price(id: String,index: int) -> int:
 func lot_spare(id: String,index: int) -> int:
 	var list=lots_of(id)
 	if index<0 or index>=list.size(): return 0
-	return int(list[index].n)-(1 if bit==id and index==best_lot(id) else 0)
+	return int(list[index].n)-(reserved(id) if index==best_lot(id) else 0)
 
 func best_lot(id: String) -> int:
 	var list=lots_of(id); var best=-1
@@ -748,9 +773,9 @@ func best_lot(id: String) -> int:
 func sell(state,id: String,amount: int=1,index: int=-1) -> String:
 	if count("trade_hub")<1: return "先建一座星港交易所"
 	if not rules().items.has(id) or amount<1: return "没有这种工业品"
-	var spare=int(items.get(id,0))-(1 if bit==id else 0)
+	var spare=int(items.get(id,0))-reserved(id)
 	if index>=0: spare=lot_spare(id,index)
-	if spare<amount: return "库存不足（装备中的钻头不能卖）"
+	if spare<amount: return "库存不足（装备中的钻头和头灯不能卖）"
 	var total=0
 	for i in range(amount):
 		total+=lot_price(id,index) if index>=0 else price(id); saturation[id]=minf(1.0,float(saturation.get(id,0.0))+float(rules().market.per_unit))
@@ -778,6 +803,21 @@ func gear_hv(id: String) -> float:
 		if best>=0: return float(lot_props(id,lots[id][best]).get("edge",0.0))
 	return float(rules().items[id].gear.hv)
 
+## v0.38 headlamp: colour from the LED's wavelength, reach from its lumens (best lot).
+func equip_lamp(id: String) -> String:
+	if id=="": lamp=""; return "已收起头灯"
+	if not rules().items.get(id,{}).get("lamp",false) or int(items.get(id,0))<1: return "没有这盏头灯"
+	lamp=id
+	var spec=lamp_spec()
+	return "戴上%s：%s，照明约 %.0f m（夜里和洞里自动亮）" % [rules().items[id].name,Model.value_text("wavelength",float(spec.nm)),float(spec.range)]
+
+func lamp_spec() -> Dictionary:
+	if lamp=="" or int(items.get(lamp,0))<1: return {}
+	var best=best_lot(lamp)
+	if best<0: return {}
+	var p=lot_props(lamp,lots[lamp][best])
+	return {"nm":float(p.wavelength),"color":Model.wavelength_color(float(p.wavelength)),"range":float(p.beam),"lumens":float(p.lumens)}
+
 func bit_hv() -> float:
 	if bit=="" or int(items.get(bit,0))<1: return 0.0
 	return gear_hv(bit)
@@ -785,7 +825,7 @@ func bit_hv() -> float:
 # --- Save ---------------------------------------------------------------------------------------
 func serialize() -> Dictionary:
 	for id in items.keys(): _reconcile(id)
-	return {"version":3,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
+	return {"version":3,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
 		"buildings":buildings.duplicate(true),"items":items.duplicate(),"saturation":saturation.duplicate(),"bit":bit,"earned":earned,"crafted":crafted,
 		"service":service.duplicate(),"delays":delays.duplicate(),"service_init":service_init,"staff":staff.duplicate(true),"staff_serial":staff_serial,
 		"wages":wages,"wage_clock":wage_clock,"arrears":arrears,"furnished":furnished.duplicate(),
@@ -806,6 +846,7 @@ func restore(data) -> bool:
 		if not str(key).is_valid_int() or int(key)<0 or int(key)>=int(data.plots) or str(int(key))!=key: return false
 		if not b is Dictionary or not R.buildings.has(b.get("kind")) or not b.get("jobs") is Array: return false
 		if b.has("repeat") and (not b.repeat is String or R.recipes.get(b.repeat,{}).get("building","")!=b.kind): return false
+		if b.has("board") and (not b.board is bool or b.kind not in FACTORIES): return false
 		var spec: Dictionary=R.buildings[b.kind]
 		if not _num(b.get("level"),1,float(spec.max_level)) or b.jobs.size()>int(spec.queue_base)+int(spec.max_level)-1: return false
 		for job in b.jobs:
@@ -818,6 +859,7 @@ func restore(data) -> bool:
 	for id in data.saturation:
 		if not R.items.has(id) or not _num(data.saturation[id],0,1,false): return false
 	if data.bit!="" and not R.items.get(data.bit,{}).has("gear"): return false
+	if not data.get("lamp","") is String or (str(data.get("lamp",""))!="" and not R.items.get(data.lamp,{}).get("lamp",false)): return false
 	var v2=int(data.version)>=2
 	if v2 and not _restore_v2_ok(data,R): return false
 	if int(data.version)>=3 and not _restore_v3_ok(data,R): return false
@@ -831,11 +873,12 @@ func restore(data) -> bool:
 			jobs.append(j)
 		buildings[str(key)]={"kind":str(b.kind),"level":int(b.level),"jobs":jobs,"yield_acc":float(b.get("yield_acc",0.0))}
 		if b.has("repeat"): buildings[str(key)]["repeat"]=str(b.repeat)
+		if b.get("board",false): buildings[str(key)]["board"]=true
 	items={}
 	for id in data.items: items[id]=int(data.items[id])
 	saturation={}
 	for id in data.saturation: saturation[id]=float(data.saturation[id])
-	bit=data.bit; earned=int(data.earned); crafted=int(data.crafted); pending_xp=0
+	bit=data.bit; lamp=str(data.get("lamp","")); earned=int(data.earned); crafted=int(data.crafted); pending_xp=0
 	service={}; delays={}; service_init=false; staff=[]; staff_serial=1; wages=0.0; wage_clock=0.0; arrears=0.0
 	furnished={}; contracts=[]; contract_serial=1; board_left=0.0; airship={}
 	if v2:

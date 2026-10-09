@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "note": "星锻岛 (v0.34–v0.35). Equations, processes and hardness are real (sources); prices, seconds, power, yields, XP, wages, service years and costs are game rules (游戏数值).",
   "rank": {
     "base": 60,
@@ -213,6 +213,46 @@
       "speed_per_level": 0.25,
       "queue_base": 2,
       "story": "西门子法把冶金级硅提纯到 99.9999999%，直拉法拉成单晶并掺磷，切成硅片，再和玻璃、硬铝框组装成太阳能板。"
+    },
+    "chip_fab": {
+      "name": "晶圆芯片厂",
+      "en": "Chip Fab",
+      "accent": "b18cff",
+      "model": "chip_fab",
+      "cost": {
+        "coins": 15000,
+        "credits": 60
+      },
+      "power": 5,
+      "xp": 50,
+      "max_level": 3,
+      "upgrade_costs": [
+        20000,
+        40000
+      ],
+      "speed_per_level": 0.25,
+      "queue_base": 2,
+      "story": "洁净室里，汞灯 i 线透过掩模把电路印到涂了光刻胶的硅片上：氧化、光刻、刻蚀、铜互连，一层层做出晶体管；隔壁用钙钛矿纳米晶做 LED。"
+    },
+    "packaging_plant": {
+      "name": "封测电路板厂",
+      "en": "Packaging & Board Plant",
+      "accent": "5fe0c8",
+      "model": "packaging_plant",
+      "cost": {
+        "coins": 12000,
+        "credits": 40
+      },
+      "power": 3,
+      "xp": 40,
+      "max_level": 3,
+      "upgrade_costs": [
+        16000,
+        32000
+      ],
+      "speed_per_level": 0.25,
+      "queue_base": 2,
+      "story": "玻璃纤维布浸环氧树脂、压上铜箔做成 FR-4 电路板；裸芯片倒装焊上去封装成 IC，再装成控制板和头灯。"
     }
   },
   "licences": {
@@ -631,6 +671,171 @@
       "equation": "pn 结：光子 → 电子–空穴对 → 电流",
       "source": "green1982",
       "model": "solar_panel"
+    },
+    "photoresist": {
+      "name": "光刻胶（酚醛型）",
+      "building": "polymer_works",
+      "method": "苯酚 + 甲醛缩聚成酚醛树脂，加重氮萘醌感光剂",
+      "inputs": {
+        "el:C": 6,
+        "el:H": 6,
+        "el:O": 1
+      },
+      "evidence": [
+        "C6H6O"
+      ],
+      "outputs": {
+        "photoresist": 3
+      },
+      "seconds": 35,
+      "equation": "苯酚 + 甲醛 → 酚醛树脂（novolac）；DNQ 曝光后分解，曝光区溶于显影液",
+      "source": "mack2007"
+    },
+    "epoxy": {
+      "name": "环氧树脂",
+      "building": "polymer_works",
+      "method": "双酚 A + 环氧氯丙烷缩合（原料简化为元素）",
+      "inputs": {
+        "el:C": 3,
+        "el:H": 5,
+        "el:Cl": 1,
+        "el:O": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "epoxy": 3
+      },
+      "seconds": 30,
+      "equation": "双酚 A + 环氧氯丙烷 → 环氧树脂 + HCl；固化剂交联成网",
+      "source": "pham2005"
+    },
+    "logic_chip": {
+      "name": "逻辑芯片",
+      "building": "chip_fab",
+      "method": "氧化 · 光刻 · 等离子刻蚀 · 铜互连（线宽可调）",
+      "inputs": {
+        "item:wafer": 1,
+        "item:photoresist": 1,
+        "el:Cu": 1,
+        "el:F": 2,
+        "el:O": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "logic_chip": 4
+      },
+      "seconds": 70,
+      "equation": "Si + O₂ → SiO₂（栅氧）；CF₄ 等离子刻蚀 SiO₂；Cu 大马士革互连",
+      "source": "mack2007",
+      "model": "lithography"
+    },
+    "power_diode": {
+      "name": "功率二极管",
+      "building": "chip_fab",
+      "method": "N 型硅片上扩散铝形成 p⁺n 结",
+      "inputs": {
+        "item:wafer": 1,
+        "el:Al": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "power_diode": 6
+      },
+      "seconds": 40,
+      "equation": "Al 在 Si 中是受主：p⁺ 区 + n 型衬底 → pn 结，单向导电",
+      "source": "sze2007"
+    },
+    "led_chip": {
+      "name": "钙钛矿 LED 芯片",
+      "building": "chip_fab",
+      "method": "CsPbX₃ 纳米晶热注入合成 · 卤素比例可调（颜色）",
+      "inputs": {
+        "el:Cs": 1,
+        "el:Pb": 1,
+        "el:Br": 3,
+        "item:glass": 1
+      },
+      "evidence": [
+        "CsPbBr3"
+      ],
+      "outputs": {
+        "led_chip": 4
+      },
+      "seconds": 50,
+      "equation": "Cs-油酸盐 + PbX₂ → CsPbX₃ 纳米晶（X = Br/Cl，按比例混合）",
+      "source": "protesescu2015",
+      "model": "perovskite_led"
+    },
+    "fr4_board": {
+      "name": "FR-4 电路板",
+      "building": "packaging_plant",
+      "method": "玻璃纤维 + 环氧 + 溴系阻燃剂 · 压铜箔 · 蚀刻线路",
+      "inputs": {
+        "item:glass": 1,
+        "item:epoxy": 1,
+        "el:Br": 1,
+        "el:Cu": 2
+      },
+      "evidence": [],
+      "outputs": {
+        "pcb": 2
+      },
+      "seconds": 35,
+      "equation": "FR-4 = 玻璃纤维布 + 溴化环氧树脂（阻燃）+ 铜箔；FeCl₃ 蚀刻出线路",
+      "source": "coombs2008"
+    },
+    "ic_package": {
+      "name": "IC 封装",
+      "building": "packaging_plant",
+      "method": "倒装焊 + 环氧塑封",
+      "inputs": {
+        "item:logic_chip": 2,
+        "item:solder": 1,
+        "item:epoxy": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "ic": 2
+      },
+      "seconds": 40,
+      "equation": "锡焊球 + Cu 焊盘 → Cu₆Sn₅ 金属间化合物（连接）",
+      "source": "abtew2000",
+      "model": "packaged_ic"
+    },
+    "control_board": {
+      "name": "工厂控制板",
+      "building": "packaging_plant",
+      "method": "SMT 贴片：IC + 功率二极管焊上 FR-4",
+      "inputs": {
+        "item:pcb": 1,
+        "item:ic": 2,
+        "item:power_diode": 2
+      },
+      "evidence": [],
+      "outputs": {
+        "control_board": 1
+      },
+      "seconds": 45,
+      "equation": "Kilby/Noyce 集成电路 → 可编程控制",
+      "source": "coombs2008"
+    },
+    "headlamp": {
+      "name": "LED 头灯",
+      "building": "packaging_plant",
+      "method": "LED 芯片 + 驱动板 + 硬铝散热壳",
+      "inputs": {
+        "item:led_chip": 2,
+        "item:pcb": 1,
+        "item:duralumin": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "headlamp": 1
+      },
+      "seconds": 40,
+      "equation": "恒流驱动 LED：电子与空穴复合发出光子，能量 ≈ E_g",
+      "source": "protesescu2015",
+      "model": "headlamp"
     }
   },
   "items": {
@@ -824,6 +1029,75 @@
       "xp": 20,
       "model": "solar_panel",
       "solar": true
+    },
+    "photoresist": {
+      "name": "光刻胶",
+      "icon": "pellet",
+      "color": "d98c5f",
+      "sell": 30,
+      "xp": 4
+    },
+    "epoxy": {
+      "name": "环氧树脂",
+      "icon": "pellet",
+      "color": "e8e0b8",
+      "sell": 26,
+      "xp": 4
+    },
+    "logic_chip": {
+      "name": "逻辑芯片",
+      "icon": "board",
+      "color": "6b6f8f",
+      "sell": 120,
+      "xp": 12,
+      "model": "lithography"
+    },
+    "power_diode": {
+      "name": "功率二极管",
+      "icon": "board",
+      "color": "39404d",
+      "sell": 40,
+      "xp": 5
+    },
+    "led_chip": {
+      "name": "钙钛矿 LED 芯片",
+      "icon": "board",
+      "color": "7cff9a",
+      "sell": 70,
+      "xp": 8,
+      "model": "perovskite_led"
+    },
+    "pcb": {
+      "name": "FR-4 电路板",
+      "icon": "board",
+      "color": "2f8a5a",
+      "sell": 60,
+      "xp": 6
+    },
+    "ic": {
+      "name": "封装 IC",
+      "icon": "board",
+      "color": "23262e",
+      "sell": 300,
+      "xp": 20,
+      "model": "packaged_ic"
+    },
+    "control_board": {
+      "name": "工厂控制板",
+      "icon": "board",
+      "color": "1f7a55",
+      "sell": 900,
+      "xp": 40,
+      "automation": true
+    },
+    "headlamp": {
+      "name": "LED 头灯",
+      "icon": "bit",
+      "color": "c8d0da",
+      "sell": 400,
+      "xp": 25,
+      "model": "headlamp",
+      "lamp": true
     }
   },
   "sources": [
@@ -918,6 +1192,42 @@
     {
       "id": "green1982",
       "cite": "Green, Solar Cells: Operating Principles, Technology and System Applications, Prentice-Hall (1982)"
+    },
+    {
+      "id": "mack2007",
+      "cite": "Mack, Fundamental Principles of Optical Lithography, Wiley (2007)"
+    },
+    {
+      "id": "stapper1983",
+      "cite": "Stapper, Armstrong & Saji, Integrated circuit yield statistics, Proc. IEEE 71, 453–470 (1983)",
+      "doi": "10.1109/PROC.1983.12619"
+    },
+    {
+      "id": "dennard1974",
+      "cite": "Dennard et al., Design of ion-implanted MOSFETs with very small physical dimensions, IEEE JSSC 9, 256–268 (1974)",
+      "doi": "10.1109/JSSC.1974.1050511"
+    },
+    {
+      "id": "protesescu2015",
+      "cite": "Protesescu et al., Nanocrystals of cesium lead halide perovskites (CsPbX3), Nano Lett. 15, 3692–3696 (2015)",
+      "doi": "10.1021/nl5048779"
+    },
+    {
+      "id": "liu2021",
+      "cite": "Liu et al., Metal halide perovskite light-emitting diodes, review of blue/green EQE progress (2021)"
+    },
+    {
+      "id": "cie1931",
+      "cite": "CIE 1924/1931 photopic luminosity function V(λ); 683 lm/W at 555 nm"
+    },
+    {
+      "id": "pham2005",
+      "cite": "Pham & Marks, Epoxy Resins, Ullmann's Encycl. Ind. Chem. (2005)",
+      "doi": "10.1002/14356007.a09_547.pub2"
+    },
+    {
+      "id": "coombs2008",
+      "cite": "Coombs, Printed Circuits Handbook, 6th ed., McGraw-Hill (2008)"
     }
   ],
   "staff": {
@@ -1024,7 +1334,9 @@
           "steel_bit",
           "ptfe",
           "pe",
-          "duralumin"
+          "duralumin",
+          "headlamp",
+          "power_diode"
         ]
       },
       {
@@ -1050,6 +1362,17 @@
           "glass",
           "polysilicon"
         ]
+      },
+      {
+        "name": "深湾电子城",
+        "story": "电子城要芯片、电路板和 LED 做新一代设备。",
+        "wants": [
+          "ic",
+          "logic_chip",
+          "pcb",
+          "led_chip",
+          "control_board"
+        ]
       }
     ]
   },
@@ -1061,5 +1384,9 @@
   "fertilizer": {
     "nutrients": 0.12,
     "note": "一份磷肥让地球上每块有作物的地区养分 +12%（上限 100%）"
+  },
+  "automation": {
+    "speed": 0.25,
+    "note": "每座工厂可装一块控制板：速度 +25%（游戏数值）"
   }
 }
