@@ -25,6 +25,7 @@ var serial=1
 var shipment_serial=1
 var _reference_cache: Dictionary={}
 var notice=""
+var batch: Dictionary={}   # v0.37.1: {"recipe": id, "left": n} — the next one starts when the bench frees up
 var v2=PlanetV2.new()
 ## v0.32: samples whose identity unlocks a workshop line (water is the original entry pass).
 const SAMPLE_REFERENCES={"water":"水样","oxygen":"氧气 O₂ 样品","carbon_dioxide":"二氧化碳 CO₂ 样品","ammonia":"氨 NH₃ 样品"}
@@ -148,8 +149,11 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			if input_count(input_id)+reserved>=int(config.workshop.inventory_limit): return "供料仓已满（含工坊预留供料）"
 			var price=int(config.workshop.feed_cost) if input_id=="feed" else int(config.supplies[input_id].price)
 			if state.coins<price: return "金币不足，供料%d金币一份" % price
-			state.coins-=price; _input_add(input_id,1)
-			return "购入1份%s" % ("标准水供料（含容器）" if input_id=="feed" else str(config.supplies[input_id].name))
+			# v0.37.1: buy up to `count` in one tap, bounded by the store and the purse.
+			var room=int(config.workshop.inventory_limit)-input_count(input_id)-reserved
+			var n=mini(mini(maxi(1,int(payload.get("count",1))),room),int(state.coins/float(price)))
+			state.coins-=price*n; _input_add(input_id,n)
+			return "购入%d份%s" % [n,"标准水供料（含容器）" if input_id=="feed" else str(config.supplies[input_id].name)]
 		"pack":
 			var info=recipe(str(payload.get("recipe","standard_water_crate")))
 			if info.is_empty(): return "未知工艺"
@@ -168,6 +172,16 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			job={"id":serial,"recipe":str(info.id),"recipe_version":int(info.version),"left":float(info.seconds),"duration":float(info.seconds),"fee":int(info.fee),"source_batch":str(evidence(str(info.reference)).batch_id)}
 			serial+=1
 			return "%s制作中 · 标准工时%d秒，完工后自动入库" % [info.name,int(info.seconds)]
+		"batch":
+			var rid=str(payload.get("recipe","")); var n=int(payload.get("count",0))
+			if n<=0: batch={}; return "已取消连续制作"
+			if recipe(rid).is_empty(): return "未知工艺"
+			batch={"recipe":rid,"left":mini(n,int(config.workshop.product_limit))}
+			if job.is_empty():
+				var message=command(state,"pack",{"recipe":rid,"production_mode":str(payload.get("production_mode",production_mode))})
+				if not job.is_empty(): batch.left=int(batch.left)-1
+				else: batch={}; return message
+			return "连续制作 %s：还剩 %d 件排队，前一件完工后自动开工" % [recipe(rid).name,int(batch.get("left",0))]
 		"cancel_pack":
 			if job.is_empty(): return "装罐台当前空闲"
 			if recipe(str(job.recipe)).has("natural_inputs"):
@@ -349,7 +363,7 @@ func tick(dt: float,effort: float=0.0) -> void:
 	v2.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":12,"laminates":laminates.serialize(),"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"retired_planet":retired_planet.duplicate(true),"v2":v2.serialize()}
+	return {"version":12,"batch":batch.duplicate(),"laminates":laminates.serialize(),"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"retired_planet":retired_planet.duplicate(true),"v2":v2.serialize()}
 
 func restore(data,state) -> bool:
 	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8,9,10,11,12]: return false
@@ -473,6 +487,10 @@ func restore(data,state) -> bool:
 	circuit_reports=data.circuit_reports.duplicate(true)
 	joined=data.joined; qualified=data.qualified; qualification=data.qualification.duplicate(true)
 	feed=int(data.feed); products=data.products.duplicate(true); job=data.job.duplicate(true)
+	batch={}
+	var b=data.get("batch",{})
+	if b is Dictionary and not b.is_empty() and not recipe(str(b.get("recipe",""))).is_empty() and Count.count_ok(b.get("left")) and int(b.left)<=int(config.workshop.product_limit):
+		batch={"recipe":str(b.recipe),"left":int(b.left)}
 	extra_qualifications=data.extra_qualifications.duplicate(true); supplies=data.supplies.duplicate(true)
 	serial=int(data.serial); shipment_serial=int(data.shipment_serial); v2=restored_v2
 	return true

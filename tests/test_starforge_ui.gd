@@ -23,6 +23,10 @@ func button(node: Node,prefix: String) -> Button:
 		if found!=null: return found
 	return null
 
+func _gone(node) -> bool:
+	await process_frame; await process_frame
+	return not is_instance_valid(node) and game.modal==null
+
 func _run() -> void:
 	game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var s=game.state; await process_frame; await process_frame
@@ -73,6 +77,19 @@ func _run() -> void:
 	check(int(s.industry.staff[0].factory)==0,"they work at the metallurgy works")
 	game.modal._tab("market"); await process_frame
 	check(button(game.modal,"换一批合同")!=null,"the market shows the contract board")
+	# v0.37.1 (phone report): 返回浮岛 Ⅰ really leaves (layout width: test_starforge_layout_ui, windowed).
+	s.industry.plots=10; s.coins=300000; s.industry.credits=900; s.industry.gain(Industry.step(12))
+	for kind in ["polymer_works","home_studio","inorganic_works","silicon_works","test_bench"]:
+		for i in range(s.industry.plots):
+			if not s.industry.buildings.has(str(i)): s.industry.build(s,i,kind); break
+	panel=game.modal
+	var back=button(panel,"返回浮岛")
+	check(back!=null,"the return button is there")
+	if back!=null: back.pressed.emit(); await process_frame; await process_frame
+	check(game.modal==null and not is_instance_valid(panel),"返回浮岛 Ⅰ closes 星锻岛 and gives the island back")
+	game._show_starforge(); await process_frame
+	panel=game.modal
+	check(panel.handle_back() and (await _gone(panel)),"the Android back button leaves 星锻岛 too")
 	game.queue_free(); await process_frame
 	if failures.is_empty(): print("STARFORGE UI OK (%d checks)" % checks); quit(0)
 	else: print("STARFORGE UI FAILED: ",failures); quit(1)

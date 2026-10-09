@@ -111,7 +111,7 @@ func available(kind: String, products: Array, recipe_id: String="") -> int:
 		if r.get("kind") == kind and (recipe_id.is_empty() or p.recipe==recipe_id): result += int(r.units)
 	return result
 
-func place_error(c: Vector3i, actor: Dictionary) -> String:
+func place_error(c: Vector3i, actor: Dictionary, check_reach: bool=true) -> String:
 	if blocks.size() >= int(rules.max_blocks): return "本星球已放满512块构件"
 	if blocks.has(key(c)): return "这里已经有构件"
 	var below: Dictionary=blocks.get(key(c+Vector3i.DOWN),{})
@@ -122,7 +122,7 @@ func place_error(c: Vector3i, actor: Dictionary) -> String:
 	if terrain.solid(c) and terrain.cell_height(c) >= 1.0: return "这里被岩土占据，请换一个位置"
 	var feet: Vector3 = actor.feet
 	if absf(feet.x-c.x)<0.8 and absf(feet.z-c.z)<0.8 and feet.y<c.y+1 and feet.y+float(terrain.rules.body_height)>c.y: return "构件会碰到你，请退开一点"
-	if Vector3(c.x,c.y+0.5,c.z).distance_to(actor.eye)>float(rules.reach)+0.9: return "离得太远，请走近些"
+	if check_reach and Vector3(c.x,c.y+0.5,c.z).distance_to(actor.eye)>float(rules.reach)+0.9: return "离得太远，请走近些"
 	if c.y == base(c): return ""
 	for n in neighbors(c):
 		if blocks.has(key(n)): return ""
@@ -196,6 +196,9 @@ func restore(data) -> bool:
 		var box=boxes[id]
 		if not box is Dictionary or box.get("id")!=id or not str(id).is_valid_int() or int(id)<1 or int(id)>=int(data.get("miniature_serial",1)): return false
 		if not box.get("name") is String or box.name.length()>64 or not _integer(box.get("plot"),-2,4096) or not box.get("blocks") is Array or box.blocks.is_empty() or box.blocks.size()>64: return false
+		# v0.37.1 display replicas copy the shape, not the material: their pieces are not counted.
+		if not box.get("replica",false) is bool: return false
+		var replica: bool=box.get("replica",false)
 		var seen={}
 		for b in box.blocks:
 			if not b is Dictionary or not rules.kinds.has(b.get("kind")) or not data.sources.has(b.get("source")): return false
@@ -203,7 +206,8 @@ func restore(data) -> bool:
 				if not _integer(b.get(axis),0,7): return false
 			var k=key(cell(b))
 			if seen.has(k) or rules.recipes[data.sources[b.source].product.recipe].kind!=b.kind: return false
-			seen[k]=true; counts[b.source]+=1
+			seen[k]=true
+			if not replica: counts[b.source]+=1
 	for id in counts:
 		if counts[id]!=int(rules.recipes[data.sources[id].product.recipe].units): return false
 	if not connected(data.blocks): return false

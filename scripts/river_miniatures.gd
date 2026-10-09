@@ -38,25 +38,61 @@ static func pack(c,target: Dictionary) -> String:
 	c.blocks=rest; c.revision+=1
 	return "作品已装入微缩盒 · %d块。回浮岛背包的‘河湾作品’中摆放，原地已经腾空。" % cells.size()
 
-static func unfold(c,id: String,actor: Dictionary) -> String:
-	if not c.miniatures.has(id): return "背包中没有这件作品"
+## v0.37.1: where a boxed build would land. The footprint is centred on the aimed cell and its base
+## sits on the highest ground under it. Only the aimed cell must be within reach — checking every
+## cell made anything taller or wider than ~3 blocks fail with "离得太远". Shared by the preview.
+static func plan(c,id: String,actor: Dictionary) -> Dictionary:
+	if not c.miniatures.has(id): return {"error":"背包中没有这件作品"}
 	var item=c.miniatures[id]
-	if item.plot!=-1: return "先从浮岛展台收回作品"
-	if actor.is_empty(): return "进入星球第一人称后再展开"
+	if item.get("replica",false): return {"error":"复刻模型只用于展示，不能在星球展开（材料不会凭空复制）"}
+	if int(item.plot)==-2: return {"error":"这件作品在庭院展台上，先在浮岛地块的物品列表里收回"}
+	if int(item.plot)!=-1: return {"error":"先从浮岛展台收回作品"}
+	if actor.is_empty(): return {"error":"进入星球第一人称后再展开"}
 	var hit=c.trace(actor.eye,actor.direction)
-	if hit.is_empty() or not hit.has("target"): return "瞄准附近的空地"
-	if c.blocks.size()+item.blocks.size()>int(c.rules.max_blocks): return "这里的建筑数量已经到上限"
-	var offset: Vector3i=hit.target; var next=c.blocks.duplicate()
+	if hit.is_empty() or not hit.has("target"): return {"error":"瞄准附近的空地"}
+	if c.blocks.size()+item.blocks.size()>int(c.rules.max_blocks): return {"error":"这里的建筑数量已经到上限"}
+	var aim: Vector3i=hit.target
+	if Vector3(aim.x,aim.y+0.5,aim.z).distance_to(actor.eye)>float(c.rules.reach)+0.9: return {"error":"离得太远，请走近些"}
+	var size=Vector3i.ZERO
+	for b in item.blocks: size=size.max(c.cell(b))
+	var offset=Vector3i(aim.x-size.x/2,aim.y,aim.z-size.z/2)
+	# Rest the bottom layer on the highest ground of its columns (no cell ends up inside a slope).
+	var ground=-99999
 	for b in item.blocks:
-		var pos=c.cell(b)+offset; var error=c.place_error(pos,actor)
+		if int(b.y)==0: ground=maxi(ground,c.base(c.cell(b)+Vector3i(offset.x,0,offset.z)))
+	if ground>-99999: offset.y=maxi(offset.y,ground)
+	var next=c.blocks.duplicate()
+	var result={"error":"","next":next,"low":offset,"high":offset+size}
+	for b in item.blocks:
+		var pos=c.cell(b)+offset; var error=c.place_error(pos,actor,false)
 		# Validate support for the complete assembly below, not cell insertion order.
-		if not error.is_empty() and error!="构件需要连接地面或已有建筑": return error
+		if not error.is_empty() and error!="构件需要连接地面或已有建筑": result.error=error; return result
 		var k=c.key(pos)
-		if next.has(k): return "这里的空间不够展开作品"
+		if next.has(k): result.error="这里的空间不够展开作品"; return result
 		var copy=b.duplicate(); copy.x=pos.x; copy.y=pos.y; copy.z=pos.z; next[k]=copy
-	if not c.connected(next): return "底座需要完整落地，换一块平整地面"
-	c.blocks=next; c.miniatures.erase(id); c.revision+=1
+	if not c.connected(next): result.error="底座需要完整落地，换一块平整地面"
+	return result
+
+static func unfold(c,id: String,actor: Dictionary) -> String:
+	var found=plan(c,id,actor)
+	if not found.error.is_empty(): return found.error
+	c.blocks=found.next; c.miniatures.erase(id); c.revision+=1
 	return "作品已展开，保留每一块原材料的来源"
+
+## v0.37.1: a display-only replica of a boxed build. It can stand on any island stand or pedestal
+## but never unfolds on the planet, so building material is still never duplicated.
+static func replica_cost(c,id: String) -> int:
+	return 100+10*c.miniatures.get(id,{}).get("blocks",[]).size()
+
+static func replicate(c,id: String) -> String:
+	if not c.miniatures.has(id): return "找不到这件作品"
+	if c.miniatures.size()>=16: return "作品盒最多16件，先展开或出售一件"
+	var item: Dictionary=c.miniatures[id]
+	var copy=str(c.miniature_serial); c.miniature_serial+=1
+	var base_name=str(item.name).trim_prefix("复刻 · ")
+	c.miniatures[copy]={"id":copy,"name":("复刻 · "+base_name).left(64),"blocks":item.blocks.duplicate(true),"plot":-1,"replica":true}
+	c.revision+=1
+	return "复刻了一份「%s」展示模型（只用于浮岛展示，不能在星球展开）" % base_name
 
 static func exhibit(c,id: String,plot: int,plots: Array) -> String:
 	if not c.miniatures.has(id): return "找不到这件作品"

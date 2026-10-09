@@ -92,6 +92,8 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.37 "Silicon & Materials" (tag `v0.37.0`; see [23-silicon-materials.md](23-silicon-materials.md)): Si/Ca/P + apatite,
   MP rebuild (2 733 crystals, Poisson + n), material property model v1 (knobs, lots, laws, 材料测试台), inorganic works,
   silicon foundry, solar grid power, fertiliser to Earth.
+- ✅ v0.37.1 playtest fixes (tag `v0.37.1`; see [24-playtest-fixes.md](24-playtest-fixes.md)): leave 星锻岛, layout,
+  miniatures from any side + 复刻, batch/loop production.
 - Next: v0.38 industry — chip fab + packaging (doped Si devices, LEDs from the band gap and alloy bowing).
 - Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
   more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,

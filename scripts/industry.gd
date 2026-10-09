@@ -305,6 +305,35 @@ func job_seconds(job: Dictionary) -> float:
 	if not job.has("k") or str(r.get("model",""))=="": return float(r.seconds)
 	return float(r.seconds)*Model.seconds_factor(str(r.model),job.k)
 
+## v0.37.1: queue up to n jobs at once; stops at the queue limit or the first missing input.
+func start_many(state,plot: int,recipe_id: String,n: int) -> String:
+	var started=0; var last=""
+	for i in range(maxi(1,n)):
+		last=start(state,plot,recipe_id)
+		if not last.begins_with("已投料"): break
+		started+=1
+	if started==0: return last
+	var r: Dictionary=rules().recipes[recipe_id]
+	return "已投料：%s ×%d%s" % [r.name,started,"" if started>=n else "（%s）" % quote(state,plot,recipe_id).message]
+
+func queue_room(plot: int) -> int:
+	var b: Dictionary=buildings.get(str(plot),{})
+	return 0 if b.is_empty() else maxi(0,queue_limit(b)-b.jobs.size())
+
+## Per-building loop: the recipe is re-queued whenever its inputs are there (also offline).
+func set_repeat(plot: int,recipe_id: String) -> String:
+	var b: Dictionary=buildings.get(str(plot),{})
+	if b.is_empty(): return "这里没有工厂"
+	if recipe_id!="" and rules().recipes.get(recipe_id,{}).get("building","")!=b.kind: return "这座工厂不做这个"
+	if recipe_id=="": b.erase("repeat"); return "已停止循环生产"
+	b["repeat"]=recipe_id
+	return "循环生产：%s（原料够就自动投料，离线也继续）" % rules().recipes[recipe_id].name
+
+func _refill(state,plot: String) -> void:
+	var b: Dictionary=buildings[plot]; var rid=str(b.get("repeat",""))
+	if rid=="": return
+	while b.jobs.size()<queue_limit(b) and quote(state,int(plot),rid).ready: start(state,int(plot),rid)
+
 ## Recipe inputs, with knob-scaled amounts (more tin needs more tin).
 func inputs(recipe_id: String) -> Dictionary:
 	var r: Dictionary=rules().recipes[recipe_id]; var out: Dictionary=r.inputs.duplicate()
@@ -418,6 +447,7 @@ func tick(state,delta: float) -> Array:
 	var notes=[]
 	if not unlocked: return notes
 	for key in buildings:
+		_refill(state,key)
 		var b: Dictionary=buildings[key]; var work=delta*speed(b,int(key))
 		while work>0.0 and not b.jobs.is_empty():
 			var job: Dictionary=b.jobs[0]; var used=minf(work,float(job.left))
@@ -437,6 +467,7 @@ func tick(state,delta: float) -> Array:
 						_add_lot(id,n,job.get("k",{}),Model.quality(lot_serial)); lot_serial+=1
 					gain(int(rules().items[id].xp)*n)
 				crafted+=1; notes.append("%s出炉%s" % [r.name,"（研发博士多出一份）" if extra>0 else ""])
+				_refill(state,key)
 	var m: Dictionary=rules().market
 	var decay=pow(0.5,delta/float(m.half_life))
 	for id in saturation.keys():
@@ -774,6 +805,7 @@ func restore(data) -> bool:
 		var b=data.buildings[key]
 		if not str(key).is_valid_int() or int(key)<0 or int(key)>=int(data.plots) or str(int(key))!=key: return false
 		if not b is Dictionary or not R.buildings.has(b.get("kind")) or not b.get("jobs") is Array: return false
+		if b.has("repeat") and (not b.repeat is String or R.recipes.get(b.repeat,{}).get("building","")!=b.kind): return false
 		var spec: Dictionary=R.buildings[b.kind]
 		if not _num(b.get("level"),1,float(spec.max_level)) or b.jobs.size()>int(spec.queue_base)+int(spec.max_level)-1: return false
 		for job in b.jobs:
@@ -798,6 +830,7 @@ func restore(data) -> bool:
 			if job.has("k"): j["k"]=Model.knobs(str(R.recipes[job.recipe].model),job.k)
 			jobs.append(j)
 		buildings[str(key)]={"kind":str(b.kind),"level":int(b.level),"jobs":jobs,"yield_acc":float(b.get("yield_acc",0.0))}
+		if b.has("repeat"): buildings[str(key)]["repeat"]=str(b.repeat)
 	items={}
 	for id in data.items: items[id]=int(data.items[id])
 	saturation={}

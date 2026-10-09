@@ -31,7 +31,7 @@ func entries(state) -> Dictionary:
 		if v.nature.seeds[species]>0 or key in slots: result[key]=_item(key,spec.seed,"trees","seed",int(v.nature.seeds[species]),"种在空地长成"+str(spec.name)+"；用水样或标准水箱浇灌可加快生长。",{"type":"tree_plant","species":species})
 	for id in c.miniatures:
 		var box=c.miniatures[id]; var key="mini:"+str(id)
-		result[key]=_item(key,box.name,"miniatures","crate",1,"%d块构件组成的作品。%s" % [box.blocks.size(),"已摆在浮岛展台，先收回才能展开" if box.plot>=0 else "可返回浮岛的作品展台摆放，或瞄准星球空地展开。"],{"type":"mini_unfold","id":id})
+		result[key]=_item(key,box.name,"miniatures","crate",1,"%d块构件组成的作品。%s" % [box.blocks.size(),"复刻的展示模型，只能摆在浮岛展台上" if box.get("replica",false) else "已摆在浮岛展台，先收回才能展开" if int(box.plot)!=-1 else "可返回浮岛的作品展台摆放，或瞄准星球空地展开。"],{"type":"mini_unfold","id":id})
 	for recipe_id in p.recipe_ids():
 		var spec=p.recipe(recipe_id); var construction=c.rules.recipes.get(recipe_id,{})
 		var quantity=0

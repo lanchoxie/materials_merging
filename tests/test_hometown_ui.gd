@@ -121,6 +121,20 @@ func _run() -> void:
 	check(s.town_item(home,pedestal).show.get("id")=="limestone" and int(s.planet.v2.nature.minerals.limestone)==1,"pedestal shows the specimen from the backpack")
 	var caption: Label3D=game.campus_view.scenery.get_node_or_null("Plot_%d/Item_%d/Caption" % [home,pedestal])
 	check(caption!=null and caption.text.contains("CaCO₃"),"specimen card names the mineral and its formula")
+	# v0.37.1: a river miniature on a pedestal renders (the view used to type the ledger as a Dictionary).
+	var c=s.planet.v2.construction
+	c.miniatures["1"]={"id":"1","name":"复刻 · 河湾小塔","blocks":[{"x":0,"y":0,"z":0,"kind":"block","source":"1"},{"x":0,"y":1,"z":0,"kind":"block","source":"1"}],"plot":-1,"replica":true}
+	c.miniature_serial=2
+	var placed=""
+	for z in range(0,12):
+		for x in range(0,12):
+			if placed.contains("已摆放"): break
+			placed=s.town_place(home,"turntable",x,z)
+	check(placed.contains("已摆放"),"a turntable fits on the home plot: "+placed)
+	var turntable=uids(home,"turntable")[0]
+	s.town_exhibit(home,turntable,{"type":"mini","id":"1"}); game._sync_world(); await process_frame
+	var mini_caption: Label3D=game.campus_view.scenery.get_node_or_null("Plot_%d/Item_%d/Caption" % [home,turntable])
+	check(mini_caption!=null and mini_caption.text.contains("河湾小塔"),"a miniature on a turntable renders with its name card")
 	# Selecting an item by tapping it in the world.
 	game._select_plot(4)
 	await tap(tile_screen(home,Vector2i(1,8)))

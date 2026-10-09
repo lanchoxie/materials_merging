@@ -8,6 +8,7 @@ var level=1
 var jobs: Array=[]           # queue of {"process":id,"left":seconds}; only the first one runs
 var progress: Dictionary={}  # extractor id -> accumulated seconds
 var made: Dictionary={}      # element -> units produced here (stats and guidance)
+var repeat=""               # v0.37.1: process id re-queued whenever its minerals are there ("" = off)
 var power_gain=0.0          # v0.30: extra speed from fabricator solar panels (set by LabState.sync_gear, not saved)
 
 static func rules() -> Dictionary:
@@ -81,9 +82,35 @@ func start(state,id: String) -> String:
 	jobs.append({"process":id,"left":float(p.seconds)})
 	return "%s开始：%s" % [p.name,q.message]
 
+## v0.37.1: queues up to n batches of one process in a single tap (stops at the queue or the ore).
+func start_many(state,id: String,n: int) -> String:
+	var started=0; var last=""
+	for i in range(maxi(1,n)):
+		last=start(state,id)
+		if not last.contains("开始"): break
+		started+=1
+	if started==0: return last
+	return "%s ×%d 已排队%s" % [process(id).name,started,"" if started>=n else "（%s）" % quote(state,id).message]
+
+## Max batches a tap can queue now: queue space and minerals, whichever runs out first.
+func can_queue(state,id: String) -> int:
+	var p=process(id); var n=queue_limit()-jobs.size()
+	for m in p.inputs: n=mini(n,int(mineral_stock(state).get(m,0))/maxi(1,int(p.inputs[m])))
+	return maxi(0,n)
+
+func set_repeat(id: String) -> String:
+	if id!="" and process(id).is_empty(): return "没有这种精炼工艺"
+	repeat=id
+	return "循环精炼：%s（矿石够就自动续上，离线也会继续）" % process(id).name if id!="" else "已停止循环精炼"
+
+func _refill(state) -> void:
+	if repeat=="" or process(repeat).is_empty(): return
+	while jobs.size()<queue_limit() and quote(state,repeat).ready: start(state,repeat)
+
 ## Advances the queue and extractors; returns finished-batch notices.
 func tick(state,delta: float) -> Array:
 	var notices=[]
+	_refill(state)
 	var work=delta*speed()
 	while work>0.0 and not jobs.is_empty():
 		var job: Dictionary=jobs[0]
@@ -93,6 +120,7 @@ func tick(state,delta: float) -> Array:
 		for symbol in p.outputs: _add(state,symbol,int(p.outputs[symbol]))
 		notices.append("精炼完成：%s → %s" % [p.name,format(p.outputs)])
 		jobs.pop_front()
+		_refill(state)
 	var cap=extractor_cap()
 	for id in rules().extractors:
 		var ex: Dictionary=rules().extractors[id]
@@ -126,7 +154,7 @@ static func format(outputs: Dictionary) -> String:
 	return " ".join(parts)
 
 func serialize() -> Dictionary:
-	return {"version":1,"level":level,"jobs":jobs.duplicate(true),"progress":progress.duplicate(),"made":made.duplicate()}
+	return {"version":1,"level":level,"jobs":jobs.duplicate(true),"progress":progress.duplicate(),"made":made.duplicate(),"repeat":repeat}
 
 func restore(data,elements: Dictionary) -> bool:
 	if not data is Dictionary or int(data.get("version",0))!=1: return false
@@ -136,12 +164,13 @@ func restore(data,elements: Dictionary) -> bool:
 		if not job is Dictionary or not rules().processes.has(str(job.get("process",""))): return false
 		var left=job.get("left"); if not (left is float or left is int) or float(left)<0.0 or float(left)>float(process(str(job.process)).seconds): return false
 	if not data.get("progress") is Dictionary or not data.get("made") is Dictionary: return false
+	if not data.get("repeat","") is String or (str(data.get("repeat",""))!="" and not rules().processes.has(str(data.repeat))): return false
 	for id in data.progress:
 		var v=data.progress[id]
 		if not rules().extractors.has(id) or not (v is float or v is int) or float(v)<0.0 or float(v)>float(rules().extractors[id].every): return false
 	for symbol in data.made:
 		var v=data.made[symbol]
 		if not elements.has(symbol) or not (v is float or v is int) or float(v)<0.0 or float(v)>1e9: return false
-	level=int(lv); jobs=data.jobs.duplicate(true); progress=data.progress.duplicate(); made=data.made.duplicate()
+	level=int(lv); jobs=data.jobs.duplicate(true); progress=data.progress.duplicate(); made=data.made.duplicate(); repeat=str(data.get("repeat",""))
 	for job in jobs: job.left=float(job.left)
 	return true

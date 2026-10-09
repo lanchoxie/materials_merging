@@ -126,6 +126,10 @@ func _extractors() -> void:
 func _queue() -> void:
 	UI.clear(queue_box); job_bar=null
 	var r=state.refinery
+	if r.repeat!="":
+		var line=UI.row(queue_box,8)
+		line.add_child(UI.label("⟳ 循环：%s" % r.process(r.repeat).name,15,UI.MINT))
+		line.add_child(UI.button("停止循环",func(): _say(r.set_repeat(""))))
 	if r.jobs.is_empty():
 		queue_box.add_child(UI.paragraph("炉子空闲。带回矿物后，在下面选一种工艺开始精炼。",15,UI.MUTED)); return
 	for i in range(r.jobs.size()):
@@ -159,6 +163,16 @@ func _processes() -> void:
 		var b=UI.button("开始精炼" if q.ready else q.message,_start.bind(id),q.ready); b.disabled=not q.ready
 		b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 		c.add_child(b)
+		# v0.37.1: queue several at once, or keep the furnace fed while ore lasts (also offline).
+		var more=HFlowContainer.new(); more.add_theme_constant_override("h_separation",6); more.add_theme_constant_override("v_separation",6); c.add_child(more)
+		var room=r.can_queue(state,id)
+		if room>=2:
+			more.add_child(UI.button("×%d" % mini(5,room),_start_many.bind(id,mini(5,room))))
+			if room>5: more.add_child(UI.button("排满 ×%d" % room,_start_many.bind(id,room)))
+		var loop=CheckButton.new(); loop.text="循环精炼"; loop.button_pressed=r.repeat==id
+		loop.tooltip_text="矿石够就自动续上，离线时也继续"
+		loop.toggled.connect(func(on: bool): _say(r.set_repeat(id if on else "")))
+		more.add_child(loop)
 
 func _bars() -> void:
 	var r=state.refinery
@@ -174,6 +188,12 @@ func _start(id: String) -> void:
 	status.text=message; acted.emit(message)
 	if state.refinery.jobs.size()>before: _sparkle_center(queue_box)
 	_redraw()
+
+func _start_many(id: String,n: int) -> void:
+	_say(state.refinery.start_many(state,id,n)); _sparkle_center(queue_box)
+
+func _say(message: String) -> void:
+	status.text=message; acted.emit(message); _redraw()
 
 func _upgrade() -> void:
 	var message=state.refinery.upgrade(state)

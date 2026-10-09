@@ -202,13 +202,25 @@ func _workshop() -> void:
 			progress_text=UI.paragraph("",17,UI.MINT); body.add_child(progress_text)
 			progress=ProgressBar.new(); progress.custom_minimum_size.y=12; progress.show_percentage=false; body.add_child(progress)
 			_button("取消制作 · 退供料，费用不退",func(): _do("cancel_pack"))
+		_batch_buttons(info,not access.ready or p.input_count(info.input)<1 or state.coins<float(info.fee))
 	var input_info={"name":"标准水供料","price":int(rules.feed_cost)} if info.input=="feed" else p.config.supplies[info.input]
 	_text("%s · 库存%d份" % [input_info.name,p.input_count(info.input)],16,UI.MINT)
 	_button("补充1份供料 · %d金币" % int(input_info.price),func(): _do("buy_feed",{"input":info.input}))
+	_button("补充10份供料 · %d金币" % (10*int(input_info.price)),func(): _do("buy_feed",{"input":info.input,"count":10}))
 	_text("工业构件采用295 K参考物性和已对照几何；供料包含对应预切件。它不是玩家分子的实测性能。" if ref.begins_with("fixture:") else "结构身份不等于宏观纯度。标准组件、气源与已充能模块由合作方供给。",14)
 	if ref.begins_with("fixture:"): _button("更换设计 · 材料对照",_open_materials)
 	if info.get("domain","") in ["watershed","village","habitat","industry","modern"]: _text("水样只用于合作入门资格；组件与供料规格由合作方提供，不由水分子几何推出。",14,UI.GOLD)
 	_button("前往星球 · 使用现有成品",func(): planet_requested.emit(),true)
+
+## v0.37.1: 连续制作 — the next item starts by itself when the bench frees up.
+func _batch_buttons(info: Dictionary,blocked: bool) -> void:
+	var p=state.planet
+	if not p.batch.is_empty():
+		_text("⟳ 连续制作：%s · 还剩 %d 件排队" % [p.recipe(str(p.batch.recipe)).name,int(p.batch.left)],16,UI.MINT)
+		_button("停止连续制作",func(): _do("batch",{"count":0}))
+		return
+	for n in [5,10]:
+		_button("连续制作 %d 件" % n,func(): _do("batch",{"recipe":selected_recipe,"count":n,"production_mode":"island"}),false,blocked and p.job.is_empty())
 
 func _natural_workshop(info: Dictionary) -> void:
 	if selected_recipe=="field_mixing_tank":
@@ -222,6 +234,7 @@ func _natural_workshop(info: Dictionary) -> void:
 	_text("预留上述原料，标准工时%d秒。没有额外原料购买费；工程师继续按原规则领取薪酬。取消时原料全部退回。" % int(info.seconds),15)
 	if not p.joined: _button("登记车间合作",func(): _do("join"),true)
 	elif p.job.is_empty(): _button("加工采集材料",func(): _do("pack",{"recipe":selected_recipe}),true,not access.ready or not field.crafting_error(selected_recipe).is_empty())
+	if p.joined: _batch_buttons(info,not access.ready or not field.crafting_error(selected_recipe).is_empty())
 	else:
 		progress_text=UI.paragraph("",17,UI.MINT); body.add_child(progress_text)
 		progress=ProgressBar.new(); progress.custom_minimum_size.y=12; progress.show_percentage=false; body.add_child(progress)

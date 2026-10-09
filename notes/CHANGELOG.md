@@ -30,6 +30,22 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.37.1 playtest fixes
+Fixes from the user's phone play. Full notes: [24-playtest-fixes.md](24-playtest-fixes.md).
+- **星锻岛.** 「返回浮岛 Ⅰ」 and Android back now really return to the main island. Rows and labels wrap, so no tab runs off the
+  screen.
+- **Miniatures.**
+  - Big builds unfold from any side. The footprint is centred on the aim point, the base rests on the ground, and only
+    the aimed cell needs to be in reach. A ghost box shows where the build will land.
+  - Builds on courtyard pedestals render again (a type error).
+  - New 「复刻」 makes a paid, display-only replica.
+- **Queues.**
+  - 精炼厂: ×5, 排满 and 循环精炼.
+  - 星锻岛 factories: 排满 and 循环生产.
+  - Both loops keep going offline.
+  - 工艺车间: 连续制作 5/10 and buying supplies ×10.
+- **Tests.** New: `test_queues` (36 checks) and `test_starforge_layout_ui` (windowed). `test_starforge_ui` and `test_hometown_ui` are extended.
+
 ## v0.37.0 "Silicon & Materials" (硅与材料)
 Industry release. Full notes: [23-silicon-materials.md](23-silicon-materials.md).
 - **Si, P and Ca.** 19 elements. Apatite (Ca₅(PO₄)₃F) is the phosphorus ore. The refinery gains three real routes: an

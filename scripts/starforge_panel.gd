@@ -18,15 +18,17 @@ var section="deck"
 var fingerprint=""
 var clock=0.0
 var bars: Array=[]
-var laws_open: Dictionary={}   # recipe id -> showing its property laws
+var laws_open: Dictionary={}
+var close_button: Button   # recipe id -> showing its property laws
 
 func setup(model) -> void:
 	state=model
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); theme=UI.make_theme()
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var title=UI.label("星锻岛 · 浮岛 Ⅱ",30,UI.MINT); title.position=Vector2(28,22); add_child(title)
-	header=UI.label("",17,UI.GOLD); header.position=Vector2(300,34); add_child(header)
-	var close=UI.button("返回浮岛 Ⅰ",func(): dismissed.emit()); close.position=Vector2(1268,22); close.size=Vector2(144,48); add_child(close)
+	header=UI.label("",17,UI.GOLD); header.position=Vector2(300,34); header.size=Vector2(950,30); header.clip_text=true; add_child(header)
+	# v0.37.1: the button used to only emit `dismissed`, leaving this full-screen panel on top with no way back.
+	close_button=UI.button("返回浮岛 Ⅰ",_close); close_button.position=Vector2(1268,22); close_button.size=Vector2(144,48); add_child(close_button)
 	var frame=UI.box(self,Rect2(28,96,760,740))
 	var container=SubViewportContainer.new(); container.stretch=true; container.custom_minimum_size=Vector2(736,716); frame.add_child(container)
 	var viewport=SubViewport.new(); viewport.own_world_3d=true; viewport.size=Vector2i(736,716); viewport.msaa_3d=Viewport.MSAA_2X; container.add_child(viewport)
@@ -40,6 +42,26 @@ func setup(model) -> void:
 	status=UI.paragraph("",16,UI.GOLD); status.position=Vector2(32,848); status.size=Vector2(1370,40); add_child(status)
 	_redraw()
 
+func set_return_label(text: String) -> void:
+	close_button.text=text
+
+func handle_back() -> bool:
+	_close(); return true
+
+func _close() -> void:
+	dismissed.emit(); queue_free()
+
+## A button row that wraps instead of widening the right-hand panel past the screen edge.
+func _flow(parent: Node) -> HFlowContainer:
+	var f=HFlowContainer.new(); f.add_theme_constant_override("h_separation",6); f.add_theme_constant_override("v_separation",6); parent.add_child(f); return f
+
+## Long one-line labels stacked in a column wrap too (labels in rows keep their size).
+func _wrap_labels(node: Node) -> void:
+	for child in node.get_children():
+		if child is Label and node is VBoxContainer and child.autowrap_mode==TextServer.AUTOWRAP_OFF:
+			child.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+		_wrap_labels(child)
+
 func _tab(id: String) -> void:
 	section=id; _redraw()
 
@@ -48,7 +70,7 @@ func _act(message: String) -> void:
 
 func _fingerprint() -> String:
 	var ind=state.industry
-	return JSON.stringify([section,ind.unlocked,ind.rank(),ind.credits,ind.plots,ind.buildings.keys(),ind.buildings.values().map(func(b): return [b.kind,b.level,b.jobs.size()]),ind.items,ind.lots.hash(),ind.bit,int(state.coins)/50,state.materials,state.element_inventory.hash(),state.storage.batches.size(),
+	return JSON.stringify([section,ind.unlocked,ind.rank(),ind.credits,ind.plots,ind.buildings.keys(),ind.buildings.values().map(func(b): return [b.kind,b.level,b.jobs.size(),b.get("repeat","")]),ind.items,ind.lots.hash(),ind.bit,int(state.coins)/50,state.materials,state.element_inventory.hash(),state.storage.batches.size(),
 		ind.staff,ind.furnished,ind.contracts.map(func(c): return c.id),ind.airship.is_empty(),ind.arrears>0,ind.candidates(state).map(func(c): return [c.ready,c.delayed]),state.campus.people.size()])
 
 func _process(dt: float) -> void:
@@ -80,6 +102,7 @@ func _redraw() -> void:
 		"staff": _staff()
 		"market": _market()
 		"gear": _gear()
+	_wrap_labels(body)
 
 func _unlock() -> void:
 	var ind=state.industry
@@ -116,7 +139,7 @@ func _deck() -> void:
 			if bld.kind=="staff_housing":
 				var cap=ind.housing_capacity(bld); var here=ind.staff.filter(func(x): return int(x.home)==i)
 				plot.add_child(UI.paragraph("住户 %d/%d · 家具 %d/%d（舒适度让员工加成最多 +%d%%）" % [here.size(),cap,int(ind.furnished.get(str(i),0)),cap,int(float(ind.rules().staff.comfort_bonus)*100)],13))
-				var furn=UI.row(plot,6)
+				var furn=_flow(plot)
 				for id in ind.rules().items:
 					if ind.rules().items[id].has("furniture") and int(ind.items.get(id,0))>0:
 						furn.add_child(UI.button("摆%s" % ind.rules().items[id].name,func(): _act(ind.furnish(i,id))))
@@ -136,7 +159,8 @@ func _factories() -> void:
 		var bld: Dictionary=ind.buildings[key]
 		if bld.kind=="trade_hub": continue
 		any=true; var plot=int(key); var spec: Dictionary=R.buildings[bld.kind]
-		var card=_card("%s Lv.%d · %d 号地 · 队列 %d/%d" % [spec.name,int(bld.level),plot+1,bld.jobs.size(),ind.queue_limit(bld)],Color(str(spec.accent)))
+		var looping=str(bld.get("repeat",""))
+		var card=_card("%s Lv.%d · %d 号地 · 队列 %d/%d%s" % [spec.name,int(bld.level),plot+1,bld.jobs.size(),ind.queue_limit(bld),"  ⟳ "+str(R.recipes[looping].name) if looping!="" else ""],Color(str(spec.accent)))
 		for job in bld.jobs:
 			var r: Dictionary=R.recipes[job.recipe]
 			card.add_child(UI.label("▶ %s" % r.name,15,UI.TEXT))
@@ -157,6 +181,16 @@ func _factories() -> void:
 			if r.has("model") and not q.get("locked",false): _knobs(line,id,str(r.model))
 			var go=UI.button("投料" if q.ready else str(q.message),func(): _act(ind.start(state,plot,id)))
 			go.disabled=not q.ready; go.add_theme_font_size_override("font_size",13); line.add_child(go)
+			if not q.get("locked",false):
+				# v0.37.1: fill the queue in one tap, or loop the recipe while inputs last (also offline).
+				var more=_flow(line); var room=ind.queue_room(plot)
+				if q.ready and room>=2:
+					var fill=UI.button("排满 ×%d" % room,func(): _act(ind.start_many(state,plot,id,room)))
+					fill.add_theme_font_size_override("font_size",13); more.add_child(fill)
+				var loop=CheckButton.new(); loop.text="循环生产"; loop.button_pressed=str(bld.get("repeat",""))==id
+				loop.tooltip_text="原料够就自动投料，离线也继续"; loop.add_theme_font_size_override("font_size",13)
+				loop.toggled.connect(func(on: bool): _act(ind.set_repeat(plot,id if on else "")))
+				more.add_child(loop)
 	if not any:
 		var c=_card("还没有工厂")
 		c.add_child(UI.paragraph("在「甲板」页选一块地，建冶金工厂或高分子工厂。",15))
@@ -207,7 +241,7 @@ func _staff() -> void:
 		card.add_child(UI.paragraph(str(role.story),13))
 		var where="休息中" if int(s.factory)<0 else "%d号地 %s" % [int(s.factory)+1,R.buildings[ind.buildings[str(int(s.factory))].kind].name]
 		card.add_child(UI.label("住 %d号地公寓 · 工作：%s · 日薪 %d" % [int(s.home)+1,where,int(role.daily_pay)],14,UI.TEXT))
-		var row=UI.row(card,6)
+		var row=_flow(card)
 		for key in ind.buildings:
 			if ind.buildings[key].kind not in ind.FACTORIES: continue
 			var b=UI.button("派到%d号%s" % [int(key)+1,R.buildings[ind.buildings[key].kind].name],func(): _act(ind.assign(int(s.id),int(key))))
@@ -237,7 +271,7 @@ func _market() -> void:
 		if ind.modelled(id)!="": _lot_rows(id); continue
 		var row=_card("%s × %d" % [it.name,n])
 		row.add_child(UI.paragraph("当前出价 %d 金币（基础 %d · 需求 %d%%）" % [ind.price(id),int(it.sell),int(100*(1.0-float(ind.saturation.get(id,0.0))))],13))
-		var h=UI.row(row,6)
+		var h=_flow(row)
 		for k in [1,5]:
 			var b=UI.button("卖 %d" % k,func(): _act(ind.sell(state,id,k))); b.disabled=n-(1 if ind.bit==id else 0)<k; h.add_child(b)
 		if it.has("furniture"): h.add_child(UI.button("送回浮岛 Ⅰ 摆放",func(): _act(ind.ship_home(state,id))))
@@ -252,7 +286,7 @@ func _lot_rows(id: String) -> void:
 		var lot: Dictionary=list[i]
 		card.add_child(UI.label("批次 %d × %d · %s%s" % [i+1,int(lot.n),Model.knob_text(fam,lot.k),"  · 已检测 ✓" if lot.m else ""],14,UI.MINT if lot.m else UI.TEXT))
 		card.add_child(UI.paragraph("%s · 出价 %d 金币" % [Model.describe(fam,lot.k,float(lot.q),bool(lot.m)),ind.lot_price(id,i)],13))
-		var h=UI.row(card,6); var spare=ind.lot_spare(id,i)
+		var h=_flow(card); var spare=ind.lot_spare(id,i)
 		var one=UI.button("卖 1",func(): _act(ind.sell(state,id,1,i))); one.disabled=spare<1; h.add_child(one)
 		if spare>1: h.add_child(UI.button("全卖 %d" % spare,func(): _act(ind.sell(state,id,spare,i))))
 		if not lot.m:

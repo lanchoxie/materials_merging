@@ -585,6 +585,14 @@ func tick(delta: float):
 		if delta-floor(delta)>0.0: tick(delta-floor(delta))
 		return
 	planet.tick(delta,campus.industrial_rate(campus_context()) if not planet.laminates.job.is_empty() or (planet.production_mode=="island" and not planet.job.is_empty()) else 1.0)
+	# v0.37.1 workshop batch: the next item starts as soon as the bench is free.
+	if planet.job.is_empty() and not planet.batch.is_empty():
+		var rid=str(planet.batch.recipe)
+		if int(planet.batch.left)<=0: planet.batch={}
+		else:
+			var message: String=planet.command(self,"pack",{"recipe":rid,"production_mode":planet.production_mode})
+			if planet.job.is_empty(): planet.batch={}; planet.notice="连续制作停止：%s" % message
+			else: planet.batch.left=int(planet.batch.left)-1
 	_campus_clock += delta
 	while _campus_clock >= 1.0:
 		var payroll_result: Dictionary=payroll.tick(1.0,campus.people,campus.config,coins)
@@ -1627,6 +1635,16 @@ func lay_pipe() -> String:
 	var message: String=planet.v2.incidents.lay_pipe()
 	if message.begins_with("铺设"):
 		industry.take_item("pvc",need)
+	return message
+
+## v0.37.1: a display-only replica of a boxed river build, paid in coins.
+func replicate_miniature(id: String) -> String:
+	var Mini=preload("res://scripts/river_miniatures.gd"); var c=planet.v2.construction
+	if not c.miniatures.has(id): return "找不到这件作品"
+	var cost=Mini.replica_cost(c,id)
+	if coins<cost: return "复刻需要%d金币" % cost
+	var message: String=Mini.replicate(c,id)
+	if message.begins_with("复刻了"): coins-=float(cost)
 	return message
 
 ## v0.37: superphosphate from 星锻岛 raises the nutrients of every Earth region that has crops.

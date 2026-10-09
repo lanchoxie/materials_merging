@@ -217,7 +217,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.36 天气与标本  ·  暴风雨 · 洪水 · 干旱 · 标本图鉴" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.37.1 硅与材料  ·  连续生产 · 循环精炼 · 作品复刻" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -1940,7 +1940,7 @@ func _show_island_walk() -> void:
 		else: _close_modal(); _select_plot(index))
 
 func _show_miniatures() -> void:
-	var body=_dialog("河湾作品 · 把探索带回家", "星球上装备微缩器，瞄准自建作品装箱。作品会从原地搬走，材料不会复制。",true)
+	var body=_dialog("河湾作品 · 把探索带回家", "星球上装备微缩器，瞄准自建作品装箱。作品会从原地搬走；「复刻」只做展示用的复制品。",true)
 	var boxes=state.planet.v2.construction.miniatures
 	if boxes.is_empty():
 		body.add_child(UI.paragraph("还没有带回来的作品。先用工艺车间做出的构件搭一座小屋、一段桥或雕塑，再用背包里的微缩器收纳。\n每件最多64块、8×8×8格；有作物的种植箱先收获。",18))
@@ -1949,7 +1949,11 @@ func _show_miniatures() -> void:
 	for id in boxes:
 		var item=boxes[id]; var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(Color("213c45"),14)); body.add_child(card)
 		var row=UI.row(card,12); row.add_child(UI.label("%s · %d块" % [item.name,item.blocks.size()],19,UI.MINT))
-		if int(item.plot)==-2: row.add_child(UI.label("摆在庭院展台上 · 在地块物品列表收回",16,UI.GOLD)); continue
+		if item.get("replica",false): row.add_child(UI.label("复刻 · 仅展示",14,UI.LILAC))
+		var copy_cost=preload("res://scripts/river_miniatures.gd").replica_cost(state.planet.v2.construction,id)
+		var copy=UI.button("复刻 · %d金币" % copy_cost,func(): _action(state.replicate_miniature(id)); _show_miniatures())
+		copy.disabled=boxes.size()>=16 or state.coins<copy_cost; copy.tooltip_text="做一份只用于展示的复制品；原作仍可在星球展开"
+		if int(item.plot)==-2: row.add_child(UI.label("摆在庭院展台上 · 在地块物品列表收回",16,UI.GOLD)); row.add_child(copy); continue
 		var options=OptionButton.new(); options.custom_minimum_size=Vector2(380,48); row.add_child(options)
 		options.add_item("留在背包",0); options.set_item_metadata(0,-1)
 		for i in range(state.plots.size()):
@@ -1959,6 +1963,7 @@ func _show_miniatures() -> void:
 			if item.plot==i: options.select(at)
 		row.add_child(UI.button("摆放 / 收回",func():
 			_action(state.planet.command(state,"v2_mini_exhibit",{"id":id,"plot":options.get_item_metadata(options.selected)})); _show_miniatures(),true))
+		row.add_child(copy)
 	body.add_child(UI.button("走近展台看看",_show_island_walk))
 
 

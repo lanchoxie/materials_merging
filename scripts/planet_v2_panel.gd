@@ -385,6 +385,11 @@ func _aim() -> void:
 		var found: Dictionary=preload("res://scripts/river_miniatures.gd").survey(v.construction,target)
 		view.construction_view.preview_box(found)
 		aim_label.text=found.error if not found.error.is_empty() else "微缩器 · 这座作品%d块 · E 装进微缩盒，回浮岛「河湾作品」里摆放" % found.chosen.size()
+	elif action.get("type")=="mini_unfold":
+		# v0.37.1: a ghost shows where the boxed build will land (green) or why it can't (red).
+		var found: Dictionary=preload("res://scripts/river_miniatures.gd").plan(v.construction,str(action.get("id","")),v.actor)
+		view.construction_view.preview_box(found)
+		aim_label.text=found.error if not found.error.is_empty() else "%s · 绿框是展开位置 · E 展开" % str(item.get("name","作品"))
 	aim_label.text=InteractionHelp.prompt(v,item,target,aim_label.text)
 	action_button.text=InteractionHelp.button_text(action,target)
 	attack_button.text="收拳中…" if v.combat.attack_left>0 else "攻击 F"
