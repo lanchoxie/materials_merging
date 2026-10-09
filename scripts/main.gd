@@ -217,7 +217,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.34 星锻岛  ·  岛主等级 · 工业信用 · 冶金与高分子工厂" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.35 家与市  ·  晋升与延毕 · 星锻公寓 · 家居工坊 · 合同飞艇" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -1580,6 +1580,7 @@ func _show_test_panel(planet: Control = null) -> void:
 	row.add_child(UI.button("招募博士", func(): run.call(state.campus_hire("doctor"))))
 	row.add_child(UI.button("招募工程师", func(): run.call(state.campus_hire("engineer"))))
 	row.add_child(UI.button("开放星锻岛 +300信用", func(): run.call(TestMode.open_starforge(state, 300))))
+	row.add_child(UI.button("员工满年限", func(): run.call(TestMode.finish_service(state))))
 	row = UI.row(body, 8)
 	row.add_child(UI.button("浮岛快进 1 小时", func(): run.call(TestMode.skip_island(state, 3600))))
 	row.add_child(UI.button("浮岛快进 8 小时", func(): run.call(TestMode.skip_island(state, 8 * 3600))))

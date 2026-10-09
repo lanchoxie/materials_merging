@@ -6,44 +6,369 @@
   "usable": 12,
   "sell_ratio": 0.5,
   "max_items_per_plot": 96,
-  "reactor_footprint": [2, 2, 8, 8],
+  "reactor_footprint": [
+    2,
+    2,
+    8,
+    8
+  ],
   "building_footprint": {
-    "engineer_house": 5, "doctor_dorm": 5, "canteen": 5, "park": 5, "workshop": 5, "professor_apartment": 5,
-    "institute": 8, "academician_villa": 8
+    "engineer_house": 5,
+    "doctor_dorm": 5,
+    "canteen": 5,
+    "park": 5,
+    "workshop": 5,
+    "professor_apartment": 5,
+    "institute": 8,
+    "academician_villa": 8
   },
   "categories": [
-    {"id": "building", "name": "建筑"},
-    {"id": "path", "name": "小路"},
-    {"id": "fence", "name": "围栏"},
-    {"id": "plant", "name": "花木"},
-    {"id": "furniture", "name": "小品"},
-    {"id": "pedestal", "name": "展台"}
+    {
+      "id": "building",
+      "name": "建筑"
+    },
+    {
+      "id": "path",
+      "name": "小路"
+    },
+    {
+      "id": "fence",
+      "name": "围栏"
+    },
+    {
+      "id": "plant",
+      "name": "花木"
+    },
+    {
+      "id": "furniture",
+      "name": "小品"
+    },
+    {
+      "id": "pedestal",
+      "name": "展台"
+    }
   ],
   "items": {
-    "stone_path":   {"name": "石板路", "category": "path", "cost": 3, "size": [2, 2], "paint": true, "color": "cfc6b0"},
-    "wood_path":    {"name": "木栈道", "category": "path", "cost": 4, "size": [2, 2], "paint": true, "color": "b88d63"},
-    "crystal_path": {"name": "晶砂小径", "category": "path", "cost": 6, "size": [2, 2], "paint": true, "color": "a9dcd8", "requires_plots": 8},
-    "wood_fence":   {"name": "木栅栏", "category": "fence", "cost": 4, "size": [1, 1], "paint": true, "join": "fence", "color": "c79a6b"},
-    "picket_fence": {"name": "白篱笆", "category": "fence", "cost": 6, "size": [1, 1], "paint": true, "join": "fence", "color": "f3eee2"},
-    "stone_wall":   {"name": "矮石墙", "category": "fence", "cost": 8, "size": [1, 1], "paint": true, "join": "wall", "color": "a7a39a"},
-    "hedge":        {"name": "树篱", "category": "fence", "cost": 6, "size": [1, 1], "paint": true, "join": "hedge", "color": "6fa77a"},
-    "gate":         {"name": "小木门", "category": "fence", "cost": 10, "size": [1, 1], "join": "fence", "color": "c79a6b"},
-    "flower_bed":   {"name": "花坛", "category": "plant", "cost": 15, "size": [2, 2], "color": "e59ab4"},
-    "sunflower":    {"name": "向日葵", "category": "plant", "cost": 6, "size": [1, 1], "paint": true, "color": "f2c64d"},
-    "bush":         {"name": "圆灌木", "category": "plant", "cost": 8, "size": [1, 1], "paint": true, "color": "79b287"},
-    "young_tree":   {"name": "小树", "category": "plant", "cost": 20, "size": [2, 2], "color": "7fbf8e"},
-    "blossom_tree": {"name": "樱花树", "category": "plant", "cost": 45, "size": [3, 3], "color": "f3b8cb", "requires_plots": 6},
-    "bench":        {"name": "长椅", "category": "furniture", "cost": 20, "size": [2, 1], "color": "c49872"},
-    "street_lamp":  {"name": "路灯", "category": "furniture", "cost": 25, "size": [1, 1], "color": "ffe0a7"},
-    "signpost":     {"name": "路牌", "category": "furniture", "cost": 12, "size": [1, 1], "color": "d8b27c"},
-    "flag":         {"name": "小旗杆", "category": "furniture", "cost": 30, "size": [1, 1], "color": "e7776d"},
-    "swing":        {"name": "秋千", "category": "furniture", "cost": 60, "size": [3, 2], "color": "d5a26e", "requires_plots": 6},
-    "pond":         {"name": "小池塘", "category": "furniture", "cost": 80, "size": [4, 3], "color": "7fcbd6", "requires_plots": 8},
-    "fountain":     {"name": "喷泉", "category": "furniture", "cost": 120, "size": [4, 4], "color": "9fdde3", "requires_deliveries": 3},
-    "windmill":     {"name": "小风车", "category": "furniture", "cost": 150, "size": [3, 3], "color": "efe6d6", "requires_plots": 10},
-    "stone_pedestal": {"name": "石展台", "category": "pedestal", "cost": 30, "size": [2, 2], "display": true, "color": "d9d2c3"},
-    "plinth":         {"name": "大展台", "category": "pedestal", "cost": 60, "size": [3, 3], "display": true, "color": "e7ded0"},
-    "turntable":      {"name": "旋转展台", "category": "pedestal", "cost": 90, "size": [2, 2], "display": true, "spin": true, "color": "c9d6dc"},
-    "glass_case":     {"name": "玻璃展柜", "category": "pedestal", "cost": 120, "size": [2, 2], "display": true, "glass": true, "color": "bfe4ea", "requires_deliveries": 2}
+    "stone_path": {
+      "name": "石板路",
+      "category": "path",
+      "cost": 3,
+      "size": [
+        2,
+        2
+      ],
+      "paint": true,
+      "color": "cfc6b0"
+    },
+    "wood_path": {
+      "name": "木栈道",
+      "category": "path",
+      "cost": 4,
+      "size": [
+        2,
+        2
+      ],
+      "paint": true,
+      "color": "b88d63"
+    },
+    "crystal_path": {
+      "name": "晶砂小径",
+      "category": "path",
+      "cost": 6,
+      "size": [
+        2,
+        2
+      ],
+      "paint": true,
+      "color": "a9dcd8",
+      "requires_plots": 8
+    },
+    "wood_fence": {
+      "name": "木栅栏",
+      "category": "fence",
+      "cost": 4,
+      "size": [
+        1,
+        1
+      ],
+      "paint": true,
+      "join": "fence",
+      "color": "c79a6b"
+    },
+    "picket_fence": {
+      "name": "白篱笆",
+      "category": "fence",
+      "cost": 6,
+      "size": [
+        1,
+        1
+      ],
+      "paint": true,
+      "join": "fence",
+      "color": "f3eee2"
+    },
+    "stone_wall": {
+      "name": "矮石墙",
+      "category": "fence",
+      "cost": 8,
+      "size": [
+        1,
+        1
+      ],
+      "paint": true,
+      "join": "wall",
+      "color": "a7a39a"
+    },
+    "hedge": {
+      "name": "树篱",
+      "category": "fence",
+      "cost": 6,
+      "size": [
+        1,
+        1
+      ],
+      "paint": true,
+      "join": "hedge",
+      "color": "6fa77a"
+    },
+    "gate": {
+      "name": "小木门",
+      "category": "fence",
+      "cost": 10,
+      "size": [
+        1,
+        1
+      ],
+      "join": "fence",
+      "color": "c79a6b"
+    },
+    "flower_bed": {
+      "name": "花坛",
+      "category": "plant",
+      "cost": 15,
+      "size": [
+        2,
+        2
+      ],
+      "color": "e59ab4"
+    },
+    "sunflower": {
+      "name": "向日葵",
+      "category": "plant",
+      "cost": 6,
+      "size": [
+        1,
+        1
+      ],
+      "paint": true,
+      "color": "f2c64d"
+    },
+    "bush": {
+      "name": "圆灌木",
+      "category": "plant",
+      "cost": 8,
+      "size": [
+        1,
+        1
+      ],
+      "paint": true,
+      "color": "79b287"
+    },
+    "young_tree": {
+      "name": "小树",
+      "category": "plant",
+      "cost": 20,
+      "size": [
+        2,
+        2
+      ],
+      "color": "7fbf8e"
+    },
+    "blossom_tree": {
+      "name": "樱花树",
+      "category": "plant",
+      "cost": 45,
+      "size": [
+        3,
+        3
+      ],
+      "color": "f3b8cb",
+      "requires_plots": 6
+    },
+    "bench": {
+      "name": "长椅",
+      "category": "furniture",
+      "cost": 20,
+      "size": [
+        2,
+        1
+      ],
+      "color": "c49872"
+    },
+    "street_lamp": {
+      "name": "路灯",
+      "category": "furniture",
+      "cost": 25,
+      "size": [
+        1,
+        1
+      ],
+      "color": "ffe0a7"
+    },
+    "signpost": {
+      "name": "路牌",
+      "category": "furniture",
+      "cost": 12,
+      "size": [
+        1,
+        1
+      ],
+      "color": "d8b27c"
+    },
+    "flag": {
+      "name": "小旗杆",
+      "category": "furniture",
+      "cost": 30,
+      "size": [
+        1,
+        1
+      ],
+      "color": "e7776d"
+    },
+    "swing": {
+      "name": "秋千",
+      "category": "furniture",
+      "cost": 60,
+      "size": [
+        3,
+        2
+      ],
+      "color": "d5a26e",
+      "requires_plots": 6
+    },
+    "pond": {
+      "name": "小池塘",
+      "category": "furniture",
+      "cost": 80,
+      "size": [
+        4,
+        3
+      ],
+      "color": "7fcbd6",
+      "requires_plots": 8
+    },
+    "fountain": {
+      "name": "喷泉",
+      "category": "furniture",
+      "cost": 120,
+      "size": [
+        4,
+        4
+      ],
+      "color": "9fdde3",
+      "requires_deliveries": 3
+    },
+    "windmill": {
+      "name": "小风车",
+      "category": "furniture",
+      "cost": 150,
+      "size": [
+        3,
+        3
+      ],
+      "color": "efe6d6",
+      "requires_plots": 10
+    },
+    "stone_pedestal": {
+      "name": "石展台",
+      "category": "pedestal",
+      "cost": 30,
+      "size": [
+        2,
+        2
+      ],
+      "display": true,
+      "color": "d9d2c3"
+    },
+    "plinth": {
+      "name": "大展台",
+      "category": "pedestal",
+      "cost": 60,
+      "size": [
+        3,
+        3
+      ],
+      "display": true,
+      "color": "e7ded0"
+    },
+    "turntable": {
+      "name": "旋转展台",
+      "category": "pedestal",
+      "cost": 90,
+      "size": [
+        2,
+        2
+      ],
+      "display": true,
+      "spin": true,
+      "color": "c9d6dc"
+    },
+    "glass_case": {
+      "name": "玻璃展柜",
+      "category": "pedestal",
+      "cost": 120,
+      "size": [
+        2,
+        2
+      ],
+      "display": true,
+      "glass": true,
+      "color": "bfe4ea",
+      "requires_deliveries": 2
+    },
+    "sf_chair": {
+      "name": "星环椅",
+      "category": "furniture",
+      "cost": 60,
+      "size": [
+        1,
+        1
+      ],
+      "color": "9fe7ff",
+      "industry": "chair_nova"
+    },
+    "sf_desk": {
+      "name": "刨花板书桌",
+      "category": "furniture",
+      "cost": 70,
+      "size": [
+        2,
+        1
+      ],
+      "color": "c9a57a",
+      "industry": "desk_board"
+    },
+    "sf_sofa": {
+      "name": "浮光沙发",
+      "category": "furniture",
+      "cost": 110,
+      "size": [
+        2,
+        1
+      ],
+      "color": "ff8a7a",
+      "industry": "sofa_float"
+    },
+    "sf_kitchen": {
+      "name": "户外厨台",
+      "category": "furniture",
+      "cost": 75,
+      "size": [
+        2,
+        1
+      ],
+      "color": "d9dee5",
+      "industry": "ptfe_pan"
+    }
   }
 }

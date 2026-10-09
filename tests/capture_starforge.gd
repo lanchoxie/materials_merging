@@ -43,5 +43,28 @@ func _run() -> void:
 	await shot("market")
 	panel._tab("gear"); await process_frame
 	await shot("gear")
+	# v0.35: apartments, studio, promotion, staff and contracts.
+	s.coins=60000; ind.credits=400; ind.plots=8
+	ind.build(s,3,"home_studio"); ind.build(s,4,"staff_housing")
+	preload("res://scripts/test_mode.gd").finish_service(s)
+	s.campus_hire("engineer"); s.campus_hire("engineer")
+	preload("res://scripts/test_mode.gd").finish_service(s)
+	panel.dismissed.emit(); await process_frame
+	game._show_campus("promotion"); for i in range(5): await process_frame
+	await shot("campus-promotion")
+	game._show_starforge(); panel=game.modal
+	for row in ind.candidates(s):
+		if row.ready: s.campus_promote(int(row.id)); break
+	if not ind.staff.is_empty(): ind.assign(int(ind.staff[0].id),0)
+	ind.items["chair_nova"]=2; ind.items["sofa_float"]=1; ind.furnish(4,"chair_nova")
+	ind.tick(s,0.1)
+	panel._tab("staff"); for i in range(30): await process_frame
+	await shot("staff")
+	panel._tab("market"); await process_frame
+	await shot("contracts")
+	var con: Dictionary=ind.contracts[0]
+	for item in con.lines: ind.items[item]=int(ind.items.get(item,0))+int(con.lines[item])
+	ind.deliver(int(con.id)); panel._redraw(); for i in range(60): await process_frame
+	await shot("airship")
 	game.queue_free(); await process_frame
 	print("STARFORGE CAPTURE done (%s)" % tag); quit(0)

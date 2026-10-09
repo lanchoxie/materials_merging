@@ -56,6 +56,23 @@ func _run() -> void:
 	button(panel,"装备到星球").pressed.emit(); await process_frame
 	check(s.industry.bit=="steel_bit" and is_equal_approx(s.planet.v2.nature.pick_hv,7.4),"the gear tab equips the bit for the planet")
 	game._xp_pop(); check(s.industry.pending_xp==0,"XP pops are consumed by the top bar")
+	# v0.35: the 科研小镇 晋升 tab approves a promotion into a 星锻公寓 bed.
+	s.coins=30000; s.industry.plots=6; s.industry.build(s,5,"staff_housing")
+	preload("res://scripts/test_mode.gd").finish_service(s)
+	var eng=s.industry.candidates(s).filter(func(x): return x.ready)
+	game._show_campus("promotion"); await process_frame
+	var approve=button(game.modal,"批准晋升")
+	check(not eng.is_empty() and approve!=null and not approve.disabled,"the 晋升 tab offers approval to a ready engineer")
+	if approve!=null: approve.pressed.emit(); await process_frame
+	check(s.industry.staff.size()==1,"approving moves them to 星锻岛")
+	game._show_starforge(); await process_frame
+	game.modal._tab("staff"); await process_frame
+	var send=button(game.modal,"派到1号冶金工厂")
+	check(send!=null,"the staff tab can send them to a factory")
+	if send!=null: send.pressed.emit(); await process_frame
+	check(int(s.industry.staff[0].factory)==0,"they work at the metallurgy works")
+	game.modal._tab("market"); await process_frame
+	check(button(game.modal,"换一批合同")!=null,"the market shows the contract board")
 	game.queue_free(); await process_frame
 	if failures.is_empty(): print("STARFORGE UI OK (%d checks)" % checks); quit(0)
 	else: print("STARFORGE UI FAILED: ",failures); quit(1)

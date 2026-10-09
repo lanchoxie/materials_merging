@@ -19,6 +19,7 @@
 | v0.31.0 "Builder" | branch `claude/v0.31-builder`, tag **`v0.31.0`** (save v27: town items may spill across plots; loads every older save, v0.30 cannot read a v27 save) |
 | v0.32.0 "Earth" | branch `claude/v0.32-earth`, tag **`v0.32.0`** (planet v2 gains an optional `environment` key; workshop program save v12; loads every older save, v0.31 cannot read a v12 program) |
 | v0.33.0 "Polish" | branch `claude/v0.33-polish`, tag **`v0.33.0`** (display only; same save format as v0.32.0) |
+| v0.35.0 "Home & Market" | branch `claude/v0.35-promotions`, tag **`v0.35.0`** (save v28; `industry` section v2, loads v1) |
 | v0.34.0 "Starforge Isle" | branch `claude/v0.34-starforge`, tag **`v0.34.0`** (save v28 with `industry`; loads every older save, v0.33 cannot read a v28 save) |
 | v0.33.2 "Terrain & caves" | branch `claude/v0.33.2-terrain`, tag **`v0.33.2`** (planet v2 gains an optional `terrain` key with legacy pads; loads every older save) |
 | v0.33.1 "Test build + Earth usability" | branch `claude/v0.33.1-testbuild`, tag **`v0.33.1`** (journey gains an optional `trail`; test builds save to `save_test.json`; loads every older save) |

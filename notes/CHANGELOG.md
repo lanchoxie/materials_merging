@@ -30,6 +30,18 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.35.0 "Home & Market" (家与市)
+Phase-2 slot I2 plus the promotion pipeline. Full notes: [21-home-market.md](21-home-market.md).
+- **晋升.** Engineers serve 2 学年 and 博士生 3 学年. Some get a seeded 延毕 with a reason. The player approves each
+  promotion in the 科研小镇 「晋升」 tab or the 星锻岛 「人员」 tab. The person leaves a vacancy on island Ⅰ and moves to 星锻岛.
+- **Senior staff.** 高级工程师 give +30 % factory speed and 研发博士 give extra yield. They live in 星锻公寓 and earn higher wages
+  (arrears pause the bonus). Furniture in the apartment raises comfort.
+- **未来家居工坊.** Makes 刨花板 (from planet timber + UF), 星环椅, 书桌, 浮光沙发 and 不粘锅. The polymer works also makes 硫化橡胶.
+  Furniture can be sold, sent into contracts, used to furnish apartments, or placed in island Ⅰ's courtyard.
+- **合同板.** Three buyers' contracts based on what they want, 1.5× pay plus credits. The cargo airship carries them (90 s trip).
+- The island grid grows with rank. The 测试版 gets 「员工满年限」. There are three new Blender models.
+- **Tests.** New: `test_industry_staff` (29 checks). `test_starforge_ui` now has 17 checks.
+
 ## v0.34.0 "Starforge Isle" (星锻岛 · 浮岛 Ⅱ)
 The first phase-2 release, following the plan the user confirmed (2026-10-09). Full notes: [19-starforge.md](19-starforge.md).
 - **岛主等级.** A visible XP bar sits in the top bar, with "+XP" pops and a level-up banner. Old progress converts to XP once.

@@ -40,6 +40,28 @@ static func build(v, node: Node3D, kind: String, links: Array, detail: bool) -> 
 			v.box(node,Vector3(0.44,0.035,0.16),Vector3(0,0.24,0),color)
 			v.box(node,Vector3(0.44,0.12,0.025),Vector3(0,0.33,-0.07),color)
 			for x in [-0.18,0.18]: v.box(node,Vector3(0.03,0.14,0.14),Vector3(x,0.16,0),Color("5c5a58"))
+		"sf_chair":
+			v.box(node,Vector3(0.05,0.02,0.05),Vector3(0,0.11,0),Color("5c6670"))
+			v.box(node,Vector3(0.025,0.14,0.025),Vector3(0,0.19,0),Color("8b95a3"))
+			v.ball(node,0.11,Vector3(0,0.3,0),color)
+			v.box(node,Vector3(0.2,0.12,0.03),Vector3(0,0.37,-0.09),color.darkened(0.1))
+			v.box(node,Vector3(0.18,0.012,0.012),Vector3(0,0.33,0.08),Color("35e0ff"))
+		"sf_desk":
+			v.box(node,Vector3(w*0.92,0.035,d*0.7),Vector3(0,0.32,0),color)
+			for x in [-w*0.4,w*0.4]: v.box(node,Vector3(0.025,0.2,d*0.6),Vector3(x,0.2,0),Color("8b95a3"))
+			v.box(node,Vector3(0.12,0.08,0.01),Vector3(0.05,0.38,-0.05),Color("35e0ff"))
+		"sf_sofa":
+			v.box(node,Vector3(w*0.9,0.08,d*0.7),Vector3(0,0.18,0),Color("3b3b3b"))
+			v.box(node,Vector3(w*0.9,0.07,d*0.66),Vector3(0,0.255,0.01),color)
+			v.box(node,Vector3(w*0.9,0.16,0.05),Vector3(0,0.34,-d*0.3),color.darkened(0.08))
+			for x in [-w*0.45,w*0.45]: v.box(node,Vector3(0.04,0.12,d*0.66),Vector3(x,0.3,0),color.darkened(0.15))
+			v.box(node,Vector3(w*0.8,0.01,0.012),Vector3(0,0.13,d*0.33),Color("ff8a7a").lightened(0.3))
+		"sf_kitchen":
+			v.box(node,Vector3(w*0.92,0.22,d*0.7),Vector3(0,0.21,0),Color("c8d0da"))
+			v.box(node,Vector3(w*0.94,0.02,d*0.74),Vector3(0,0.33,0),Color("eef2f5"))
+			var pan=v.ball(node,0.06,Vector3(-0.08,0.36,0),Color("2b2b2b")); pan.scale=Vector3(1,0.3,1)
+			v.box(node,Vector3(0.1,0.01,0.015),Vector3(0.02,0.36,0),Color("2b2b2b"))
+			v.ball(node,0.025,Vector3(0.14,0.36,0.02),Color("ff7a2e"))
 		"street_lamp":
 			v.box(node,Vector3(0.1,0.04,0.1),Vector3(0,0.11,0),Color("386270"))
 			v.box(node,Vector3(0.03,0.62,0.03),Vector3(0,0.42,0),Color("386270"))

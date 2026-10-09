@@ -11,6 +11,10 @@ var yaw=0.6
 var selected=-1
 var marker: MeshInstance3D
 var _scenes: Dictionary={}
+## v0.35: the cargo airship docks at the trade hub and flies out while a contract is in transit.
+var airship: Node3D
+var flying=false
+var dock=Vector3.INF
 
 func _ready() -> void:
 	var env=Environment.new(); env.background_mode=Environment.BG_COLOR; env.background_color=Color("0d1d2b")
@@ -23,6 +27,7 @@ func _ready() -> void:
 	marker=MeshInstance3D.new(); var ring=TorusMesh.new(); ring.inner_radius=1.35; ring.outer_radius=1.5; ring.rings=32; ring.ring_segments=4; marker.mesh=ring
 	var m=StandardMaterial3D.new(); m.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED; m.albedo_color=Color("35e0ff"); marker.material_override=m
 	add_child(marker); marker.hide()
+	airship=_scene("airship").instantiate(); airship.scale=Vector3.ONE*0.55; add_child(airship); airship.hide()
 
 func _scene(name: String) -> PackedScene:
 	if not _scenes.has(name): _scenes[name]=load(MODELS+name+".glb")
@@ -33,6 +38,10 @@ static func plot_center(i: int) -> Vector3:
 
 ## Rebuilds only when the owned plots or the buildings change.
 func sync(industry) -> void:
+	flying=not industry.airship.is_empty(); dock=Vector3.INF
+	for k in industry.buildings:
+		if industry.buildings[k].kind=="trade_hub": dock=plot_center(int(k))+Vector3(1.2,2.9,0)
+	airship.visible=dock!=Vector3.INF
 	var key=JSON.stringify([industry.unlocked,industry.plots,industry.buildings.keys(),industry.buildings.values().map(func(b): return [b.kind,b.level])])
 	if key==seen: return
 	seen=key; spinners=[]
@@ -69,5 +78,12 @@ func _process(dt: float) -> void:
 	for i in range(spinners.size()):
 		var n: Node3D=spinners[i]
 		if is_instance_valid(n): n.rotation.y=sin(t*0.3+i)*0.05
+	if airship.visible:
+		if flying:
+			# A wide loop out beyond the island and back, nose along the path.
+			var a=t*0.45; var at=Vector3(cos(a)*6.5,5.5+sin(t*0.9)*0.4,sin(a)*5.0)
+			airship.look_at_from_position(at,at+Vector3(-sin(a)*6.5,0,cos(a)*5.0)); airship.rotate_object_local(Vector3.UP,PI/2)
+		else:
+			airship.position=dock+Vector3(0,deck.position.y+sin(t*1.3)*0.06,0); airship.rotation=Vector3(0,PI/2,0)
 	marker.visible=selected>=0
 	if selected>=0: marker.position=plot_center(selected)+Vector3(0,0.3+deck.position.y,0); marker.rotation.y=t

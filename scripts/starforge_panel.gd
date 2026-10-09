@@ -31,7 +31,7 @@ func setup(model) -> void:
 	view=View.new(); viewport.add_child(view)
 	var right=UI.box(self,Rect2(806,96,606,740)); var col=UI.column(right,10)
 	var nav=UI.row(col,6)
-	for entry in [["deck","甲板"],["factory","生产"],["market","交易所"],["gear","装备"]]:
+	for entry in [["deck","甲板"],["factory","生产"],["staff","人员"],["market","交易所"],["gear","装备"]]:
 		var b=UI.button(entry[1],_tab.bind(entry[0])); b.size_flags_horizontal=Control.SIZE_EXPAND_FILL; nav.add_child(b); tabs[entry[0]]=b
 	scroll=ScrollContainer.new(); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; col.add_child(scroll)
 	body=UI.column(scroll,10); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
@@ -46,7 +46,8 @@ func _act(message: String) -> void:
 
 func _fingerprint() -> String:
 	var ind=state.industry
-	return JSON.stringify([section,ind.unlocked,ind.rank(),ind.credits,ind.plots,ind.buildings.keys(),ind.buildings.values().map(func(b): return [b.kind,b.level,b.jobs.size()]),ind.items,ind.bit,int(state.coins)/50,state.materials,state.element_inventory.hash(),state.storage.batches.size()])
+	return JSON.stringify([section,ind.unlocked,ind.rank(),ind.credits,ind.plots,ind.buildings.keys(),ind.buildings.values().map(func(b): return [b.kind,b.level,b.jobs.size()]),ind.items,ind.bit,int(state.coins)/50,state.materials,state.element_inventory.hash(),state.storage.batches.size(),
+		ind.staff,ind.furnished,ind.contracts.map(func(c): return c.id),ind.airship.is_empty(),ind.arrears>0,ind.candidates(state).map(func(c): return [c.ready,c.delayed]),state.campus.people.size()])
 
 func _process(dt: float) -> void:
 	if state==null: return
@@ -65,7 +66,7 @@ func _redraw() -> void:
 	fingerprint=_fingerprint(); bars=[]
 	var ind=state.industry; view.sync(ind)
 	var r=ind.rank_of(ind.xp)
-	header.text="岛主 Lv.%d · %d/%d XP   ·   工业信用 %d   ·   金币 %d   ·   电网 %d/%d" % [r.rank,r.into,r.need,ind.credits,int(state.coins),ind.power_use(),ind.power_cap()]
+	header.text="岛主 Lv.%d · %d/%d XP   ·   工业信用 %d   ·   金币 %d   ·   电网 %d/%d   ·   员工 %d/%d床" % [r.rank,r.into,r.need,ind.credits,int(state.coins),ind.power_use(),ind.power_cap(),ind.staff.size(),ind.beds()]
 	for key in tabs:
 		tabs[key].modulate=UI.MINT if key==section else Color.WHITE
 		tabs[key].disabled=not ind.unlocked
@@ -74,6 +75,7 @@ func _redraw() -> void:
 	match section:
 		"deck": _deck()
 		"factory": _factories()
+		"staff": _staff()
 		"market": _market()
 		"gear": _gear()
 
@@ -109,6 +111,13 @@ func _deck() -> void:
 			var bld: Dictionary=ind.buildings[str(i)]; var spec: Dictionary=R.buildings[bld.kind]
 			plot.add_child(UI.label("%s Lv.%d" % [spec.name,int(bld.level)],17,Color(str(spec.accent))))
 			plot.add_child(UI.paragraph(str(spec.story),13))
+			if bld.kind=="staff_housing":
+				var cap=ind.housing_capacity(bld); var here=ind.staff.filter(func(x): return int(x.home)==i)
+				plot.add_child(UI.paragraph("住户 %d/%d · 家具 %d/%d（舒适度让员工加成最多 +%d%%）" % [here.size(),cap,int(ind.furnished.get(str(i),0)),cap,int(float(ind.rules().staff.comfort_bonus)*100)],13))
+				var furn=UI.row(plot,6)
+				for id in ind.rules().items:
+					if ind.rules().items[id].has("furniture") and int(ind.items.get(id,0))>0:
+						furn.add_child(UI.button("摆%s" % ind.rules().items[id].name,func(): _act(ind.furnish(i,id))))
 			if int(bld.level)<int(spec.max_level):
 				plot.add_child(UI.button("升级 · %d金币" % int(spec.upgrade_costs[int(bld.level)-1]),func(): _act(ind.upgrade(state,i))))
 		else:
@@ -148,11 +157,38 @@ func _factories() -> void:
 		var c=_card("还没有工厂")
 		c.add_child(UI.paragraph("在「甲板」页选一块地，建冶金工厂或高分子工厂。",15))
 
+func _staff() -> void:
+	var ind=state.industry; var R=ind.rules()
+	var pay=_card("星锻岛员工 · 日薪合计 %d 金币" % ind.daily_wages(),UI.GOLD)
+	pay.add_child(UI.paragraph("员工从浮岛 Ⅰ 晋升而来，住在星锻公寓，按在岛时间计薪（每游戏日结算）。欠薪时员工加成暂停。",14))
+	if ind.arrears>0: pay.add_child(UI.button("补发欠薪 %.0f 金币" % ind.arrears,func(): _act(ind.pay_arrears(state))))
+	for s in ind.staff:
+		var role: Dictionary=R.staff.roles[s.role]
+		var card=_card("%s · %s" % [s.name,role.name],UI.MINT)
+		card.add_child(UI.paragraph(str(role.story),13))
+		var where="休息中" if int(s.factory)<0 else "%d号地 %s" % [int(s.factory)+1,R.buildings[ind.buildings[str(int(s.factory))].kind].name]
+		card.add_child(UI.label("住 %d号地公寓 · 工作：%s · 日薪 %d" % [int(s.home)+1,where,int(role.daily_pay)],14,UI.TEXT))
+		var row=UI.row(card,6)
+		for key in ind.buildings:
+			if ind.buildings[key].kind not in ind.FACTORIES: continue
+			var b=UI.button("派到%d号%s" % [int(key)+1,R.buildings[ind.buildings[key].kind].name],func(): _act(ind.assign(int(s.id),int(key))))
+			b.disabled=int(s.factory)==int(key); b.add_theme_font_size_override("font_size",13); row.add_child(b)
+	var list=_card("待晋升 · 来自浮岛 Ⅰ 科研小镇")
+	var rows=ind.candidates(state)
+	if rows.is_empty(): list.add_child(UI.paragraph("浮岛 Ⅰ 还没有工程师或博士生。",14))
+	for row in rows:
+		list.add_child(UI.label("%s（%s → %s）· %.1f / %.1f 学年%s" % [row.name,row.from,row.to,row.years,row.need,"  ·  延毕：%s" % row.reason if row.delayed else ""],14,UI.MINT if row.ready else UI.TEXT))
+		var error=ind.promote_error(state,int(row.id))
+		if row.ready:
+			var b=UI.button("批准晋升" if error.is_empty() else error,func(): _act(state.campus_promote(int(row.id))))
+			b.disabled=not error.is_empty(); list.add_child(b)
+
 func _market() -> void:
 	var ind=state.industry; var R=ind.rules()
 	var hub=_card("星港交易所",UI.GOLD)
 	if ind.count("trade_hub")<1:
 		hub.add_child(UI.paragraph("先在「甲板」页建一座星港交易所，货运飞艇才会来收货。",15)); return
+	_contracts()
 	hub.add_child(UI.paragraph("买家：轨道空间站 · 城市百货。同一件货卖得越多出价越低（最低 %d%%），约 %d 分钟恢复一半。元素和原始分子不在这里卖。累计卖出 %d 金币。" % [int(float(R.market.floor)*100),int(R.market.half_life)/60,ind.earned],14))
 	var any=false
 	for id in R.items:
@@ -164,7 +200,28 @@ func _market() -> void:
 		var h=UI.row(row,6)
 		for k in [1,5]:
 			var b=UI.button("卖 %d" % k,func(): _act(ind.sell(state,id,k))); b.disabled=n-(1 if ind.bit==id else 0)<k; h.add_child(b)
+		if it.has("furniture"): h.add_child(UI.button("送回浮岛 Ⅰ 摆放",func(): _act(ind.ship_home(state,id))))
 	if not any: hub.add_child(UI.paragraph("仓库里还没有工业品。去「生产」页投料吧。",15))
+
+func _contracts() -> void:
+	var ind=state.industry
+	var board=_card("合同板 · %d分钟后换一批" % int(ceil(ind.board_left/60.0)),UI.GOLD)
+	if ind.airship.is_empty(): board.add_child(UI.paragraph("货运飞艇在港，一次运一份合同。合同报酬比直接卖高，还给工业信用；不做也没有惩罚。",14))
+	else:
+		var trip=ind.airship
+		board.add_child(UI.label("飞艇在途 → %s · %d秒后结算" % [trip.contract.buyer,int(ceil(float(trip.left)))],15,UI.MINT))
+		var bar=ProgressBar.new(); bar.max_value=1.0; bar.show_percentage=false; bar.custom_minimum_size=Vector2(0,8); board.add_child(bar)
+		var total=float(ind.rules().contracts.trip)
+		bars.append([bar,func(): return 1.0-float(ind.airship.get("left",0.0))/total])
+	for c in ind.contracts:
+		var lines=[]
+		for item in c.lines: lines.append("%s %d/%d" % [ind.rules().items[item].name,int(ind.items.get(item,0)),int(c.lines[item])])
+		board.add_child(UI.label("%s · %s" % [c.buyer,"，".join(lines)],15,UI.TEXT))
+		board.add_child(UI.paragraph("%s　报酬 %d金币 + %d信用 + %dXP" % [c.story,int(c.coins),int(c.credits),int(c.xp)],13))
+		var error=ind.deliver_error(int(c.id))
+		var b=UI.button("装船交付" if error.is_empty() else error,func(): _act(ind.deliver(int(c.id))))
+		b.disabled=not error.is_empty(); b.add_theme_font_size_override("font_size",13); board.add_child(b)
+	board.add_child(UI.button("换一批合同 · %d信用" % int(ind.rules().contracts.reroll_credits),func(): _act(ind.reroll(state))))
 
 func _gear() -> void:
 	var ind=state.industry; var R=ind.rules()

@@ -1,82 +1,732 @@
 {
-  "version": 1,
-  "note": "v0.34 星锻岛. Equations, processes and hardness are real (sources); prices, seconds, power, yields, XP and costs are game rules (游戏数值).",
+  "version": 2,
+  "note": "星锻岛 (v0.34–v0.35). Equations, processes and hardness are real (sources); prices, seconds, power, yields, XP, wages, service years and costs are game rules (游戏数值).",
   "rank": {
-    "base": 60, "power": 1.3, "max": 60,
-    "legacy": {"milestone": 20, "codex_star": 10, "index_find": 15, "reactor_level": 5, "plot": 8, "refinery_level": 50, "fabricated": 25}
+    "base": 60,
+    "power": 1.3,
+    "max": 60,
+    "legacy": {
+      "milestone": 20,
+      "codex_star": 10,
+      "index_find": 15,
+      "reactor_level": 5,
+      "plot": 8,
+      "refinery_level": 50,
+      "fabricated": 25
+    }
   },
-  "unlock": {"rank": 6, "coins": 12000, "alloy": 30, "home_plots": 24, "refinery_level": 2, "fabricated": 1},
-  "credits": {"name": "工业信用", "fuse": {"materials": [1, 1, 1], "credits": 5}, "max": 1000000},
-  "plots": {"start": 4, "max": 16, "coins": 500, "credits": 8, "growth": 1.18},
-  "power": {"starter": 10},
-  "market": {"half_life": 1200, "per_unit": 0.04, "floor": 0.25, "xp_per_coins": 10},
+  "unlock": {
+    "rank": 6,
+    "coins": 12000,
+    "alloy": 30,
+    "home_plots": 24,
+    "refinery_level": 2,
+    "fabricated": 1
+  },
+  "credits": {
+    "name": "工业信用",
+    "fuse": {
+      "materials": [
+        1,
+        1,
+        1
+      ],
+      "credits": 5
+    },
+    "max": 1000000
+  },
+  "plots": {
+    "start": 4,
+    "max": 16,
+    "coins": 500,
+    "credits": 8,
+    "growth": 1.18
+  },
+  "power": {
+    "starter": 10,
+    "per_rank": 1,
+    "max": 40
+  },
+  "market": {
+    "half_life": 1200,
+    "per_unit": 0.04,
+    "floor": 0.25,
+    "xp_per_coins": 10
+  },
   "buildings": {
-    "metal_works": {"name": "冶金工厂", "en": "Metallurgy Works", "accent": "ffb547", "model": "metal_works",
-      "cost": {"coins": 3000, "credits": 20}, "power": 3, "xp": 30, "max_level": 3, "upgrade_costs": [6000, 15000],
-      "speed_per_level": 0.25, "queue_base": 2,
-      "story": "熔炉把精炼厂的铁、铜、锡、铝熔成合金；只有你在原子工坊里亲手做出过对应的晶体，才知道怎么配比。"},
-    "polymer_works": {"name": "高分子工厂", "en": "Polymer Works", "accent": "ffb547", "model": "polymer_works",
-      "cost": {"coins": 3500, "credits": 25}, "power": 3, "xp": 30, "max_level": 3, "upgrade_costs": [7000, 16000],
-      "speed_per_level": 0.25, "queue_base": 2,
-      "story": "反应釜里的乙醇、尿素被送上精馏塔，聚合成塑料与树脂。单体分子需要你先做出过。"},
-    "trade_hub": {"name": "星港交易所", "en": "Trade Hub", "accent": "ffd36b", "model": "trade_hub",
-      "cost": {"coins": 2500, "credits": 10}, "power": 1, "xp": 20, "max_level": 1, "upgrade_costs": [],
-      "speed_per_level": 0.0, "queue_base": 0,
-      "story": "货运飞艇在这里装货：工业品卖给轨道空间站和城市百货；同一件货卖得越多，买家出价越低，过一阵会回升。"}
+    "metal_works": {
+      "name": "冶金工厂",
+      "en": "Metallurgy Works",
+      "accent": "ffb547",
+      "model": "metal_works",
+      "cost": {
+        "coins": 3000,
+        "credits": 20
+      },
+      "power": 3,
+      "xp": 30,
+      "max_level": 3,
+      "upgrade_costs": [
+        6000,
+        15000
+      ],
+      "speed_per_level": 0.25,
+      "queue_base": 2,
+      "story": "熔炉把精炼厂的铁、铜、锡、铝熔成合金；只有你在原子工坊里亲手做出过对应的晶体，才知道怎么配比。"
+    },
+    "polymer_works": {
+      "name": "高分子工厂",
+      "en": "Polymer Works",
+      "accent": "ffb547",
+      "model": "polymer_works",
+      "cost": {
+        "coins": 3500,
+        "credits": 25
+      },
+      "power": 3,
+      "xp": 30,
+      "max_level": 3,
+      "upgrade_costs": [
+        7000,
+        16000
+      ],
+      "speed_per_level": 0.25,
+      "queue_base": 2,
+      "story": "反应釜里的乙醇、尿素被送上精馏塔，聚合成塑料与树脂。单体分子需要你先做出过。"
+    },
+    "trade_hub": {
+      "name": "星港交易所",
+      "en": "Trade Hub",
+      "accent": "ffd36b",
+      "model": "trade_hub",
+      "cost": {
+        "coins": 2500,
+        "credits": 10
+      },
+      "power": 1,
+      "xp": 20,
+      "max_level": 1,
+      "upgrade_costs": [],
+      "speed_per_level": 0.0,
+      "queue_base": 0,
+      "story": "货运飞艇在这里装货：工业品卖给轨道空间站和城市百货；同一件货卖得越多，买家出价越低，过一阵会回升。"
+    },
+    "home_studio": {
+      "name": "未来家居工坊",
+      "en": "Home Goods Studio",
+      "accent": "ff8a7a",
+      "model": "home_studio",
+      "cost": {
+        "coins": 4000,
+        "credits": 30
+      },
+      "power": 2,
+      "xp": 30,
+      "max_level": 3,
+      "upgrade_costs": [
+        7000,
+        16000
+      ],
+      "speed_per_level": 0.25,
+      "queue_base": 2,
+      "story": "玻璃展厅里的机械臂把刨花板、钢管和塑料拼成科幻家具：可以卖、可以摆回浮岛 Ⅰ 的庭院，也能布置星锻公寓。"
+    },
+    "staff_housing": {
+      "name": "星锻公寓",
+      "en": "Staff Apartments",
+      "accent": "9fe7ff",
+      "model": "staff_housing",
+      "cost": {
+        "coins": 2000,
+        "credits": 15
+      },
+      "power": 1,
+      "xp": 20,
+      "max_level": 3,
+      "upgrade_costs": [
+        3000,
+        8000
+      ],
+      "speed_per_level": 0.0,
+      "queue_base": 0,
+      "capacity": 4,
+      "capacity_per_level": 2,
+      "no_licence": true,
+      "story": "错落的胶囊公寓。从浮岛 Ⅰ 晋升来的高级工程师和研发博士住在这里；摆上家具，他们干活更起劲。"
+    }
   },
-  "licences": {"base": 1, "per_ranks": 6},
+  "licences": {
+    "base": 1,
+    "per_ranks": 6
+  },
   "recipes": {
-    "carbon_steel": {"name": "碳钢锭", "building": "metal_works", "method": "碱性氧气转炉 · 脱碳到碳含量 <2.1 wt%",
-      "inputs": {"el:Fe": 6, "el:C": 1}, "evidence": ["Fe3C"], "outputs": {"steel_ingot": 2}, "seconds": 40,
-      "equation": "Fe + C → 铁素体 + Fe₃C（渗碳体）", "source": "worldsteel"},
-    "bronze": {"name": "锡青铜", "building": "metal_works", "method": "铜锡合熔 · 约 Cu-12Sn",
-      "inputs": {"el:Cu": 6, "el:Sn": 1}, "evidence": ["Cu3Sn"], "outputs": {"bronze_ingot": 2}, "seconds": 35,
-      "equation": "Cu + Sn → α-青铜 + Cu₃Sn 析出", "source": "abtew2000"},
-    "solder": {"name": "锡铅焊料", "building": "metal_works", "method": "共晶 Sn63Pb37 · 183 °C 熔化",
-      "inputs": {"el:Sn": 3, "el:Pb": 2}, "evidence": [], "outputs": {"solder": 3}, "seconds": 25,
-      "equation": "Sn + Pb → 共晶合金（183 °C）", "source": "abtew2000"},
-    "duralumin": {"name": "硬铝", "building": "metal_works", "method": "Al-4Cu 固溶 + 时效硬化",
-      "inputs": {"el:Al": 9, "el:Cu": 1}, "evidence": ["Al2Cu"], "outputs": {"duralumin": 2}, "seconds": 45,
-      "equation": "Al(Cu) 过饱和固溶体 → θ'-Al₂Cu 析出强化", "source": "rioja2012"},
-    "al_li": {"name": "铝锂合金", "building": "metal_works", "method": "Al-Li 2195 型 · 更轻更刚",
-      "inputs": {"el:Al": 9, "el:Li": 1, "el:Cu": 1}, "evidence": ["LiAl"], "outputs": {"al_li": 2}, "seconds": 55,
-      "equation": "Al + Li → δ'-Al₃Li 析出", "source": "rioja2012"},
-    "steel_bit": {"name": "碳钢钻头", "building": "metal_works", "method": "碳钢锭锻造 + 淬火回火",
-      "inputs": {"item:steel_ingot": 3}, "evidence": ["Fe3C"], "outputs": {"steel_bit": 1}, "seconds": 50,
-      "equation": "奥氏体 → 马氏体（淬火），硬度约 HV 750", "source": "worldsteel"},
-    "polyethylene": {"name": "聚乙烯粒料", "building": "polymer_works", "method": "乙醇脱水 → 乙烯聚合（催化剂简化）",
-      "inputs": {"batch:ethanol": 2}, "evidence": ["C2H4"], "outputs": {"pe": 3}, "seconds": 30,
-      "equation": "C₂H₅OH → C₂H₄ + H₂O；n C₂H₄ → (C₂H₄)ₙ", "source": "mohsenzadeh2017"},
-    "pvc": {"name": "聚氯乙烯", "building": "polymer_works", "method": "乙烯氯化 → 氯乙烯 → 聚合",
-      "inputs": {"batch:ethanol": 2, "el:Cl": 2}, "evidence": ["C2H3Cl"], "outputs": {"pvc": 3}, "seconds": 40,
-      "equation": "C₂H₄ + Cl₂ → C₂H₄Cl₂ → C₂H₃Cl + HCl；n C₂H₃Cl → PVC", "source": "dreher2014"},
-    "ptfe": {"name": "聚四氟乙烯", "building": "polymer_works", "method": "四氟乙烯自由基聚合",
-      "inputs": {"el:C": 2, "el:F": 4}, "evidence": ["C2F4"], "outputs": {"ptfe": 2}, "seconds": 50,
-      "equation": "n C₂F₄ → (C₂F₄)ₙ", "source": "plunkett1941"},
-    "uf_resin": {"name": "脲醛树脂", "building": "polymer_works", "method": "尿素 + 甲醛缩聚（甲醛来源简化）",
-      "inputs": {"batch:urea": 2, "el:C": 1, "el:H": 2, "el:O": 1}, "evidence": ["CH2O"], "outputs": {"uf_resin": 3}, "seconds": 35,
-      "equation": "CO(NH₂)₂ + CH₂O → 羟甲基脲 → 缩聚树脂", "source": "dunky1998"}
+    "carbon_steel": {
+      "name": "碳钢锭",
+      "building": "metal_works",
+      "method": "碱性氧气转炉 · 脱碳到碳含量 <2.1 wt%",
+      "inputs": {
+        "el:Fe": 6,
+        "el:C": 1
+      },
+      "evidence": [
+        "Fe3C"
+      ],
+      "outputs": {
+        "steel_ingot": 2
+      },
+      "seconds": 40,
+      "equation": "Fe + C → 铁素体 + Fe₃C（渗碳体）",
+      "source": "worldsteel"
+    },
+    "bronze": {
+      "name": "锡青铜",
+      "building": "metal_works",
+      "method": "铜锡合熔 · 约 Cu-12Sn",
+      "inputs": {
+        "el:Cu": 6,
+        "el:Sn": 1
+      },
+      "evidence": [
+        "Cu3Sn"
+      ],
+      "outputs": {
+        "bronze_ingot": 2
+      },
+      "seconds": 35,
+      "equation": "Cu + Sn → α-青铜 + Cu₃Sn 析出",
+      "source": "abtew2000"
+    },
+    "solder": {
+      "name": "锡铅焊料",
+      "building": "metal_works",
+      "method": "共晶 Sn63Pb37 · 183 °C 熔化",
+      "inputs": {
+        "el:Sn": 3,
+        "el:Pb": 2
+      },
+      "evidence": [],
+      "outputs": {
+        "solder": 3
+      },
+      "seconds": 25,
+      "equation": "Sn + Pb → 共晶合金（183 °C）",
+      "source": "abtew2000"
+    },
+    "duralumin": {
+      "name": "硬铝",
+      "building": "metal_works",
+      "method": "Al-4Cu 固溶 + 时效硬化",
+      "inputs": {
+        "el:Al": 9,
+        "el:Cu": 1
+      },
+      "evidence": [
+        "Al2Cu"
+      ],
+      "outputs": {
+        "duralumin": 2
+      },
+      "seconds": 45,
+      "equation": "Al(Cu) 过饱和固溶体 → θ'-Al₂Cu 析出强化",
+      "source": "rioja2012"
+    },
+    "al_li": {
+      "name": "铝锂合金",
+      "building": "metal_works",
+      "method": "Al-Li 2195 型 · 更轻更刚",
+      "inputs": {
+        "el:Al": 9,
+        "el:Li": 1,
+        "el:Cu": 1
+      },
+      "evidence": [
+        "LiAl"
+      ],
+      "outputs": {
+        "al_li": 2
+      },
+      "seconds": 55,
+      "equation": "Al + Li → δ'-Al₃Li 析出",
+      "source": "rioja2012"
+    },
+    "steel_bit": {
+      "name": "碳钢钻头",
+      "building": "metal_works",
+      "method": "碳钢锭锻造 + 淬火回火",
+      "inputs": {
+        "item:steel_ingot": 3
+      },
+      "evidence": [
+        "Fe3C"
+      ],
+      "outputs": {
+        "steel_bit": 1
+      },
+      "seconds": 50,
+      "equation": "奥氏体 → 马氏体（淬火），硬度约 HV 750",
+      "source": "worldsteel"
+    },
+    "polyethylene": {
+      "name": "聚乙烯粒料",
+      "building": "polymer_works",
+      "method": "乙醇脱水 → 乙烯聚合（催化剂简化）",
+      "inputs": {
+        "batch:ethanol": 2
+      },
+      "evidence": [
+        "C2H4"
+      ],
+      "outputs": {
+        "pe": 3
+      },
+      "seconds": 30,
+      "equation": "C₂H₅OH → C₂H₄ + H₂O；n C₂H₄ → (C₂H₄)ₙ",
+      "source": "mohsenzadeh2017"
+    },
+    "pvc": {
+      "name": "聚氯乙烯",
+      "building": "polymer_works",
+      "method": "乙烯氯化 → 氯乙烯 → 聚合",
+      "inputs": {
+        "batch:ethanol": 2,
+        "el:Cl": 2
+      },
+      "evidence": [
+        "C2H3Cl"
+      ],
+      "outputs": {
+        "pvc": 3
+      },
+      "seconds": 40,
+      "equation": "C₂H₄ + Cl₂ → C₂H₄Cl₂ → C₂H₃Cl + HCl；n C₂H₃Cl → PVC",
+      "source": "dreher2014"
+    },
+    "ptfe": {
+      "name": "聚四氟乙烯",
+      "building": "polymer_works",
+      "method": "四氟乙烯自由基聚合",
+      "inputs": {
+        "el:C": 2,
+        "el:F": 4
+      },
+      "evidence": [
+        "C2F4"
+      ],
+      "outputs": {
+        "ptfe": 2
+      },
+      "seconds": 50,
+      "equation": "n C₂F₄ → (C₂F₄)ₙ",
+      "source": "plunkett1941"
+    },
+    "uf_resin": {
+      "name": "脲醛树脂",
+      "building": "polymer_works",
+      "method": "尿素 + 甲醛缩聚（甲醛来源简化）",
+      "inputs": {
+        "batch:urea": 2,
+        "el:C": 1,
+        "el:H": 2,
+        "el:O": 1
+      },
+      "evidence": [
+        "CH2O"
+      ],
+      "outputs": {
+        "uf_resin": 3
+      },
+      "seconds": 35,
+      "equation": "CO(NH₂)₂ + CH₂O → 羟甲基脲 → 缩聚树脂",
+      "source": "dunky1998"
+    },
+    "rubber": {
+      "name": "硫化橡胶",
+      "building": "polymer_works",
+      "method": "丁二烯聚合 + 硫黄交联（硫化）",
+      "inputs": {
+        "el:C": 4,
+        "el:H": 6,
+        "el:S": 1
+      },
+      "evidence": [
+        "C4H6"
+      ],
+      "outputs": {
+        "rubber": 2
+      },
+      "seconds": 40,
+      "equation": "n C₄H₆ → 聚丁二烯；+ S → 硫桥交联网络",
+      "source": "goodyear1844"
+    },
+    "particleboard": {
+      "name": "刨花板",
+      "building": "home_studio",
+      "method": "木屑 + 脲醛树脂热压成板",
+      "inputs": {
+        "raw:timber": 3,
+        "item:uf_resin": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "particleboard": 2
+      },
+      "seconds": 30,
+      "equation": "木纤维 + UF 树脂 → 热压固化（约 180 °C）",
+      "source": "dunky1998"
+    },
+    "chair_nova": {
+      "name": "星环椅",
+      "building": "home_studio",
+      "method": "钢管骨架 + 聚乙烯壳体注塑",
+      "inputs": {
+        "item:steel_ingot": 1,
+        "item:pe": 2
+      },
+      "evidence": [],
+      "outputs": {
+        "chair_nova": 1
+      },
+      "seconds": 35,
+      "equation": "钢管弯折焊接；PE 熔融注塑成型",
+      "source": "worldsteel"
+    },
+    "desk_board": {
+      "name": "刨花板书桌",
+      "building": "home_studio",
+      "method": "刨花板台面 + 钢腿",
+      "inputs": {
+        "item:particleboard": 2,
+        "item:steel_ingot": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "desk_board": 1
+      },
+      "seconds": 40,
+      "equation": "板材裁切封边；钢腿螺栓连接",
+      "source": "dunky1998"
+    },
+    "sofa_float": {
+      "name": "浮光沙发",
+      "building": "home_studio",
+      "method": "刨花板框架 + 橡胶减震 + PE 面层",
+      "inputs": {
+        "item:particleboard": 2,
+        "item:rubber": 2,
+        "item:pe": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "sofa_float": 1
+      },
+      "seconds": 50,
+      "equation": "框架组装；硫化橡胶做弹性支撑",
+      "source": "goodyear1844"
+    },
+    "ptfe_pan": {
+      "name": "不粘锅",
+      "building": "home_studio",
+      "method": "硬铝锅体 + PTFE 不粘涂层",
+      "inputs": {
+        "item:duralumin": 1,
+        "item:ptfe": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "ptfe_pan": 1
+      },
+      "seconds": 30,
+      "equation": "喷涂 PTFE 后烧结；约 260 °C 以下安全使用",
+      "source": "plunkett1941"
+    }
   },
   "items": {
-    "steel_ingot": {"name": "碳钢锭", "icon": "ingot", "color": "8b95a3", "sell": 40, "xp": 6},
-    "bronze_ingot": {"name": "锡青铜锭", "icon": "ingot", "color": "c98b4a", "sell": 36, "xp": 6},
-    "solder": {"name": "焊料丝", "icon": "ingot", "color": "b7bcc4", "sell": 22, "xp": 4},
-    "duralumin": {"name": "硬铝板", "icon": "ingot", "color": "c8d0da", "sell": 58, "xp": 8},
-    "al_li": {"name": "铝锂合金板", "icon": "ingot", "color": "d9e6f2", "sell": 80, "xp": 10},
-    "steel_bit": {"name": "碳钢钻头", "icon": "bit", "color": "6f7a88", "sell": 160, "xp": 15,
-      "gear": {"hv": 7.4, "note": "淬火回火碳素工具钢约 HV 750 ≈ 7.4 GPa（真实量级）；比起步镐（5.43 GPa）更快挖开花岗岩"}},
-    "pe": {"name": "聚乙烯粒料", "icon": "pellet", "color": "e9f1f5", "sell": 24, "xp": 4},
-    "pvc": {"name": "PVC 管材", "icon": "pellet", "color": "9fb7c9", "sell": 32, "xp": 5},
-    "ptfe": {"name": "PTFE 特氟龙", "icon": "pellet", "color": "f4f4ee", "sell": 64, "xp": 9},
-    "uf_resin": {"name": "脲醛树脂", "icon": "pellet", "color": "e8d9a8", "sell": 28, "xp": 4}
+    "steel_ingot": {
+      "name": "碳钢锭",
+      "icon": "ingot",
+      "color": "8b95a3",
+      "sell": 40,
+      "xp": 6
+    },
+    "bronze_ingot": {
+      "name": "锡青铜锭",
+      "icon": "ingot",
+      "color": "c98b4a",
+      "sell": 36,
+      "xp": 6
+    },
+    "solder": {
+      "name": "焊料丝",
+      "icon": "ingot",
+      "color": "b7bcc4",
+      "sell": 22,
+      "xp": 4
+    },
+    "duralumin": {
+      "name": "硬铝板",
+      "icon": "ingot",
+      "color": "c8d0da",
+      "sell": 58,
+      "xp": 8
+    },
+    "al_li": {
+      "name": "铝锂合金板",
+      "icon": "ingot",
+      "color": "d9e6f2",
+      "sell": 80,
+      "xp": 10
+    },
+    "steel_bit": {
+      "name": "碳钢钻头",
+      "icon": "bit",
+      "color": "6f7a88",
+      "sell": 160,
+      "xp": 15,
+      "gear": {
+        "hv": 7.4,
+        "note": "淬火回火碳素工具钢约 HV 750 ≈ 7.4 GPa（真实量级）；比起步镐（5.43 GPa）更快挖开花岗岩"
+      }
+    },
+    "pe": {
+      "name": "聚乙烯粒料",
+      "icon": "pellet",
+      "color": "e9f1f5",
+      "sell": 24,
+      "xp": 4
+    },
+    "pvc": {
+      "name": "PVC 管材",
+      "icon": "pellet",
+      "color": "9fb7c9",
+      "sell": 32,
+      "xp": 5
+    },
+    "ptfe": {
+      "name": "PTFE 特氟龙",
+      "icon": "pellet",
+      "color": "f4f4ee",
+      "sell": 64,
+      "xp": 9
+    },
+    "uf_resin": {
+      "name": "脲醛树脂",
+      "icon": "pellet",
+      "color": "e8d9a8",
+      "sell": 28,
+      "xp": 4
+    },
+    "rubber": {
+      "name": "硫化橡胶",
+      "icon": "pellet",
+      "color": "3b3b3b",
+      "sell": 30,
+      "xp": 5
+    },
+    "particleboard": {
+      "name": "刨花板",
+      "icon": "board",
+      "color": "c9a57a",
+      "sell": 26,
+      "xp": 4
+    },
+    "chair_nova": {
+      "name": "星环椅",
+      "icon": "furniture",
+      "color": "9fe7ff",
+      "sell": 120,
+      "xp": 12,
+      "furniture": {
+        "town": "sf_chair",
+        "comfort": 1
+      }
+    },
+    "desk_board": {
+      "name": "刨花板书桌",
+      "icon": "furniture",
+      "color": "c9a57a",
+      "sell": 140,
+      "xp": 12,
+      "furniture": {
+        "town": "sf_desk",
+        "comfort": 1
+      }
+    },
+    "sofa_float": {
+      "name": "浮光沙发",
+      "icon": "furniture",
+      "color": "ff8a7a",
+      "sell": 220,
+      "xp": 18,
+      "furniture": {
+        "town": "sf_sofa",
+        "comfort": 2
+      }
+    },
+    "ptfe_pan": {
+      "name": "不粘锅",
+      "icon": "furniture",
+      "color": "d9dee5",
+      "sell": 150,
+      "xp": 12,
+      "furniture": {
+        "town": "sf_kitchen",
+        "comfort": 1
+      }
+    }
   },
   "sources": [
-    {"id": "worldsteel", "cite": "worldsteel Association, Steel Facts (basic oxygen steelmaking; carbon steel < 2.1 wt% C)"},
-    {"id": "abtew2000", "cite": "Abtew & Selvaduray, Mater. Sci. Eng. R 27, 95–141 (2000)", "doi": "10.1016/S0927-796X(00)00010-3"},
-    {"id": "rioja2012", "cite": "Rioja & Liu, Metall. Mater. Trans. A 43, 3325–3337 (2012)", "doi": "10.1007/s11661-012-1155-z"},
-    {"id": "mohsenzadeh2017", "cite": "Mohsenzadeh, Zamani & Taherzadeh, ChemBioEng Rev. 4, 75–91 (2017)", "doi": "10.1002/cben.201600025"},
-    {"id": "dreher2014", "cite": "Dreher et al., Chloroethanes and Chloroethylenes, Ullmann's Encycl. Ind. Chem. (2014)", "doi": "10.1002/14356007.o06_o01.pub2"},
-    {"id": "plunkett1941", "cite": "Plunkett, US Patent 2,230,654 (1941), polytetrafluoroethylene"},
-    {"id": "dunky1998", "cite": "Dunky, Int. J. Adhes. Adhes. 18, 95–107 (1998)", "doi": "10.1016/S0143-7496(97)00054-7"}
-  ]
+    {
+      "id": "worldsteel",
+      "cite": "worldsteel Association, Steel Facts (basic oxygen steelmaking; carbon steel < 2.1 wt% C)"
+    },
+    {
+      "id": "abtew2000",
+      "cite": "Abtew & Selvaduray, Mater. Sci. Eng. R 27, 95–141 (2000)",
+      "doi": "10.1016/S0927-796X(00)00010-3"
+    },
+    {
+      "id": "rioja2012",
+      "cite": "Rioja & Liu, Metall. Mater. Trans. A 43, 3325–3337 (2012)",
+      "doi": "10.1007/s11661-012-1155-z"
+    },
+    {
+      "id": "mohsenzadeh2017",
+      "cite": "Mohsenzadeh, Zamani & Taherzadeh, ChemBioEng Rev. 4, 75–91 (2017)",
+      "doi": "10.1002/cben.201600025"
+    },
+    {
+      "id": "dreher2014",
+      "cite": "Dreher et al., Chloroethanes and Chloroethylenes, Ullmann's Encycl. Ind. Chem. (2014)",
+      "doi": "10.1002/14356007.o06_o01.pub2"
+    },
+    {
+      "id": "plunkett1941",
+      "cite": "Plunkett, US Patent 2,230,654 (1941), polytetrafluoroethylene"
+    },
+    {
+      "id": "dunky1998",
+      "cite": "Dunky, Int. J. Adhes. Adhes. 18, 95–107 (1998)",
+      "doi": "10.1016/S0143-7496(97)00054-7"
+    },
+    {
+      "id": "goodyear1844",
+      "cite": "Goodyear, US Patent 3,633 (1844), vulcanisation of rubber"
+    }
+  ],
+  "staff": {
+    "year_seconds": 960,
+    "legacy_years": 1,
+    "settle_seconds": 480,
+    "roles": {
+      "engineer": {
+        "from": "工程师",
+        "name": "高级工程师",
+        "years": 2,
+        "delay": 0.12,
+        "daily_pay": 20,
+        "effect": "speed",
+        "amount": 0.3,
+        "story": "在浮岛 Ⅰ 修过路、盖过房的工程师，到星锻岛管一条生产线：所在工厂速度 +30%。"
+      },
+      "doctor": {
+        "from": "博士生",
+        "name": "研发博士",
+        "years": 3,
+        "delay": 0.25,
+        "daily_pay": 30,
+        "effect": "yield",
+        "amount": 0.25,
+        "story": "博士毕业后来做工艺研发：所在工厂每出一炉，多产 0.25 炉的成品（累计满一份就多出一份）。"
+      }
+    },
+    "per_factory": 2,
+    "comfort_bonus": 0.2,
+    "delay_reasons": {
+      "doctor": [
+        "审稿人要求补做一组对照实验",
+        "导师出国访问半年，答辩推迟",
+        "实验数据重复性不够，需要重做",
+        "答辩委员会的老师凑不齐时间",
+        "论文查重要改写引言"
+      ],
+      "engineer": [
+        "负责的工程延期验收",
+        "职称评审名额已满，明年再评",
+        "还要带完这一批新人"
+      ]
+    }
+  },
+  "contracts": {
+    "board": 3,
+    "refresh": 900,
+    "reroll_credits": 2,
+    "qty": [
+      2,
+      5
+    ],
+    "lines": [
+      1,
+      3
+    ],
+    "bonus": 1.5,
+    "credits": [
+      4,
+      12
+    ],
+    "trip": 90,
+    "buyers": [
+      {
+        "name": "轨道空间站",
+        "story": "空间站在扩建居住舱，需要轻质结构件。",
+        "wants": [
+          "duralumin",
+          "al_li",
+          "ptfe",
+          "solder"
+        ]
+      },
+      {
+        "name": "城市百货",
+        "story": "新季上架，想要有科技感的家居。",
+        "wants": [
+          "chair_nova",
+          "desk_board",
+          "sofa_float",
+          "ptfe_pan",
+          "pe"
+        ]
+      },
+      {
+        "name": "港口船厂",
+        "story": "修船要用钢材、焊料和防水材料。",
+        "wants": [
+          "steel_ingot",
+          "solder",
+          "rubber",
+          "pvc",
+          "bronze_ingot"
+        ]
+      },
+      {
+        "name": "山地研究所",
+        "story": "野外台站要耐用、耐腐蚀的器材。",
+        "wants": [
+          "steel_bit",
+          "ptfe",
+          "pe",
+          "duralumin"
+        ]
+      },
+      {
+        "name": "河湾合作社",
+        "story": "村里建新屋，需要板材和日用品。",
+        "wants": [
+          "particleboard",
+          "uf_resin",
+          "steel_ingot",
+          "pvc"
+        ]
+      }
+    ]
+  }
 }

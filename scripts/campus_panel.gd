@@ -31,7 +31,7 @@ func setup(model, plot: int=-1) -> void:
 	head.add_child(UI.button("工艺车间",func(): factory_requested.emit()))
 	clock_label=UI.label("",15,UI.GOLD); outer.add_child(clock_label)
 	var tabs=UI.row(outer)
-	for entry in [["overview","小镇概览"],["people","居民与招募"],["build","建筑与庭院"],["research","团队研发"],["requests","居民心愿"]]:
+	for entry in [["overview","小镇概览"],["people","居民与招募"],["build","建筑与庭院"],["research","团队研发"],["requests","居民心愿"],["promotion","晋升"]]:
 		var button=UI.button(entry[1],_show.bind(entry[0])); button.size_flags_horizontal=Control.SIZE_EXPAND_FILL; tabs.add_child(button)
 	scroll=ScrollContainer.new(); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; outer.add_child(scroll)
 	body=UI.column(scroll,12); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
@@ -46,6 +46,7 @@ func _show(tab: String, keep_position: bool=false) -> void:
 		"build": _buildings()
 		"research": _research()
 		"requests": _requests()
+		"promotion": _promotion()
 	_update_live()
 
 func _card(heading: String) -> VBoxContainer:
@@ -97,6 +98,24 @@ func _people() -> void:
 			var supervisor: Dictionary=state.campus.person(int(p.supervisor_id))
 			if not supervisor.is_empty(): card.add_child(UI.label("导师："+str(supervisor.name),15,UI.LILAC))
 		card.add_child(UI.button("请这位居民离岛…",_confirm_dismiss.bind(int(p.id))))
+
+## v0.35 promotion pipeline: engineers and 博士生 serve their years, a few get 延毕, and the player
+## approves each promotion to 星锻岛 (they leave a vacancy here and need a bed there).
+func _promotion() -> void:
+	var ind=state.industry; var R=ind.rules().staff
+	body.add_child(UI.paragraph("工程师服务满%d学年、博士生满%d学年后可以晋升（1学年=游戏里%d天，只在你在岛上时累计）。少数人会延毕一年，原因写在卡片上。批准后他们离开浮岛 Ⅰ，去星锻岛当%s或%s，住进星锻公寓、到工厂上班、拿更高薪酬。" % [int(R.roles.engineer.years),int(R.roles.doctor.years),int(float(R.year_seconds)/float(state.campus.config.day_seconds)),R.roles.engineer.name,R.roles.doctor.name],16))
+	if not ind.unlocked: body.add_child(UI.paragraph("星锻岛还没开放：年限照常累计，开放后再批准。",16,UI.GOLD))
+	else: body.add_child(UI.paragraph("星锻公寓床位 %d / %d" % [ind.staff.size(),ind.beds()],16,UI.GOLD))
+	var rows=ind.candidates(state)
+	if rows.is_empty(): body.add_child(UI.paragraph("岛上还没有工程师或博士生。",16))
+	for row in rows:
+		var card=_card("%s  ·  %s → %s" % [row.name,row.from,row.to])
+		var bar=ProgressBar.new(); bar.max_value=1.0; bar.value=row.progress; bar.show_percentage=false; bar.custom_minimum_size=Vector2(0,10); card.add_child(bar)
+		card.add_child(UI.label("服务 %.1f / %.1f 学年%s" % [row.years,row.need,"  ·  可以晋升" if row.ready else ""],16,UI.MINT if row.ready else UI.TEXT))
+		if row.delayed: card.add_child(UI.paragraph("延毕一年：%s" % row.reason,15,UI.GOLD))
+		var error=ind.promote_error(state,int(row.id))
+		var b=UI.button("批准晋升" if error.is_empty() else error,func(): _done(state.campus_promote(int(row.id))))
+		b.disabled=not error.is_empty(); card.add_child(b)
 
 func _buildings() -> void:
 	var picker=OptionButton.new(); picker.custom_minimum_size.y=44; picker.size_flags_horizontal=Control.SIZE_EXPAND_FILL; body.add_child(picker)

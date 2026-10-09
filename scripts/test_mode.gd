@@ -63,6 +63,20 @@ static func open_starforge(s,credits: int) -> String:
 	ind.credits=mini(ind.credits+credits,int(ind.rules().credits.max)); ind.gain(500)
 	return "测试：星锻岛已开放 · 工业信用 +%d · 岛主经验 +500" % credits
 
+## v0.35: every engineer and 博士生 reaches their service years (延毕 rolls still apply).
+static func finish_service(s) -> String:
+	var ind=s.industry; var n=0
+	for p in s.campus.people:
+		if ind._role(str(p.role)).is_empty(): continue
+		var need=float(ind._role(str(p.role)).years)*ind.year_seconds()
+		ind.service[str(int(p.id))]=maxf(float(ind.service.get(str(int(p.id)),0.0)),need-0.5); n+=1
+	ind.service_init=true
+	var notes=ind.serve(s,1.0)
+	for p in s.campus.people:
+		var key=str(int(p.id))
+		if ind.service.has(key): ind.service[key]=maxf(float(ind.service[key]),ind.need_seconds(p))
+	return "测试：%d人服务满年限%s" % [n,"（"+"；".join(notes)+"）" if not notes.is_empty() else ""]
+
 ## Island production and the refinery run as if the game had been closed for `seconds`.
 static func skip_island(s,seconds: int) -> String:
 	var now=int(Time.get_unix_time_from_system())

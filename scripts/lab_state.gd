@@ -593,6 +593,8 @@ func tick(delta: float):
 		var context=campus_context()
 		context["logistics"]=logistics.prepare(campus.people,reactors,context.reachable_plots,storage,island_rules)
 		var campus_result: Dictionary=campus.tick(1.0,context)
+		var served: Array=industry.serve(self,1.0)
+		if not served.is_empty(): industry_notice="；".join(served)
 		_finish_logistics(logistics.arrivals(campus.people,1.0,storage,island_rules))
 		_campus_clock-=1.0
 		if not campus_result.get("notifications",[]).is_empty(): campus_notice="；".join(campus_result.notifications)
@@ -1618,6 +1620,12 @@ func _campus_transaction(result: Dictionary) -> String:
 func campus_hire(role: String) -> String:
 	return _campus_transaction(campus.hire(role,campus_context()))
 
+## v0.35: the player approves a graduate's promotion to 星锻岛.
+func campus_promote(id: int) -> String:
+	var message: String=industry.promote(self,id)
+	_sync_campus_counts()
+	return message
+
 func campus_dismiss(id: int) -> String:
 	var message: String=campus.dismiss(id)
 	_sync_campus_counts()
@@ -1873,6 +1881,8 @@ func town_price(kind: String) -> int:
 ## Empty string when the player may buy this kind now, otherwise the reason.
 func town_locked(kind: String) -> String:
 	var spec: Dictionary=Town.info(kind)
+	# v0.35: 星锻岛 furniture is made in the 未来家居工坊, never bought with coins.
+	if spec.has("industry"): return "在星锻岛未来家居工坊制作，再送回工具箱"
 	if int(spec.get("requires_plots",0))>unlocked_plot_count(): return "开拓%d块土地后解锁" % int(spec.requires_plots)
 	if int(spec.get("requires_deliveries",0))>deliveries: return "完成%d次交付后解锁" % int(spec.requires_deliveries)
 	return ""
@@ -1989,6 +1999,10 @@ func town_sell(plot: int, uid: int) -> String:
 		var busy=_town_building_in_use(plot,item)
 		if not busy.is_empty(): return busy
 	_town_take_back(item)
+	if Town.info(str(item.kind)).has("industry"):
+		plots[plot].items.erase(item); storage.decorations[str(item.kind)]=int(storage.decorations.get(str(item.kind),0))+1
+		layout.mark_changed()
+		return "%s已收回工具箱" % town_name(str(item.kind))
 	var spent=town_price(str(item.kind))
 	if Town.is_building(str(item.kind)):
 		var info=layout.building_info(str(item.kind))

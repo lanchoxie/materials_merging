@@ -142,4 +142,52 @@ def thruster():
     cyl(0.5, 0.2, (0, 0, -0.55), mat("core", "b8f6ff", emit=8.0), verts=16)
     export("thruster")
 
-for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster): build()
+CORAL = "ff8a7a"; ICE = "9fe7ff"
+
+# --- 未来家居工坊 Home Goods Studio (v0.35): stacked offset glass showroom pods, a robot arm.
+def home_studio():
+    clear(); plinth(accent=CORAL)
+    glass = mat("glass", "bfe9f2", metal=0.1, rough=0.08); gm = mat("gun", GUN, metal=0.6, rough=0.45)
+    neon = mat("neon", CORAL, emit=4.0)
+    for i, (x, y, z, w) in enumerate(((-0.35, 0.1, 0.65, 1.7), (0.3, -0.15, 1.45, 1.4), (-0.15, 0.25, 2.15, 1.1))):
+        box((w, w * 0.8, 0.7), (x, y, z), glass)
+        box((w + 0.04, w * 0.8 + 0.04, 0.06), (x, y, z + 0.37), gm)
+        box((w * 0.9, 0.03, 0.03), (x, y - w * 0.4 - 0.02, z - 0.3), neon)
+    # A chair on display in the lowest pod and the arm placing it.
+    box((0.3, 0.3, 0.06), (-0.4, 0.1, 0.42), mat("seat", ICE, emit=0.6))
+    box((0.3, 0.05, 0.3), (-0.4, 0.24, 0.6), mat("seat", ICE, emit=0.6))
+    cyl(0.12, 0.5, (0.85, 0.75, 0.45), gm)
+    box((0.08, 0.08, 0.8), (0.65, 0.6, 0.85), mat("arm", STEEL, metal=0.8), rot=(0.5, 0.4, 0))
+    sphere(0.07, (0.45, 0.45, 1.15), neon)
+    holo_logo(3.0, CORAL); export("home_studio")
+
+# --- 星锻公寓 Staff Apartments (v0.35): capsule pods stacked in a staggered tower, warm windows.
+def staff_housing():
+    clear(); plinth(accent=ICE)
+    shell = mat("shell", "e8edf2", metal=0.2, rough=0.35); window = mat("window", "ffd9a0", emit=2.4)
+    cyl(0.18, 2.8, (0, 0, 1.55), mat("core", GUN, metal=0.6), verts=8)
+    for k in range(5):
+        a = k * 1.3; r = 0.55; z = 0.55 + k * 0.5
+        x, y = math.cos(a) * r, math.sin(a) * r
+        cyl(0.32, 0.9, (x, y, z), shell, verts=12, rot=(math.pi / 2, 0, a))
+        sphere(0.12, (x + math.cos(a) * 0.46, y + math.sin(a) * 0.46, z), window)
+    torus(0.75, 0.03, (0, 0, 3.0), mat("ring", ICE, emit=4.0), seg=32)
+    holo_logo(3.4, ICE); export("staff_housing")
+
+# --- 货运飞艇 Cargo airship (v0.35): envelope, gondola, fins, glowing engines.
+def airship():
+    clear()
+    env = mat("envelope", "eef1f4", metal=0.1, rough=0.4)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, radius=1.0, location=(0, 0, 0))
+    o = bpy.context.active_object; o.scale = (2.2, 0.75, 0.75); finish(o, env, True)
+    torus(0.76, 0.04, (0.6, 0, 0), mat("band", GOLD, emit=3.0), rot=(0, math.pi / 2, 0))
+    torus(0.76, 0.04, (-0.6, 0, 0), mat("band", GOLD, emit=3.0), rot=(0, math.pi / 2, 0))
+    box((1.0, 0.35, 0.3), (0, 0, -0.9), mat("gondola", GUN, metal=0.6))
+    box((0.9, 0.36, 0.08), (0, 0, -0.73), mat("strip", CYAN, emit=3.0))
+    for s in (-1, 1):
+        box((0.5, 0.04, 0.5), (-1.9, s * 0.3, 0.2 * s), mat("fin", "c9ced6", metal=0.4), rot=(0.6 * s, 0, 0))
+        cyl(0.14, 0.3, (-0.2, s * 0.45, -0.8), mat("engine", GUN, metal=0.6), rot=(0, math.pi / 2, 0))
+        cyl(0.1, 0.05, (-0.37, s * 0.45, -0.8), mat("jet", CYAN, emit=4.0), rot=(0, math.pi / 2, 0))
+    export("airship")
+
+for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship): build()
