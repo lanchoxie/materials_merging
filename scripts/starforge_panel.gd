@@ -336,6 +336,12 @@ func _gear() -> void:
 	var fert=UI.button("施一份磷肥",func(): _act(state.fertilize()))
 	fert.disabled=int(ind.items.get("fertilizer",0))<1; farm.add_child(fert)
 	for id in R.items:
+		if not R.items[id].has("suit") or int(ind.items.get(id,0))<1: continue
+		var worn=ind.suit==id
+		var suit_card=_card("%s × %d%s" % [R.items[id].name,int(ind.items[id]),"（已穿上）" if worn else ""],Color("9fc7ff"))
+		suit_card.add_child(UI.paragraph(str(R.items[id].suit.note)+"\n冰河期和北方冻原里，体感低于 0 °C 会持续掉血。",13))
+		suit_card.add_child(UI.button("脱下" if worn else "穿上（星球第一人称）",func(): _act(ind.equip_suit("" if worn else id)); state.sync_gear()))
+	for id in R.items:
 		if not R.items[id].get("lamp",false) or int(ind.items.get(id,0))<1: continue
 		var on=ind.lamp==id; var best=ind.best_lot(id)
 		var lamp_card=_card("%s × %d%s" % [R.items[id].name,int(ind.items[id]),"（已戴上）" if on else ""],Color("ffe08a"))

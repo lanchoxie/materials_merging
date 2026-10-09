@@ -45,7 +45,8 @@ var lots: Dictionary={}
 var settings: Dictionary={}
 var lot_serial=1
 var solar: Array=[]
-var lamp=""                    # v0.38: equipped headlamp item id ("" = none)            # efficiencies of panels installed on the island grid
+var lamp=""                    # v0.38: equipped headlamp item id ("" = none)
+var suit=""                    # v0.39: worn insulated suit item id ("" = none)            # efficiencies of panels installed on the island grid
 
 static func rules() -> Dictionary:
 	if _rules.is_empty(): _rules=JSON.parse_string(FileAccess.get_file_as_string("res://data/industry.json"))
@@ -225,7 +226,7 @@ func install_board(plot: int) -> String:
 
 ## Items held back from sale and recipes: the equipped bit and headlamp.
 func reserved(id: String) -> int:
-	return 1 if (id==bit or id==lamp) and id!="" else 0
+	return 1 if (id==bit or id==lamp or id==suit) and id!="" else 0
 
 # --- Evidence: the player must have made the real compound ---------------------------------
 static func _keys_for(formula: String) -> Array:
@@ -811,6 +812,16 @@ func equip_lamp(id: String) -> String:
 	var spec=lamp_spec()
 	return "戴上%s：%s，照明约 %.0f m（夜里和洞里自动亮）" % [rules().items[id].name,Model.value_text("wavelength",float(spec.nm)),float(spec.range)]
 
+func equip_suit(id: String) -> String:
+	if id=="": suit=""; return "已脱下保温服"
+	if not rules().items.get(id,{}).has("suit") or int(items.get(id,0))<1: return "没有这件保温服"
+	suit=id
+	return "穿上%s：体感温度 +%d °C" % [rules().items[id].name,int(suit_warmth())]
+
+func suit_warmth() -> float:
+	if suit=="" or int(items.get(suit,0))<1: return 0.0
+	return float(rules().items[suit].suit.warmth)
+
 func lamp_spec() -> Dictionary:
 	if lamp=="" or int(items.get(lamp,0))<1: return {}
 	var best=best_lot(lamp)
@@ -825,7 +836,7 @@ func bit_hv() -> float:
 # --- Save ---------------------------------------------------------------------------------------
 func serialize() -> Dictionary:
 	for id in items.keys(): _reconcile(id)
-	return {"version":3,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
+	return {"version":3,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"suit":suit,"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
 		"buildings":buildings.duplicate(true),"items":items.duplicate(),"saturation":saturation.duplicate(),"bit":bit,"earned":earned,"crafted":crafted,
 		"service":service.duplicate(),"delays":delays.duplicate(),"service_init":service_init,"staff":staff.duplicate(true),"staff_serial":staff_serial,
 		"wages":wages,"wage_clock":wage_clock,"arrears":arrears,"furnished":furnished.duplicate(),
@@ -860,6 +871,7 @@ func restore(data) -> bool:
 		if not R.items.has(id) or not _num(data.saturation[id],0,1,false): return false
 	if data.bit!="" and not R.items.get(data.bit,{}).has("gear"): return false
 	if not data.get("lamp","") is String or (str(data.get("lamp",""))!="" and not R.items.get(data.lamp,{}).get("lamp",false)): return false
+	if not data.get("suit","") is String or (str(data.get("suit",""))!="" and not R.items.get(data.suit,{}).has("suit")): return false
 	var v2=int(data.version)>=2
 	if v2 and not _restore_v2_ok(data,R): return false
 	if int(data.version)>=3 and not _restore_v3_ok(data,R): return false
@@ -878,7 +890,7 @@ func restore(data) -> bool:
 	for id in data.items: items[id]=int(data.items[id])
 	saturation={}
 	for id in data.saturation: saturation[id]=float(data.saturation[id])
-	bit=data.bit; lamp=str(data.get("lamp","")); earned=int(data.earned); crafted=int(data.crafted); pending_xp=0
+	bit=data.bit; lamp=str(data.get("lamp","")); suit=str(data.get("suit","")); earned=int(data.earned); crafted=int(data.crafted); pending_xp=0
 	service={}; delays={}; service_init=false; staff=[]; staff_serial=1; wages=0.0; wage_clock=0.0; arrears=0.0
 	furnished={}; contracts=[]; contract_serial=1; board_left=0.0; airship={}
 	if v2:

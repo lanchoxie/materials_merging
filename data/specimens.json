@@ -1,19 +1,58 @@
 {
   "version": 1,
   "note": "v0.36 标本. The game species are stylised; each card names its real-world prototype (原型) and states only well-established biology. XP values are game rules.",
-  "xp": {"species": 25, "biome": 10},
+  "xp": {
+    "species": 25,
+    "biome": 10
+  },
   "species": {
-    "marsh_fish": {"name": "湿地鱼", "group": "动物", "prototype": "鲫鱼 Carassius auratus（鲤科）",
-      "facts": "杂食性淡水鱼，吃水草、藻类和小型无脊椎动物；耐低氧，能在浅水湿地生活。水位过低时会缺氧受困。"},
-    "meadow_herbivore": {"name": "小鹿", "group": "动物", "prototype": "狍 Capreolus pygargus（鹿科）",
-      "facts": "反刍的植食动物，以嫩叶、草和灌木为食；胆小，受惊会逃跑。草甸和林缘都能见到。"},
-    "woodland_boar": {"name": "林地野猪", "group": "动物", "prototype": "野猪 Sus scrofa（猪科）",
-      "facts": "杂食性，用鼻子翻土找根茎、坚果和小动物，翻动的土壤能帮助种子入土；受到威胁会反击。"},
-    "oak": {"name": "橡树", "group": "植物", "prototype": "栎属 Quercus（壳斗科）",
-      "facts": "落叶或常绿乔木，结坚果（橡子），木材坚硬致密；许多鸟兽靠橡子过冬。"},
-    "birch": {"name": "白桦", "group": "植物", "prototype": "白桦 Betula platyphylla（桦木科）",
-      "facts": "先锋树种，火烧或砍伐后的空地上最先长起来；白色树皮含桦木脂（betulin），能反射阳光。"},
-    "pine": {"name": "松树", "group": "植物", "prototype": "松属 Pinus（松科）",
-      "facts": "常绿针叶树，针叶外有蜡质、气孔下陷，耐寒耐旱；松脂能封住伤口、防虫。"}
+    "marsh_fish": {
+      "name": "湿地鱼",
+      "group": "动物",
+      "prototype": "鲫鱼 Carassius auratus（鲤科）",
+      "facts": "杂食性淡水鱼，吃水草、藻类和小型无脊椎动物；耐低氧，能在浅水湿地生活。水位过低时会缺氧受困。"
+    },
+    "meadow_herbivore": {
+      "name": "小鹿",
+      "group": "动物",
+      "prototype": "狍 Capreolus pygargus（鹿科）",
+      "facts": "反刍的植食动物，以嫩叶、草和灌木为食；胆小，受惊会逃跑。草甸和林缘都能见到。"
+    },
+    "woodland_boar": {
+      "name": "林地野猪",
+      "group": "动物",
+      "prototype": "野猪 Sus scrofa（猪科）",
+      "facts": "杂食性，用鼻子翻土找根茎、坚果和小动物，翻动的土壤能帮助种子入土；受到威胁会反击。"
+    },
+    "oak": {
+      "name": "橡树",
+      "group": "植物",
+      "prototype": "栎属 Quercus（壳斗科）",
+      "facts": "落叶或常绿乔木，结坚果（橡子），木材坚硬致密；许多鸟兽靠橡子过冬。"
+    },
+    "birch": {
+      "name": "白桦",
+      "group": "植物",
+      "prototype": "白桦 Betula platyphylla（桦木科）",
+      "facts": "先锋树种，火烧或砍伐后的空地上最先长起来；白色树皮含桦木脂（betulin），能反射阳光。"
+    },
+    "pine": {
+      "name": "松树",
+      "group": "植物",
+      "prototype": "松属 Pinus（松科）",
+      "facts": "常绿针叶树，针叶外有蜡质、气孔下陷，耐寒耐旱；松脂能封住伤口、防虫。"
+    },
+    "mammoth": {
+      "name": "猛犸象",
+      "group": "动物",
+      "prototype": "真猛犸象 Mammuthus primigenius（象科）",
+      "facts": "肩高约 3 米，长着厚毛和皮下脂肪；耳朵和尾巴比现代象小，减少热量散失。吃草和低矮灌木，约四千年前在弗兰格尔岛灭绝。"
+    },
+    "woolly_rhino": {
+      "name": "披毛犀",
+      "group": "动物",
+      "prototype": "披毛犀 Coelodonta antiquitatis（犀科）",
+      "facts": "肩高约 1.8 米，前角可长到 1 米多，常用来扫开积雪吃草；头低垂，适合啃食地面的草。约一万四千年前灭绝。"
+    }
   }
 }

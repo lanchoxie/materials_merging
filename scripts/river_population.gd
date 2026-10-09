@@ -2,6 +2,7 @@ extends RefCounted
 ## Persistent encounters, separate from render chunks and the player's inventory.
 const Terrain=preload("res://scripts/river_terrain.gd")
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/river_population.json"))
+const WILD=["meadow_herbivore","woodland_boar","mammoth","woolly_rhino"]
 var terrain=Terrain.new()
 var sites={}
 var active_sites=[]
@@ -10,6 +11,9 @@ var combat
 var ranch
 ## v0.32: wild sites live in the Earth climate field when it is linked.
 var environment
+## v0.39: set by the timeline. The 冰河期 sends mammoths and woolly rhinos, which thrive in the cold.
+var cold_min=5.0
+var wild_species: Array=[]
 
 func _init() -> void:
 	for id in Terrain.CENTERS:
@@ -27,7 +31,9 @@ func _animal(site: Dictionary) -> Dictionary:
 	var id=int(site.serial); site.serial+=1
 	var boar=id%2==0
 	if environment!=null and not site.home and environment.biome_at(Vector2(site.x,site.z))=="forest": boar=true
-	return {"id":id,"species":"woodland_boar" if boar else "meadow_herbivore","health":0.9,"age":0.5,"x":sin(id*9.1)*2,"z":cos(id*4.7)*2}
+	var species="woodland_boar" if boar else "meadow_herbivore"
+	if not wild_species.is_empty(): species=str(wild_species[id%wild_species.size()])
+	return {"id":id,"species":species,"health":0.9,"age":0.5,"x":sin(id*9.1)*2,"z":cos(id*4.7)*2}
 
 func _visitor(site: Dictionary) -> Dictionary:
 	var id=int(site.serial); site.serial+=1
@@ -47,7 +53,7 @@ func observe(at: Vector2) -> void:
 			if sites.has(key): active_sites.append(key)
 
 func _suitable(env: Dictionary) -> bool:
-	return float(env.moisture)>0.3 and float(env.water)>0.15 and float(env.temperature)>5 and float(env.temperature)<34 and float(env.pollution)<0.4
+	return float(env.moisture)>0.3 and float(env.water)>0.15 and float(env.temperature)>cold_min and float(env.temperature)<34 and float(env.pollution)<0.4
 
 func advance(regions: Dictionary) -> Array:
 	var arrivals=[]
@@ -155,7 +161,7 @@ func restore(data) -> bool:
 			if not a is Dictionary or not _num(a.get("id"),1,s.serial-1,true) or int(a.id) in ids or not _num(a.get("x"),-9,9) or not _num(a.get("z"),-9,9): return false
 			ids.append(int(a.id))
 		for a in s.animals:
-			if a.get("species") not in ["meadow_herbivore","woodland_boar"] or not _num(a.get("health"),0,1) or not _num(a.get("age"),0,1e12): return false
+			if a.get("species") not in WILD or not _num(a.get("health"),0,1) or not _num(a.get("age"),0,1e12): return false
 		for a in s.animals:
 			if a.has("hunger") and not _num(a.hunger,0,1): return false
 		for v in s.visitors:

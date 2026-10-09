@@ -34,6 +34,8 @@ var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://dat
 var world: Dictionary={}
 var active=false
 var observer_id=0
+## v0.39 timeline: "present" or "ice" (see rules.epochs). The time gate swaps whole PlanetV2 saves.
+var epoch="present"
 
 func _init() -> void:
 	world=fresh()
@@ -45,6 +47,45 @@ func _link_geometry() -> void:
 	field.terrain=construction.terrain; population.terrain=construction.terrain
 	population.combat=combat; settlement.combat=combat
 	population.ranch=ranch; settlement.ranch=ranch
+
+func set_epoch(id: String) -> void:
+	epoch=id if rules.epochs.has(id) else "present"
+	var e: Dictionary=epoch_info()
+	environment.epoch_offset=float(e.get("temperature",0.0)); environment._shift=environment.warming()+environment.epoch_offset
+	population.cold_min=float(e.get("cold_min",5.0)); population.wild_species=e.get("wild",[])
+
+func epoch_info() -> Dictionary:
+	return rules.epochs.get(epoch,{})
+
+## A brand-new world in another timeline (the first trip through the time gate).
+func begin_epoch(id: String) -> void:
+	set_epoch(id); world=fresh()
+	if not bool(epoch_info().get("crops",true)):
+		for r in world.regions.values(): r.crops=[]
+	world.events=[{"time":0,"text":str(epoch_info().get("story","河湾已苏醒。"))}]
+
+## Weather for this timeline: the 冰河期 has its own list and odds, all year round.
+func incident_kinds() -> Array:
+	return epoch_info().get("incidents",settlement.incident_kinds())
+
+func incident_chance() -> float:
+	return float(epoch_info().get("chance",settlement.incident_chance()))
+
+func incidents_all_seasons() -> bool:
+	return bool(epoch_info().get("all_seasons",false))
+
+## v0.39 cold: air temperature where the player stands (climate field + season + day + weather).
+func air_temperature(p: Vector2) -> float:
+	var ds=float(rules.clock.day_seconds)
+	return environment.values(environment.cell_of(p)).y+float(rules.ecology.temperature[season()])+sin(float(world.elapsed)/ds*TAU)*2-float(incidents.region_mods("").get("chill",0.0))
+
+## Felt temperature: air plus a campfire within reach, a roof overhead and the 保温服.
+func felt_temperature(feet: Vector3) -> float:
+	var c: Dictionary=rules.cold; var p=Vector2(feet.x,feet.z)
+	var t=air_temperature(p)+combat.suit_warmth
+	if construction.near_kind("campfire",feet,float(c.fire_radius)): t+=float(c.fire_warmth)
+	if construction.roof_over(feet): t+=float(c.roof_warmth)
+	return t
 
 func fresh() -> Dictionary:
 	var w={"version":1,"elapsed":0,"remainder":0.0,"paused":false,"speed":1,"current_region":"wetland","next_animal":1,"seeds":int(rules.ecology.initial_seeds),"food":0,"events":[],"receipts":[],"regions":{}}
@@ -89,7 +130,8 @@ func season() -> int:
 	return (day()/int(rules.clock.season_days))%4
 
 func time_label() -> String:
-	return "第 %d 天 · %s · %02d:00" % [day()+1,rules.clock.seasons[season()],int(fmod(float(world.elapsed)/float(rules.clock.day_seconds),1.0)*24)]
+	var prefix="%s · " % str(epoch_info().name) if epoch!="present" else ""
+	return prefix+"第 %d 天 · %s · %02d:00" % [day()+1,rules.clock.seasons[season()],int(fmod(float(world.elapsed)/float(rules.clock.day_seconds),1.0)*24)]
 
 func _event(message: String) -> void:
 	world.events.push_front({"time":int(world.elapsed),"text":message})
@@ -145,7 +187,7 @@ func _step() -> void:
 		if weather.flood: r.water=minf(1.0,r.water+0.5/ds)
 		r.moisture=clampf(r.moisture+(r.water-r.moisture)*0.06/ds,0,1)
 		var at: Vector3=construction.terrain.CENTERS[id]
-		r.temperature=float(base.temperature)+float(rules.ecology.temperature[season()])+sin(float(world.elapsed)/ds*TAU)*2+environment.warming()+environment.local_heat(Vector2(at.x,at.z))
+		r.temperature=float(base.temperature)+float(rules.ecology.temperature[season()])+sin(float(world.elapsed)/ds*TAU)*2+environment.warming()+environment.epoch_offset+environment.local_heat(Vector2(at.x,at.z))-float(weather.get("chill",0.0))
 		r.oxygen=clampf(r.oxygen+(0.52*(environment.o2/20.9)-r.oxygen)*0.16/ds-r.pollution*0.06/ds,0,1)
 		if r.oxygen_fuel>0:
 			r.oxygen_fuel=maxf(0,r.oxygen_fuel-1); r.oxygen=clampf(r.oxygen+0.004,0,1)
@@ -290,7 +332,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize()}
+	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize()}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -314,6 +356,7 @@ func _number(v,lo: float,hi: float,whole: bool=false) -> bool:
 
 func restore(data) -> bool:
 	if not data is Dictionary or data.get("version")!=1 or not data.get("world") is Dictionary: return false
+	if not data.get("epoch","present") is String or not rules.epochs.has(str(data.get("epoch","present"))): return false
 	var w: Dictionary=data.world
 	if w.get("version")!=1 or not w.get("paused") is bool or not _number(w.get("speed"),1,8,true): return false
 	if int(w.speed) not in [1,4,8]: return false
@@ -413,5 +456,6 @@ func restore(data) -> bool:
 	inventory=restored_inventory
 	world=w.duplicate(true); population=restored_population; construction=restored_construction; settlement=restored_settlement; nature=restored_nature; combat=restored_combat; actor={}; active=false
 	_link_geometry()
+	set_epoch(str(data.get("epoch","present")))
 	ranch.sync(self)
 	return true

@@ -34,8 +34,8 @@ func step(v) -> void:
 	if now%int(ds)!=0 or day==last_roll: return
 	last_roll=day
 	if day<int(rules.first_day) or (last_end>=0 and day-last_end<int(rules.cooldown_days)): return
-	var kinds=v.settlement.incident_kinds().filter(func(k): return v.season() in kind_info(k).get("seasons",[]))
-	if kinds.is_empty() or _hash01(day,17)>=v.settlement.incident_chance(): return
+	var kinds=v.incident_kinds().filter(func(k): return v.incidents_all_seasons() or v.season() in kind_info(k).get("seasons",[]))
+	if kinds.is_empty() or _hash01(day,17)>=v.incident_chance(): return
 	var kind=str(kinds[int(_hash01(day,29)*kinds.size())%kinds.size()])
 	warn(v,kind)
 
@@ -79,6 +79,11 @@ func preparation(v,kind: String) -> float:
 		"storm": return clampf(float(v.construction.shelter_cells(v.settlement.center(),v.settlement.rules.radius))/float(rules.shelter_full),0,1)
 		"flood": return clampf(float(levee_blocks(v))/float(rules.levee.full),0,1)
 		"drought": return clampf(float(v.environment.machine_count("sprinkler")+pipes)/float(rules.irrigation_full),0,1)
+		"blizzard":
+			var at=v.settlement.center(); var radius=float(v.settlement.rules.radius)
+			var fires=clampf(float(v.construction.count_kind("campfire",at,radius))/float(rules.fire_full),0,1)
+			var roof=clampf(float(v.construction.shelter_cells(at,radius))/float(rules.shelter_full),0,1)
+			return 0.5*fires+0.5*roof
 	return 0.0
 
 ## Built blocks along the home stretch of the river, 3–9 m from the water line.
@@ -91,7 +96,7 @@ func levee_blocks(v) -> int:
 
 ## Per-region weather for this second: extra rain, evaporation factor, crop loss.
 func region_mods(id: String) -> Dictionary:
-	var mods={"rain":0.0,"evaporation":1.0,"crop_loss":0.0,"flood":false}
+	var mods={"rain":0.0,"evaporation":1.0,"crop_loss":0.0,"flood":false,"chill":0.0}
 	if active.is_empty(): return mods
 	var info=kind_info(str(active.kind)); var harm=1.0-float(active.prepared)
 	match str(active.kind):
@@ -99,6 +104,9 @@ func region_mods(id: String) -> Dictionary:
 			mods.rain=float(info.rain); mods.crop_loss=float(info.crop_loss)*harm
 		"flood":
 			if id in info.regions: mods.flood=true; mods.crop_loss=float(info.crop_loss)*harm
+		"blizzard":
+			# The air cools for everyone; preparation shields the crops and the people, not the weather.
+			mods.chill=float(info.chill); mods.crop_loss=float(info.crop_loss)*harm
 		"drought":
 			mods.rain=-1.0; mods.evaporation=1.0+(float(info.evaporation)-1.0)*harm*(1.0-minf(1.0,float(pipes)*float(rules.pipe.cut)))
 	return mods
@@ -107,8 +115,8 @@ func record_crop_loss(amount: float) -> void:
 	if not active.is_empty(): active.crop_loss=float(active.crop_loss)+amount
 
 func _hurt(v) -> void:
-	if str(active.kind)!="storm": return
-	var loss=float(kind_info("storm").health)*(1.0-float(active.prepared))
+	if str(active.kind) not in ["storm","blizzard"]: return
+	var loss=float(kind_info(str(active.kind)).health)*(1.0-float(active.prepared))
 	if loss<=0.0 or v.settlement.people.is_empty(): return
 	for p in v.settlement.people: p.health=clampf(float(p.health)-loss,0,1)
 	active.health_loss=float(active.health_loss)+loss

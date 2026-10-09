@@ -23,6 +23,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [15-earth.md](15-earth.md) | v0.32: climate field, biomes, environment machines, warming, 环境图 |
 | [16-polish.md](16-polish.md) | v0.33: sky and shadows, shaded hands and tools, chibi residents, rigged planet creatures, water shader |
 | [22-incidents-specimens.md](22-incidents-specimens.md) | v0.36: data-driven era framework, storms/floods/droughts with warnings and preparation, PVC pipes, 标本图鉴 |
+| [26-ice-age.md](26-ice-age.md) | v0.39: time gate between timelines, cold survival (campfire, roof, 保温服), 寒潮暴雪, mammoths and woolly rhinos |
 | [25-chips-light.md](25-chips-light.md) | v0.38: chip fab (lithography yield), perovskite LEDs (bowing, V(λ)), packaging, control boards, the headlamp |
 | [24-playtest-fixes.md](24-playtest-fixes.md) | v0.37.1: leaving 星锻岛 and its layout, miniature unfolding/pedestals/复刻, batch and loop production |
 | [23-silicon-materials.md](23-silicon-materials.md) | v0.37: Si/Ca/P and apatite, MP rebuild, material property model v1 (knobs, lots, laws, test bench), inorganic works, silicon foundry |

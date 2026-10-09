@@ -561,18 +561,25 @@ func _weather_card() -> void:
 	var kind=str(inc.active.get("kind",inc.pending.get("kind","")))
 	var card=_card("天气与灾害" if kind=="" else "⚠ "+str(inc.kind_info(kind).name))
 	if kind=="":
-		card.add_child(UI.paragraph("春夏有暴风雨和河水上涨，夏秋可能干旱；每次都会提前一天预警（年鉴和左上角）。准备得越好损失越小，扛住后有岛主经验。现在%s的时代可能遇到：%s。" % [s_title(v),"、".join(v.settlement.incident_kinds().map(func(k): return inc.kind_info(k).name))],14))
+		card.add_child(UI.paragraph("春夏有暴风雨和河水上涨，夏秋可能干旱，冬天有寒潮暴雪；每次都会提前一天预警（年鉴和左上角）。准备得越好损失越小，扛住后有岛主经验。现在%s的时代可能遇到：%s。" % [s_title(v),"、".join(v.incident_kinds().map(func(k): return inc.kind_info(k).name))],14))
 	else:
 		card.add_child(UI.label(inc.status_line(v),16,UI.GOLD))
 		card.add_child(UI.paragraph("怎么准备："+str(inc.kind_info(kind).prepare),14))
-	var rows=[["暴风雨 · 营地屋顶下净空","storm"],["河水上涨 · 沿河堤坝构件","flood"],["干旱 · 洒水器 + 灌溉管","drought"]]
+	var rows=[["暴风雨 · 营地屋顶下净空","storm"],["河水上涨 · 沿河堤坝构件","flood"],["干旱 · 洒水器 + 灌溉管","drought"],["寒潮 · 篝火 + 屋顶下空地","blizzard"]]
 	for row in rows:
 		var p=inc.preparation(v,str(row[1]))
 		var line=UI.row(card,8)
 		line.add_child(UI.label("%s %d%%" % [row[0],roundi(p*100)],14,UI.MINT if p>=0.5 else UI.TEXT))
 	card.add_child(UI.button("铺设灌溉管 %d/%d · 星锻岛 PVC×%d" % [inc.pipes,int(inc.rules.pipe.max),int(inc.rules.pipe.pvc)],func(): message=state.lay_pipe(); _redraw()))
 	card.add_child(UI.button("去车间做屋顶或堤坝木墙",func(): workshop_requested.emit("field_roof")))
+	card.add_child(UI.button("去车间做篝火（3木料 + 2散石）",func(): workshop_requested.emit("field_campfire")))
 	if not inc.history.is_empty(): card.add_child(UI.paragraph("上一次："+str(inc.history[0].text),13))
+	# v0.39 time gate status.
+	var gate=_card("时间之门 · %s" % str(v.epoch_info().name))
+	if state.planet.gate_ready():
+		gate.add_child(UI.paragraph("回浮岛后走上彩虹光桥，可以在「当代」和「冰河期（约两万年前）」之间穿越。背包、种子、矿物和标本跟着你走；建筑和营地留在各自的时代。",14))
+	else: gate.add_child(UI.paragraph(state.planet.gate_hint(),14,UI.GOLD))
+	if v.epoch=="ice": gate.add_child(UI.paragraph("冰河期：冬天体感低于 0 °C 会持续掉血。生篝火、躲到屋顶下，或在星锻岛做保温服。猛犸象和披毛犀会反击，用分析仪记录它们的标本。",14,Color("bfe6ff")))
 
 func s_title(v) -> String:
 	return str(v.settlement.title())

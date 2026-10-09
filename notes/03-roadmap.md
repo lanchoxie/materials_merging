@@ -96,7 +96,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   miniatures from any side + 复刻, batch/loop production.
 - ✅ v0.38 "Chips & Light" (tag `v0.38.0`; see [25-chips-light.md](25-chips-light.md)): chip fab, packaging plant, perovskite
   LEDs, control boards, the headlamp on Earth.
-- Next: v0.39 planet — 冰河期 era + time gate, harsher incidents (plan in 14-industry-island.md).
+- ✅ v0.39 "Ice Age" (tag `v0.39.0`; see [26-ice-age.md](26-ice-age.md)): time gate with per-era saves, cold survival,
+  寒潮暴雪, mammoths and woolly rhinos, 保温服.
+- Next: v0.40 industry — energy: batteries (lead-acid → LiFePO₄), energy park (plan in 14-industry-island.md).
 - Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
   more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,
   and the remaining eras.

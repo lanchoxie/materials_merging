@@ -7,6 +7,12 @@ var attack_left=0.0
 var hurt_flash=0.0
 var records={}
 var revision=0
+## v0.39 cold: the 保温服's warmth (set by LabState.sync_gear) and the last felt temperature (HUD).
+var suit_warmth=0.0
+var felt=20.0
+const WILD_NAMES={"woodland_boar":"林地野猪","meadow_herbivore":"林间小鹿","mammoth":"猛犸象","woolly_rhino":"披毛犀"}
+const WILD_HEIGHT={"mammoth":3.0,"woolly_rhino":1.8}
+const FIGHTERS=["woodland_boar","mammoth","woolly_rhino"]
 
 func entities(v) -> Array:
 	var out=[]; var t=v.construction.terrain
@@ -22,7 +28,7 @@ func entities(v) -> Array:
 		for kind in ["animals","visitors"]:
 			for a in s[kind]:
 				var human=kind=="visitors"; var key=("visitor:" if human else "wild:")+str(s.id)+":"+str(int(a.id))
-				out.append({"key":key,"type":"visitor" if human else "wild","row":a,"position":Vector2(s.x+a.x,s.z+a.z),"origin":Vector2(s.x,s.z),"scale":1.0,"fish":false,"name":a.name if human else ("林地野猪" if a.species=="woodland_boar" else "林间小鹿"),"height":1.55 if human else 0.8,"id":a.id,"site":s.id})
+				out.append({"key":key,"type":"visitor" if human else "wild","row":a,"position":Vector2(s.x+a.x,s.z+a.z),"origin":Vector2(s.x,s.z),"scale":1.0,"fish":false,"name":a.name if human else str(WILD_NAMES.get(a.species,"林间小鹿")),"height":1.55 if human else float(WILD_HEIGHT.get(a.species,0.8)),"id":a.id,"site":s.id})
 	for a in v.settlement.people:
 		out.append({"key":"resident:"+str(int(a.id)),"type":"resident","row":a,"position":Vector2(a.x,a.z),"origin":Vector2.ZERO,"scale":1.0,"fish":false,"name":a.name,"height":1.65,"id":a.id})
 	return out
@@ -31,7 +37,7 @@ func busy(key: String) -> bool:
 	return records.get(key,{}).get("anger",0)>0
 
 func reaction(entity: Dictionary) -> String:
-	return "逃跑" if entity.fish or (entity.type in ["animal","wild"] and entity.row.get("species")!="woodland_boar") else "反击"
+	return "逃跑" if entity.fish or (entity.type in ["animal","wild"] and entity.row.get("species") not in FIGHTERS) else "反击"
 
 func strike(target: Dictionary,v) -> String:
 	if player_health<=0: return "你需要回营地休息"
@@ -60,6 +66,7 @@ func tick(dt: float,v,advance_encounters: bool=true) -> void:
 	# A paused ecosystem still accepts manual actions; the player's arm must recover.
 	if not advance_encounters: return
 	if v.actor.is_empty() or player_health<=0: return
+	_cold(dt,v)
 	var c=v.construction; var t=c.terrain; var player=Vector2(v.actor.feet.x,v.actor.feet.z)
 	var live={}
 	for e in entities(v):
@@ -90,6 +97,14 @@ func tick(dt: float,v,advance_encounters: bool=true) -> void:
 			player_health=maxf(0,player_health-float(rules.enemy_damage)); hurt_flash=0.35; r.wait=float(rules.enemy_cooldown); revision+=1
 	for key in records.keys():
 		if not live.has(key): records.erase(key)
+
+## Below the threshold the body loses heat: health drains in proportion to how cold it feels.
+func _cold(dt: float,v) -> void:
+	var rules_cold: Dictionary=v.rules.cold
+	felt=v.felt_temperature(v.actor.feet)
+	var below=float(rules_cold.threshold)-felt
+	if below<=0.0: return
+	player_health=maxf(0,player_health-below*float(rules_cold.drain_per_degree)*dt); revision+=1
 
 func respawn() -> void:
 	player_health=float(rules.player_health); attack_left=0; hurt_flash=0; records.clear(); revision+=1

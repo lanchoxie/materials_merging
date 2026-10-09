@@ -90,6 +90,20 @@ func count_kind(kind: String, near: Vector2=Vector2(INF,INF), radius: float=INF)
 		if b.kind == kind and (not is_finite(near.x) or Vector2(b.x,b.z).distance_to(near)<=radius): count+=1
 	return count
 
+## v0.39: a built piece of `kind` within `radius` m of a point (campfires for warmth).
+func near_kind(kind: String, at: Vector3, radius: float) -> bool:
+	for b in blocks.values():
+		if str(b.kind)==kind and Vector3(b.x,b.y,b.z).distance_to(at)<=radius: return true
+	return false
+
+## A roof-type block in the 4 cells above the feet: the player stands under shelter.
+func roof_over(feet: Vector3) -> bool:
+	var c=cell_at(feet)
+	for dy in range(1,5):
+		var b: Dictionary=blocks.get(key(c+Vector3i(0,dy,0)),{})
+		if not b.is_empty() and rules.kinds[b.kind].get("roof",false): return true
+	return false
+
 func shelter_cells(near: Vector2, radius: float) -> int:
 	var covered={}
 	for b in blocks.values():

@@ -178,6 +178,20 @@
         "stone": 3
       },
       "description": "2份木料和3份散石加工为1个配料罐。放在河湾后加入反应釜的尿素和水，分装后给种植箱施肥；少量与过量会有不同结果。"
+    },
+    "field_campfire": {
+      "id": "field_campfire",
+      "version": 1,
+      "name": "篝火石圈",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 15,
+      "natural_inputs": {
+        "timber": 3,
+        "stone": 2
+      },
+      "description": "3份木料和2份散石做成2处篝火：取暖、照明，寒潮时保护营地。"
     }
   }
 }

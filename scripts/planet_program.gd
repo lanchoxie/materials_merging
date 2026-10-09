@@ -25,7 +25,12 @@ var serial=1
 var shipment_serial=1
 var _reference_cache: Dictionary={}
 var notice=""
-var batch: Dictionary={}   # v0.37.1: {"recipe": id, "left": n} — the next one starts when the bench frees up
+var batch: Dictionary={}
+## v0.39 time gate: the inactive timelines' saved worlds (epoch id -> PlanetV2.serialize()), and
+## whether the gate has opened. Only one PlanetV2 is ever live.
+var timelines: Dictionary={}
+var gate_open=false
+var _home=null   # v0.37.1: {"recipe": id, "left": n} — the next one starts when the bench frees up
 var v2=PlanetV2.new()
 ## v0.32: samples whose identity unlocks a workshop line (water is the original entry pass).
 const SAMPLE_REFERENCES={"water":"水样","oxygen":"氧气 O₂ 样品","carbon_dioxide":"二氧化碳 CO₂ 样品","ammonia":"氨 NH₃ 样品"}
@@ -33,6 +38,62 @@ const EARTH_KITS=["earth_sprinkler_kit","earth_oxygen_tower_kit","earth_co2_towe
 
 func _init() -> void:
 	for id in config.supplies: supplies[id]=0
+
+## The gate opens once the present-day camp reaches the era named in planet_v2.json time_gate.
+func gate_ready() -> bool:
+	if gate_open: return true
+	if v2.epoch=="present" and v2.settlement.era>=int(v2.rules.time_gate.requires_era): gate_open=true
+	return gate_open
+
+## Miniatures and their island exhibits always belong to the present-day river: while the player is
+## in another era the island reads (and edits) the stored present world through this.
+func home():
+	if v2.epoch=="present": return v2
+	if _home==null:
+		_home=PlanetV2.new()
+		if not _home.restore(timelines.get("present",{})): _home=PlanetV2.new()
+	return _home
+
+func home_saved() -> void:
+	if v2.epoch!="present" and _home!=null: timelines["present"]=_home.serialize()
+
+## The present world's save dict inside a PlanetProgram save (for LabState's town validation).
+static func home_data(planet_data) -> Dictionary:
+	if not planet_data is Dictionary: return {}
+	var live=planet_data.get("v2",{})
+	if live is Dictionary and str(live.get("epoch","present"))=="present": return live
+	var stored=planet_data.get("timelines",{})
+	return stored.get("present",{}) if stored is Dictionary else {}
+
+func gate_hint() -> String:
+	return "时间之门：当代营地进入「%s」后，彩虹光桥可以调到冰河期" % str(v2.settlement.rules.eras[int(v2.rules.time_gate.requires_era)].name)
+
+## Swap the live world for another timeline. What the player carries goes along: the backpack
+## (raw stock, seeds, minerals, hotbar), workshop provenance records, the 标本图鉴, health.
+## Places stay put: buildings, terrain edits, settlement, regions, animals, weather.
+const CARRY_FIELD=["stock","crafts"]
+const CARRY_NATURE=["seeds","minerals","discovered"]
+func travel(to: String) -> String:
+	if not v2.rules.epochs.has(to): return "没有这个时代"
+	if to==v2.epoch: return "已经在%s" % str(v2.epoch_info().name)
+	if not gate_ready(): return gate_hint()
+	var here: Dictionary=v2.serialize(); var from=v2.epoch
+	var there: Dictionary
+	if timelines.has(to): there=timelines[to].duplicate(true)
+	else:
+		var fresh=PlanetV2.new(); fresh.begin_epoch(to); there=fresh.serialize()
+	for k in CARRY_FIELD: there.field[k]=here.field[k]
+	for k in CARRY_NATURE: there.nature[k]=here.nature[k]
+	there.inventory=here.inventory; there.specimens=here.specimens; there.combat.player_health=here.combat.player_health
+	var blank=PlanetV2.new()
+	var left_behind: Dictionary=blank.serialize()
+	for k in CARRY_FIELD: here.field[k]=left_behind.field[k]
+	for k in CARRY_NATURE: here.nature[k]=left_behind.nature[k]
+	here.inventory=left_behind.inventory; here.specimens=left_behind.specimens
+	var next=PlanetV2.new()
+	if not next.restore(there): return "时间之门不稳定：目标时代的存档无法读取"
+	timelines.erase(to); timelines[from]=here; v2=next; _home=null
+	return "穿过时间之门：%s · %s" % [str(v2.epoch_info().name),str(v2.epoch_info().get("era",""))]
 
 func recipe_ids() -> Array:
 	return ["standard_water_crate"]+config.recipes.keys()+v2.field.rules.recipes.keys()
@@ -209,11 +270,14 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 					return v2.nature.plant(str(payload.get("species","")),Vector2(aim.point.x,aim.point.z),v2)
 				"v2_strike": return v2.combat.strike(aim,v2)
 				"v2_mini_pack":
+					if v2.epoch!="present": return "微缩器只能把当代河湾的作品带回浮岛：冰河期的建筑留在冰河期"
 					v2.ranch.sync(v2)
 					return preload("res://scripts/river_miniatures.gd").pack(v2.construction,aim)
 				"v2_mini_unfold": return preload("res://scripts/river_miniatures.gd").unfold(v2.construction,str(payload.get("id","")),v2.actor)
 		"v2_mini_exhibit":
-			return preload("res://scripts/river_miniatures.gd").exhibit(v2.construction,str(payload.get("id","")),int(payload.get("plot",-1)),state.plots)
+			var shown: String=preload("res://scripts/river_miniatures.gd").exhibit(home().construction,str(payload.get("id","")),int(payload.get("plot",-1)),state.plots)
+			home_saved()
+			return shown
 		"v2_build", "v2_dismantle":
 			if not v2.active: return "请先进入星球"
 			v2.ranch.sync(v2)
@@ -363,7 +427,7 @@ func tick(dt: float,effort: float=0.0) -> void:
 	v2.tick(dt)
 
 func serialize() -> Dictionary:
-	return {"version":12,"batch":batch.duplicate(),"laminates":laminates.serialize(),"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"retired_planet":retired_planet.duplicate(true),"v2":v2.serialize()}
+	return {"version":12,"timelines":timelines.duplicate(true),"gate_open":gate_open,"batch":batch.duplicate(),"laminates":laminates.serialize(),"materials":materials.serialize(),"circuit_reports":circuit_reports.duplicate(true),"production_mode":production_mode,"reports":reports.duplicate(true),"joined":joined,"qualified":qualified,"qualification":qualification.duplicate(true),"extra_qualifications":extra_qualifications.duplicate(true),"supplies":supplies.duplicate(true),"feed":feed,"products":products.duplicate(true),"job":job.duplicate(true),"serial":serial,"shipment_serial":shipment_serial,"retired_planet":retired_planet.duplicate(true),"v2":v2.serialize()}
 
 func restore(data,state) -> bool:
 	if not data is Dictionary or not Count.count_ok(data.get("version")) or int(data.version) not in [1,2,3,4,5,6,7,8,9,10,11,12]: return false
@@ -481,6 +545,25 @@ func restore(data,state) -> bool:
 			if not receipt.get("work") is Dictionary or not state.sandbox_validate(receipt.work): return false
 			if state.sandbox_reference(receipt.work).get("reference_id","")!=receipt.reference: return false
 		else: return false
+	# v0.39: inactive timelines are full worlds of their own; their products share the id space.
+	var saved_lines=data.get("timelines",{})
+	if not saved_lines is Dictionary or saved_lines.size()>restored_v2.rules.epochs.size()-1 or not data.get("gate_open",false) is bool: return false
+	for e in saved_lines:
+		var line=PlanetV2.new()
+		if e==restored_v2.epoch or not restored_v2.rules.epochs.has(e) or not line.restore(saved_lines[e]) or line.epoch!=e: return false
+		if not line.field.crafts.is_empty(): return false
+		for source in line.construction.sources.values():
+			if not _valid_product(source.product,data,ids): return false
+			ids.append(int(source.product.id))
+		for receipt in line.world.receipts:
+			if receipt.get("kind")=="product":
+				if not _valid_product(receipt.get("product"),data,ids) or receipt.use!=receipt.product.recipe: return false
+				ids.append(int(receipt.product.id))
+			elif receipt.get("kind")!="sample" or not receipt.get("work") is Dictionary or not state.sandbox_validate(receipt.work): return false
+		for receipt in line.organics.inputs.values():
+			if not state.sandbox_validate(receipt.work) or state.sandbox_reference(receipt.work).get("reference_id","")!=receipt.reference: return false
+	if not saved_lines.is_empty() and not data.get("gate_open",false): return false
+	timelines=saved_lines.duplicate(true); gate_open=bool(data.get("gate_open",false)); _home=null
 	laminates=factory; materials=archive; retired_planet=retired.data
 	production_mode=data.production_mode
 	reports=data.reports.duplicate(true)

@@ -76,7 +76,8 @@
       "incidents": [
         "storm",
         "flood",
-        "drought"
+        "drought",
+        "blizzard"
       ],
       "incident_chance": 0.16,
       "requires": [
@@ -163,7 +164,8 @@
       "incidents": [
         "storm",
         "flood",
-        "drought"
+        "drought",
+        "blizzard"
       ],
       "incident_chance": 0.22,
       "requires": []

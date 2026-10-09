@@ -9,7 +9,7 @@ var ghost: MeshInstance3D
 var ghost_material: StandardMaterial3D
 ## v0.32: animated sprays and plumes for nearby Earth machines (render only).
 var effects: Dictionary={}
-const FX={"sprinkler":["8fd8ff",2.3,Vector3(0,1,0),70.0,2.2,-4.0],"oxygen_tower":["c8fbff",3.2,Vector3(0,1,0),12.0,0.9,0.4],"co2_tower":["9a948c",3.0,Vector3(0,1,0),18.0,0.8,0.15],"fertilizer_spreader":["e8d27a",0.7,Vector3(0,0.3,0),80.0,1.8,-5.0]}
+const FX={"sprinkler":["8fd8ff",2.3,Vector3(0,1,0),70.0,2.2,-4.0],"oxygen_tower":["c8fbff",3.2,Vector3(0,1,0),12.0,0.9,0.4],"co2_tower":["9a948c",3.0,Vector3(0,1,0),18.0,0.8,0.15],"fertilizer_spreader":["e8d27a",0.7,Vector3(0,0.3,0),80.0,1.8,-5.0],"campfire":["ffb347",0.7,Vector3(0,1,0),18.0,1.1,1.5]}
 
 func _ready() -> void:
 	ghost=MeshInstance3D.new(); var mesh=BoxMesh.new(); mesh.size=Vector3.ONE*1.025; ghost.mesh=mesh
@@ -64,6 +64,9 @@ func _effect(b: Dictionary) -> CPUParticles3D:
 	fx.direction=spec[2]; fx.spread=float(spec[3]); fx.initial_velocity_min=float(spec[4])*0.7; fx.initial_velocity_max=float(spec[4])
 	fx.gravity=Vector3(0,float(spec[5]),0); fx.scale_amount_min=0.6; fx.scale_amount_max=1.4
 	if b.kind=="co2_tower": fx.scale_amount_max=2.6
+	if b.kind=="campfire":
+		fx.amount=20; fx.lifetime=0.9
+		var light=OmniLight3D.new(); light.light_color=Color("ff9b4a"); light.light_energy=1.6; light.omni_range=7.0; light.position=Vector3(0,0.2,0); fx.add_child(light)
 	fx.emitting=true
 	return fx
 

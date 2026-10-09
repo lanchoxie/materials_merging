@@ -252,7 +252,7 @@ func _exhibit(holder: Node3D, kind: String, show: Dictionary, detail: bool) -> v
 		caption=str(spec.get("name",show.id))
 		if str(spec.get("formula",""))!="": caption+="  "+str(spec.formula)
 	else:
-		var c=state.planet.v2.construction
+		var c=state.planet.home().construction
 		var mini: Dictionary=c.miniatures.get(show.id,{})
 		if not mini.is_empty():
 			var mat=StandardMaterial3D.new(); mat.vertex_color_use_as_albedo=true; mat.roughness=0.8

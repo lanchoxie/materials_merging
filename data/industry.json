@@ -836,6 +836,22 @@
       "equation": "恒流驱动 LED：电子与空穴复合发出光子，能量 ≈ E_g",
       "source": "protesescu2015",
       "model": "headlamp"
+    },
+    "insulated_suit": {
+      "name": "保温服",
+      "building": "home_studio",
+      "method": "聚乙烯中空纤维保暖层 + 膨体 PTFE 透气防水膜",
+      "inputs": {
+        "item:pe": 3,
+        "item:ptfe": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "insulated_suit": 1
+      },
+      "seconds": 40,
+      "equation": "膨体聚四氟乙烯（ePTFE）微孔：水滴进不去、水蒸气出得来（Gore 1976）",
+      "source": "gore1976"
     }
   },
   "items": {
@@ -1098,6 +1114,17 @@
       "xp": 25,
       "model": "headlamp",
       "lamp": true
+    },
+    "insulated_suit": {
+      "name": "保温服",
+      "icon": "furniture",
+      "color": "5f8fd0",
+      "sell": 180,
+      "xp": 14,
+      "suit": {
+        "warmth": 14.0,
+        "note": "保暖层 + ePTFE 防风膜：体感温度 +14 °C（游戏数值）"
+      }
     }
   },
   "sources": [
@@ -1228,6 +1255,10 @@
     {
       "id": "coombs2008",
       "cite": "Coombs, Printed Circuits Handbook, 6th ed., McGraw-Hill (2008)"
+    },
+    {
+      "id": "gore1976",
+      "cite": "Gore, US Patent 3,953,566 (1976), expanded porous PTFE"
     }
   ],
   "staff": {
@@ -1336,7 +1367,8 @@
           "pe",
           "duralumin",
           "headlamp",
-          "power_diode"
+          "power_diode",
+          "insulated_suit"
         ]
       },
       {

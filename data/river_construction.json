@@ -63,6 +63,10 @@
     "earth_fertilizer": {
       "units": 1,
       "kind": "fertilizer_spreader"
+    },
+    "field_campfire": {
+      "units": 2,
+      "kind": "campfire"
     }
   },
   "kinds": {
@@ -122,6 +126,11 @@
     "fertilizer_spreader": {
       "name": "氨肥撒播机",
       "color": "c9a75a",
+      "machine": true
+    },
+    "campfire": {
+      "name": "篝火",
+      "color": "e0763c",
       "machine": true
     }
   },

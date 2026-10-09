@@ -2,6 +2,18 @@ extends RefCounted
 const G=preload("res://scripts/river_geometry.gd")
 static func draw(st: SurfaceTool,p: Vector3,kind: String,color: Color) -> void:
 	if kind in ["sprinkler","oxygen_tower","co2_tower","fertilizer_spreader"]: _machine(st,p+Vector3(0,-0.5,0),kind,color); return
+	if kind=="campfire":
+		# v0.39: a ring of stones, crossed logs and a stepped flame (the view adds sparks and light).
+		var base=p+Vector3(0,-0.5,0)
+		for a in range(8):
+			var ang=a*TAU/8; G.cube(st,base+Vector3(cos(ang)*0.38,0.08,sin(ang)*0.38),Vector3(0.2,0.16,0.2),Color("8d9497").darkened(0.08*(a%2)))
+		for a in range(3):
+			var ang=a*PI/3; var dir=Vector3(cos(ang),0,sin(ang))
+			G.cube(st,base+Vector3(0,0.14,0),Vector3(0.62*absf(dir.x)+0.1,0.09,0.62*absf(dir.z)+0.1),Color("6a4a30"))
+		G.cube(st,base+Vector3(0,0.3,0),Vector3(0.3,0.26,0.3),Color("ff8a3d"))
+		G.cube(st,base+Vector3(0,0.5,0),Vector3(0.18,0.22,0.18),Color("ffc35a"))
+		G.cube(st,base+Vector3(0,0.66,0),Vector3(0.08,0.14,0.08),Color("fff0a8"))
+		return
 	if kind=="mixing_tank":
 		G.cube(st,p+Vector3(0,-0.40,0),Vector3(0.88,0.18,0.88),Color("426969"))
 		for x in [-0.36,0.36]:

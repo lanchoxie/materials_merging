@@ -7,7 +7,8 @@ const Figure=preload("res://scripts/figure_geometry.gd")
 static var _cache: Dictionary={}
 ## Whole-creature bounds (legs and tail included) for hitboxes and culling.
 const BOUNDS={"meadow_herbivore":AABB(Vector3(-0.2,0,-0.56),Vector3(0.4,0.9,0.9)),"woodland_boar":AABB(Vector3(-0.28,0,-0.76),Vector3(0.56,0.78,1.16)),
-	"marsh_fish":AABB(Vector3(-0.12,-0.1,-0.22),Vector3(0.24,0.25,0.62)),"person":AABB(Vector3(-0.32,0,-0.26),Vector3(0.64,1.62,0.52))}
+	"marsh_fish":AABB(Vector3(-0.12,-0.1,-0.22),Vector3(0.24,0.25,0.62)),
+	"mammoth":AABB(Vector3(-0.9,0,-2.0),Vector3(1.8,3.3,3.6)),"woolly_rhino":AABB(Vector3(-0.6,0,-1.9),Vector3(1.2,1.9,3.2)),"person":AABB(Vector3(-0.32,0,-0.26),Vector3(0.64,1.62,0.52))}
 
 static func _key(kind: String,part: String,material: Material) -> String:
 	return "%s:%s:%d" % [kind,part,material.get_instance_id()]
@@ -60,6 +61,53 @@ static func _mesh(kind: String,part: String,material: Material) -> ArrayMesh:
 		"woodland_boar:tail":
 			G.cube(st,Vector3(0,-0.07,0.02),Vector3(0.03,0.14,0.03),Color("5e4535"))
 			G.cube(st,Vector3(0,-0.15,0.02),Vector3(0.05,0.04,0.05),Color("3d2c22"))
+		# v0.39 冰河期. Mammoth: ~3 m at the shoulder, high domed head and back, small ears (less heat
+		# loss), long shaggy coat, curved tusks and a trunk.
+		"mammoth:body":
+			var fur=Color("6b4a32"); var long=Color("54392a"); var ivory=Color("efe4c8")
+			G.cube(st,Vector3(0,1.85,0.1),Vector3(1.5,1.5,2.3),fur)
+			G.cube(st,Vector3(0,2.7,-0.35),Vector3(1.2,0.5,1.1),fur.lightened(0.05))
+			G.cube(st,Vector3(0,1.05,0.1),Vector3(1.56,0.35,2.2),long)
+			for side in [-1,1]: G.cube(st,Vector3(side*0.78,1.35,0.1),Vector3(0.06,0.9,2.2),long)
+			G.cube(st,Vector3(0,2.55,-1.3),Vector3(0.95,1.05,0.75),fur.lightened(0.08))
+			G.cube(st,Vector3(0,3.1,-1.25),Vector3(0.7,0.35,0.55),fur.lightened(0.12))
+			G.cube(st,Vector3(0,2.1,-1.72),Vector3(0.34,0.5,0.3),fur.darkened(0.05))
+			G.cube(st,Vector3(0,1.55,-1.85),Vector3(0.26,0.6,0.24),fur.darkened(0.1))
+			G.cube(st,Vector3(0,1.08,-1.9),Vector3(0.2,0.4,0.2),fur.darkened(0.15))
+			G.cube(st,Vector3(0,0.86,-1.86),Vector3(0.22,0.1,0.26),fur.darkened(0.2))
+			for side in [-1,1]:
+				G.cube(st,Vector3(side*0.3,2.0,-1.75),Vector3(0.14,0.14,0.45),ivory)
+				G.cube(st,Vector3(side*0.38,1.75,-2.0),Vector3(0.13,0.35,0.13),ivory)
+				G.cube(st,Vector3(side*0.32,1.6,-2.2),Vector3(0.12,0.12,0.35),ivory)
+				G.cube(st,Vector3(side*0.24,1.72,-2.4),Vector3(0.1,0.25,0.1),ivory)
+				G.cube(st,Vector3(side*0.48,2.75,-1.25),Vector3(0.1,0.3,0.24),long)
+				G.cube(st,Vector3(side*0.43,2.62,-1.68),Vector3(0.02,0.07,0.07),ink)
+		"mammoth:leg":
+			G.cube(st,Vector3(0,-0.55,0),Vector3(0.42,1.1,0.42),Color("5e4130"))
+			G.cube(st,Vector3(0,-0.32,0),Vector3(0.5,0.5,0.5),Color("54392a"))
+			G.cube(st,Vector3(0,-1.07,0),Vector3(0.44,0.08,0.44),Color("3a2a21"))
+		"mammoth:tail":
+			G.cube(st,Vector3(0,-0.2,0.04),Vector3(0.1,0.4,0.1),Color("54392a"))
+			G.cube(st,Vector3(0,-0.45,0.04),Vector3(0.16,0.14,0.16),Color("3a2a21"))
+		# Woolly rhino: ~1.8 m, a shoulder hump, a long low head carrying two horns.
+		"woolly_rhino:body":
+			var coat=Color("8a6a45"); var horn=Color("4a3f36")
+			G.cube(st,Vector3(0,1.1,0.1),Vector3(1.0,0.95,2.1),coat)
+			G.cube(st,Vector3(0,1.62,-0.45),Vector3(0.8,0.35,0.7),coat.lightened(0.05))
+			G.cube(st,Vector3(0,0.68,0.1),Vector3(1.04,0.18,2.0),coat.darkened(0.15))
+			G.cube(st,Vector3(0,0.95,-1.15),Vector3(0.55,0.55,0.75),coat.lightened(0.06))
+			G.cube(st,Vector3(0,0.78,-1.55),Vector3(0.42,0.38,0.35),coat.lightened(0.1))
+			G.cube(st,Vector3(0,1.15,-1.72),Vector3(0.14,0.5,0.14),horn)
+			G.cube(st,Vector3(0,1.45,-1.85),Vector3(0.1,0.25,0.1),horn.darkened(0.1))
+			G.cube(st,Vector3(0,1.15,-1.38),Vector3(0.1,0.24,0.1),horn)
+			for side in [-1,1]:
+				G.cube(st,Vector3(side*0.2,1.28,-0.98),Vector3(0.09,0.14,0.08),coat.darkened(0.1))
+				G.cube(st,Vector3(side*0.27,1.0,-1.36),Vector3(0.02,0.05,0.05),ink)
+		"woolly_rhino:leg":
+			G.cube(st,Vector3(0,-0.3,0),Vector3(0.24,0.6,0.26),Color("6f5538"))
+			G.cube(st,Vector3(0,-0.62,0),Vector3(0.26,0.06,0.28),Color("3a2f25"))
+		"woolly_rhino:tail":
+			G.cube(st,Vector3(0,-0.12,0.02),Vector3(0.05,0.24,0.05),Color("6f5538"))
 		"marsh_fish:body":
 			G.cube(st,Vector3.ZERO,Vector3(0.2,0.15,0.42),Color("f2cb81"))
 			G.cube(st,Vector3(0,0.07,0.01),Vector3(0.14,0.03,0.36),Color("d9944f"))
@@ -82,11 +130,13 @@ static func make(kind: String,material: Material) -> MeshInstance3D:
 	var node=MeshInstance3D.new(); node.mesh=_mesh(kind,"body",material)
 	var legs=[]
 	var hips={"meadow_herbivore":[Vector3(-0.1,0.31,-0.2),Vector3(0.1,0.31,-0.2),Vector3(-0.1,0.31,0.2),Vector3(0.1,0.31,0.2)],
-		"woodland_boar":[Vector3(-0.17,0.24,-0.24),Vector3(0.17,0.24,-0.24),Vector3(-0.17,0.24,0.24),Vector3(0.17,0.24,0.24)]}
+		"woodland_boar":[Vector3(-0.17,0.24,-0.24),Vector3(0.17,0.24,-0.24),Vector3(-0.17,0.24,0.24),Vector3(0.17,0.24,0.24)],
+		"mammoth":[Vector3(-0.5,1.12,-0.65),Vector3(0.5,1.12,-0.65),Vector3(-0.5,1.12,0.8),Vector3(0.5,1.12,0.8)],
+		"woolly_rhino":[Vector3(-0.32,0.65,-0.6),Vector3(0.32,0.65,-0.6),Vector3(-0.32,0.65,0.75),Vector3(0.32,0.65,0.75)]}
 	for at in hips.get(kind,[]):
 		var leg=MeshInstance3D.new(); leg.mesh=_mesh(kind,"leg",material); leg.position=at; node.add_child(leg); legs.append(leg)
 	var tail=MeshInstance3D.new(); tail.mesh=_mesh(kind,"tail",material)
-	tail.position={"meadow_herbivore":Vector3(0,0.53,0.29),"woodland_boar":Vector3(0,0.56,0.37),"marsh_fish":Vector3(0,0,0.2)}.get(kind,Vector3.ZERO)
+	tail.position={"meadow_herbivore":Vector3(0,0.53,0.29),"woodland_boar":Vector3(0,0.56,0.37),"marsh_fish":Vector3(0,0,0.2),"mammoth":Vector3(0,2.2,1.27),"woolly_rhino":Vector3(0,1.3,1.16)}.get(kind,Vector3.ZERO)
 	node.add_child(tail)
 	node.set_meta("legs",legs); node.set_meta("tail",tail); node.set_meta("gait",randf()*TAU); node.set_meta("kind",kind); node.set_meta("bounds",BOUNDS.get(kind,node.mesh.get_aabb()))
 	return node
@@ -96,7 +146,7 @@ static func animate(node: Node3D,dt: float,travelled: float,clock: float) -> voi
 	if not node.has_meta("legs"): return
 	var kind=str(node.get_meta("kind"))
 	var speed=clampf(travelled/maxf(dt,0.0001),0.0,3.0)
-	var gait=float(node.get_meta("gait"))+travelled*(9.0 if kind=="meadow_herbivore" else 7.0)
+	var gait=float(node.get_meta("gait"))+travelled*{"meadow_herbivore":9.0,"mammoth":2.6,"woolly_rhino":4.0}.get(kind,7.0)
 	node.set_meta("gait",gait)
 	var amount=clampf(speed*1.4,0.0,1.0)
 	var legs: Array=node.get_meta("legs")

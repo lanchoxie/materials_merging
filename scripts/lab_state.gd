@@ -1457,7 +1457,7 @@ func _validate_save(data) -> bool:
 			if not str(id).is_valid_int() or not _number_ok(data.logistics_rounds[id],0,maximum_rounds,true): return false
 	if int(data.version)>=11:
 		var exhibits={}
-		for item in data.planet.get("v2",{}).get("construction",{}).get("miniatures",{}).values():
+		for item in PlanetProgram.home_data(data.planet).get("construction",{}).get("miniatures",{}).values():
 			var plot=int(item.plot)
 			if plot<0: continue
 			if plot>=data.plots.size() or not data.plots[plot].unlocked or data.plots[plot].kind=="plaza" or exhibits.has(plot): return false
@@ -1639,12 +1639,12 @@ func lay_pipe() -> String:
 
 ## v0.37.1: a display-only replica of a boxed river build, paid in coins.
 func replicate_miniature(id: String) -> String:
-	var Mini=preload("res://scripts/river_miniatures.gd"); var c=planet.v2.construction
+	var Mini=preload("res://scripts/river_miniatures.gd"); var c=planet.home().construction
 	if not c.miniatures.has(id): return "找不到这件作品"
 	var cost=Mini.replica_cost(c,id)
 	if coins<cost: return "复刻需要%d金币" % cost
 	var message: String=Mini.replicate(c,id)
-	if message.begins_with("复刻了"): coins-=float(cost)
+	if message.begins_with("复刻了"): coins-=float(cost); planet.home_saved()
 	return message
 
 ## v0.37: superphosphate from 星锻岛 raises the nutrients of every Earth region that has crops.
@@ -1789,6 +1789,8 @@ func sync_gear() -> void:
 		planet.v2.nature.pick_hv=industry.bit_hv(); planet.v2.nature.pick_name=str(Industry.rules().items[industry.bit].name)
 	refinery.power_gain=fabricator.refinery_gain()
 	if industry.lamp!="" and int(industry.items.get(industry.lamp,0))<1: industry.lamp=""
+	if industry.suit!="" and int(industry.items.get(industry.suit,0))<1: industry.suit=""
+	planet.v2.combat.suit_warmth=industry.suit_warmth()
 
 func _queue_install(r: Dictionary, payload: Dictionary, quote: Dictionary) -> String:
 	r["installation"]={"payload":payload.duplicate(true),"remaining":float(island_rules.logistics.installation_seconds),"fee":int(quote.fee),"elements":quote.required.duplicate()}
@@ -2001,8 +2003,8 @@ func _town_take_back(item: Dictionary) -> void:
 	if show.type=="mineral":
 		var stock: Dictionary=planet.v2.nature.minerals
 		stock[show.id]=int(stock.get(show.id,0))+1
-	elif planet.v2.construction.miniatures.has(show.id):
-		planet.v2.construction.miniatures[show.id].plot=-1; planet.v2.construction.revision+=1
+	elif planet.home().construction.miniatures.has(show.id):
+		planet.home().construction.miniatures[show.id].plot=-1; planet.home().construction.revision+=1; planet.home_saved()
 	item.show={}
 
 ## Decorations only: back into the toolbox, placeable again for free.
@@ -2081,11 +2083,11 @@ func town_exhibit(plot: int, uid: int, what: Dictionary) -> String:
 			planet.v2.nature.minerals[id]=int(planet.v2.nature.minerals[id])-1
 			item.show={"type":"mineral","id":id}
 		"mini":
-			var boxes: Dictionary=planet.v2.construction.miniatures
+			var boxes: Dictionary=planet.home().construction.miniatures
 			if not boxes.has(id): return "找不到这件河湾作品"
 			if int(boxes[id].plot)!=-1: return "这件作品已经摆在别处，先收回"
 			_town_take_back(item)
-			boxes[id].plot=-2; planet.v2.construction.revision+=1
+			boxes[id].plot=-2; planet.home().construction.revision+=1; planet.home_saved()
 			item.show={"type":"mini","id":id}
 		_: return "请选择要展示的标本或作品"
 	layout.mark_changed()
@@ -2231,7 +2233,7 @@ func _valid_town(data: Dictionary) -> bool:
 	if not Town.valid_island(data.plots): return false
 	var uids={}
 	var shown={}
-	var boxes: Dictionary=data.get("planet",{}).get("v2",{}).get("construction",{}).get("miniatures",{})
+	var boxes: Dictionary=PlanetProgram.home_data(data.get("planet",{})).get("construction",{}).get("miniatures",{})
 	for p in data.plots:
 		for item in p.get("items",[]):
 			if uids.has(int(item.uid)): return false

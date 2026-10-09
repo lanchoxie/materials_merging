@@ -35,7 +35,7 @@ func sync(population,at: Vector2,is_paused: bool) -> void:
 			scenery[id].mesh=_scenery(s); scenery[id].set_meta("version",version)
 		for a in s.animals:
 			var key=id+"/animal/"+str(int(a.id)); alive.append(key)
-			_entity(key,"woodland_boar" if a.species=="woodland_boar" else "meadow_herbivore",center+Vector2(a.x,a.z))
+			_entity(key,str(a.species) if Rig.BOUNDS.has(str(a.species)) else "meadow_herbivore",center+Vector2(a.x,a.z))
 			moving[key].set_meta("life_key","wild:"+id+":"+str(int(a.id)))
 		for v in s.visitors:
 			var key=id+"/visitor/"+str(int(v.id)); alive.append(key)

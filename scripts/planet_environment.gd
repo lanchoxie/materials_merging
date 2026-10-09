@@ -22,6 +22,8 @@ var _emitters: Dictionary={}
 var _counts: Dictionary={}
 var _seen_build=-1
 var _shift=0.0
+## v0.39: the timeline's climate offset (冰河期 −16 °C); constant per planet instance, never saved here.
+var epoch_offset=0.0
 
 func _init() -> void:
 	size=int(rules.grid); cell=float(rules.cell_size); origin=float(rules.origin)
@@ -147,7 +149,7 @@ func tick(construction) -> void:
 	co2+=(co2_target-co2)/float(climate.atmosphere_tau)
 	if absf(o2-o2_target)<0.0005: o2=o2_target
 	if absf(co2-co2_target)<0.01: co2=co2_target
-	_shift=warming()
+	_shift=warming()+epoch_offset
 	var targets={}
 	for c in _emitters:
 		var push=[0.0,0.0,0.0,0.0]

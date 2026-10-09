@@ -75,6 +75,13 @@ static func silicon_kit(s) -> String:
 		if not keys.is_empty(): s.index_found[keys[0]]=true
 	return "测试：硅钙磷原料包 · 元素各 +30，石英砂/石灰岩/黏土/磷灰石各 +30，CaO、SiHCl₃、Si、H₃PO₄ 已记入索引"
 
+## v0.39: open the time gate and swap between the present and the 冰河期.
+static func toggle_epoch(s) -> String:
+	s.planet.gate_open=true
+	var message: String=s.planet.travel("present" if s.planet.v2.epoch=="ice" else "ice")
+	s.sync_gear()
+	return "测试："+message
+
 ## v0.38: everything the chip fab and packaging plant need, plus the phenol and CsPbBr₃ gates.
 static func chip_kit(s) -> String:
 	for el in ["Cs","Pb","Br","Cl","Cu","F","Al","O","C","H","Sn"]: s.element_inventory[el]=int(s.element_inventory.get(el,0))+40

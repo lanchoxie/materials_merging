@@ -30,6 +30,18 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.39.0 "Ice Age" (冰河期)
+Planet release. Full notes: [26-ice-age.md](26-ice-age.md).
+- **时间之门.** Once your present-day camp farms, the rainbow light bridge can take you to the 冰河期, about 20 000 years ago
+  (the same river, 18 °C colder, with snow). Each era keeps its own buildings and camp. Your backpack, seeds, minerals and
+  specimen book travel with you.
+- **Cold.** Felt temperature below 0 °C drains health. 篝火 (a new workshop recipe), roofs and the 保温服 (made at
+  星锻岛: PE fleece + an ePTFE membrane) keep you warm. The HUD shows the felt temperature.
+- **寒潮暴雪.** A winter cold-snap incident: chill, snow, crop and health loss. Campfires and roofed shelter are the preparation.
+- **Animals.** Mammoths and woolly rhinos roam the ice-age tundra. They fight back and have specimen cards.
+- **Miniatures.** They stay with the present day, so island exhibits work from either era.
+- **Tests.** New: `test_ice_age` (36 checks).
+
 ## v0.38.0 "Chips & Light" (芯片与光)
 Industry release. Full notes: [25-chips-light.md](25-chips-light.md).
 - **晶圆芯片厂.**

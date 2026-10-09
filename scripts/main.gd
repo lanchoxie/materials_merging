@@ -217,7 +217,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.38 芯片与光  ·  光刻芯片 · 钙钛矿 LED · 头灯" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.39 冰河期  ·  时间之门 · 猛犸象 · 寒潮与篝火" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -478,6 +478,31 @@ func _on_light_bridge(local_position: Vector2) -> bool:
 
 func _enter_light_bridge() -> void:
 	if light_bridge_busy or is_instance_valid(modal): return
+	# v0.39: once the present-day camp is farming, the bridge becomes a time gate with an era dial.
+	if state.planet.gate_ready(): _show_time_gate(); return
+	_cross_light_bridge()
+
+func _show_time_gate() -> void:
+	var body=_dialog("时间之门 · 彩虹光桥","同一条河湾，不同的时代。背包里的原料、种子、矿物和标本图鉴跟着你走；建筑、营地和动物留在各自的时代。")
+	var here=str(state.planet.v2.epoch)
+	for id in state.planet.v2.rules.epochs:
+		var e: Dictionary=state.planet.v2.rules.epochs[id]
+		var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(Color("213c45") if id!=here else Color("2b4d4a"),14)); body.add_child(card)
+		var col=UI.column(card,6)
+		col.add_child(UI.label("%s · %s%s" % [e.name,e.get("era",""),"（你在这里）" if id==here else ""],20,UI.MINT if id==here else Color("bfe6ff")))
+		if e.has("story"): col.add_child(UI.paragraph(str(e.story),15))
+		if e.has("note"): col.add_child(UI.paragraph(str(e.note),12,UI.MUTED))
+		col.add_child(UI.button("回到%s的河湾" % e.name if id==here else "穿越到%s" % e.name,func(): _through_gate(id),true))
+
+func _through_gate(id: String) -> void:
+	_close_modal()
+	if id!=str(state.planet.v2.epoch):
+		var message: String=state.planet.travel(id)
+		state.sync_gear(); _toast(message)
+	_cross_light_bridge()
+
+func _cross_light_bridge() -> void:
+	if light_bridge_busy: return
 	light_bridge_busy=true; light_bridge.activate(); building_drag.cancel()
 	var veil=ColorRect.new(); veil.color=Color(0.60,0.88,0.96,0)
 	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); veil.mouse_filter=Control.MOUSE_FILTER_STOP; add_child(veil)
@@ -1580,6 +1605,7 @@ func _show_test_panel(planet: Control = null) -> void:
 	row.add_child(UI.button("招募博士", func(): run.call(state.campus_hire("doctor"))))
 	row.add_child(UI.button("招募工程师", func(): run.call(state.campus_hire("engineer"))))
 	row.add_child(UI.button("开放星锻岛 +300信用", func(): run.call(TestMode.open_starforge(state, 300))))
+	row.add_child(UI.button("时间之门：切换冰河期/当代", func(): run.call(TestMode.toggle_epoch(state))))
 	row.add_child(UI.button("员工满年限", func(): run.call(TestMode.finish_service(state))))
 	row = UI.row(body, 8)
 	row.add_child(UI.button("浮岛快进 1 小时", func(): run.call(TestMode.skip_island(state, 3600))))
@@ -1942,7 +1968,7 @@ func _show_island_walk() -> void:
 
 func _show_miniatures() -> void:
 	var body=_dialog("河湾作品 · 把探索带回家", "星球上装备微缩器，瞄准自建作品装箱。作品会从原地搬走；「复刻」只做展示用的复制品。",true)
-	var boxes=state.planet.v2.construction.miniatures
+	var boxes=state.planet.home().construction.miniatures
 	if boxes.is_empty():
 		body.add_child(UI.paragraph("还没有带回来的作品。先用工艺车间做出的构件搭一座小屋、一段桥或雕塑，再用背包里的微缩器收纳。\n每件最多64块、8×8×8格；有作物的种植箱先收获。",18))
 		body.add_child(UI.button("走过光桥去河湾",_show_planet_v2,true)); return
@@ -1951,7 +1977,7 @@ func _show_miniatures() -> void:
 		var item=boxes[id]; var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(Color("213c45"),14)); body.add_child(card)
 		var row=UI.row(card,12); row.add_child(UI.label("%s · %d块" % [item.name,item.blocks.size()],19,UI.MINT))
 		if item.get("replica",false): row.add_child(UI.label("复刻 · 仅展示",14,UI.LILAC))
-		var copy_cost=preload("res://scripts/river_miniatures.gd").replica_cost(state.planet.v2.construction,id)
+		var copy_cost=preload("res://scripts/river_miniatures.gd").replica_cost(state.planet.home().construction,id)
 		var copy=UI.button("复刻 · %d金币" % copy_cost,func(): _action(state.replicate_miniature(id)); _show_miniatures())
 		copy.disabled=boxes.size()>=16 or state.coins<copy_cost; copy.tooltip_text="做一份只用于展示的复制品；原作仍可在星球展开"
 		if int(item.plot)==-2: row.add_child(UI.label("摆在庭院展台上 · 在地块物品列表收回",16,UI.GOLD)); row.add_child(copy); continue
@@ -2025,7 +2051,7 @@ func _pick_item(uid: int) -> void:
 
 func _exhibit_name(show: Dictionary) -> String:
 	if show.get("type") == "mineral": return str(preload("res://scripts/planet_geology.gd").info(str(show.id)).get("name",show.id))
-	var mini: Dictionary = state.planet.v2.construction.miniatures.get(str(show.get("id","")),{})
+	var mini: Dictionary = state.planet.home().construction.miniatures.get(str(show.get("id","")),{})
 	return str(mini.get("name","河湾作品"))
 
 func _town_item_actions(p: Dictionary) -> void:
@@ -2117,8 +2143,8 @@ func _show_exhibit_picker(plot: int, uid: int) -> void:
 		any = true
 		body.add_child(UI.button("%s  %s  ·  背包%d" % [spec.name,spec.get("formula",""),int(state.planet.v2.nature.minerals[id])],func(): _close_modal(); _action(state.town_exhibit(plot,uid,{"type":"mineral","id":str(id)}))))
 	body.add_child(UI.label("河湾作品",18,UI.LILAC))
-	for id in state.planet.v2.construction.miniatures:
-		var mini: Dictionary = state.planet.v2.construction.miniatures[id]
+	for id in state.planet.home().construction.miniatures:
+		var mini: Dictionary = state.planet.home().construction.miniatures[id]
 		if int(mini.plot) != -1: continue
 		any = true
 		body.add_child(UI.button("%s · %d块" % [mini.name,mini.blocks.size()],func(): _close_modal(); _action(state.town_exhibit(plot,uid,{"type":"mini","id":str(id)}))))

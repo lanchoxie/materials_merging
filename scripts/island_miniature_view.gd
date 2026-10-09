@@ -5,7 +5,7 @@ var revision=-1
 var fingerprint=""
 
 func sync(state) -> void:
-	var c=state.planet.v2.construction
+	var c=state.planet.home().construction
 	var signature=str(c.revision)+":"+str(state.layout.revision)
 	if fingerprint==signature: return
 	fingerprint=signature

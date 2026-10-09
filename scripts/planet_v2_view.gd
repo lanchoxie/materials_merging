@@ -58,6 +58,9 @@ var weather_now=Vector3.ZERO
 var lamp_spec: Dictionary={}
 var lamp: SpotLight3D
 var lamp_on=false
+var snowing=false
+var rain_drop: Mesh
+var flake: QuadMesh
 
 func _ready() -> void:
 	mat=StandardMaterial3D.new(); mat.vertex_color_use_as_albedo=true; mat.roughness=0.92; mat.metallic_specular=0.25
@@ -333,7 +336,18 @@ func _weather(dt: float) -> void:
 	else: env.background_color=env.background_color.lerp(Color("1a222b"),dark*0.6)
 	sky_phase=-1.0 if dark>0.01 or haze>0.01 else sky_phase
 	rain.emitting=weather_now.y>0.05
-	if rain.emitting: rain.material_override.albedo_color.a=0.45*clampf(weather_now.y,0.0,1.0)
+	# v0.39: a blizzard turns the rain streaks into slow white snow.
+	var snow=float(weather.get("snow",0.0))>0.0
+	if snow!=snowing:
+		snowing=snow
+		rain.gravity=Vector3(0.6,-2.0,0) if snow else Vector3(0,-30,0)
+		rain.initial_velocity_min=1.5 if snow else 16.0; rain.initial_velocity_max=3.0 if snow else 20.0
+		rain.lifetime=3.2 if snow else 0.9; rain.spread=25.0 if snow else 4.0
+		if rain_drop==null: rain_drop=rain.mesh
+		if snow and flake==null: flake=QuadMesh.new(); flake.size=Vector2(0.09,0.09)
+		rain.mesh=flake if snow else rain_drop
+		rain.material_override.albedo_color=Color(1,1,1,0.0) if snow else Color(0.78,0.86,0.95,0.0)
+	if rain.emitting: rain.material_override.albedo_color.a=(0.8 if snow else 0.45)*clampf(weather_now.y,0.0,1.0)
 	if rain.emitting:
 		var at=walker.eye() if first_person else camera.global_position.lerp(Vector3(camera.global_position.x,0,camera.global_position.z),0.7)
 		rain.global_position=at+Vector3(0,9,0)
