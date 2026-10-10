@@ -618,6 +618,8 @@ func tick(delta: float):
 	if not refined.is_empty(): refinery_notice="；".join(refined)
 	industry.sync_legacy(self)
 	var made: Array=industry.tick(self,delta)
+	# v0.40: the drill recharges whenever the player is not out on the planet.
+	if not planet.v2.active: industry.recharge(delta)
 	if not made.is_empty(): industry_notice="星锻岛："+"；".join(made)
 	visitor_cooldown = maxf(0.0, visitor_cooldown - delta)
 	_produce(delta)
@@ -1791,6 +1793,7 @@ func sync_gear() -> void:
 	if industry.lamp!="" and int(industry.items.get(industry.lamp,0))<1: industry.lamp=""
 	if industry.suit!="" and int(industry.items.get(industry.suit,0))<1: industry.suit=""
 	planet.v2.combat.suit_warmth=industry.suit_warmth()
+	industry.update_drill(); planet.v2.nature.drill=industry.drill_state if industry.drill!="" else {}
 
 func _queue_install(r: Dictionary, payload: Dictionary, quote: Dictionary) -> String:
 	r["installation"]={"payload":payload.duplicate(true),"remaining":float(island_rules.logistics.installation_seconds),"fee":int(quote.fee),"elements":quote.required.duplicate()}

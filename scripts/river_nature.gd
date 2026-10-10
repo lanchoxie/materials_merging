@@ -11,6 +11,8 @@ var discovered={}  # material id -> true (矿物图鉴)
 var mining={}      # transient hit progress on one cell
 var pick_hv=-1.0   # v0.30: equipped pick hardness (GPa), set by LabState.sync_gear; <0 = starter pick
 var pick_name=""
+## v0.40: the equipped cordless drill's state, shared with LabState.industry ({} when none).
+var drill: Dictionary={}
 var trees={}
 var seeds={"oak":0,"birch":0,"pine":0}
 var revision=0
@@ -150,8 +152,11 @@ func dig(aim: Dictionary,v) -> String:
 	# v0.30: a pick softer than the rock needs more hits (hardness compared on the Vickers scale).
 	var hv: float=pick_hv if pick_hv>0.0 else float(Fabricator.rules().starter_pick.hv)
 	var need: int=Fabricator.dig_hits(id,int(spec.hits),hv)
-	if mining.hits<need: return "%s · 采掘 %d/%d%s" % [spec.name,mining.hits,need,"（%s比岩石软，挖得慢）" % (pick_name if pick_name!="" else "镐头") if need>int(spec.hits) else ""]
+	var drilled=not drill.is_empty() and float(drill.get("cap",0.0))>0.0 and float(drill.charge)>=float(drill.wh)
+	if drilled: need=maxi(1,ceili(float(need)*float(drill.factor)))
+	if mining.hits<need: return "%s · 采掘 %d/%d%s%s" % [spec.name,mining.hits,need,"（%s比岩石软，挖得慢）" % (pick_name if pick_name!="" else "镐头") if need>int(spec.hits) else "","（电钻 %d%%）" % roundi(100*float(drill.charge)/float(drill.cap)) if drilled else ""]
 	mining={}
+	if drilled: drill.charge=float(drill.charge)-float(drill.wh)
 	set_voxel(c,"",t); touch(p,t)
 	var found=_discover(id)
 	if soil:

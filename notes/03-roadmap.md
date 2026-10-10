@@ -98,7 +98,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   LEDs, control boards, the headlamp on Earth.
 - ✅ v0.39 "Ice Age" (tag `v0.39.0`; see [26-ice-age.md](26-ice-age.md)): time gate with per-era saves, cold survival,
   寒潮暴雪, mammoths and woolly rhinos, 保温服.
-- Next: v0.40 industry — energy: batteries (lead-acid → LiFePO₄), energy park (plan in 14-industry-island.md).
+- ✅ v0.40 "Batteries & Power" (tag `v0.40.0`; see [27-batteries.md](27-batteries.md)): battery works, LFP thickness
+  trade-off, packs, motor, cordless drill on Earth, grid storage.
+- Next: v0.41 industry — the rover with real driving (vehicle assembly, planet vehicle controller; plan in 14-industry-island.md).
 - Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
   more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,
   and the remaining eras.

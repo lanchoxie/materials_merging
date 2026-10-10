@@ -30,6 +30,19 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.40.0 "Batteries & Power" (电池与能源)
+Industry release. Full notes: [27-batteries.md](27-batteries.md).
+- **电池工厂.**
+  - Lead-acid batteries.
+  - LiFePO₄ cells with a coating-thickness slider. Faraday gives 170 mAh/g; thicker coatings store more but deliver
+    less current; the optimum for tools is about 90 µm.
+  - Battery packs.
+- **Motor.** Silicon-steel motor at the metal works.
+- **充电电钻.** Equip it for Earth: it halves the hits per block while the pack's real Wh lasts, and recharges on the island.
+- **储能电池.** Batteries add power to the island grid.
+- **Other.** New buyer, Blender model, 测试版 「电池原料包」.
+- **Tests.** New: `test_batteries` (29 checks).
+
 ## v0.39.0 "Ice Age" (冰河期)
 Planet release. Full notes: [26-ice-age.md](26-ice-age.md).
 - **时间之门.** Once your present-day camp farms, the rainbow light bridge can take you to the 冰河期, about 20 000 years ago

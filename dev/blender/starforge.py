@@ -269,7 +269,22 @@ def packaging_plant():
     cyl(0.2, 0.08, (-0.6, -0.92, 0.6), mat("tape", "5fe0c8", emit=1.0), rot=(math.pi / 2, 0, 0))
     holo_logo(2.7, "5fe0c8"); export("packaging_plant")
 
+# --- v0.40 电池工厂 Battery Works: three cylindrical-cell "skyscrapers" with lime charge bars.
+def battery_works():
+    clear(); plinth(accent="b6ff5c")
+    gm = mat("gun", GUN, metal=0.6, rough=0.45); shell = mat("shell", "d9dee5", metal=0.5, rough=0.3)
+    lime = mat("charge", "b6ff5c", emit=4.0)
+    for i, (x, y, h) in enumerate(((-0.7, 0.35, 2.4), (0.05, -0.3, 3.0), (0.8, 0.4, 2.0))):
+        cyl(0.36, h, (x, y, 0.18 + h / 2), shell, verts=16)
+        cyl(0.38, 0.12, (x, y, 0.18 + h), gm, verts=16)
+        cyl(0.12, 0.14, (x, y, 0.3 + h), mat("cap", "b87333", metal=0.8), verts=10)
+        for k in range(int(h / 0.45)):
+            box((0.08, 0.06, 0.22), (x + 0.36, y, 0.45 + k * 0.45), lime if k < int(h / 0.45) - 1 else mat("empty", "3a4250"))
+    box((1.0, 0.5, 0.35), (0.1, 0.85, 0.36), gm)
+    box((0.9, 0.04, 0.2), (0.1, 0.6, 0.4), mat("strip", "b6ff5c", emit=2.0))
+    holo_logo(3.6, "b6ff5c"); export("battery_works")
+
 import sys
 only = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship, test_bench, inorganic_works, silicon_works, chip_fab, packaging_plant):
+for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship, test_bench, inorganic_works, silicon_works, chip_fab, packaging_plant, battery_works):
     if not only or build.__name__ in only: build()

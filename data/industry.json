@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "note": "星锻岛 (v0.34–v0.35). Equations, processes and hardness are real (sources); prices, seconds, power, yields, XP, wages, service years and costs are game rules (游戏数值).",
   "rank": {
     "base": 60,
@@ -253,6 +253,26 @@
       "speed_per_level": 0.25,
       "queue_base": 2,
       "story": "玻璃纤维布浸环氧树脂、压上铜箔做成 FR-4 电路板；裸芯片倒装焊上去封装成 IC，再装成控制板和头灯。"
+    },
+    "battery_works": {
+      "name": "电池工厂",
+      "en": "Battery Works",
+      "accent": "b6ff5c",
+      "model": "battery_works",
+      "cost": {
+        "coins": 14000,
+        "credits": 50
+      },
+      "power": 3,
+      "xp": 40,
+      "max_level": 3,
+      "upgrade_costs": [
+        18000,
+        36000
+      ],
+      "speed_per_level": 0.25,
+      "queue_base": 2,
+      "story": "涂布机把磷酸铁锂浆料刮在铝箔上，烘干、辊压、卷绕成电芯；隔壁的铅酸线做储能电池。窗里的电量条随充放电起落。"
     }
   },
   "licences": {
@@ -852,6 +872,104 @@
       "seconds": 40,
       "equation": "膨体聚四氟乙烯（ePTFE）微孔：水滴进不去、水蒸气出得来（Gore 1976）",
       "source": "gore1976"
+    },
+    "lead_acid": {
+      "name": "铅酸蓄电池",
+      "building": "battery_works",
+      "method": "铅板 + 二氧化铅板 + 稀硫酸 · 6 格串联 12 V",
+      "inputs": {
+        "el:Pb": 4,
+        "el:S": 1,
+        "el:O": 4,
+        "el:H": 2,
+        "item:pe": 1
+      },
+      "evidence": [
+        "PbSO4"
+      ],
+      "outputs": {
+        "lead_acid": 1
+      },
+      "seconds": 40,
+      "equation": "Pb + PbO₂ + 2H₂SO₄ ⇌ 2PbSO₄ + 2H₂O（每格 2.05 V）",
+      "source": "may2018"
+    },
+    "lfp_cell": {
+      "name": "磷酸铁锂电芯",
+      "building": "battery_works",
+      "method": "LiFePO₄/C 正极涂布（厚度可调）· 石墨负极 · 卷绕",
+      "inputs": {
+        "el:Li": 1,
+        "el:Fe": 1,
+        "el:P": 1,
+        "el:O": 4,
+        "el:C": 2,
+        "el:Al": 1,
+        "el:Cu": 1
+      },
+      "evidence": [
+        "LiFePO4"
+      ],
+      "outputs": {
+        "lfp_cell": 4
+      },
+      "seconds": 50,
+      "equation": "LiFePO₄ ⇌ FePO₄ + Li⁺ + e⁻（放电时反向，约 3.3 V）",
+      "source": "padhi1997",
+      "model": "lfp_cell"
+    },
+    "battery_pack": {
+      "name": "电池包",
+      "building": "battery_works",
+      "method": "8 节电芯 4 串 2 并 + 电池管理芯片 + 硬铝外壳",
+      "inputs": {
+        "item:lfp_cell": 8,
+        "item:ic": 1,
+        "item:duralumin": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "battery_pack": 1
+      },
+      "seconds": 45,
+      "equation": "串联加电压，并联加容量；BMS 均衡每一串电芯",
+      "source": "padhi1997",
+      "model": "battery_pack"
+    },
+    "motor": {
+      "name": "电机",
+      "building": "metal_works",
+      "method": "铜绕组 + 硅钢片（Fe-3%Si）定子 · 有刷直流",
+      "inputs": {
+        "el:Cu": 3,
+        "el:Fe": 3,
+        "el:Si": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "motor": 1
+      },
+      "seconds": 40,
+      "equation": "硅让钢的电阻率升高约 4 倍，涡流损耗大降（变压器、电机铁芯都用硅钢）",
+      "source": "moses1990"
+    },
+    "power_drill": {
+      "name": "充电电钻",
+      "building": "packaging_plant",
+      "method": "电机 + 碳钢钻头 + 电池包 + 调速开关",
+      "inputs": {
+        "item:motor": 1,
+        "item:steel_bit": 1,
+        "item:battery_pack": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "power_drill": 1
+      },
+      "seconds": 40,
+      "equation": "电能 → 电机转矩 → 钻头",
+      "source": "moses1990",
+      "model": "power_drill"
     }
   },
   "items": {
@@ -1125,6 +1243,47 @@
         "warmth": 14.0,
         "note": "保暖层 + ePTFE 防风膜：体感温度 +14 °C（游戏数值）"
       }
+    },
+    "lead_acid": {
+      "name": "铅酸蓄电池",
+      "icon": "board",
+      "color": "5b6670",
+      "sell": 60,
+      "xp": 6,
+      "storage": 1
+    },
+    "lfp_cell": {
+      "name": "磷酸铁锂电芯",
+      "icon": "pellet",
+      "color": "7fbf4a",
+      "sell": 35,
+      "xp": 5,
+      "model": "lfp_cell"
+    },
+    "battery_pack": {
+      "name": "电池包",
+      "icon": "board",
+      "color": "b6ff5c",
+      "sell": 260,
+      "xp": 20,
+      "model": "battery_pack",
+      "storage": 2
+    },
+    "motor": {
+      "name": "电机",
+      "icon": "ingot",
+      "color": "b87333",
+      "sell": 90,
+      "xp": 8
+    },
+    "power_drill": {
+      "name": "充电电钻",
+      "icon": "bit",
+      "color": "f2b134",
+      "sell": 520,
+      "xp": 30,
+      "model": "power_drill",
+      "drill": true
     }
   },
   "sources": [
@@ -1259,6 +1418,26 @@
     {
       "id": "gore1976",
       "cite": "Gore, US Patent 3,953,566 (1976), expanded porous PTFE"
+    },
+    {
+      "id": "padhi1997",
+      "cite": "Padhi, Nanjundaswamy & Goodenough, J. Electrochem. Soc. 144, 1188 (1997)",
+      "doi": "10.1149/1.1837571"
+    },
+    {
+      "id": "may2018",
+      "cite": "May, Davidson & Monahov, Lead batteries for utility energy storage, J. Energy Storage 15, 145–157 (2018)",
+      "doi": "10.1016/j.est.2017.11.008"
+    },
+    {
+      "id": "zheng2012",
+      "cite": "Zheng et al., Thickness effects of LiFePO4 electrodes on rate performance, J. Power Sources 208, 52–57 (2012)",
+      "doi": "10.1016/j.jpowsour.2012.02.001"
+    },
+    {
+      "id": "moses1990",
+      "cite": "Moses, Electrical steels: past, present and future developments, IEE Proc. A 137, 233–245 (1990)",
+      "doi": "10.1049/ip-a-2.1990.0039"
     }
   ],
   "staff": {
@@ -1368,7 +1547,9 @@
           "duralumin",
           "headlamp",
           "power_diode",
-          "insulated_suit"
+          "insulated_suit",
+          "power_drill",
+          "battery_pack"
         ]
       },
       {
@@ -1405,6 +1586,17 @@
           "led_chip",
           "control_board"
         ]
+      },
+      {
+        "name": "海岛微电网",
+        "story": "离岛社区建微电网，需要储能电池和电机。",
+        "wants": [
+          "lead_acid",
+          "battery_pack",
+          "lfp_cell",
+          "motor",
+          "solar_panel"
+        ]
       }
     ]
   },
@@ -1420,5 +1612,13 @@
   "automation": {
     "speed": 0.25,
     "note": "每座工厂可装一块控制板：速度 +25%（游戏数值）"
+  },
+  "storage": {
+    "max": 8,
+    "note": "储能电池接入岛心电网：铅酸 +1、锂电包 +2（游戏数值）"
+  },
+  "drill": {
+    "recharge_seconds": 120,
+    "note": "回到浮岛时电钻自动充电，约 2 分钟充满（游戏数值）"
   }
 }

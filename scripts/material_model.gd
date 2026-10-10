@@ -100,6 +100,18 @@ static func props(id: String,given: Dictionary={},q: float=1.0) -> Dictionary:
 			if id=="headlamp":
 				p.lumens=float(p.efficacy)*float(f.watts)
 				p.beam=3.0+1.2*sqrt(float(p.lumens))
+		"lfp_cell","battery_pack","power_drill":
+			var g: Dictionary=family("lfp_cell"); var t=float(k.t)
+			p.capacity=96485.0/(3.6*float(g.molar_mass))
+			p.wh_kg=float(p.capacity)*float(g.voltage)*float(g.cathode_share)*t/(t+float(g.inactive_um))*q
+			p.c_rate=float(g.c_ref)*pow(float(g.t_ref)/t,2.0)
+			p.cell_wh=float(p.wh_kg)*float(g.cell_kg)
+			p.tool_energy=float(p.wh_kg)*minf(1.0,float(p.c_rate)/float(g.tool_c))
+			if id!="lfp_cell":
+				p.pack_wh=float(f.get("cells",8))*float(p.cell_wh)
+			if id=="power_drill":
+				p.blocks=floorf(float(p.pack_wh)/float(f.wh_per_block))
+				p.drill_factor=lerpf(0.8,0.5,clampf(float(p.c_rate)/float(g.tool_c),0.0,1.0))
 		"n_wafer","solar_panel":
 			var w: Dictionary=family("n_wafer"); var mob: Dictionary=w.mobility; var n=pow(10.0,float(k.N))
 			p.mu=float(mob.min)+(float(mob.max)-float(mob.min))/(1.0+pow(n/float(mob.nref),float(mob.alpha)))
@@ -168,7 +180,8 @@ static func quality(serial: int) -> float:
 # --- Text -----------------------------------------------------------------------------------
 const NAMES={"hv":"硬度","gpa":"硬度","tough":"韧性","rho":"密度","E":"弹性模量","specific":"比刚度","edge":"刃口硬度",
 	"eff":"转换效率","rho_ohm":"电阻率","n":"折射率","durab":"耐候性","mu":"电子迁移率","T_work":"工作温度","watt":"组件功率",
-	"transistors":"晶体管","yield":"良率","clock":"时钟","wavelength":"波长","eg":"带隙","eqe":"外量子效率","efficacy":"光效","beam":"照明距离"}
+	"transistors":"晶体管","yield":"良率","clock":"时钟","wavelength":"波长","eg":"带隙","eqe":"外量子效率","efficacy":"光效","beam":"照明距离",
+	"capacity":"理论容量","wh_kg":"电芯比能量","c_rate":"最大倍率","cell_wh":"单节能量","pack_wh":"电池包能量","blocks":"一次充电可挖","drill_factor":"敲击次数"}
 
 static func value_text(key: String,v: float) -> String:
 	match key:
@@ -191,6 +204,13 @@ static func value_text(key: String,v: float) -> String:
 		"eqe": return "%.1f%%" % (v*100)
 		"efficacy": return "%.1f lm/W" % v
 		"beam": return "%.0f m" % v
+		"capacity": return "%.0f mAh/g" % v
+		"wh_kg": return "%.0f Wh/kg" % v
+		"c_rate": return "%.1fC" % v
+		"cell_wh": return "%.1f Wh" % v
+		"pack_wh": return "%.0f Wh" % v
+		"blocks": return "%d 格" % int(v)
+		"drill_factor": return "×%.2f" % v
 		"n": return "%.3f" % v
 	return String.num(v,3)
 
@@ -207,7 +227,7 @@ static func describe(id: String,given: Dictionary,q: float,measured: bool) -> St
 	var p=props(id,given,q if measured else 1.0); var u=float(rules().model_uncertainty)
 	for key in f.get("show",[]):
 		var v=float(p.get(key,0.0))
-		if measured or key in ["rho","tough","n","T_work","mu","rho_ohm","transistors","clock","wavelength","eg"]: shown.append("%s %s" % [NAMES.get(key,key),value_text(key,v)])
+		if measured or key in ["rho","tough","n","T_work","mu","rho_ohm","transistors","clock","wavelength","eg","capacity","c_rate"]: shown.append("%s %s" % [NAMES.get(key,key),value_text(key,v)])
 		else: shown.append("%s %s ±%d%%" % [NAMES.get(key,key),value_text(key,v),int(round(u*100))])
 	return " · ".join(shown)
 

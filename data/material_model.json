@@ -655,6 +655,137 @@
           "source": "protesescu2015"
         }
       ]
+    },
+    "lfp_cell": {
+      "name": "磷酸铁锂电芯",
+      "knobs": {
+        "t": {
+          "label": "正极涂层厚度",
+          "unit": "µm",
+          "min": 40,
+          "max": 200,
+          "step": 5,
+          "default": 120
+        }
+      },
+      "show": [
+        "capacity",
+        "wh_kg",
+        "c_rate",
+        "cell_wh"
+      ],
+      "score": {
+        "tool_energy": 1.0
+      },
+      "molar_mass": 157.76,
+      "voltage": 3.3,
+      "inactive_um": 60,
+      "cathode_share": 0.4,
+      "c_ref": 10,
+      "t_ref": 50,
+      "cell_kg": 0.085,
+      "tool_c": 3.0,
+      "laws": [
+        {
+          "text": "法拉第定律：LiFePO₄ 每摩尔转移 1 个电子，理论容量 = 96485 / (3.6 × 157.76) ≈ 170 mAh/g",
+          "tag": "真实数据",
+          "source": "padhi1997"
+        },
+        {
+          "text": "平台电压约 3.3 V（对石墨负极的全电池约 3.2–3.3 V），所以正极理论比能量约 560 Wh/kg",
+          "tag": "真实数据",
+          "source": "padhi1997"
+        },
+        {
+          "text": "集流体、隔膜、外壳不储能：涂层越厚，活性物质占比越高，电芯比能量越高（约 90–175 Wh/kg）",
+          "tag": "简化模型",
+          "source": "zheng2012"
+        },
+        {
+          "text": "锂离子在电极里扩散的时间 ∝ 厚度²：涂层越厚，大电流（倍率）放电越差",
+          "tag": "简化模型",
+          "source": "zheng2012"
+        },
+        {
+          "text": "电动工具要约 3C 放电：太薄能量少，太厚带不动电钻，中间有最佳点",
+          "tag": "游戏数值",
+          "source": ""
+        }
+      ]
+    },
+    "battery_pack": {
+      "name": "电池包",
+      "knobs": {},
+      "inherit": {
+        "t": "lfp_cell"
+      },
+      "inherit_default": {
+        "t": 120
+      },
+      "inherit_knobs": {
+        "t": {
+          "label": "电芯涂层厚度",
+          "unit": "µm"
+        }
+      },
+      "cells": 8,
+      "show": [
+        "pack_wh",
+        "c_rate"
+      ],
+      "score": {
+        "tool_energy": 1.0
+      },
+      "laws": [
+        {
+          "text": "8 节 26650 电芯（每节约 85 g）：4 串 2 并，约 13 V",
+          "tag": "近似精确",
+          "source": ""
+        },
+        {
+          "text": "电池包能量 = 节数 × 单节质量 × 比能量（一块 18 V / 4 Ah 的电动工具电池约 72 Wh）",
+          "tag": "近似精确",
+          "source": ""
+        }
+      ]
+    },
+    "power_drill": {
+      "name": "充电电钻",
+      "knobs": {},
+      "inherit": {
+        "t": "battery_pack"
+      },
+      "inherit_default": {
+        "t": 120
+      },
+      "inherit_knobs": {
+        "t": {
+          "label": "电芯涂层厚度",
+          "unit": "µm"
+        }
+      },
+      "cells": 8,
+      "wh_per_block": 3.0,
+      "show": [
+        "pack_wh",
+        "blocks",
+        "drill_factor"
+      ],
+      "score": {
+        "tool_energy": 1.0
+      },
+      "laws": [
+        {
+          "text": "每挖开一格岩土耗电约 3 Wh",
+          "tag": "游戏数值",
+          "source": ""
+        },
+        {
+          "text": "电池倍率够 3C 时，电钻把每格需要的敲击次数减半；倍率不足时力气变小",
+          "tag": "游戏数值",
+          "source": ""
+        }
+      ]
     }
   }
 }

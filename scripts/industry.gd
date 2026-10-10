@@ -46,7 +46,12 @@ var settings: Dictionary={}
 var lot_serial=1
 var solar: Array=[]
 var lamp=""                    # v0.38: equipped headlamp item id ("" = none)
-var suit=""                    # v0.39: worn insulated suit item id ("" = none)            # efficiencies of panels installed on the island grid
+var suit=""                    # v0.39: worn insulated suit item id ("" = none)
+## v0.40: the equipped cordless drill and its charge (shared by reference with the planet's nature),
+## and battery storage units on the island grid.
+var drill=""
+var drill_state: Dictionary={"charge":0.0,"cap":0.0,"factor":1.0,"wh":3.0}
+var storage: Array=[]            # efficiencies of panels installed on the island grid
 
 static func rules() -> Dictionary:
 	if _rules.is_empty(): _rules=JSON.parse_string(FileAccess.get_file_as_string("res://data/industry.json"))
@@ -147,7 +152,20 @@ func power_use() -> int:
 
 func power_cap() -> int:
 	var p: Dictionary=rules().power
-	return mini(int(p.max),int(p.starter)+int(p.get("per_rank",0))*maxi(0,rank()-int(rules().unlock.rank)))+solar_power()
+	return mini(int(p.max),int(p.starter)+int(p.get("per_rank",0))*maxi(0,rank()-int(rules().unlock.rank)))+solar_power()+storage_power()
+
+func storage_power() -> int:
+	var n=0
+	for u in storage: n+=int(u)
+	return n
+
+## v0.40: a battery joins the island grid (lead-acid +1, LFP pack +2, game values).
+func install_storage(id: String) -> String:
+	var spec: Dictionary=rules().items.get(id,{})
+	if not spec.has("storage") or int(items.get(id,0))-reserved(id)<1: return "没有可接入的储能电池"
+	if storage.size()>=int(rules().storage.max): return "岛心最多接%d组储能电池" % int(rules().storage.max)
+	take_item(id,1); storage.append(int(spec.storage)); gain(10)
+	return "%s接入岛心电网：电网上限 %d" % [spec.name,power_cap()]
 
 ## v0.37: installed solar panels add (Σ efficiency / 20 %) units to the grid.
 func solar_power() -> int:
@@ -226,7 +244,7 @@ func install_board(plot: int) -> String:
 
 ## Items held back from sale and recipes: the equipped bit and headlamp.
 func reserved(id: String) -> int:
-	return 1 if (id==bit or id==lamp or id==suit) and id!="" else 0
+	return 1 if (id==bit or id==lamp or id==suit or id==drill) and id!="" else 0
 
 # --- Evidence: the player must have made the real compound ---------------------------------
 static func _keys_for(formula: String) -> Array:
@@ -812,6 +830,27 @@ func equip_lamp(id: String) -> String:
 	var spec=lamp_spec()
 	return "戴上%s：%s，照明约 %.0f m（夜里和洞里自动亮）" % [rules().items[id].name,Model.value_text("wavelength",float(spec.nm)),float(spec.range)]
 
+func equip_drill(id: String) -> String:
+	if id=="": drill=""; update_drill(); return "已收起电钻"
+	if not rules().items.get(id,{}).get("drill",false) or int(items.get(id,0))<1: return "没有这把电钻"
+	drill=id; update_drill()
+	return "装上%s：电池 %.0f Wh，可挖约 %d 格，敲击 ×%.2f" % [rules().items[id].name,float(drill_state.cap),int(float(drill_state.cap)/float(drill_state.wh)),float(drill_state.factor)]
+
+## Refreshes capacity and strength from the best drill lot; keeps the same dictionary (the planet holds it).
+func update_drill() -> void:
+	if drill!="" and int(items.get(drill,0))<1: drill=""
+	var best=best_lot(drill) if drill!="" else -1
+	if best<0:
+		drill_state.cap=0.0; drill_state.factor=1.0; drill_state.charge=0.0; return
+	var p=lot_props(drill,lots[drill][best])
+	drill_state.cap=float(p.pack_wh); drill_state.factor=float(p.drill_factor)
+	drill_state.wh=float(Model.family("power_drill").wh_per_block)
+	drill_state.charge=clampf(float(drill_state.charge),0.0,float(drill_state.cap))
+
+func recharge(dt: float) -> void:
+	if float(drill_state.cap)<=0.0: return
+	drill_state.charge=minf(float(drill_state.cap),float(drill_state.charge)+float(drill_state.cap)/float(rules().drill.recharge_seconds)*dt)
+
 func equip_suit(id: String) -> String:
 	if id=="": suit=""; return "已脱下保温服"
 	if not rules().items.get(id,{}).has("suit") or int(items.get(id,0))<1: return "没有这件保温服"
@@ -836,7 +875,7 @@ func bit_hv() -> float:
 # --- Save ---------------------------------------------------------------------------------------
 func serialize() -> Dictionary:
 	for id in items.keys(): _reconcile(id)
-	return {"version":3,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"suit":suit,"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
+	return {"version":3,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"suit":suit,"drill":drill,"drill_charge":float(drill_state.charge),"storage":storage.duplicate(),"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
 		"buildings":buildings.duplicate(true),"items":items.duplicate(),"saturation":saturation.duplicate(),"bit":bit,"earned":earned,"crafted":crafted,
 		"service":service.duplicate(),"delays":delays.duplicate(),"service_init":service_init,"staff":staff.duplicate(true),"staff_serial":staff_serial,
 		"wages":wages,"wage_clock":wage_clock,"arrears":arrears,"furnished":furnished.duplicate(),
@@ -872,6 +911,10 @@ func restore(data) -> bool:
 	if data.bit!="" and not R.items.get(data.bit,{}).has("gear"): return false
 	if not data.get("lamp","") is String or (str(data.get("lamp",""))!="" and not R.items.get(data.lamp,{}).get("lamp",false)): return false
 	if not data.get("suit","") is String or (str(data.get("suit",""))!="" and not R.items.get(data.suit,{}).has("suit")): return false
+	if not data.get("drill","") is String or (str(data.get("drill",""))!="" and not R.items.get(data.drill,{}).get("drill",false)): return false
+	if not _num(data.get("drill_charge",0.0),0,100000,false) or not data.get("storage",[]) is Array or data.get("storage",[]).size()>int(R.storage.max): return false
+	for u in data.get("storage",[]):
+		if not _num(u,1,2): return false
 	var v2=int(data.version)>=2
 	if v2 and not _restore_v2_ok(data,R): return false
 	if int(data.version)>=3 and not _restore_v3_ok(data,R): return false
@@ -890,7 +933,10 @@ func restore(data) -> bool:
 	for id in data.items: items[id]=int(data.items[id])
 	saturation={}
 	for id in data.saturation: saturation[id]=float(data.saturation[id])
-	bit=data.bit; lamp=str(data.get("lamp","")); suit=str(data.get("suit","")); earned=int(data.earned); crafted=int(data.crafted); pending_xp=0
+	bit=data.bit; lamp=str(data.get("lamp","")); suit=str(data.get("suit","")); drill=str(data.get("drill",""))
+	drill_state.charge=float(data.get("drill_charge",0.0)); storage=[]
+	for u in data.get("storage",[]): storage.append(int(u))
+	earned=int(data.earned); crafted=int(data.crafted); pending_xp=0
 	service={}; delays={}; service_init=false; staff=[]; staff_serial=1; wages=0.0; wage_clock=0.0; arrears=0.0
 	furnished={}; contracts=[]; contract_serial=1; board_left=0.0; airship={}
 	if v2:

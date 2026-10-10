@@ -82,6 +82,18 @@ static func toggle_epoch(s) -> String:
 	s.sync_gear()
 	return "测试："+message
 
+## v0.40: the battery works' inputs plus the PbSO₄ and LiFePO₄ gates.
+static func battery_kit(s) -> String:
+	for el in ["Pb","S","O","H","Li","Fe","P","C","Al","Cu","Si"]: s.element_inventory[el]=int(s.element_inventory.get(el,0))+40
+	var ind=s.industry
+	for id in ["pe","ic","duralumin","steel_bit"]:
+		ind.items[id]=mini(int(ind.items.get(id,0))+4,9999); ind._reconcile(id)
+	var Industry=preload("res://scripts/industry.gd")
+	for f in ["PbSO4","LiFePO4"]:
+		var keys: Array=Industry._keys_for(f)
+		if not keys.is_empty(): s.index_found[keys[0]]=true
+	return "测试：电池原料包 · 元素各 +40，PE/IC/硬铝/钻头各 +4，PbSO₄ 和 LiFePO₄ 已记入索引"
+
 ## v0.38: everything the chip fab and packaging plant need, plus the phenol and CsPbBr₃ gates.
 static func chip_kit(s) -> String:
 	for el in ["Cs","Pb","Br","Cl","Cu","F","Al","O","C","H","Sn"]: s.element_inventory[el]=int(s.element_inventory.get(el,0))+40

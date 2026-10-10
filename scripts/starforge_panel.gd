@@ -335,6 +335,28 @@ func _gear() -> void:
 	farm.add_child(UI.paragraph("无机材料厂做的过磷酸钙磷肥：一份让地球上每块有作物的地区养分 +%d%%。仓库 %d 份。" % [int(float(R.fertilizer.nutrients)*100),int(ind.items.get("fertilizer",0))],14))
 	var fert=UI.button("施一份磷肥",func(): _act(state.fertilize()))
 	fert.disabled=int(ind.items.get("fertilizer",0))<1; farm.add_child(fert)
+	# v0.40: battery storage on the island grid.
+	var cells=_card("储能电池 · %d/%d 组 · 电网 +%d" % [ind.storage.size(),int(R.storage.max),ind.storage_power()],Color("b6ff5c"))
+	cells.add_child(UI.paragraph("铅酸蓄电池 +1、锂电池包 +2（游戏数值）。接入后不能再拆。",13))
+	var hooks=_flow(cells)
+	for id in ["lead_acid","battery_pack"]:
+		var spare=int(ind.items.get(id,0))-ind.reserved(id)
+		var b=UI.button("接入%s（仓库 %d）" % [R.items[id].name,spare],func(): _act(ind.install_storage(id)))
+		b.disabled=spare<1 or ind.storage.size()>=int(R.storage.max); hooks.add_child(b)
+	# v0.40: the cordless drill.
+	for id in R.items:
+		if not R.items[id].get("drill",false) or int(ind.items.get(id,0))<1: continue
+		var on=ind.drill==id; ind.update_drill()
+		var drill_card=_card("%s × %d%s" % [R.items[id].name,int(ind.items[id]),"（已装备）" if on else ""],Color("f2b134"))
+		var best=ind.best_lot(id)
+		if best>=0:
+			var lot: Dictionary=ind.lots[id][best]
+			drill_card.add_child(UI.paragraph("最好的一把：%s\n%s" % [Model.knob_text(ind.modelled(id),lot.k),Model.describe(ind.modelled(id),lot.k,float(lot.q),bool(lot.m))],13))
+		if on:
+			drill_card.add_child(UI.label("电量 %.0f / %.0f Wh · 回到浮岛自动充电" % [float(ind.drill_state.charge),float(ind.drill_state.cap)],14,UI.MINT))
+			var bar=ProgressBar.new(); bar.max_value=1.0; bar.show_percentage=false; bar.custom_minimum_size=Vector2(0,8); drill_card.add_child(bar)
+			bars.append([bar,func(): return float(ind.drill_state.charge)/maxf(1.0,float(ind.drill_state.cap))])
+		drill_card.add_child(UI.button("收起电钻" if on else "装备到星球（采掘敲击次数减少）",func(): _act(ind.equip_drill("" if on else id)); state.sync_gear()))
 	for id in R.items:
 		if not R.items[id].has("suit") or int(ind.items.get(id,0))<1: continue
 		var worn=ind.suit==id
