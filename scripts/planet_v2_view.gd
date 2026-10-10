@@ -19,6 +19,14 @@ var globe_pitch=0.35
 var globe_shown=false
 const GLOBE_RADIUS=10.0
 const GLOBE_LAYER=1<<19
+## v0.47 小飞机: parked, or flown from a chase camera; far terrain and an opening fog while flying.
+const Aircraft=preload("res://scripts/planet_plane.gd")
+var plane
+var flying=false
+var plane_parked=false
+var plane_node: Node3D
+var far_terrain
+var sea_node: MeshInstance3D
 ## v0.45 盾构机: parked on the planet, or bored from its seat (a chase camera inside the tunnel).
 const Tbm=preload("res://scripts/planet_tbm.gd")
 var tbm
@@ -111,6 +119,8 @@ func _ready() -> void:
 	var sea_material=ShaderMaterial.new(); sea_material.shader=preload("res://assets/shaders/sea.gdshader"); sea_material.set_shader_parameter("use_mask",0.0)
 	water_mat=ShaderMaterial.new(); water_mat.shader=preload("res://assets/shaders/planet_water.gdshader")
 	ocean.material=sea_material; sea.mesh=ocean; sea.position.y=terrain.Geology.bedrock_y()-1.0; terrain_root.add_child(sea)  # below bedrock: dug pits must not fill with sea
+	sea_node=sea
+	far_terrain=preload("res://scripts/planet_far_terrain.gd").new(); far_terrain.terrain=terrain; far_terrain.visible=false; terrain_root.add_child(far_terrain)
 	stream=Stream.new(); stream.terrain=terrain; stream.material=mat; stream.water_material=water_mat; terrain_root.add_child(stream); chunks=stream.chunks
 	for id in CENTERS:
 		var n=MeshInstance3D.new(); terrain_root.add_child(n); water_nodes[id]=n
@@ -149,6 +159,9 @@ func _height(x: float,z: float) -> float:
 	return terrain.height_at(Vector2(x,z))
 
 func _terrain(season: int) -> void:
+	# v0.47: high in the air the near chunks stay as they are (streaming at 60 m/s would stall);
+	# the far terrain mesh shows the land below instead.
+	if flying and plane.height_above_ground()>25.0: return
 	stream.schedule(observer(),season)
 
 func observer() -> Vector2:
@@ -313,8 +326,78 @@ func spin(delta: Vector2) -> void:
 
 ## The body the input drives: the rover while seated, otherwise the walker.
 func pilot():
+	if flying: return plane
 	if boring: return tbm
 	return rover if driving else walker
+
+func _ensure_plane(spec: Dictionary) -> void:
+	if plane!=null: return
+	plane=Aircraft.new(spec); plane.terrain=terrain; plane_node=_plane_mesh(); add_child(plane_node); plane_node.hide()
+
+func park_plane(at,facing: float=0.0) -> void:
+	if plane==null: return
+	if at==null: plane_parked=false; flying=false; plane_node.hide(); return
+	plane.construction=walker.construction; plane.place(at,facing); plane_parked=true; _pose_plane()
+
+func enter_plane() -> void:
+	if not plane_parked: return
+	flying=true; chase_ready=false; walker.stop(); hands.hide(); plane.stop(); plane.look_yaw=0.0
+	far_terrain.env=terrain.environment
+
+## Climb out beside the plane once it has stopped on the ground or water; false otherwise.
+func exit_plane() -> bool:
+	if not flying or not plane.can_exit(): return false
+	var f=plane.forward(); var side=Vector2(-f.y,f.x)
+	for offset in [side*2.6,-side*2.6,-f*4.0,f*4.0,side*4.0,-side*4.0]:
+		var p=plane.position+offset
+		if not terrain.inside(p,3) or terrain.blocked(p,walker.barriers): continue
+		flying=false; plane.stop(); plane.speed=0.0; plane.throttle=0.0
+		walker.position=p; walker.yaw=plane.heading; walker.pitch=-0.1; walker.reset_height(); walker.stop()
+		hands.visible=first_person; far_terrain.visible=false; sea_node.visible=true; stream.visible=true; _ground_sky(false)
+		return true
+	return false
+
+func _plane_mesh() -> Node3D:
+	var root=Node3D.new()
+	var mat=func(hex: String,metal: float=0.2,emit: bool=false):
+		var m=StandardMaterial3D.new(); m.albedo_color=Color(hex); m.metallic=metal; m.roughness=0.4
+		if emit: m.emission_enabled=true; m.emission=Color(hex)
+		return m
+	var add=func(parent: Node3D,size: Vector3,at: Vector3,material: Material) -> MeshInstance3D:
+		var n=MeshInstance3D.new(); var b=BoxMesh.new(); b.size=size; n.mesh=b; n.position=at; n.material_override=material; parent.add_child(n); return n
+	var white=mat.call("eef2f5"); var blue=mat.call("2f6f93"); var dark=mat.call("2a3038",0.5)
+	add.call(root,Vector3(1.0,1.0,5.2),Vector3(0,1.5,0.1),white)
+	add.call(root,Vector3(0.82,0.5,1.3),Vector3(0,2.1,-0.9),mat.call("7fd8ff",0.1,true))
+	add.call(root,Vector3(9.0,0.12,1.4),Vector3(0,2.05,-0.3),white)
+	add.call(root,Vector3(9.02,0.13,0.25),Vector3(0,2.06,-0.95),blue)
+	add.call(root,Vector3(3.2,0.1,0.9),Vector3(0,1.75,2.4),white)
+	add.call(root,Vector3(0.12,1.3,1.0),Vector3(0,2.4,2.4),blue)
+	add.call(root,Vector3(0.5,0.5,0.4),Vector3(0,1.5,-2.65),dark)
+	var prop=Node3D.new(); prop.position=Vector3(0,1.5,-2.9); root.add_child(prop)
+	add.call(prop,Vector3(0.14,2.2,0.06),Vector3.ZERO,dark)
+	add.call(prop,Vector3(2.2,0.14,0.06),Vector3.ZERO,dark)
+	for x in [-1.25,1.25]:
+		add.call(root,Vector3(0.45,0.4,4.6),Vector3(x,0.2,0.0),mat.call("ffcf5c",0.3))
+		for z in [-1.0,1.0]: add.call(root,Vector3(0.08,1.0,0.08),Vector3(x*0.6,0.85,z),dark)
+	var lamp=OmniLight3D.new(); lamp.position=Vector3(0,1.6,-3.4); lamp.omni_range=10.0; lamp.light_energy=0.8; lamp.light_color=Color("fff1d0"); root.add_child(lamp)
+	root.set_meta("prop",prop)
+	return root
+
+## Below a curved horizon the sky's "ground" shows: in flight it is sea haze, not the green floor.
+func _ground_sky(aloft: bool) -> void:
+	if aloft:
+		sky_material.ground_horizon_color=sky_material.sky_horizon_color
+		sky_material.ground_bottom_color=sky_material.sky_horizon_color.lerp(Color("1b4d6e"),0.6)
+	else:
+		sky_material.ground_bottom_color=Color("2c4a3a"); sky_material.ground_horizon_color=Color("a9c7c4")
+
+func _pose_plane() -> void:
+	if plane_node==null: return
+	plane_node.visible=plane_parked
+	if not plane_parked: return
+	plane_node.position=Vector3(plane.position.x,plane.altitude,plane.position.y)
+	plane_node.rotation=Vector3(plane.pitch,plane.heading,plane.bank)
+	plane_node.get_meta("prop").rotation.z=plane.spin
 
 func _ensure_tbm(spec: Dictionary) -> void:
 	if tbm!=null: return
@@ -465,6 +548,10 @@ func set_first_person(enabled: bool) -> void:
 	if first_person==enabled: return
 	if not enabled and driving: exit_rover()
 	if not enabled and boring and not exit_tbm(): boring=false
+	if not enabled and flying and not exit_plane():
+		# Leaving first person mid-flight: the plane comes down where it is (a safe auto-landing).
+		plane.airborne=false; plane.speed=0.0; plane.throttle=0.0; plane.altitude=plane.floor_at(plane.position,INF); flying=false
+		far_terrain.visible=false; sea_node.visible=true; stream.visible=true; _ground_sky(false)
 	first_person=enabled; walker.stop(); hands.visible=enabled
 	if not enabled: overview_at=walker.position if has_walk_position and walker.position.length()>40 else Vector2.ZERO
 	camera.projection=Camera3D.PROJECTION_PERSPECTIVE
@@ -501,6 +588,28 @@ func orbit(amount: float) -> void:
 
 func _camera(dt: float) -> void:
 	if first_person: _show_globe(false)
+	if first_person and flying:
+		plane.construction=walker.construction
+		plane.step(dt)
+		walker.position=plane.position; walker.feet_y=plane.altitude+0.6; walker.last_position=walker.position; walker.yaw=plane.heading
+		var ang=plane.heading+plane.look_yaw; var back=Vector3(sin(ang),0,cos(ang))
+		var target=Vector3(plane.position.x,plane.altitude+1.8,plane.position.y)
+		var want=target+back*13.0+Vector3(0,4.0-plane.pitch*6.0,0)
+		want.y=maxf(want.y,plane.floor_at(Vector2(want.x,want.z),want.y+2.0)+1.0)
+		camera.position=want if not chase_ready else camera.position.lerp(want,minf(1.0,dt*5.0))
+		chase_ready=true
+		camera.look_at(target-back*12.0); hands.hide(); marker.hide()
+		camera.far=3200.0
+		# Far terrain below, bent by the planet's curvature around the plane; the flat sea plane
+		# would show through the curved far sea, so it hides while flying.
+		far_terrain.env=terrain.environment; far_terrain.want(plane.position)
+		far_terrain.visible=far_terrain.mesh!=null; sea_node.visible=not far_terrain.visible
+		far_terrain.set_origin(Vector3(plane.position.x,0,plane.position.y))
+		# High up the flat near chunks would float out of place over the curved far terrain.
+		stream.visible=plane.height_above_ground()<=25.0
+		_pose_plane()
+		return
+	if plane_node!=null: _pose_plane()
 	if first_person and boring:
 		if v2!=null: tbm.step(dt,v2)
 		var ctr: Vector3=tbm.centre()
@@ -581,6 +690,11 @@ func _weather(dt: float) -> void:
 	if first_person:
 		env.fog_depth_begin=lerpf(26.0,10.0,dark); env.fog_depth_end=lerpf(48.0,30.0,dark)
 		env.fog_depth_begin=lerpf(env.fog_depth_begin,14.0,haze*0.6)
+		if flying:
+			# v0.47: the higher you fly, the farther you see (fog out to ~2.6 km).
+			var h=clampf(plane.height_above_ground(),0.0,400.0)
+			env.fog_depth_end=lerpf(clampf(60.0+h*7.0,60.0,2600.0),30.0,dark); env.fog_depth_begin=env.fog_depth_end*0.45
+			_ground_sky(true)
 		env.fog_light_color=env.fog_light_color.lerp(Color("4c5560"),dark).lerp(Color("dcc28a"),haze*0.9)
 		env.ambient_light_color=env.ambient_light_color.lerp(Color("66737f"),dark).lerp(Color("ecd29a"),haze*0.6)
 		sky_material.sky_top_color=sky_material.sky_top_color.lerp(Color("343e49"),dark).lerp(Color("cdb88a"),haze*0.45)

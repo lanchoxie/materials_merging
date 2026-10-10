@@ -727,7 +727,7 @@ func tick(delta: float):
 	# v0.40: the drill recharges whenever the player is not out on the planet.
 	if not planet.v2.active: industry.recharge(delta)
 	# v0.41: the rover charges on the island, and slowly when parked by a solar block on Earth.
-	if not planet.v2.active: industry.recharge_rover(delta); industry.recharge_tbm(delta)
+	if not planet.v2.active: industry.recharge_rover(delta); industry.recharge_tbm(delta); industry.recharge_plane(delta)
 	elif not planet.v2.driving and not planet.v2.rover_at.is_empty():
 		var at=Vector2(float(planet.v2.rover_at.x),float(planet.v2.rover_at.z)); var R=planet.v2.construction.terrain.rules.rover
 		if planet.v2.construction.count_kind("solar",at,float(R.park_solar_radius))>0: industry.recharge_rover(delta,float(R.park_charge_seconds))
@@ -1915,7 +1915,7 @@ func sync_gear() -> void:
 	if industry.suit!="" and int(industry.items.get(industry.suit,0))<1: industry.suit=""
 	planet.v2.combat.suit_warmth=industry.suit_warmth()
 	industry.update_drill(); planet.v2.nature.drill=industry.drill_state if industry.drill!="" else {}
-	industry.update_rover(); industry.update_tbm()
+	industry.update_rover(); industry.update_tbm(); industry.update_plane()
 
 func _queue_install(r: Dictionary, payload: Dictionary, quote: Dictionary) -> String:
 	r["installation"]={"payload":payload.duplicate(true),"remaining":float(island_rules.logistics.installation_seconds),"fee":int(quote.fee),"elements":quote.required.duplicate()}

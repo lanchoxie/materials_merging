@@ -30,6 +30,17 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.47.0 "Floatplane" (水陆两栖小飞机)
+Full notes: [36-airplane.md](36-airplane.md).
+- **水陆两栖小飞机.** An electric floatplane, built at the vehicle assembly plant and sent to the planet. It takes
+  off from ground or water at 24 m/s, climbs, banks, glides and lands, and it floats, so oceans can finally be
+  crossed. A full battery lasts about 75 km.
+- **Far terrain.** While flying you see 2–3 km of land and sea, built from the real terrain heights and globe colours.
+- **Curved horizon.** A shader bends the far terrain with the planet's radius, so the horizon curves away below you.
+  The fog opens with height.
+- **Flying skips the heavy work.** Chunk streaming, wildlife spawning and aim tracing pause while you're high up.
+- **Tests.** New: `test_plane` (24), `test_plane_ui` (16).
+
 ## v0.46.0 "Farm Robots" (农业机器人)
 Full notes: [35-farm-robots.md](35-farm-robots.md).
 - **农业机器人.** A placeable machine made from 星锻岛 motors, a logic chip and a battery. It tends the planters within

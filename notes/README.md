@@ -23,6 +23,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [15-earth.md](15-earth.md) | v0.32: climate field, biomes, environment machines, warming, 环境图 |
 | [16-polish.md](16-polish.md) | v0.33: sky and shadows, shaded hands and tools, chibi residents, rigged planet creatures, water shader |
 | [22-incidents-specimens.md](22-incidents-specimens.md) | v0.36: data-driven era framework, storms/floods/droughts with warnings and preparation, PVC pipes, 标本图鉴 |
+| [36-airplane.md](36-airplane.md) | v0.47: floatplane flight model, far-terrain LOD, curved-horizon shader, flight-time streaming/observe pauses |
 | [35-farm-robots.md](35-farm-robots.md) | v0.46: 农业机器人 (harvest/sow/water within 8 m, own hopper, E service, moving body) |
 | [34-tbm.md](34-tbm.md) | v0.45: 盾构机 (3×3 tunnel boring, bulk ore, battery, controls), batch refinery processes, rover parking fix |
 | [33-building-materials.md](33-building-materials.md) | v0.44: 20 building parts (slab/brick/door/window/slope × wood/stone/plastic/metal), partial-cell collision, doors, glass, 星锻岛 inputs |

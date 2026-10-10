@@ -1055,6 +1055,26 @@
       "seconds": 120,
       "equation": "刀盘切削岩面 → 螺旋输送机出渣 → 管片支护",
       "source": "worldsteel"
+    },
+    "plane": {
+      "name": "水陆两栖小飞机",
+      "building": "vehicle_assembly",
+      "method": "硬铝机身与机翼 + 浮筒 + 电动螺旋桨 + 3 电池包 + 控制板 + 玻璃座舱",
+      "inputs": {
+        "item:duralumin": 8,
+        "item:steel_ingot": 2,
+        "item:motor": 2,
+        "item:battery_pack": 3,
+        "item:control_board": 1,
+        "item:glass": 2
+      },
+      "evidence": [],
+      "outputs": {
+        "plane": 1
+      },
+      "seconds": 150,
+      "equation": "升力 L = ½ρv²SC_L：速度够快，机翼就能把飞机托起来",
+      "source": "polmear2017"
     }
   },
   "items": {
@@ -1386,6 +1406,14 @@
       "sell": 5200,
       "xp": 150,
       "tbm": true
+    },
+    "plane": {
+      "name": "水陆两栖小飞机",
+      "icon": "bit",
+      "color": "7fd8ff",
+      "sell": 9800,
+      "xp": 220,
+      "plane": true
     }
   },
   "sources": [
@@ -1752,5 +1780,21 @@
     "seconds_per_hit": 0.06,
     "reverse_seconds": 0.8,
     "note": "3×3 截面，每掘进1米切下最多9格岩土，全部按格收进矿物仓（满999后多出的丢弃并计数）。电量按格消耗；回到浮岛自动充电约4分钟（游戏数值）。"
+  },
+  "plane": {
+    "cap_wh": 3000,
+    "wh_per_km": 40,
+    "recharge_seconds": 300,
+    "max_speed": 62.0,
+    "takeoff_speed": 24.0,
+    "stall_speed": 17.0,
+    "accel": 7.0,
+    "turn_rate": 0.55,
+    "pitch_rate": 0.9,
+    "max_pitch": 0.45,
+    "max_altitude": 420.0,
+    "sink": 6.0,
+    "crash_speed": 9.0,
+    "note": "电动水陆两栖小飞机：在地面或水面滑跑到 24 m/s 后拉起；满电约 75 公里。回到浮岛自动充电约 5 分钟（游戏数值）。"
   }
 }

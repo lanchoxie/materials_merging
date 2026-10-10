@@ -65,6 +65,14 @@ static func give_tbm(s) -> String:
 	ind.deploy_tbm("tbm"); ind.tbm_state.charge=float(ind.tbm_state.cap)
 	return "测试：盾构机已派往地球并充满电"
 
+## v0.47: a ready plane on the planet (made, charged and deployed).
+static func give_plane(s) -> String:
+	var ind=s.industry
+	if not ind.unlocked: open_starforge(s,200)
+	ind.items["plane"]=int(ind.items.get("plane",0))+1; ind._reconcile("plane")
+	ind.deploy_plane("plane"); ind.plane_state.charge=float(ind.plane_state.cap)
+	return "测试：小飞机已派往地球并充满电"
+
 static func open_starforge(s,credits: int) -> String:
 	var ind=s.industry
 	if not ind.unlocked: ind.unlocked=true; ind.plots=int(ind.rules().plots.start)

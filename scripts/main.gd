@@ -218,7 +218,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.46 农业机器人 · 自动收获 · 补种 · 浇水" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.47 水陆两栖小飞机 · 远景地形 · 弯曲的地平线" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -1671,6 +1671,7 @@ func _show_test_panel(planet: Control = null) -> void:
 	row.add_child(UI.button("浮岛快进 8 小时", func(): run.call(TestMode.skip_island(state, 8 * 3600))))
 	row.add_child(UI.button("硅钙磷原料包", func(): run.call(TestMode.silicon_kit(state))))
 	row.add_child(UI.button("盾构机（派往地球）", func(): run.call(TestMode.give_tbm(state))))
+	row.add_child(UI.button("小飞机（派往地球）", func(): run.call(TestMode.give_plane(state))))
 	row.add_child(UI.button("芯片原料包", func(): run.call(TestMode.chip_kit(state))))
 	row.add_child(UI.button("电池原料包", func(): run.call(TestMode.battery_kit(state))))
 	row.add_child(UI.button("越野车", func(): run.call(TestMode.rover_kit(state))))

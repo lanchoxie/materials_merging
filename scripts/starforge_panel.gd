@@ -444,6 +444,18 @@ func _gear() -> void:
 			bars.append([tbm_bar,func(): return float(ind.tbm_state.charge)/maxf(1.0,float(ind.tbm_state.cap))])
 		tbm_card.add_child(UI.paragraph("地球第一人称：走到盾构机旁 E 进入，W 掘进、S 后退、A/D 转向、空格切换 水平/下潜/上爬，E 离开。",13))
 		tbm_card.add_child(UI.button("收回盾构机" if out else "派往地球",func(): _act(ind.deploy_tbm("" if out else id)); state.sync_gear()))
+	# v0.47: the amphibious plane.
+	for id in R.items:
+		if not R.items[id].get("plane",false) or int(ind.items.get(id,0))<1: continue
+		var away=ind.plane==id; ind.update_plane()
+		var plane_card=_card("%s × %d%s" % [R.items[id].name,int(ind.items[id]),"（在地球上）" if away else ""],Color("7fd8ff"))
+		plane_card.add_child(UI.paragraph("电动浮筒飞机：在地面或水面滑跑到 %d m/s 起飞，可以飞过大洋、落在海面上。满电航程约 %.0f 公里。" % [int(R.plane.takeoff_speed),float(R.plane.cap_wh)/float(R.plane.wh_per_km)],13))
+		if away:
+			plane_card.add_child(UI.label("电量 %.0f / %.0f Wh · 回到浮岛自动充电" % [float(ind.plane_state.charge),float(ind.plane_state.cap)],14,UI.MINT))
+			var plane_bar=ProgressBar.new(); plane_bar.max_value=1.0; plane_bar.show_percentage=false; plane_bar.custom_minimum_size=Vector2(0,8); plane_card.add_child(plane_bar)
+			bars.append([plane_bar,func(): return float(ind.plane_state.charge)/maxf(1.0,float(ind.plane_state.cap))])
+		plane_card.add_child(UI.paragraph("地球第一人称：走到飞机旁 E 登机。W 加油门、S 收油门，A/D 转弯，上下拖动（或↑↓）控制机头，空格改平；落地或落水停稳后 E 下机。",13))
+		plane_card.add_child(UI.button("收回小飞机" if away else "派往地球",func(): _act(ind.deploy_plane("" if away else id)); state.sync_gear()))
 	# v0.40: the cordless drill.
 	for id in R.items:
 		if not R.items[id].get("drill",false) or int(ind.items.get(id,0))<1: continue

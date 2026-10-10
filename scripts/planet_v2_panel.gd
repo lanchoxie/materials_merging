@@ -261,6 +261,47 @@ func _sync_rover() -> void:
 	var at=Vector2(float(v.rover_at.x),float(v.rover_at.z))
 	if not view.rover_parked or view.rover.position.distance_to(at)>0.5: view.park_rover(at,float(v.rover_at.heading))
 
+## v0.47: the plane follows the deployed aircraft; it is parked beside the player the first time.
+func _sync_plane() -> void:
+	var v=state.planet.v2; var ind=state.industry
+	view._ensure_plane(ind.rules().plane); view.plane.state=ind.plane_state
+	if ind.plane=="":
+		if view.flying: view.exit_plane()
+		view.park_plane(null); v.plane_at={}; v.flying=false; return
+	if view.flying: v.plane_at={"x":view.plane.position.x,"z":view.plane.position.y,"heading":view.plane.heading}; return
+	if v.plane_at.is_empty() and view.first_person:
+		var f=Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw)); var side=Vector2(-f.y,f.x)
+		for offset in [f*7.0+side*3.0,f*7.0-side*3.0,side*7.0,-side*7.0,f*10.0]:
+			var p=view.walker.position+offset
+			if view.terrain.inside(p,6) and not view.terrain.blocked(p,view.walker.barriers):
+				v.plane_at={"x":p.x,"z":p.y,"heading":view.walker.yaw}; break
+	if v.plane_at.is_empty(): view.park_plane(null); return
+	var at=Vector2(float(v.plane_at.x),float(v.plane_at.z))
+	if not view.plane_parked or view.plane.position.distance_to(at)>0.5: view.park_plane(at,float(v.plane_at.heading))
+
+func near_plane() -> bool:
+	return view.plane_parked and not view.flying and view.walker.position.distance_to(view.plane.position)<=4.5
+
+func _toggle_plane() -> bool:
+	var v=state.planet.v2
+	if view.flying:
+		if view.exit_plane():
+			v.flying=false; v.plane_at={"x":view.plane.position.x,"z":view.plane.position.y,"heading":view.plane.heading}
+			message="下机 · 小飞机停在原地，电量 %d%%" % roundi(100*float(view.plane.state.charge)/maxf(1.0,float(view.plane.state.cap)))
+		elif view.plane.airborne: message="还在空中：先降落（收油门、机头略抬，慢慢接近地面或水面）"
+		else: message="先停稳再下机（S 收油门）"
+		_live(); return true
+	if near_plane():
+		view.enter_plane(); v.flying=true
+		message="登机 · W 加油门 · S 收油门 · A/D 转弯 · 上下拖动控制机头 · 空格改平 · 停稳后 E 下机"
+		_live(); return true
+	return false
+
+## The flight panel (replaces the aim line while flying).
+func _plane_text() -> String:
+	var p=view.plane
+	return "小飞机 · %s · 速度 %d km/h · 高度 %d 米 · 油门 %d%% · 电量 %d%%\n%s · 航向 %s%s" % ["飞行中" if p.airborne else ("水面滑行" if view.terrain.water_at(p.position) or view.terrain.deep_water(p.position) else "地面滑跑"),roundi(p.speed*3.6),roundi(p.height_above_ground()),roundi(p.throttle*100),roundi(100.0*float(p.state.charge)/maxf(1.0,float(p.state.cap))),Shape.coordinates(p.position),["北","东北","东","东南","南","西南","西","西北"][posmod(roundi(-p.heading/(PI/4)),8)]," · "+p.message if p.message!="" else ""]
+
 ## v0.45: the 盾构机 follows the deployed machine; it appears in front of the player the first time.
 func _sync_tbm() -> void:
 	var v=state.planet.v2; var ind=state.industry
@@ -343,6 +384,7 @@ func _toggle_rover() -> bool:
 
 func _collect() -> void:
 	if is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
+	if _toggle_plane(): return
 	if _toggle_tbm(): return
 	if _toggle_rover(): return
 	# v0.41.2: E at a campfire opens the cooking menu.
@@ -484,8 +526,9 @@ func _aim() -> void:
 	_update_actor()
 	if not view.first_person or is_instance_valid(backpack): return
 	# v0.45: while boring the dashboard takes the hotbar's place.
-	play_bar.visible=not view.boring; aim_label.position.y=520.0 if view.boring else 606.0
+	play_bar.visible=not view.boring and not view.flying; aim_label.position.y=520.0 if view.boring or view.flying else 606.0
 	if view.boring: aim_label.text=_tbm_text(); view.construction_view.ghost.hide(); return
+	if view.flying: play_bar.visible=false; aim_label.position.y=520.0; aim_label.text=_plane_text(); view.construction_view.ghost.hide(); return
 	var v=state.planet.v2
 	var id=str(v.inventory.slots[v.inventory.selected]); var item: Dictionary=inventory_items.get(id,{})
 	var action: Dictionary=item.get("action",{})
@@ -843,12 +886,14 @@ func _live() -> void:
 func _sync() -> void:
 	if view==null: return
 	var v=state.planet.v2; var at=_observer_position()
-	v.population.observe(at)
+	# v0.47: high in the air nothing below is "observed" (no wildlife sites or camps spawn on the way).
+	var aloft=view.flying and view.plane.height_above_ground()>25.0
+	if not aloft: v.population.observe(at)
 	if not view.first_person: view.selected=selected_region
 	view.ranch=v.ranch
 	view.sync(v.world,v.season())
 	view.life_view.ranch=v.ranch
-	view.life_view.sync(v.population,at,v.world.paused)
+	if not aloft: view.life_view.sync(v.population,at,v.world.paused)
 	view.walker.barriers.append_array(view.life_view.barriers)
 	v.construction.obstacles=view.walker.barriers.duplicate()
 	view.walker.construction=v.construction
@@ -867,6 +912,7 @@ func _sync() -> void:
 	view.lamp_spec=state.industry.lamp_spec()
 	_sync_rover()
 	_sync_tbm()
+	_sync_plane()
 	_live(); _aim()
 
 func _process(dt: float) -> void:

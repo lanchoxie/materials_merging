@@ -43,6 +43,9 @@ var driving=false
 ## player is in its seat.
 var tbm_at: Dictionary={}
 var boring=false
+## v0.47 小飞机: where it is parked ({x, z, heading}) and whether the player is flying it.
+var plane_at: Dictionary={}
+var flying=false
 
 func _init() -> void:
 	world=fresh()
@@ -342,7 +345,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate()}
+	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate()}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -374,6 +377,10 @@ func restore(data) -> bool:
 			if not _number(parked.get(k),-9000,9000): return false
 		# v0.42 planet: anywhere on the surface (the old 8 km disc check rejected far-north parking).
 		if absf(float(parked.x))>8192.0 or absf(float(parked.z))>7600.0: return false
+	var aircraft=data.get("plane",{})
+	if not aircraft is Dictionary: return false
+	if not aircraft.is_empty():
+		if not _number(aircraft.get("x"),-8192,8192) or not _number(aircraft.get("z"),-7600,7600) or not _number(aircraft.get("heading"),-9000,9000): return false
 	var machine=data.get("tbm",{})
 	if not machine is Dictionary: return false
 	if not machine.is_empty():
@@ -482,6 +489,8 @@ func restore(data) -> bool:
 	set_epoch(str(data.get("epoch","present")))
 	rover_at={}; driving=false
 	if not parked.is_empty(): rover_at={"x":float(parked.x),"z":float(parked.z),"heading":float(parked.heading)}
+	plane_at={}; flying=false
+	if not aircraft.is_empty(): plane_at={"x":float(aircraft.x),"z":float(aircraft.z),"heading":float(aircraft.heading)}
 	tbm_at={}; boring=false
 	if not machine.is_empty(): tbm_at={"x":int(machine.x),"y":int(machine.y),"z":int(machine.z),"facing":int(machine.facing),"grade":int(machine.grade)}
 	ranch.sync(self)
