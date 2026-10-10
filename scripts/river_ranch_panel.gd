@@ -16,7 +16,7 @@ static func describe(v,target: Dictionary) -> String:
 static func build(panel) -> void:
 	var s=panel.state; var v=s.planet.v2; var r=v.ranch; r.sync(v)
 	var intro=panel._card("河湾牧场与村庄")
-	intro.add_child(UI.paragraph("工艺车间：散石 → 饮水槽；木料＋纤维 → 饲草架。\n摆到动物能走到的空地，补充水和谷穗。圈养时要保留通往食物的路。",15))
+	intro.add_child(UI.paragraph("工艺车间：石料 → 饮水槽；木料＋纤维 → 饲草架。\n摆到动物能走到的空地，补充水和谷穗。圈养时要保留通往食物的路。",15))
 	for recipe in ["field_trough","field_feeder"]:
 		intro.add_child(UI.button("去制作 · "+str(s.planet.recipe(recipe).name),func(): panel.workshop_requested.emit(recipe)))
 	var target=v.Target.query(v)
@@ -27,7 +27,7 @@ static func build(panel) -> void:
 			card.add_child(UI.button("交换树种",func(): panel._act("v2_ranch_trade")))
 	var depot=panel._card("公共仓库（＝公用粮仓）· 玩家自行补给")
 	depot.add_child(UI.paragraph("这里就是时代条件里说的「公共仓库／粮仓」。用下面的「存」把背包里的口粮、谷穗、野果和水样放进来；村民只吃这里的东西，走到仓库吃掉才算一次用餐。背包里的东西仍属于你。\n水：%d / %d份 · 喂村民用野果或谷穗" % [r.depot.water,r.rules.depot_capacity],15))
-	var names={"seed":"种子","timber":"木料","stone":"散石","fruit":"野果","grain":"谷穗","ration":"口粮"}
+	var names={"seed":"种子","timber":"木料","stone":"石料","fruit":"野果","grain":"谷穗","ration":"口粮"}
 	for item in names:
 		var available=v.world.seeds if item=="seed" else (v.world.food if item=="ration" else v.field.stock[item])
 		depot.add_child(UI.paragraph("%s · 仓库%d / 背包%d" % [names[item],r.depot[item],available],15))

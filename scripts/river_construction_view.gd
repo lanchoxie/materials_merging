@@ -17,6 +17,23 @@ func _ready() -> void:
 	ghost_material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 	ghost.material_override=ghost_material; add_child(ghost); ghost.hide()
 
+## v0.41.2: every cell a build will occupy, like placing one block (green fits, red does not).
+var cell_ghosts: Array=[]
+func preview_cells(found: Dictionary) -> void:
+	var cells: Array=found.get("cells",[])
+	ghost.hide()
+	var color=Color(0.4,0.95,0.7,0.30) if str(found.get("error","")).is_empty() else Color(1,0.5,0.4,0.30)
+	ghost_material.albedo_color=color
+	while cell_ghosts.size()<mini(cells.size(),64):
+		var g=MeshInstance3D.new(); g.mesh=ghost.mesh; g.material_override=ghost_material; add_child(g); cell_ghosts.append(g)
+	for i in range(cell_ghosts.size()):
+		var on=i<cells.size()
+		cell_ghosts[i].visible=on
+		if on: var c: Vector3i=cells[i]; cell_ghosts[i].position=Vector3(c.x,c.y+0.5,c.z)
+
+func hide_cells() -> void:
+	for g in cell_ghosts: g.visible=false
+
 ## v0.33.1: the 微缩器 shows the whole build it would box (green) or why it can't (red).
 func preview_box(found: Dictionary) -> void:
 	if not found.has("low"): ghost.hide(); return
@@ -71,7 +88,7 @@ func _effect(b: Dictionary) -> CPUParticles3D:
 	return fx
 
 func preview(model,actor: Dictionary,mode: String,products: Array,recipe_id: String="") -> String:
-	ghost.hide(); ghost.scale=Vector3.ONE
+	ghost.hide(); ghost.scale=Vector3.ONE; hide_cells()
 	if actor.is_empty() or mode=="observe": return "E 采集成熟野草 · B 打开背包 · 1—9切换物品"
 	var hit: Dictionary=model.trace(actor.eye,actor.direction)
 	if hit.is_empty() or hit.has("blocked"): return "瞄准5米内的地面或自建构件"

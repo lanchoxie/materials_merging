@@ -6,37 +6,21 @@
   "resources": {
     "timber": {
       "name": "木料",
-      "node": "枯枝堆",
-      "hits": 3,
-      "yield": 4,
-      "renew_seconds": 480,
       "color": "bc9265",
       "icon": "block"
     },
     "stone": {
-      "name": "散石",
-      "node": "散石堆",
-      "hits": 3,
-      "yield": 4,
-      "renew_seconds": 720,
+      "name": "石料",
       "color": "a7b7b8",
       "icon": "stone"
     },
     "fiber": {
       "name": "植物纤维",
-      "node": "纤维草",
-      "hits": 2,
-      "yield": 3,
-      "renew_seconds": 300,
       "color": "94bd73",
       "icon": "seed"
     },
     "fruit": {
       "name": "野果",
-      "node": "野果丛",
-      "hits": 2,
-      "yield": 3,
-      "renew_seconds": 360,
       "color": "ecad69",
       "icon": "fruit"
     },
@@ -49,6 +33,26 @@
       "name": "土方",
       "icon": "block",
       "color": "a77f5d"
+    },
+    "meat": {
+      "name": "生肉",
+      "icon": "fruit",
+      "color": "c96b5b"
+    },
+    "cooked_meat": {
+      "name": "烤肉",
+      "icon": "fruit",
+      "color": "a5643a"
+    },
+    "porridge": {
+      "name": "谷物粥",
+      "icon": "fruit",
+      "color": "e8d49a"
+    },
+    "stew": {
+      "name": "热汤",
+      "icon": "fruit",
+      "color": "d9874f"
     }
   },
   "garden": {
@@ -63,7 +67,20 @@
     "rain_duration_seconds": 100,
     "rain_per_second": 0.0007,
     "roof_evaporation_multiplier": 0.45,
-    "roof_growth_multiplier": 0.55
+    "roof_growth_multiplier": 0.55,
+    "harvest_grain_range": [
+      2,
+      4
+    ],
+    "seed_chances": [
+      0.8,
+      0.45,
+      0.2
+    ],
+    "sprinkler_radius": 6.0,
+    "sprinkler_water": 0.02,
+    "fertilizer_radius": 6.0,
+    "fertilizer_growth": 1.3
   },
   "feeding": {
     "minimum_hunger": 0.12,
@@ -81,7 +98,7 @@
       "natural_inputs": {
         "stone": 4
       },
-      "description": "4份散石加工为8块石基；用于铺地和台阶。"
+      "description": "4份石料加工为8块石基；用于铺地和台阶。"
     },
     "field_wall": {
       "id": "field_wall",
@@ -136,7 +153,7 @@
         "timber": 3,
         "stone": 2
       },
-      "description": "3份木料和2份散石加工为2个种植箱，每箱单独记录湿度和作物。"
+      "description": "3份木料和2份石料加工为2个种植箱，每箱单独记录湿度和作物。"
     },
     "field_trough": {
       "id": "field_trough",
@@ -177,7 +194,7 @@
         "timber": 2,
         "stone": 3
       },
-      "description": "2份木料和3份散石加工为1个配料罐。放在河湾后加入反应釜的尿素和水，分装后给种植箱施肥；少量与过量会有不同结果。"
+      "description": "2份木料和3份石料加工为1个配料罐。放在河湾后加入反应釜的尿素和水，分装后给种植箱施肥；少量与过量会有不同结果。"
     },
     "field_campfire": {
       "id": "field_campfire",
@@ -191,7 +208,59 @@
         "timber": 3,
         "stone": 2
       },
-      "description": "3份木料和2份散石做成2处篝火：取暖、照明，寒潮时保护营地。"
+      "description": "3份木料和2份石料做成2处篝火：取暖、照明，寒潮时保护营地。"
     }
+  },
+  "cooking": {
+    "note": "篝火旁烹饪；回血与保暖时长为游戏数值。热食让人体感更暖（真实：进食产热与热饮）",
+    "recipes": {
+      "cooked_meat": {
+        "name": "烤肉",
+        "inputs": {
+          "meat": 1
+        },
+        "output": 1
+      },
+      "porridge": {
+        "name": "谷物粥",
+        "inputs": {
+          "grain": 2,
+          "fruit": 1
+        },
+        "output": 1
+      },
+      "stew": {
+        "name": "热汤",
+        "inputs": {
+          "meat": 1,
+          "grain": 1,
+          "fiber": 1
+        },
+        "output": 1
+      }
+    },
+    "foods": {
+      "fruit": {
+        "heal": 5,
+        "warmth": 0,
+        "seconds": 0
+      },
+      "cooked_meat": {
+        "heal": 30,
+        "warmth": 6,
+        "seconds": 90
+      },
+      "porridge": {
+        "heal": 25,
+        "warmth": 10,
+        "seconds": 150
+      },
+      "stew": {
+        "heal": 45,
+        "warmth": 14,
+        "seconds": 240
+      }
+    },
+    "campfire_reach": 3.5
   }
 }

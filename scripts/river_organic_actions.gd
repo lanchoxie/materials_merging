@@ -17,7 +17,7 @@ static func command(state,action: String,payload: Dictionary) -> String:
 		if not error.is_empty(): return error
 		p.shipment_serial+=1
 		var result=o.apply(id,str(target.key),v.field); v.ranch.sync(v); return result
-	if target.get("kind")!="mixing_tank": return "走近并瞄准配料罐；在工艺车间用木料和散石制造"
+	if target.get("kind")!="mixing_tank": return "走近并瞄准配料罐；在工艺车间用木料和石料制造"
 	var key=str(target.key)
 	if payload.has("key") and str(payload.key)!=key: return "视线已经离开这只罐；请重新瞄准"
 	if action=="organic_add":

@@ -23,6 +23,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [15-earth.md](15-earth.md) | v0.32: climate field, biomes, environment machines, warming, 环境图 |
 | [16-polish.md](16-polish.md) | v0.33: sky and shadows, shaded hands and tools, chibi residents, rigged planet creatures, water shader |
 | [22-incidents-specimens.md](22-incidents-specimens.md) | v0.36: data-driven era framework, storms/floods/droughts with warnings and preparation, PVC pipes, 标本图鉴 |
+| [30-wild-harvest.md](30-wild-harvest.md) | v0.41.2: probabilistic drops, no piles/stumps, food and cooking, building copies, per-cell preview, machines; the agreed roadmap |
 | [29-custom-reactors.md](29-custom-reactors.md) | v0.41.1: 我的炉型, 空白反应炉, PubChem reference geometry for custom molecules; phone hang notes |
 | [28-rover.md](28-rover.md) | v0.41: vehicle assembly, the rover's kinematic driving, chase camera, energy and charging |
 | [27-batteries.md](27-batteries.md) | v0.40: battery works (lead-acid, LiFePO₄ thickness trade-off), packs, motor, cordless drill on Earth, grid storage |

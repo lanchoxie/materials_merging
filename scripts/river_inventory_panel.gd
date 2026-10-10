@@ -92,6 +92,7 @@ func _details() -> void:
 		if type=="plant": detail.add_child(UI.button("当前区域播谷物 · 1种",func(): use_requested.emit(selected_id,"region")))
 		if type=="plant": detail.add_child(UI.button("改种芦苇 · 1种",func(): use_requested.emit(selected_id,"reed")))
 		if type=="feed": detail.add_child(UI.button("送1份到粮仓",func(): use_requested.emit(selected_id,"pantry")))
+		if type in ["eat","feed"] and str(item.action.get("resource",""))!="grain": detail.add_child(UI.button("吃一份",func(): use_requested.emit(selected_id,"eat")))
 		if type=="build" and state.planet.v2.rules.products.has(item.action.recipe):
 			detail.add_child(UI.button("整包搭成围栏",func(): use_requested.emit(selected_id,"deploy")))
 	else:

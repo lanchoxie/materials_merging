@@ -10,7 +10,7 @@ static func build(panel) -> void:
 	var target=v.Target.query(v)
 	if target.get("kind")!="mixing_tank":
 		var guide=panel._card("走近你的配料罐")
-		guide.add_child(UI.paragraph("车间使用2份木料、3份散石，做出可放置的罐。背包拿起，在地面放下；换采集手套，对准罐按 E 查看。\n先点上方「回浮岛反应釜」：准备元素、博士装炉、等待合成、收获到背包。配料罐不会凭空生成尿素。",16))
+		guide.add_child(UI.paragraph("车间使用2份木料、3份石料，做出可放置的罐。背包拿起，在地面放下；换采集手套，对准罐按 E 查看。\n先点上方「回浮岛反应釜」：准备元素、博士装炉、等待合成、收获到背包。配料罐不会凭空生成尿素。",16))
 	else:
 		var key=str(target.key); var card=panel._card("配料罐 · "+key)
 		var stats=UI.paragraph("",16,UI.MINT); card.add_child(stats); panel.widgets["organic_stats"]=stats

@@ -16,23 +16,10 @@ func craft(s,recipe: String) -> void:
 	s.planet.command(s,"pack",{"recipe":recipe,"production_mode":"island"}); s.planet.tick(60,1)
 func _initialize() -> void:
 	var s=State.new(); s.coins=10000; var p=s.planet; var v=p.v2; var f=v.field; var c=v.construction; v.active=true; v.world.paused=true
-	var n=f.node("home:0"); above(v,n.x,n.z)
-	check(v.Target.query(v).get("type")=="resource","visible resource is resolved by authoritative aim ray")
-	p.command(s,"v2_field_collect"); check(f.stock.timber==0 and f.changed[n.id].hits==1,"one action advances gathering rather than granting every click")
-	p.command(s,"v2_field_collect"); p.command(s,"v2_field_collect")
-	check(f.stock.timber==4 and f.remaining(n.id,0)==480,"gather completes into finite actual raw stock and exhausts the node")
-	p.command(s,"v2_field_collect"); check(f.stock.timber==4,"depleted node cannot be replayed")
-	var saved=v.serialize(); var next=preload("res://scripts/planet_v2.gd").new()
-	check(next.restore(JSON.parse_string(JSON.stringify(saved))) and next.field.remaining(n.id,0)==480,"save and reload preserves depleted resources")
-	v.active=false; p.tick(60); check(f.remaining(n.id,int(v.world.elapsed))==480,"leaving planet does not accelerate regeneration")
-	v.active=true; v.advance(480); check(f.remaining(n.id,int(v.world.elapsed))==0,"regeneration uses elapsed simulation time")
-	above(v,n.x,n.z,9); var stock=f.stock.duplicate(); p.command(s,"v2_field_collect"); check(f.stock==stock,"out-of-range aim cannot gather")
-	# A solid wall must win the nearest-hit query even if a resource lies behind it.
-	above(v,n.x,n.z); var cell=c.cell_at(Vector3(n.x,2,n.z)); var key=c.key(cell)
-	c.blocks[key]={"x":cell.x,"y":cell.y,"z":cell.z,"kind":"block"}; p.command(s,"v2_field_collect")
-	check(f.stock==stock,"cannot gather through an intervening block"); c.blocks.clear()
-	gather(s,"home:0"); gather(s,"home:1"); gather(s,"home:2"); gather(s,"home:3"); gather(s,"home:4"); gather(s,"home:5"); gather(s,"home:6")
-	check(f.stock.timber==12 and f.stock.stone==8 and f.stock.fiber==6 and f.stock.fruit==3,"distinct resource sites supply all raw categories")
+	# v0.41.2: the gathering piles are gone; raw stock comes from felling trees and quarrying rock.
+	check(f.nodes(Vector2(18,16),40).is_empty() and f.collect({},0).contains("砍树"),"no more gathering piles")
+	above(v,18,16); var stock=f.stock.duplicate(); p.command(s,"v2_field_collect"); check(f.stock==stock,"E on bare ground gathers nothing")
+	f.stock.timber=12; f.stock.stone=8; f.stock.fiber=6; f.stock.fruit=3
 	p.command(s,"join"); stock=f.stock.duplicate()
 	p.command(s,"pack",{"recipe":"field_wall"}); check(p.job.is_empty() and f.stock==stock,"missing workshop cannot reserve materials")
 	s.campus_build(3,"workshop"); s.campus_road(3); s.campus_assign_post(s.campus.people[0].id,"workshop")
@@ -76,10 +63,10 @@ func _initialize() -> void:
 	p.command(s,"v2_field_water",payload); check(s.storage.batch(water.id).quantity==3,"repeated water action on saturated box consumes nothing")
 	v.advance(200)
 	check(f.gardens[planters[0]].growth==1 and f.gardens[planters[1]].growth<0.05,"watered crops mature while adjacent dry crops remain small")
-	p.command(s,"v2_field_collect")
-	check(f.stock.grain==3 and not f.gardens.has(planters[0]),"mature crop harvest enters portable backpack stock")
-	p.command(s,"v2_field_collect"); check(f.stock.grain==3,"harvest replay cannot duplicate grain")
-	p.command(s,"v2_field_pantry",{"resource":"grain"}); check(f.stock.grain==2,"harvest can be moved from portable stock to food warehouse")
+	p.command(s,"v2_field_collect"); var grain=int(f.stock.grain)
+	check(grain>=2 and grain<=4 and not f.gardens.has(planters[0]),"mature crop harvest enters portable backpack stock (2–4 grain, rolled)")
+	p.command(s,"v2_field_collect"); check(f.stock.grain==grain,"harvest replay cannot duplicate grain")
+	p.command(s,"v2_field_pantry",{"resource":"grain"}); check(f.stock.grain==grain-1,"harvest can be moved from portable stock to food warehouse")
 	check(restored.planet.restore(JSON.parse_string(JSON.stringify(p.serialize())),restored),"full loop source packages, crops, depletion and reserves pass full save validation")
 	check(Same.same(restored.planet.v2.field.serialize(),f.serialize()),"field state roundtrip retains exact resources and local moisture")
 	var malformed=p.serialize(); malformed.v2.field.gardens[planters[1]].moisture=3
@@ -94,8 +81,8 @@ func _initialize() -> void:
 
 func _effects(s) -> void:
 	var v=s.planet.v2; var p=s.planet; var f=v.field; var c=v.construction
-	var n=f.node("home:0"); var distant=f.nodes(Vector2(150,180),25)
-	check(not distant.is_empty() and f.node(distant[0].id)==distant[0],"distant resource identity regenerates deterministically outside the render cache")
+	var n={"x":18.0,"y":v.construction.terrain.ground(Vector2(18,16)),"z":16.0}
+	check(f.nodes(Vector2(150,180),25).is_empty(),"no piles far away either")
 	var target={"eye":Vector3(n.x+9,n.y+1,n.z),"direction":Vector3.LEFT,"feet":Vector3(n.x+9,n.y,n.z)}
 	v.actor=target; var before=f.stock.duplicate(); p.command(s,"v2_field_collect")
 	check(f.stock==before,"new region is not collectible by arbitrary payload coordinates")

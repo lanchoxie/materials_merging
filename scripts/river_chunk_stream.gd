@@ -204,8 +204,7 @@ func _build(key: Vector2i) -> Mesh:
 	for tree in terrain.tree_records(key):
 		var p=Vector2(tree.x,tree.z); var h=terrain.ground(p)
 		var spec=terrain.nature.rules.species[tree.species] if terrain.nature!=null else {"height":3.1,"leaf":"629956","wood":"956f4c"}
-		if tree.cut:
-			G.cube(st,Vector3(p.x,h+0.12,p.y),Vector3(0.42,0.24,0.42),Color(spec.wood)); continue
+		if tree.cut: continue   # v0.41.2: a felled tree leaves nothing behind (no stumps)
 		var scale=0.25+float(tree.growth)*0.75; var tall=float(spec.height)*scale
 		var wood=Color(spec.wood); var leaf=Color(spec.leaf).lerp(Color("cf9457"),0.45 if season==2 else 0)
 		if season==3: leaf=leaf.lerp(Color("e3ede4"),0.55)

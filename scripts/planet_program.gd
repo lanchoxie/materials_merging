@@ -65,6 +65,92 @@ static func home_data(planet_data) -> Dictionary:
 	var stored=planet_data.get("timelines",{})
 	return stored.get("present",{}) if stored is Dictionary else {}
 
+## v0.41.2 建筑复制 (工艺车间): build a real copy of a boxed build. Every block is paid for with its
+## recipe's raw materials in whole packages (leftover pieces stay in the copy's ledger), every
+## package is a real workshop product, so material conservation and save checks hold. Only builds
+## made of field recipes (raw materials) can be copied; the copy lands in 河湾作品 ready to unfold.
+func copy_quote(state,id: String) -> Dictionary:
+	var q={"ready":false,"message":"","packages":{},"inputs":{},"blocks":0}
+	var c=home().construction
+	if not c.miniatures.has(id): q.message="找不到这件作品"; return q
+	if c.miniatures.size()>=16: q.message="作品盒最多16件，先展开一件"; return q
+	if not joined: q.message="先在工艺车间登记合作"; return q
+	var access=WorkshopAccess.status(state)
+	if not access.ready: q.message="建筑复制台需要工程师到岗："+str(access.message); return q
+	var counts={}
+	for b in c.miniatures[id].blocks:
+		var r=str(c.sources.get(str(b.source),{}).get("product",{}).get("recipe",""))
+		if not v2.field.rules.recipes.has(r): q.message="这件作品含有非原料构件（%s），复制台只能复制用采集原料做的建筑" % (r if r!="" else "未知"); return q
+		counts[r]=int(counts.get(r,0))+1
+	for r in counts:
+		var units=int(v2.construction.rules.recipes[r].units)
+		var n=int(ceil(float(counts[r])/float(units))); q.packages[r]=n
+		for res in v2.field.rules.recipes[r].natural_inputs: q.inputs[res]=int(q.inputs.get(res,0))+n*int(v2.field.rules.recipes[r].natural_inputs[res])
+	q.blocks=c.miniatures[id].blocks.size()
+	var lacking=[]
+	for res in q.inputs:
+		if int(v2.field.stock.get(res,0))<int(q.inputs[res]): lacking.append("%s %d/%d" % [v2.field.rules.resources[res].name,int(v2.field.stock.get(res,0)),int(q.inputs[res])])
+	if not lacking.is_empty(): q.message="原料不够："+"、".join(lacking); return q
+	q.ready=true; q.message="复制 %d 块：消耗 %s" % [q.blocks,"、".join(q.inputs.keys().map(func(k): return "%s×%d" % [v2.field.rules.resources[k].name,int(q.inputs[k])]))]
+	return q
+
+func copy_building(state,id: String) -> String:
+	var q=copy_quote(state,id)
+	if not q.ready: return q.message
+	var home_world=home(); var c=home_world.construction; var source_box: Dictionary=c.miniatures[id]
+	for res in q.inputs: v2.field.stock[res]=int(v2.field.stock[res])-int(q.inputs[res])
+	v2.field.revision+=1
+	# One issued workshop product per package; the craft record travels with the player (v2.field).
+	var pools={}
+	for r in q.packages:
+		var info: Dictionary=v2.field.rules.recipes[r]; var units=int(v2.construction.rules.recipes[r].units)
+		for i in range(int(q.packages[r])):
+			var pid=serial; serial+=1
+			v2.field.crafts[str(pid)]={"recipe":r,"complete":true,"inputs":info.natural_inputs.duplicate()}
+			var product={"id":pid,"recipe":r,"recipe_version":int(info.version),"source_batch":"river:"+str(pid)}
+			c.sources[str(pid)]={"product":product,"remaining":units}
+			if not pools.has(r): pools[r]=[]
+			pools[r].append(str(pid))
+	var blocks=[]
+	for b in source_box.blocks:
+		var r=str(c.sources[str(b.source)].product.recipe); var key=str(pools[r][0])
+		var copy: Dictionary=b.duplicate(); copy.source=key; blocks.append(copy)
+		c.sources[key].remaining=int(c.sources[key].remaining)-1
+		if int(c.sources[key].remaining)<=0: pools[r].pop_front()
+	var new_id=str(c.miniature_serial); c.miniature_serial+=1
+	var base_name=str(source_box.name).trim_prefix("复刻 · ").trim_prefix("复制 · ")
+	c.miniatures[new_id]={"id":new_id,"name":("复制 · "+base_name).left(64),"blocks":blocks,"plot":-1}
+	c.revision+=1
+	home_saved()
+	return "建筑复制完成：「%s」%d 块已装盒，去星球用背包里的作品展开（%s）" % [base_name,blocks.size(),q.message.trim_prefix("复制 %d 块：" % int(q.blocks))]
+
+## v0.41.2 food: eat from the backpack; cook raw ingredients beside a campfire.
+func eat(id: String) -> String:
+	var C: Dictionary=v2.field.rules.cooking; var spec: Dictionary=C.foods.get(id,{})
+	if spec.is_empty(): return "这个不能直接吃"
+	if int(v2.field.stock.get(id,0))<1: return "背包里没有%s" % v2.field.rules.resources[id].name
+	var c=v2.combat
+	if float(spec.warmth)<=0.0 and c.player_health>=float(c.rules.player_health): return "现在不饿也不冷"
+	v2.field.stock[id]=int(v2.field.stock[id])-1; v2.field.revision+=1
+	c.eat(spec)
+	return "吃了%s：血量 %d%s" % [v2.field.rules.resources[id].name,int(c.player_health),"，暖身 +%d °C（%d秒）" % [int(spec.warmth),int(spec.seconds)] if float(spec.warmth)>0.0 else ""]
+
+func near_campfire() -> bool:
+	return not v2.actor.is_empty() and v2.construction.near_kind("campfire",v2.actor.feet,float(v2.field.rules.cooking.campfire_reach))
+
+func cook(recipe: String) -> String:
+	var C: Dictionary=v2.field.rules.cooking; var r: Dictionary=C.recipes.get(recipe,{})
+	if r.is_empty(): return "没有这道菜"
+	if not near_campfire(): return "走到篝火旁边才能烹饪"
+	var lacking=[]
+	for k in r.inputs:
+		if int(v2.field.stock.get(k,0))<int(r.inputs[k]): lacking.append("%s %d/%d" % [v2.field.rules.resources[k].name,int(v2.field.stock.get(k,0)),int(r.inputs[k])])
+	if not lacking.is_empty(): return "材料不够："+"、".join(lacking)
+	if not v2.field.can_add(recipe,int(r.output)): return "%s已经装满" % r.name
+	for k in r.inputs: v2.field.stock[k]=int(v2.field.stock[k])-int(r.inputs[k])
+	v2.field.stock[recipe]=int(v2.field.stock.get(recipe,0))+int(r.output); v2.field.revision+=1
+	return "篝火上做好了%s ×%d" % [r.name,int(r.output)]
+
 func gate_hint() -> String:
 	return "时间之门：当代营地进入「%s」后，彩虹光桥可以调到冰河期" % str(v2.settlement.rules.eras[int(v2.rules.time_gate.requires_era)].name)
 
@@ -233,6 +319,9 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			job={"id":serial,"recipe":str(info.id),"recipe_version":int(info.version),"left":float(info.seconds),"duration":float(info.seconds),"fee":int(info.fee),"source_batch":str(evidence(str(info.reference)).batch_id)}
 			serial+=1
 			return "%s制作中 · 标准工时%d秒，完工后自动入库" % [info.name,int(info.seconds)]
+		"copy_building": return copy_building(state,str(payload.get("id","")))
+		"v2_eat": return eat(str(payload.get("resource","")))
+		"v2_cook": return cook(str(payload.get("recipe","")))
 		"batch":
 			var rid=str(payload.get("recipe","")); var n=int(payload.get("count",0))
 			if n<=0: batch={}; return "已取消连续制作"

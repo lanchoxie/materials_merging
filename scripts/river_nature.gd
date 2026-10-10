@@ -58,15 +58,24 @@ func lookup(id: String,t) -> Dictionary:
 
 func chop(id: String,field,t) -> String:
 	var tree=lookup(id,t)
-	if tree.is_empty() or tree.cut: return "这里已经只剩树桩"
+	if tree.is_empty() or tree.cut: return "这棵树已经砍倒了"
 	if tree.growth<0.99: return "这棵幼树还没长成，先照顾它"
-	if not field.can_add("timber",int(rules.timber_yield)) or seeds[tree.species]>=int(rules.max_seed_stock): return "木料或树种已满，先整理背包"
+	var D: Dictionary=rules.drops
+	if not field.can_add("timber",int(D.timber[1])) or seeds[tree.species]>=int(rules.max_seed_stock): return "木料或树种已满，先整理背包"
 	if not trees.has(id) and trees.size()>=int(rules.max_trees): return "林木记录已满"
 	tree.hits+=1; trees[id]=tree
 	if tree.hits<int(rules.chop_hits): touch(Vector2(tree.x,tree.z),t); return "%s · 砍伐 %d/%d" % [rules.species[tree.species].name,tree.hits,rules.chop_hits]
 	tree.cut=true; tree.hits=0
-	field.stock.timber+=int(rules.timber_yield); field.revision+=1; seeds[tree.species]+=1; touch(Vector2(tree.x,tree.z),t)
-	return "%s倒下了：木料 ×%d，%s ×1。树桩不会自动刷回大树。" % [rules.species[tree.species].name,rules.timber_yield,rules.species[tree.species].seed]
+	# v0.41.2: drops are rolled per tree (deterministic by its id), and the tree is gone entirely.
+	var Field=field.get_script(); var gen=int(tree.get("gen",0)); var key=id+":"+str(gen)
+	var got=[]
+	var timber=Field.span(D.timber,Field.roll(key,1)); field.stock.timber+=timber; got.append("木料 ×%d" % timber)
+	if Field.roll(key,2)<float(D.seed): seeds[tree.species]+=1; got.append("%s ×1" % rules.species[tree.species].seed)
+	if Field.roll(key,3)<float(D.fiber.chance) and field.can_add("fiber",int(D.fiber.amount[1])):
+		var fiber=Field.span(D.fiber.amount,Field.roll(key,4)); field.stock.fiber+=fiber; got.append("植物纤维 ×%d" % fiber)
+	if Field.roll(key,5)<float(D.fruit.get(tree.species,0.0)) and field.can_add("fruit",1): field.stock.fruit+=1; got.append("野果 ×1")
+	field.revision+=1; touch(Vector2(tree.x,tree.z),t)
+	return "%s倒下了：%s" % [rules.species[tree.species].name,"，".join(got)]
 
 func plant(kind: String,p: Vector2,v) -> String:
 	var t=v.construction.terrain; p=p.round()
@@ -136,8 +145,13 @@ func dig(aim: Dictionary,v) -> String:
 	var id: String=t.material(c)
 	if id=="": return "这里已经挖空了"
 	if id=="bedrock": return "基岩是探索区的底部，当前工具无法破开"
-	var near=_structure_near(c,v)
-	if not near.is_empty(): return near
+	# v0.41.2 (user): digging is never refused for roads, and trees or facilities only guard the
+	# surface cell they stand on — underground is always fair game.
+	if c.y>=ceili(t.height_at(p))-1:
+		if t.blocked(p,con.obstacles):
+			for tree in records(t.chunk_at(p),t):
+				if not tree.cut and p.distance_to(Vector2(tree.x,tree.z))<0.9: return "%s长在这里：先用斧头把它砍倒" % rules.species[tree.species].name
+			return "先移开这里的设施"
 	for dy in [0,1]:
 		if con.blocks.has(con.key(c+Vector3i(0,dy,0))): return "先拆回上面的构件，以免建筑悬空或被掩埋"
 	if c.y>=ceili(t.height_at(p))-1:
@@ -163,7 +177,10 @@ func dig(aim: Dictionary,v) -> String:
 		v.field.stock.soil+=1; v.field.revision+=1
 		return "挖出1份土方（表土），这一格已挖空"+found
 	minerals[id]=int(minerals.get(id,0))+1
-	return "采到%s%s ×1%s" % [spec.name,(" "+str(spec.formula)) if str(spec.formula)!="" else "",found]
+	# v0.41.2: quarrying rock also leaves building stone (石料), the old 散石 piles' job.
+	var rubble=""
+	if id in rules.get("rubble_rocks",[]) and v.field.can_add("stone",1): v.field.stock.stone+=1; v.field.revision+=1; rubble="，石料 ×1"
+	return "采到%s%s ×1%s%s" % [spec.name,(" "+str(spec.formula)) if str(spec.formula)!="" else "",rubble,found]
 
 func place(aim: Dictionary,id: String,v) -> String:
 	var c=aim.get("target")
@@ -204,7 +221,7 @@ func scan(aim: Dictionary,v) -> String:
 			var found=v.specimens.record(str(tree.get("species","")),_biome(v,Vector2(tree.get("x",0.0),tree.get("z",0.0)))) if not tree.is_empty() else ""
 			return "分析仪 · %s\n木材：纤维素 (C₆H₁₀O₅)ₙ + 半纤维素 + 木质素（混合物）%s" % [aim.name,found]
 		"resource":
-			var kinds={"timber":"枯枝：木材（纤维素 + 木质素，混合物）","stone":"散石：风化岩块（混合物，成分随母岩而异）","fiber":"纤维草：植物纤维，主要为纤维素 (C₆H₁₀O₅)ₙ","fruit":"野果：水分 + 糖类 + 纤维（混合物）"}
+			var kinds={"timber":"枯枝：木材（纤维素 + 木质素，混合物）","stone":"石料：开采岩石时的碎石块（混合物，成分随母岩而异）","fiber":"纤维草：植物纤维，主要为纤维素 (C₆H₁₀O₅)ₙ","fruit":"野果：水分 + 糖类 + 纤维（混合物）"}
 			return "分析仪 · "+str(kinds.get(aim.node.kind,aim.name))
 		"animal","creature":
 			var e: Dictionary=aim.get("entity",{})

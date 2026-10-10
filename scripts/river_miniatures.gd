@@ -62,7 +62,9 @@ static func plan(c,id: String,actor: Dictionary) -> Dictionary:
 		if int(b.y)==0: ground=maxi(ground,c.base(c.cell(b)+Vector3i(offset.x,0,offset.z)))
 	if ground>-99999: offset.y=maxi(offset.y,ground)
 	var next=c.blocks.duplicate()
-	var result={"error":"","next":next,"low":offset,"high":offset+size}
+	var cells=[]
+	for b in item.blocks: cells.append(c.cell(b)+offset)
+	var result={"error":"","next":next,"low":offset,"high":offset+size,"cells":cells}
 	for b in item.blocks:
 		var pos=c.cell(b)+offset; var error=c.place_error(pos,actor,false)
 		# Validate support for the complete assembly below, not cell insertion order.

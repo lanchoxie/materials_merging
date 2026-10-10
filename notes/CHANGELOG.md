@@ -30,6 +30,19 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.41.2 "Wild Harvest" (野外生存)
+Full notes: [30-wild-harvest.md](30-wild-harvest.md).
+- **Gathering.** No stumps and no gathering piles. Felled trees drop timber 3–6 and, by chance, seeds, fibre and fruit;
+  quarrying rock gives stone; crops roll grain and seeds.
+- **Food.** Hunting drops meat. At a campfire you can roast meat, cook porridge or make stew; eating heals and warms you.
+- **建筑复制.** The workshop turns a boxed build into a real copy, paid for in raw materials.
+- **Placement preview.** Unfolding shows every cell it will fill.
+- **Machines.** Sprinklers water planters within 6 m, fertilizer spreaders speed them up, and every machine explains
+  itself when you aim at it.
+- **Digging.** It is no longer refused under roads or deep under trees. Only the surface cell of a standing tree asks you
+  to fell it first.
+- **Tests.** New: `test_wild_harvest` (35 checks).
+
 ## v0.41.1 custom reactors (user request)
 Full notes: [29-custom-reactors.md](29-custom-reactors.md).
 - **Reference geometry.** A custom molecule that matches a real PubChem 3D molecule gets a reference geometry: a match %,

@@ -85,7 +85,7 @@ func air_temperature(p: Vector2) -> float:
 ## Felt temperature: air plus a campfire within reach, a roof overhead and the 保温服.
 func felt_temperature(feet: Vector3) -> float:
 	var c: Dictionary=rules.cold; var p=Vector2(feet.x,feet.z)
-	var t=air_temperature(p)+combat.suit_warmth
+	var t=air_temperature(p)+combat.suit_warmth+(combat.food_warmth if combat.food_left>0.0 else 0.0)
 	if construction.near_kind("campfire",feet,float(c.fire_radius)): t+=float(c.fire_warmth)
 	if construction.roof_over(feet): t+=float(c.roof_warmth)
 	return t
@@ -290,7 +290,9 @@ func harvest() -> String:
 		if plot.ready: ready+=1
 		else: remaining.append(plot)
 	if ready==0: return "作物尚未成熟"
-	var seeds=ready*int(rules.ecology.harvest_seeds); var food=ready*int(rules.ecology.harvest_food)
+	var seeds=0; var food=ready*int(rules.ecology.harvest_food)
+	for i in range(ready):
+		seeds+=1+(1 if Field.roll(str(world.current_region),int(world.elapsed)*13+i)<float(rules.ecology.get("harvest_seed_chance",0.5)) else 0)
 	region().crops=remaining; world.seeds+=seeds; world.food+=food
 	settlement.harvests+=ready
 	_event("%s收获%d块作物，获得%d份饲料与%d份种子。" % [region().name,ready,food,seeds])

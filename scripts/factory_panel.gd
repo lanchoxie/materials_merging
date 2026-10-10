@@ -44,7 +44,7 @@ func setup(model) -> void:
 	var title=UI.label("工艺车间 · 材料制造",30,UI.MINT); title.position=Vector2(28,24); add_child(title)
 	close_button=UI.button("返回浮岛",_close); var close=close_button; close.position=Vector2(1288,22); close.size=Vector2(124,48); add_child(close)
 	var nav=UI.row(self,10); nav.position=Vector2(28,98)
-	for item in [["workshop","生产车间"],["dossiers","我的材料"],["materials","导热对照"],["circuits","导线对照"]]:
+	for item in [["workshop","生产车间"],["copy","建筑复制"],["dossiers","我的材料"],["materials","导热对照"],["circuits","导线对照"]]:
 		nav.add_child(UI.button(item[1],_section.bind(item[0])))
 	nav.add_child(UI.button("进入星球",func(): planet_requested.emit(),true))
 	var box=SubViewportContainer.new(); box.position=Vector2(28,164); box.size=Vector2(770,602); box.stretch=true; add_child(box)
@@ -91,7 +91,7 @@ func _key() -> String:
 	var affordable=state.coins>=float(p.recipe(selected_recipe).get("fee",0))
 	for batch in state.storage.batches: batches.append([batch.id,batch.quantity])
 	for job in state.campus.research_jobs: research.append([job.id,int(job.progress)/5])
-	return str([affordable,WorkshopAccess.status(state).ready,p.production_mode,p.joined,p.qualified,p.extra_qualifications,p.reports,p.circuit_reports,p.products.size(),p.job.get("id",0),p.supplies,p.feed,p.v2.field.stock,p.materials.records.size(),p.materials.designs.size(),p.laminates.stock,p.laminates.feed,p.laminates.job.get("id",0),state.campus.unlocked_materials,research,batches])
+	return str([affordable,WorkshopAccess.status(state).ready,p.production_mode,p.joined,p.qualified,p.extra_qualifications,p.reports,p.circuit_reports,p.products.size(),p.job.get("id",0),p.supplies,p.feed,p.v2.field.stock,p.home().construction.miniatures.size(),p.materials.records.size(),p.materials.designs.size(),p.laminates.stock,p.laminates.feed,p.laminates.job.get("id",0),state.campus.unlocked_materials,research,batches])
 
 func _redraw(reset_scroll: bool=false) -> void:
 	scroll_memory.refresh(scroll,reset_scroll)
@@ -100,6 +100,7 @@ func _redraw(reset_scroll: bool=false) -> void:
 		"dossiers": preload("res://scripts/player_material_panel.gd").build(self)
 		"materials": view.material_view.set_mode(material_mode); preload("res://scripts/material_lab_panel.gd").build(self)
 		"circuits": _circuits()
+		"copy": view.set_mode("workshop"); _copy_section()
 		_:
 			view.show_product(selected_recipe)
 			if state.planet.materials.designs.get(selected_recipe,{}).get("basis")=="family_model":
@@ -213,6 +214,18 @@ func _workshop() -> void:
 	_button("前往星球 · 使用现有成品",func(): planet_requested.emit(),true)
 
 ## v0.37.1: 连续制作 — the next item starts by itself when the bench frees up.
+## v0.41.2 建筑复制台: turn a boxed build into a real copy, paid in raw materials.
+func _copy_section() -> void:
+	var p=state.planet; var boxes: Dictionary=p.home().construction.miniatures
+	_text("建筑复制台",23,UI.MINT)
+	_text("从「河湾作品」里选一件，复制台按每块构件的配方消耗采集原料（按整包计算，多出的构件留在新作品里），做出一件可以展开的新建筑。复刻展示模型也能照着复制。",15)
+	if boxes.is_empty(): _text("还没有作品：在星球上用微缩器把自己搭的建筑装盒。",16,UI.GOLD); return
+	for id in boxes:
+		var box: Dictionary=boxes[id]; var q=p.copy_quote(state,str(id))
+		_text("%s · %d 块%s" % [box.name,box.blocks.size()," · 复刻模型" if box.get("replica",false) else ""],18,UI.TEXT)
+		_text(str(q.message),14,UI.MINT if q.ready else UI.GOLD)
+		_button("复制这座建筑",func(): _do("copy_building",{"id":str(id)}),false,not q.ready)
+
 func _batch_buttons(info: Dictionary,blocked: bool) -> void:
 	var p=state.planet
 	if not p.batch.is_empty():

@@ -1,11 +1,64 @@
 {
-  "max_edits": 4096, "max_trees": 2048, "height_change_limit": 6,
-  "max_voxels": 16384, "max_mineral_stock": 999, "build_above": 16, "build_ceiling": 96,
-  "max_seed_stock": 999, "reach": 5, "chop_hits": 4, "timber_yield": 5,
-  "growth_seconds": 240, "rain_growth": 0.45, "watering_growth": 1.0,
+  "max_edits": 4096,
+  "max_trees": 2048,
+  "height_change_limit": 6,
+  "max_voxels": 16384,
+  "max_mineral_stock": 999,
+  "build_above": 16,
+  "build_ceiling": 96,
+  "max_seed_stock": 999,
+  "reach": 5,
+  "chop_hits": 4,
+  "timber_yield": 5,
+  "growth_seconds": 240,
+  "rain_growth": 0.45,
+  "watering_growth": 1.0,
   "species": {
-    "oak": {"name":"橡树", "seed":"橡果", "wood":"956f4c", "leaf":"629956", "height":3.1},
-    "birch": {"name":"白桦", "seed":"桦树种子", "wood":"e5e2c8", "leaf":"a5bd61", "height":3.8},
-    "pine": {"name":"松树", "seed":"松果", "wood":"815d46", "leaf":"3c7464", "height":4.2}
-  }
+    "oak": {
+      "name": "橡树",
+      "seed": "橡果",
+      "wood": "956f4c",
+      "leaf": "629956",
+      "height": 3.1
+    },
+    "birch": {
+      "name": "白桦",
+      "seed": "桦树种子",
+      "wood": "e5e2c8",
+      "leaf": "a5bd61",
+      "height": 3.8
+    },
+    "pine": {
+      "name": "松树",
+      "seed": "松果",
+      "wood": "815d46",
+      "leaf": "3c7464",
+      "height": 4.2
+    }
+  },
+  "drops": {
+    "timber": [
+      3,
+      6
+    ],
+    "seed": 0.6,
+    "fiber": {
+      "chance": 0.55,
+      "amount": [
+        1,
+        2
+      ]
+    },
+    "fruit": {
+      "oak": 0.4,
+      "birch": 0.15,
+      "pine": 0.1
+    },
+    "note": "砍倒一棵树的掉落按树的编号确定性随机（同一棵树结果固定）；概率为游戏数值"
+  },
+  "rubble_rocks": [
+    "granite",
+    "basalt",
+    "limestone"
+  ]
 }

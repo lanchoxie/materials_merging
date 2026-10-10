@@ -19,7 +19,11 @@ func entries(state) -> Dictionary:
 		var spec=v.field.rules.resources[id]; var key="raw:"+str(id)
 		if int(v.field.stock[id])<=0 and key not in slots: continue
 		var action={"type":"feed","resource":id} if id in ["fruit","grain"] else ({"type":"fill"} if id=="soil" else {})
-		result[key]=_item(key,spec.name,"raw",spec.icon,int(v.field.stock[id]),"从河湾采集或收获，回浮岛仍在同一背包中。"+("瞄准地面填高一格；消耗1份土方，可用采掘镐挖回。" if id=="soil" else ("瞄准小兽可喂食，也可送入粮仓。" if not action.is_empty() else "到工艺车间加工成建材，无需购买标准供料。")),action)
+		# v0.41.2: cooked food is eaten from the hotbar; raw meat waits for a campfire.
+		var food: Dictionary=v.field.rules.cooking.foods.get(id,{})
+		if not food.is_empty() and id!="fruit": action={"type":"eat","resource":id}
+		var text="从河湾采集或收获，回浮岛仍在同一背包中。"+("瞄准地面填高一格；消耗1份土方，可用采掘镐挖回。" if id=="soil" else ("瞄准小兽可喂食，也可送入粮仓；饿了也能直接吃（回血 %d）。" % int(food.get("heal",0)) if id=="fruit" else ("E 吃下：回血 %d，暖身 +%d °C %d 秒。" % [int(food.heal),int(food.warmth),int(food.seconds)] if not food.is_empty() else ("走到篝火旁烤熟再吃。" if id=="meat" else "到工艺车间加工成建材，无需购买标准供料。"))))
+		result[key]=_item(key,spec.name,"raw",spec.icon,int(v.field.stock[id]),text,action)
 	for id in v.nature.minerals:
 		var spec=v.nature.Geology.info(str(id)); var key="rock:"+str(id)
 		if int(v.nature.minerals[id])<=0 and key not in slots: continue

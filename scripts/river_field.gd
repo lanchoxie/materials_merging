@@ -15,7 +15,19 @@ var revision=0
 func _init() -> void:
 	for id in rules.resources: stock[id]=0
 
+## v0.41.2: the gathering piles are gone (stone is dug, wood/fibre/fruit come from felled trees).
+## Kept as an empty list so every caller stays valid.
 func nodes(at: Vector2,radius: float=36) -> Array:
+	return []
+
+## Deterministic 0..1 roll: the same key and salt always give the same result (no save scumming).
+static func roll(key: String,salt: int) -> float:
+	return float(posmod(hash([key,salt]),100003))/100003.0
+
+static func span(bounds: Array,r: float) -> int:
+	return int(bounds[0])+mini(int(bounds[1])-int(bounds[0]),int(floor(r*(int(bounds[1])-int(bounds[0])+1))))
+
+func _old_nodes(at: Vector2,radius: float=36) -> Array:
 	var result=[]
 	var home=[Vector2(17,18),Vector2(20,15),Vector2(18,11),Vector2(22,19),Vector2(24,14),Vector2(26,18),Vector2(21,24),Vector2(25,23)]
 	var kinds=["timber","stone","fiber","fruit"]
@@ -52,7 +64,7 @@ func remaining(id: String,now: int) -> int:
 	return maxi(0,int(changed.get(id,{}).get("ready_at",0))-now)
 
 func collect(n: Dictionary,now: int) -> String:
-	if n.is_empty(): return "瞄准附近的采集点"
+	if n.is_empty(): return "砍树得木料、纤维和野果；挖岩石得石料"
 	var spec: Dictionary=rules.resources[n.kind]
 	if remaining(n.id,now)>0: return "%s恢复中 · 还需%d秒星球时间" % [spec.node,remaining(n.id,now)]
 	if not can_add(n.kind,int(spec.yield)): return "这种材料已装满，先到车间加工"
@@ -110,10 +122,15 @@ func water(key: String) -> void:
 func harvest(key: String,world: Dictionary) -> String:
 	if not gardens.has(key): return "箱里还没有作物；从背包装备种子"
 	if gardens[key].growth<1: return "作物尚未成熟"
-	var amount=int(rules.garden.harvest_grain)
+	# v0.41.2: grain and seeds are rolled per harvest (deterministic per box and time).
+	var salt=int(world.elapsed)
+	var amount=span(rules.garden.harvest_grain_range,roll(key,salt))
 	if not can_add("grain",amount): return "谷穗格已满，先取用收获"
-	stock.grain+=amount; world.seeds+=int(rules.garden.harvest_seeds); gardens.erase(key); revision+=1
-	return "收入背包：谷穗 ×%d，留种 ×%d；回浮岛仍可取用" % [amount,rules.garden.harvest_seeds]
+	var seeds=0
+	for i in range(rules.garden.seed_chances.size()):
+		if roll(key,salt*7+i+1)<float(rules.garden.seed_chances[i]): seeds+=1
+	stock.grain+=amount; world.seeds+=seeds; gardens.erase(key); revision+=1
+	return "收入背包：谷穗 ×%d%s；回浮岛仍可取用" % [amount,"，留种 ×%d" % seeds if seeds>0 else "，这次没留下种子"]
 
 func covered(b: Dictionary,c) -> bool:
 	# A vertical column lookup stays bounded even with hundreds of planted boxes.
@@ -125,12 +142,24 @@ func covered(b: Dictionary,c) -> bool:
 func tick(world: Dictionary,c,organics=null) -> void:
 	for id in changed.keys():
 		if changed[id].ready_at>0 and changed[id].ready_at<=world.elapsed: changed.erase(id); revision+=1
+	# v0.41.2: sprinklers keep nearby planters wet; fertilizer spreaders speed them up.
+	var G: Dictionary=rules.garden; var sprinklers=[]; var spreaders=[]
+	if not gardens.is_empty():
+		for m in c.blocks.values():
+			if m.kind=="sprinkler": sprinklers.append(Vector2(m.x,m.z))
+			elif m.kind=="fertilizer_spreader": spreaders.append(Vector2(m.x,m.z))
 	for key in gardens:
 		var plot: Dictionary=gardens[key]; var b: Dictionary=c.blocks[key]
 		var roof=covered(b,c)
+		var at=Vector2(b.x,b.z); var watered=false; var fed=false
+		for sp in sprinklers:
+			if sp.distance_to(at)<=float(G.sprinkler_radius): watered=true; break
+		for sp in spreaders:
+			if sp.distance_to(at)<=float(G.fertilizer_radius): fed=true; break
+		if watered: plot.moisture=minf(1.0,float(plot.moisture)+float(G.sprinkler_water))
 		var rain=float(rules.garden.rain_per_second) if int(world.elapsed)%int(rules.garden.rain_period_seconds)<int(rules.garden.rain_duration_seconds) and not roof else 0.0
 		plot.moisture=clampf(plot.moisture-float(rules.garden.evaporation)*(float(rules.garden.roof_evaporation_multiplier) if roof else 1.0)+rain,0,1)
-		if plot.moisture>=float(rules.garden.minimum_moisture): plot.growth=minf(1,plot.growth+(organics.growth_factor(key) if organics!=null else 1.0)*(float(rules.garden.roof_growth_multiplier) if roof else 1.0)/float(rules.garden.growth_seconds))
+		if plot.moisture>=float(rules.garden.minimum_moisture): plot.growth=minf(1,plot.growth+(organics.growth_factor(key) if organics!=null else 1.0)*(float(rules.garden.roof_growth_multiplier) if roof else 1.0)*(float(G.fertilizer_growth) if fed else 1.0)/float(rules.garden.growth_seconds))
 
 func serialize() -> Dictionary:
 	return {"version":1,"stock":stock.duplicate(),"changed":changed.duplicate(true),"crafts":crafts.duplicate(true),"gardens":gardens.duplicate(true)}
@@ -143,13 +172,8 @@ func restore(data,c,now: int) -> bool:
 	for id in data.stock:
 		if not rules.resources.has(id): return false
 	for id in rules.resources:
-		if not _num(data.stock.get(id,0) if id=="soil" else data.stock.get(id),0,rules.max_stock,true): return false
-	for id in data.changed:
-		var n=node(str(id)); var row=data.changed[id]
-		if n.is_empty() or not row is Dictionary: return false
-		var spec=rules.resources[n.kind]
-		if not _num(row.get("hits"),0,int(spec.hits)-1,true) or not _num(row.get("ready_at"),0,now+int(spec.renew_seconds),true): return false
-		if row.ready_at>0 and row.hits!=0: return false
+		if not _num(data.stock.get(id,0),0,rules.max_stock,true): return false
+	# v0.41.2: piles no longer exist; old progress on them is simply dropped.
 	for id in data.crafts:
 		var row=data.crafts[id]
 		if not str(id).is_valid_int() or int(id)<1 or not row is Dictionary or not rules.recipes.has(row.get("recipe")) or not row.get("complete") is bool: return false
@@ -158,7 +182,9 @@ func restore(data,c,now: int) -> bool:
 		var row=data.gardens[key]
 		if c.blocks.get(key,{}).get("kind")!="planter" or not row is Dictionary: return false
 		if not _num(row.get("growth"),0,1) or not _num(row.get("moisture"),0,1) or not _num(row.get("waterings"),0,1000000,true): return false
-	stock=data.stock.duplicate(); stock["soil"]=int(stock.get("soil",0)); changed=data.changed.duplicate(true); crafts=data.crafts.duplicate(true); gardens=data.gardens.duplicate(true); revision+=1
+	stock={}
+	for id in rules.resources: stock[id]=int(data.stock.get(id,0))
+	changed={}; crafts=data.crafts.duplicate(true); gardens=data.gardens.duplicate(true); revision+=1
 	return true
 
 func _num(v,lo: float,hi: float,whole: bool=false) -> bool:

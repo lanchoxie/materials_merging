@@ -44,7 +44,7 @@ func _run() -> void:
 	await shot("winter-night-cold")
 	var c=v.construction; var feet=v.actor.feet
 	var product={"id":int(s.planet.serial),"recipe":"field_campfire","recipe_version":1,"source_batch":"river:"+str(int(s.planet.serial))}
-	v.field.crafts[str(int(product.id))]={"recipe":"field_campfire","complete":true,"inputs":{"timber":3,"stone":2}}; s.planet.serial+=1
+	v.field.crafts[str(int(product.id))]={"recipe":"field_campfire","complete":true,"inputs":v.field.rules.recipes.field_campfire.natural_inputs.duplicate()}; s.planet.serial+=1
 	c.sources[str(int(product.id))]={"product":product,"remaining":1}
 	var fx=Vector3i(roundi(feet.x)-1,0,roundi(feet.z)-3); fx.y=c.base(fx)
 	c.blocks[c.key(fx)]={"x":fx.x,"y":fx.y,"z":fx.z,"kind":"campfire","source":str(int(product.id))}; c.revision+=1

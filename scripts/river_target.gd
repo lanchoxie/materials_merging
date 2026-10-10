@@ -77,7 +77,7 @@ static func _distance(box: AABB,eye: Vector3,direction: Vector3) -> float:
 	return -1 if point==null else eye.distance_to(point)
 
 static func prompt(v,target: Dictionary) -> String:
-	if target.is_empty(): return "瞄准枯枝、散石、纤维草、果丛或种植箱 · E 操作"
+	if target.is_empty(): return "装备斧头砍树、采掘镐挖石；瞄准种植箱或篝火按 E"
 	var text="%s · %.1f米" % [target.name,target.distance]
 	match target.type:
 		"resource":
@@ -87,6 +87,14 @@ static func prompt(v,target: Dictionary) -> String:
 			return text+" · E 采集 %d/%d" % [int(v.field.changed.get(target.node.id,{}).get("hits",0)),spec.hits]
 		"block":
 			if target.kind=="mixing_tank": return text+" · E 查看配料 / 背包拿起有机物或水样加料"
+			if target.kind=="campfire": return text+" · E 烹饪（烤肉 / 谷物粥 / 热汤）· 站在旁边取暖"
+			# v0.41.2: say what each machine actually does, with its live numbers.
+			var G: Dictionary=v.field.rules.garden
+			match str(target.kind):
+				"sprinkler": return text+" · 周围%d米内的种植箱自动保持湿润；附近大片土地变湿润、略降温" % int(G.sprinkler_radius)
+				"fertilizer_spreader": return text+" · 周围%d米内的种植箱长得快%d%%；附近土壤变肥（带少量污染）" % [int(G.fertilizer_radius),roundi((float(G.fertilizer_growth)-1.0)*100)]
+				"oxygen_tower": return text+" · 提高全球大气含氧量（现在 %.1f%%）：湿地水体溶氧更高，鱼更健康" % float(v.environment.o2)
+				"co2_tower": return text+" · 提高全球 CO₂（现在 %d ppm）：全球升温 %+.1f °C，作物长得稍快" % [roundi(float(v.environment.co2)),float(v.environment.warming())]
 			if target.kind in ["trough","feeder"]:
 				var f=v.ranch.facility(target.key,target.kind); var spec=v.ranch.rules.facilities[target.kind]
 				return text+" · 储料%d/%d · %s" % [f.stock,spec.capacity,"装备水样补充" if target.kind=="trough" else "装备谷穗补充"]

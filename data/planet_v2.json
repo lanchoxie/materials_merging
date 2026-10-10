@@ -36,7 +36,8 @@
     "max_plots": 4,
     "initial_seeds": 6,
     "harvest_seeds": 2,
-    "harvest_food": 3
+    "harvest_food": 3,
+    "harvest_seed_chance": 0.5
   },
   "regions": [
     {

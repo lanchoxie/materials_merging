@@ -201,7 +201,7 @@ func _travel(id: String) -> void:
 	var destination=view.terrain.LANDMARKS[id]
 	view.travel(destination.at); explore_input.set_walking(true)
 	show_details=false; _exploration_layout(); message="抵达"+str(destination.name)+"。M查看旅途，成熟的金色野草可以采集。"
-	if id=="homestead": message="采集坡：装备手套，瞄准枯枝堆、散石或果丛按E；原料可带回工艺车间。"
+	if id=="homestead": message="采集坡：装备斧头砍树得木料、纤维和野果，采掘镐挖岩石得石料；原料带回工艺车间。"
 	_redraw(); _sync()
 
 ## 测试版 only: jump to any point of the 16 km world.
@@ -260,6 +260,22 @@ func _sync_rover() -> void:
 	var at=Vector2(float(v.rover_at.x),float(v.rover_at.z))
 	if not view.rover_parked or view.rover.position.distance_to(at)>0.5: view.park_rover(at,float(v.rover_at.heading))
 
+var cook_box: PanelContainer
+func _cook_menu() -> void:
+	if is_instance_valid(cook_box): cook_box.queue_free()
+	var v=state.planet.v2; var C: Dictionary=v.field.rules.cooking
+	cook_box=PanelContainer.new(); cook_box.add_theme_stylebox_override("panel",UI.style(Color(0.05,0.1,0.13,0.96),14))
+	cook_box.position=viewport_box.position+Vector2(viewport_box.size.x*0.5-230,90); cook_box.size=Vector2(460,10); add_child(cook_box)
+	var col=UI.column(cook_box,8)
+	col.add_child(UI.label("篝火 · 烹饪",20,UI.GOLD))
+	col.add_child(UI.paragraph("熟食回血；热食让身体暖和一阵（体感温度上升）。生肉来自打猎。",13))
+	for id in C.recipes:
+		var r: Dictionary=C.recipes[id]; var f: Dictionary=C.foods.get(id,{}); var parts=[]
+		for k in r.inputs: parts.append("%s×%d（有%d）" % [v.field.rules.resources[k].name,int(r.inputs[k]),int(v.field.stock.get(k,0))])
+		var b=UI.button("%s：%s → 回血%d · 暖身+%d°C %d秒" % [r.name,"＋".join(parts),int(f.get("heal",0)),int(f.get("warmth",0)),int(f.get("seconds",0))],func(): message=state.planet.command(state,"v2_cook",{"recipe":id}); _live(); _cook_menu())
+		b.add_theme_font_size_override("font_size",13); col.add_child(b)
+	col.add_child(UI.button("关闭",func(): cook_box.queue_free()))
+
 func near_rover() -> bool:
 	return view.rover_parked and not view.driving and view.walker.position.distance_to(view.rover.position)<=float(view.terrain.rules.rover.enter_distance)
 
@@ -280,6 +296,9 @@ func _toggle_rover() -> bool:
 func _collect() -> void:
 	if is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
 	if _toggle_rover(): return
+	# v0.41.2: E at a campfire opens the cooking menu.
+	_update_actor()
+	if state.planet.v2.Target.query(state.planet.v2).get("kind","")=="campfire": _cook_menu(); return
 	_update_actor()
 	var id=str(state.planet.v2.inventory.slots[state.planet.v2.inventory.selected])
 	if id.is_empty(): message="这一格是空的，按 B 从背包装备物品。"; _live(); return
@@ -296,6 +315,7 @@ func _use_item(id: String,alternate: String="") -> void:
 	if type=="strike": _attack(); return
 	var target=state.planet.v2.Target.query(state.planet.v2)
 	if alternate=="pantry": _act("v2_field_pantry",{"resource":action.get("resource","")}); return
+	if alternate=="eat" or type=="eat": _act("v2_eat",{"resource":action.get("resource","")}); return
 	if target.get("type")=="depot" and type in ["collect","feed","sample","product","plant"]:
 		view.hands.swing(); _act("v2_depot_stock"); return
 	if alternate=="deploy" and type=="build": type="product"
@@ -426,7 +446,7 @@ func _aim() -> void:
 	elif action.get("type")=="mini_unfold":
 		# v0.37.1: a ghost shows where the boxed build will land (green) or why it can't (red).
 		var found: Dictionary=preload("res://scripts/river_miniatures.gd").plan(v.construction,str(action.get("id","")),v.actor)
-		view.construction_view.preview_box(found)
+		view.construction_view.preview_cells(found)
 		aim_label.text=found.error if not found.error.is_empty() else "%s · 绿框是展开位置 · E 展开" % str(item.get("name","作品"))
 	aim_label.text=InteractionHelp.prompt(v,item,target,aim_label.text)
 	action_button.text=InteractionHelp.button_text(action,target)
@@ -555,7 +575,7 @@ func _journey() -> void:
 func _building() -> void:
 	var c=state.planet.v2.construction
 	var start=_card("从一把枯枝，到第一块菜地")
-	start.add_child(UI.paragraph("① 到采集坡，用手套采木料、散石和纤维。\n② 在浮岛连通工艺车间、安排工程师，加工墙、屋顶和种植箱。\n③ 把成品放入快捷栏，在星球搭建。\n④ 装备种子瞄准箱子播种，用水样或标准水箱浇这一箱；成熟后手套收获。",15))
+	start.add_child(UI.paragraph("① 用斧头砍树得木料、纤维和野果，用采掘镐挖岩石得石料。\n② 在浮岛连通工艺车间、安排工程师，加工墙、屋顶和种植箱。\n③ 把成品放入快捷栏，在星球搭建。\n④ 装备种子瞄准箱子播种，用水样或标准水箱浇这一箱；成熟后手套收获。",15))
 	start.add_child(UI.button("前往采集坡",_travel.bind("homestead"),true))
 	for recipe in state.planet.v2.field.rules.recipes:
 		start.add_child(UI.button("加工 · "+str(state.planet.recipe(recipe).name),func(): workshop_requested.emit(recipe)))
@@ -617,7 +637,7 @@ func _weather_card() -> void:
 		line.add_child(UI.label("%s %d%%" % [row[0],roundi(p*100)],14,UI.MINT if p>=0.5 else UI.TEXT))
 	card.add_child(UI.button("铺设灌溉管 %d/%d · 星锻岛 PVC×%d" % [inc.pipes,int(inc.rules.pipe.max),int(inc.rules.pipe.pvc)],func(): message=state.lay_pipe(); _redraw()))
 	card.add_child(UI.button("去车间做屋顶或堤坝木墙",func(): workshop_requested.emit("field_roof")))
-	card.add_child(UI.button("去车间做篝火（3木料 + 2散石）",func(): workshop_requested.emit("field_campfire")))
+	card.add_child(UI.button("去车间做篝火（3木料 + 2石料）",func(): workshop_requested.emit("field_campfire")))
 	if not inc.history.is_empty(): card.add_child(UI.paragraph("上一次："+str(inc.history[0].text),13))
 	# v0.39 time gate status.
 	var gate=_card("时间之门 · %s" % str(v.epoch_info().name))

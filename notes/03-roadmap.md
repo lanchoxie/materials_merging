@@ -104,7 +104,12 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   enter/exit, Wh/km range, charging.
 - ✅ v0.41.1 custom reactors (tag `v0.41.1`; see [29-custom-reactors.md](29-custom-reactors.md)): 我的炉型, 空白反应炉,
   PubChem reference geometry; island-walk input fix.
-- Next: v0.42 planet — Settlers/Bronze/Clash: native factions, war events, incident director (plan in 14-industry-island.md).
+- ✅ v0.41.2 "Wild Harvest" (tag `v0.41.2`; see [30-wild-harvest.md](30-wild-harvest.md)).
+- Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
+  oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal
+  doors, windows, boards, bricks, roofs) → 盾构机 (bulk ore) → farm robots → airplane → spaceship → second planet.
+  Native factions move after these.
+- Was next: v0.42 planet — Settlers/Bronze/Clash: native factions, war events, incident director (plan in 14-industry-island.md).
 - Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
   more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,
   and the remaining eras.

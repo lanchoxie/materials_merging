@@ -15,6 +15,7 @@ static func button_text(action: Dictionary,target: Dictionary) -> String:
 		"organic_sample": return "加料 E"
 		"feed": return "喂食 E"
 		"mini_pack": return "装盒 E"
+		"eat": return "吃 E"
 	return "使用 E"
 
 static func prompt(v,item: Dictionary,target: Dictionary,fallback: String) -> String:

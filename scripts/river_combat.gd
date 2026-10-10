@@ -10,6 +10,9 @@ var revision=0
 ## v0.39 cold: the 保温服's warmth (set by LabState.sync_gear) and the last felt temperature (HUD).
 var suit_warmth=0.0
 var felt=20.0
+## v0.41.2 hot food: extra felt warmth for a while.
+var food_warmth=0.0
+var food_left=0.0
 const WILD_NAMES={"woodland_boar":"林地野猪","meadow_herbivore":"林间小鹿","mammoth":"猛犸象","woolly_rhino":"披毛犀"}
 const WILD_HEIGHT={"mammoth":3.0,"woolly_rhino":1.8}
 const FIGHTERS=["woodland_boar","mammoth","woolly_rhino"]
@@ -52,6 +55,11 @@ func strike(target: Dictionary,v) -> String:
 	e.row.health=maxf(0,float(e.row.get("health",1))-float(rules.hit_damage)); attack_left=float(rules.hit_cooldown); revision+=1
 	if e.row.health<=0:
 		records.erase(e.key); _remove(e,v)
+		# v0.41.2: game animals leave meat (amount rolled per animal).
+		var meat_range: Array=rules.get("meat",{}).get(str(e.row.get("species","")),[])
+		if e.type in ["animal","wild"] and not meat_range.is_empty():
+			var meat=v.field.span(meat_range,v.field.roll(str(e.key),9))
+			if v.field.can_add("meat",meat): v.field.stock.meat+=meat; v.field.revision+=1; return "%s倒下了：生肉 ×%d（篝火旁可烤熟）" % [e.name,meat]
 		return e.name+"倒下了。它不会因为重新进入区域而复活。"
 	return "%s受到攻击 · 血量%.0f%% · %s" % [e.name,e.row.health*100,r.mode]
 
@@ -63,6 +71,9 @@ func _remove(e: Dictionary,v) -> void:
 
 func tick(dt: float,v,advance_encounters: bool=true) -> void:
 	attack_left=maxf(0,attack_left-dt); hurt_flash=maxf(0,hurt_flash-dt)
+	if food_left>0.0:
+		food_left=maxf(0.0,food_left-dt)
+		if food_left<=0.0: food_warmth=0.0
 	# A paused ecosystem still accepts manual actions; the player's arm must recover.
 	if not advance_encounters: return
 	if v.actor.is_empty() or player_health<=0: return
@@ -105,6 +116,12 @@ func _cold(dt: float,v) -> void:
 	var below=float(rules_cold.threshold)-felt
 	if below<=0.0: return
 	player_health=maxf(0,player_health-below*float(rules_cold.drain_per_degree)*dt); revision+=1
+
+## Eat one food: heal, and hot food warms for a while (the stronger buff wins).
+func eat(spec: Dictionary) -> void:
+	player_health=minf(float(rules.player_health),player_health+float(spec.heal)); revision+=1
+	if float(spec.warmth)>0.0 and float(spec.warmth)*float(spec.seconds)>=food_warmth*food_left:
+		food_warmth=float(spec.warmth); food_left=float(spec.seconds)
 
 func respawn() -> void:
 	player_health=float(rules.player_health); attack_left=0; hurt_flash=0; records.clear(); revision+=1

@@ -39,6 +39,7 @@ func _initialize() -> void:
 	var tree=t.tree_records(t.chunk_at(p))[0]
 	for i in range(int(v.nature.rules.chop_hits)): v.nature.chop(tree.id,v.field,t)
 	check(v.nature.trees[tree.id].cut,"remote tree can be harvested beyond original 512 metre save bound")
+	v.nature.seeds[tree.species]=maxi(1,int(v.nature.seeds[tree.species]))   # seeds are a chance drop since v0.41.2
 	var planted=false
 	for x in range(6040,6061):
 		for z in range(2040,2061):
