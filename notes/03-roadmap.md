@@ -105,6 +105,8 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.41.1 custom reactors (tag `v0.41.1`; see [29-custom-reactors.md](29-custom-reactors.md)): 我的炉型, 空白反应炉,
   PubChem reference geometry; island-walk input fix.
 - ✅ v0.41.2 "Wild Harvest" (tag `v0.41.2`; see [30-wild-harvest.md](30-wild-harvest.md)).
+- ✅ v0.42 "Blue Planet" (tag `v0.42.0`; see [31-globe.md](31-globe.md)): wrap-around planet, oceans, ranges, latitude
+  climate, globe god view, no fixed places. Curved horizon moves to the airplane release.
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal
   doors, windows, boards, bricks, roofs) → 盾构机 (bulk ore) → farm robots → airplane → spaceship → second planet.

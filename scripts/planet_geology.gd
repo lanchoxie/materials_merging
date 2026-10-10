@@ -29,6 +29,8 @@ static func natural(c: Vector3i,top: float,river: bool) -> String:
 	var depth=ceili(top)-1-c.y
 	if river and depth<2: return "sand"
 	if depth==0: return "topsoil"
+	# v0.42: mountain ranges are granite under a thin soil.
+	if c.y>=12: return "granite"
 	if depth<=2 and c.y>-6:
 		if _blob(c,Vector3i(3,2,3),11,0.05): return "gibbsite"
 		return "sand" if _hash(floori(c.x/6.0),0,floori(c.z/6.0),7)<0.3 else "clay"

@@ -46,6 +46,7 @@ func observe(at: Vector2) -> void:
 		for x in range(-1,2):
 			var grid=center+Vector2(x,z); var p=grid*spacing
 			if p.length()<40 or not terrain.inside(p,10) or at.distance_to(p)>float(rules.active_radius): continue
+			if terrain.natural_height(p)<0.3: continue   # v0.42: no camps or herds in the sea
 			var key="%d:%d" % [int(grid.x),int(grid.y)]
 			if not sites.has(key) and sites.size()<int(rules.max_sites):
 				var camp=(posmod(int(grid.x)*7+int(grid.y)*3,5)==0)

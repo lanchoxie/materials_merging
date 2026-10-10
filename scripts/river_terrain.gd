@@ -1,6 +1,8 @@
 extends RefCounted
 ## Shared geometry queries: renderer and walker always use the same ground.
 const Geology=preload("res://scripts/planet_geology.gd")
+## v0.42: continents, oceans, mountain ranges, poles and the wrap (scripts/planet_shape.gd).
+const Shape=preload("res://scripts/planet_shape.gd")
 const CENTERS={"wetland":Vector3(-10,0,10),"riverbank":Vector3(-10,0,-10),"meadow":Vector3(10,0,10),"highland":Vector3(10,0,-10)}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_exploration.json"))
 var nature
@@ -19,7 +21,9 @@ var _cave_columns: Dictionary={}
 var _height_cache: Dictionary={}
 var _trunks: Dictionary={}
 var _cave_cells: Dictionary={}
-const LANDMARKS={"home":{"name":"起始河湾","at":Vector2(10,15)},"homestead":{"name":"采集坡 · 小屋营地","at":Vector2(16,22)},"camp":{"name":"旅人林间营地","at":Vector2(68,68)},"woods":{"name":"西岸林地","at":Vector2(-124,68)},"ridge":{"name":"远方高原","at":Vector2(196,-188)},"frontier":{"name":"千米林海 · 远征起点","at":Vector2(1348,1348)},"far_river":{"name":"六公里外 · 上游河谷","at":Vector2(-8,-6140)}}
+## v0.42: no fixed far-away places; only the home camp (and its gathering slope) can be returned to.
+## Everything else is found by walking and remembered with the player's own waypoints.
+const LANDMARKS={"home":{"name":"起始河湾","at":Vector2(10,15)},"homestead":{"name":"采集坡 · 小屋营地","at":Vector2(16,22)}}
 
 func _init() -> void:
 	# Compatibility/sample list only; walking queries nearby chunks, never this list.
@@ -44,6 +48,15 @@ func chunk_tree_origins(key: Vector2i) -> Array[Vector2]:
 			var site=(p/float(rules.site_spacing)).round()*float(rules.site_spacing)
 			if site.length()>40 and p.distance_to(site)<8: clearing=true
 			if clearing or sin(ix*21.1+iz*43.8)<-0.1: continue
+			# v0.42: no trees in the sea or on beaches; how dense a wood is depends on the biome.
+			if p.length()>300.0:
+				var cont=Shape.continent(p.x,p.y)
+				if cont<0.08 and pad_mask(p)>=1.0: continue
+				# Tree line: bare rock and snow high on the ranges.
+				if Shape.mountains(p.x,p.y,cont)>20.0: continue
+				if environment!=null:
+					var keep={"forest":1.0,"wetland":0.6,"grassland":0.35,"tundra":0.15,"desert":0.03,"ice":0.0,"ocean":0.0}.get(environment.biome_at(p),0.5)
+					if Geology._hash(ix,iz,7,11)>float(keep): continue
 			result.append(p)
 	if tree_cache.size()>=96: tree_cache.erase(tree_cache.keys()[0])
 	tree_cache[key]=result
@@ -71,8 +84,9 @@ func tree_records(key: Vector2i) -> Array:
 func region_at(p: Vector2) -> String:
 	return ("riverbank" if p.y<0 else "wetland") if p.x<0 else ("highland" if p.y<0 else "meadow")
 
+## v0.42: the surface wraps east–west; only the polar caps bound it.
 func inside(p: Vector2,margin: float=0.0) -> bool:
-	return p.length()<=float(rules.radius)-margin
+	return Shape.on_surface(p,margin)
 
 func river_x(z: float) -> float:
 	return -10.0+sin(z*0.15)*1.1+sin(z*0.017)*8.0*clampf((absf(z)-30)/60.0,0,1)
@@ -91,16 +105,25 @@ func natural_height(p: Vector2) -> float:
 	var c=cell_center(p); var k=Vector2i(roundi(c.x),roundi(c.y))
 	var cached=_height_cache.get(k)
 	if cached!=null: return cached
-	var h=0.0 if river_cell(c) else maxf(0.5,floor((legacy_height(c)+0.055)*2.0)/2.0)
+	var h=0.0
+	if not river_cell(c):
+		var raw=legacy_height(c)
+		h=floor(raw*2.0)/2.0 if raw<0.0 else maxf(0.5,floor((raw+0.055)*2.0)/2.0)
 	if _height_cache.size()>=120000: _height_cache.clear()
 	_height_cache[k]=h
 	return h
 
 func river_cell(c: Vector2) -> bool:
-	return absf(c.x-river_x(c.y))<2.0
+	# The river runs over land only; at the coast it meets the sea.
+	return absf(c.x-river_x(c.y))<2.0 and Shape.continent(c.x,c.y)>0.03
 
+## River water, or the sea over a sea floor below sea level.
 func water_at(p: Vector2) -> bool:
-	return river_cell(cell_center(p)) and not bridge(p)
+	return (river_cell(cell_center(p)) or natural_height(p)<Shape.SEA_LEVEL-0.05) and not bridge(p)
+
+## Deep sea (more than a metre and a bit): no walking or driving in until boats exist.
+func deep_water(p: Vector2) -> bool:
+	return natural_height(p)<-1.25 and not _edited(roundi(p.x),roundi(p.y))
 
 func _edited(x: int,z: int) -> bool:
 	return nature!=null and nature.columns.has(Vector2i(x,z))
@@ -192,7 +215,14 @@ func legacy_height(c: Vector2) -> float:
 		h+=floor(plateau*lerpf(1.0,edge,far))*0.28
 	h+=floor((sin(c.x*0.025)*cos(c.y*0.027)+1)*7*far)*0.16
 	h+=relief(c)
-	return maxf(h,0.27)
+	h=maxf(h,0.27)
+	# v0.42: the continent shapes the land. Legacy pads (old far builds) always stay dry land.
+	var cont=Shape.continent(c.x,c.y)
+	if pad_mask(c)<1.0: cont=maxf(cont,0.15)
+	if cont<0.0: return -Shape.ocean_depth(cont)
+	h=lerpf(0.35,h,Shape.coast(cont))
+	h+=Shape.mountains(c.x,c.y,cont)*pad_mask(c)*smoothstep(3.0,90.0,absf(c.x-river_x(c.y)))
+	return h
 
 ## v0.33.2 relief: rolling hills and ridges that stay flat inside the start bend (so home, the
 ## river, placed buildings and field nodes never move) and fade in beyond it. Floored to whole
@@ -246,6 +276,11 @@ func column_has_cave(x: int,z: int) -> bool:
 	var k=Vector2i(x,z)
 	if _cave_columns.has(k): return _cave_columns[k]
 	var top=natural_height(p); var found=false
+	# v0.42: no caves under the sea (the floor stays whole); ranges keep theirs, cut open on the slopes.
+	if top<0.5:
+		if _cave_columns.size()>=60000: _cave_columns.clear()
+		_cave_columns[k]=false
+		return false
 	# The tunnel field changes by at most ~0.04 per metre of depth, so one sample at mid-depth
 	# rules out most columns without testing every cell.
 	var mid=top-float(rules.cave_depth)*0.5
@@ -313,11 +348,11 @@ func ground(p: Vector2) -> float:
 	return maxf(height_at(p),0.72) if bridge(p) else height_at(p)
 
 func on_path(p: Vector2) -> bool:
-	return absf(p.y)<0.65 or (absf(p.x-10)<0.6 and absf(p.y)<11)
+	return (absf(p.y)<0.65 and absf(p.x)<400.0) or (absf(p.x-10)<0.6 and absf(p.y)<11)
 
 func blocked(p: Vector2,barriers: Array=[]) -> bool:
 	var radius=float(rules.player_radius)
-	if not inside(p,0.9): return true
+	if not inside(p,0.9) or deep_water(p): return true
 	var key=chunk_at(p)
 	for dz in range(-1,2):
 		for dx in range(-1,2):

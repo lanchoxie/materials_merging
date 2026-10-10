@@ -7,7 +7,7 @@ const Geology=preload("res://scripts/planet_geology.gd")
 const SAVE_NAME="save_test.json"
 const ELEMENT_CAP=9999
 const MATERIAL_CAP=1000000
-const BIOMES=["grassland","forest","wetland","desert","tundra"]
+const BIOMES=["grassland","forest","wetland","desert","tundra","ice"]
 
 static func enabled() -> bool:
 	return OS.has_feature("testbuild") or "--test-mode" in OS.get_cmdline_user_args()
@@ -151,12 +151,15 @@ static func force_era(s) -> String:
 	v._event(result)
 	return "测试：" + result
 
-## The cell centre of the nearest `biome` at least 1.5 km out (biomes start beyond the home area).
+## The cell centre of the nearest `biome` on solid land at least 1.5 km out (biomes start beyond the
+## home area; v0.42 skips the sea and the polar edge).
 static func biome_spot(env,biome: String) -> Vector2:
+	const Shape=preload("res://scripts/planet_shape.gd")
 	var best=Vector2.INF
 	for j in range(env.size):
 		for i in range(env.size):
 			var p: Vector2=env.cell_center(Vector2i(i,j))
-			if p.length()<1500 or p.length()>7600 or p.length()>=best.length(): continue
-			if env.biome_of(env.values(Vector2i(i,j)))==biome: best=p
+			if p.length()<1500 or not Shape.on_surface(p,200.0) or p.length()>=best.length(): continue
+			if Shape.continent(p.x,p.y)<0.15: continue
+			if env.biome_at(p)==biome: best=p
 	return best

@@ -19,7 +19,7 @@ func _run() -> void:
 	await capture("gallery-reactors")
 	game._open_editor(); await capture("gallery-atoms")
 	game._close_modal(); game._show_island_walk(); await capture("gallery-island-walk")
-	game._show_planet_v2(); game.modal._enter(); game.modal._travel("woods"); await create_timer(3).timeout; await capture("gallery-wilderness")
+	game._show_planet_v2(); game.modal._enter(); game.modal.test_teleport(Vector2(-124,68),"woods"); await create_timer(3).timeout; await capture("gallery-wilderness")
 	game._close_modal(); _cabin(s)
 	game._sync_world(); game._show_island_walk(); var panel=game.modal
 	panel.walker.position=Vector2(-1.7,-2.0); panel.walker.reset_height()

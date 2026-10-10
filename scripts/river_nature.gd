@@ -32,8 +32,19 @@ func touch(p: Vector2,t) -> void:
 		for x in range(-1,2):
 			var k=chunk+Vector2i(x,z); chunk_versions[k]=int(chunk_versions.get(k,0))+1
 
+## Which tree grows here. Home keeps its old mix; elsewhere the climate decides (v0.42): conifers
+## in the cold, birch in cool woods, oak and birch in warm ones.
+var climate=null
+func species_at(p: Vector2) -> String:
+	var keys=rules.species.keys(); var pick=posmod(roundi(p.x/3.3)*7+roundi(p.y/3.3)*13,3)
+	if climate==null or p.length()<300.0: return keys[pick]
+	var t=float(climate.values(climate.cell_of(p)).y)
+	if t<6.0: return "pine"
+	if t<13.0: return ["pine","birch","birch"][pick]
+	return ["oak","birch","oak"][pick]
+
 func descriptor(id: String,p: Vector2) -> Dictionary:
-	var keys=rules.species.keys(); var kind=keys[posmod(roundi(p.x/3.3)*7+roundi(p.y/3.3)*13,3)]
+	var kind=species_at(p)
 	var row=trees.get(id,{"species":kind,"growth":1.0,"cut":false,"hits":0,"water":0.0})
 	return {"id":id,"x":p.x,"z":p.y,"species":row.species,"growth":row.growth,"cut":row.cut,"hits":row.hits,"water":row.water}
 

@@ -7,6 +7,7 @@ signal test_requested
 const UI=preload("res://scripts/ui.gd")
 const View=preload("res://scripts/planet_v2_view.gd")
 const ExplorationInput=preload("res://scripts/river_exploration_input.gd")
+const Shape=preload("res://scripts/planet_shape.gd")
 const InventorySlot=preload("res://scripts/river_inventory_slot.gd")
 const InventoryPanel=preload("res://scripts/river_inventory_panel.gd")
 const InteractionHelp=preload("res://scripts/river_interaction_help.gd")
@@ -39,6 +40,7 @@ var fingerprint=""
 var message=""
 var widgets={}
 var regions={}
+var where_label: Label
 var tabs={}
 var closing=false
 var build_mode="observe"
@@ -62,13 +64,13 @@ func setup(model) -> void:
 	selected_region=str(state.planet.v2.world.current_region)
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
-	var heading=UI.label("地球 · 从河湾出发的会生长的世界",30,UI.MINT); heading.position=Vector2(28,18); add_child(heading)
-	var sub=UI.label("上帝视角 ↔ 第一人称   /   0.32 地球 · 冻原、荒漠、湿地与森林，环境设备改变气候   /   约16公里",14,UI.MUTED); sub.position=Vector2(30,62); add_child(sub)
+	var heading=UI.label("蓝色星球 · 从河湾出发，走遍整颗星球",30,UI.MINT); heading.position=Vector2(28,18); add_child(heading)
+	var sub=UI.label("地球仪 ↔ 第一人称   /   大洋、大陆、山脉与两极冰盖，纬度决定气候与植被   /   环绕一圈约16公里",14,UI.MUTED); sub.position=Vector2(30,62); add_child(sub)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1288,22); close.size=Vector2(124,48); add_child(close)
 	time_label=UI.label("",19,UI.GOLD); time_label.position=Vector2(680,28); time_label.size=Vector2(580,38); time_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; add_child(time_label)
+	# v0.42: no region tabs; the four home habitats are found by walking around the river bend.
 	var region_bar=UI.row(self,8); region_bar.position=Vector2(28,99)
-	for spec in state.planet.v2.rules.regions:
-		var b=UI.button(str(spec.name),_select_region.bind(str(spec.id))); b.custom_minimum_size.x=167; region_bar.add_child(b); regions[spec.id]=b
+	where_label=UI.label("",17,UI.TEXT); where_label.custom_minimum_size=Vector2(700,48); where_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER; region_bar.add_child(where_label)
 	enter_button=UI.button("第一人称进入",_enter,true); enter_button.custom_minimum_size.x=194; region_bar.add_child(enter_button)
 	viewport_box=SubViewportContainer.new(); viewport_box.position=Vector2(28,158); viewport_box.size=Vector2(928,574); viewport_box.stretch=true; viewport_box.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(viewport_box)
 	viewport=SubViewport.new(); viewport.size=Vector2i(928,574); viewport.own_world_3d=true; viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; viewport_box.add_child(viewport)
@@ -90,9 +92,8 @@ func setup(model) -> void:
 	world_title=UI.label("",18,UI.MINT); world_title.position=Vector2(48,180); add_child(world_title)
 	goal_label=UI.label("",14,UI.GOLD); goal_label.position=Vector2(48,342); goal_label.size=Vector2(560,48); goal_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	goal_label.add_theme_constant_override("outline_size",5); goal_label.add_theme_color_override("font_outline_color",Color(0,0,0,0.75)); add_child(goal_label)
-	hint=UI.label("点选地形 · 滚轮缩放 · 第一人称走进去",13,UI.TEXT); hint.position=Vector2(48,705); add_child(hint)
+	hint=UI.label("拖动转动地球仪 · 滚轮缩放 · 第一人称走进去",13,UI.TEXT); hint.position=Vector2(48,705); add_child(hint)
 	camera_bar=UI.row(self,8); camera_bar.position=Vector2(470,676)
-	camera_bar.add_child(UI.button("近看",func(): view.focus(selected_region,not view.close_view); _live()))
 	camera_bar.add_child(UI.button("↶",func(): view.orbit(-0.4)))
 	camera_bar.add_child(UI.button("↷",func(): view.orbit(0.4)))
 	camera_bar.add_child(UI.button("＋",func(): view.zoom=clampf(view.zoom-0.15,0.65,1.4)))
@@ -149,7 +150,7 @@ func toggle_earth_map() -> void:
 func _map_click(at: Vector2) -> void:
 	# Only the map's GUI layer owns selection; its coordinates are always local.
 	# A first-person click must never become a region/respawn command.
-	if view.first_person: return
+	if view.first_person or view.globe_shown: return
 	var id=view.pick(at*Vector2(viewport.size)/explore_input.size)
 	if not id.is_empty(): _select_region(id)
 
@@ -185,7 +186,7 @@ func _exploration_layout() -> void:
 	play_bar.position.x=300 if wide else 56; aim_label.position.x=350 if wide else 220
 	aim_label.size=Vector2(890 if wide else 710,44); aim_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	hint.position=Vector2(48,214) if view.first_person else Vector2(48,705)
-	hint.text="WASD走动 · 拖动转向 · F攻击 · E使用/查看 · B背包 · M远行\n拿手套时：左键攻击生物，E查看；手机点攻击或使用按钮" if view.first_person else "点选地形 · 滚轮缩放 · 第一人称走进去"
+	hint.text="WASD走动 · 拖动转向 · F攻击 · E使用/查看 · B背包 · M远行\n拿手套时：左键攻击生物，E查看；手机点攻击或使用按钮" if view.first_person else "拖动转动地球仪 · 滚轮缩放 · 第一人称走进去"
 	if not view.first_person: state.planet.v2.actor={}; view.construction_view.ghost.hide()
 
 func _in_wilderness() -> bool:
@@ -553,10 +554,9 @@ func _observation() -> void:
 func _journey() -> void:
 	var destinations=_card("沿河而行")
 	destinations.add_child(UI.button("打开世界地图 · 路线 / 路标 / 建筑",_open_world_map,true))
-	destinations.add_child(UI.paragraph("直径约16公里，面积约为旧地图256倍。附近地形随行加载，走远后卸载画面；砍树、挖土、建筑与栖地记录仍保留。",15))
-	for id in view.terrain.LANDMARKS:
-		var item=view.terrain.LANDMARKS[id]
-		destinations.add_child(UI.button(str(item.name)+"  ↗",_travel.bind(id)))
+	destinations.add_child(UI.paragraph("星球东西环绕一圈约16公里，向东一直走会从西边回来；南北尽头是两极冰盖。大洋要等以后的船或飞机才能跨越。附近地形随行加载，砍树、挖土与建筑都会保留。",15))
+	destinations.add_child(UI.button("回到起始河湾  ↗",_travel.bind("home")))
+	destinations.add_child(UI.paragraph("没有固定的远方地点：走到哪里，就用「记住当前位置」留下自己的路标。",14,UI.MUTED))
 	var marks=_card("我的路标 · %d / %d" % [state.planet.v2.journey.points.size(),view.terrain.rules.max_waypoints])
 	marks.add_child(UI.button("记住当前位置",func(): _update_actor(); _act("v2_waypoint_add"),true))
 	for id in state.planet.v2.journey.points:
@@ -716,13 +716,16 @@ func _live() -> void:
 	time_label.text=v.time_label()+" · %dx" % int(v.world.speed)
 	pause_button.text="继续" if v.world.paused else "暂停"
 	enter_button.text="返回上帝视角" if view.first_person else "第一人称进入"
-	world_title.text=str(r.name)+(" · 徒步探索" if view.first_person else (" · 局部观察" if view.close_view else " · 河湾全景"))
+	var at=view.last_position(); var place=Shape.coordinates(at)
+	var biome=v.environment.biome_name(v.environment.biome_at(at))
+	world_title.text=str(r.name)+" · 徒步探索" if view.first_person else "地球仪 · 上次所在："+place
 	info.text=str(r.name)+"\n"+str(r.terrain)
+	where_label.text=("当前位置" if view.first_person else "上次所在")+"：%s · %s" % [biome,place]
 	if _in_wilderness():
-		world_title.text="远郊 · %.0f, %.0f米" % [view.walker.position.x,view.walker.position.y]
-		info.text="远郊探索\n林地 · 河流 · 营地"
-		if view.walker.position.length()>float(view.terrain.rules.radius)-28:
-			world_title.text="边界 · 当前探索区直径约16公里，可用M返回路标"
+		world_title.text="%s · %s" % [biome,place]
+		info.text="远郊探索\n%s · %s" % [biome,place]
+		if not Shape.on_surface(at,140.0):
+			world_title.text="极地边缘 · 再往前是无法通行的冰盖，可用M返回路标"
 	counters.text="种子 %d · 口粮 %d\n1分钟=1天 · 每4天换季" % [v.world.seeds,v.world.food]
 	if not message.is_empty(): status.text=message
 	goal_label.visible=view.first_person and not show_details

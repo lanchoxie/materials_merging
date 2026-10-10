@@ -41,12 +41,14 @@ func _run() -> void:
 	var elapsed=p.v2.world.elapsed; p.tick(2); check(elapsed==p.v2.world.elapsed,"pause button stops simulation")
 	await capture("v021-river-overview")
 	await create_timer(0.4).timeout
-	var ground=panel.view.terrain.ground(Vector2(10,-10))
-	var point=panel.viewport_box.global_position+panel.view.camera.unproject_position(Vector3(10,ground,-10))
+	# v0.42: the god view is a globe; a click never jumps between the home habitats.
+	var region=str(p.v2.world.current_region)
+	var point=panel.viewport_box.get_global_rect().get_center()
 	await game._test_pointer(point,true); await game._test_pointer(point,false)
-	check(p.v2.world.current_region=="highland","map click selects the projected terrain region")
-	await press("河畔草甸"); await press("近看")
-	check(panel.view.close_view and p.v2.world.current_region=="meadow","regional view shares world")
+	check(panel.view.globe_shown and str(p.v2.world.current_region)==region,"a click on the globe keeps the current habitat")
+	check(button(game.modal,"河畔草甸")==null and button(game.modal,"近看")==null,"no region tabs or close-up")
+	panel._select_region("meadow"); await process_frame
+	check(p.v2.world.current_region=="meadow","the habitat panel shares the world")
 	panel._tab("bag"); await process_frame
 	var coins=s.coins; var water=p.v2.region().water
 	panel.backpack.selected_id="sample:"+str(s.storage.batches[0].id); panel.backpack.refresh()

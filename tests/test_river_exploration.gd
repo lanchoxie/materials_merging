@@ -36,11 +36,12 @@ func _run() -> void:
 	check(absf(w.position.distance_to(before)-3.2)<0.01,"walking uses metres and frame time")
 	check(is_equal_approx(w.eye().y,t.ground(w.position)+1.62),"eye stays above shared terrain surface")
 	w.look(Vector2(0,100000),0.003); check(w.pitch>=-1.25,"look cannot flip camera")
-	# The edge follows the data radius (8192 m since FRONTIER-17), not the old 512 m map.
-	var edge=float(t.rules.radius)
-	w.position=Vector2(edge-2,0); w.yaw=0; w.movement=Vector2.RIGHT
+	# v0.42: east–west wraps; walking north stops at the polar cap.
+	var edge=preload("res://scripts/planet_shape.gd").NORTH+60.0
+	w.position=Vector2(0,edge+2); w.yaw=0; w.movement=Vector2(0,-1)
 	for i in range(120): w.step(0.1)
-	check(w.position.x<=edge-0.9+0.01 and w.position.x>edge-2,"walking stops before expanded world edge")
+	check(w.position.y>=edge+0.9-0.01 and w.position.y<=edge+2.01,"walking stops before the polar cap")
+	w.position=Vector2(0,5)
 	w.position=Vector2(0,5); w.barriers=[Rect2(0.8,4,0.1,2)]; w.movement=Vector2.RIGHT
 	for i in range(30): w.step(0.1)
 	check(w.position.x<0.6,"thin obstacles prevent tunnelling")

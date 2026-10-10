@@ -2,6 +2,7 @@ extends RefCounted
 ## v0.32 Earth: a coarse climate field over the 16 km world. The baseline is a deterministic
 ## formula and is never saved; only what the player changed (cell deltas, atmosphere) is.
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_environment.json"))
+const Shape=preload("res://scripts/planet_shape.gd")
 var size=64
 var cell=256.0
 var origin=-8192.0
@@ -43,7 +44,10 @@ func baseline(x: float,z: float) -> Vector3:
 	var n2=cos(x/760-1.2)*sin(z/840+0.9)+0.5*cos((x-z)/610)
 	var n3=sin(x/390+z/510+0.3)
 	var w=clampf(float(b.water)+k*(0.30*n2-0.22*clampf(x/5000,-1,1)),0,1)
-	var t=float(b.temperature)+k*(5*n1-24*clampf(-z/6000,0,1)+9*clampf(z/6000,0,1))
+	# v0.42: temperature follows latitude (both hemispheres), not distance north of home.
+	var L: Dictionary=rules.latitude
+	var lat_t=float(L.equator)-float(L.pole_drop)*pow(absf(Shape.latitude(z))/90.0,float(L.exponent))
+	var t=lerpf(float(b.temperature),lat_t+5*n1,k)
 	var n=clampf(float(b.nutrients)+k*(0.16*n3+0.3*(w-float(b.water))),0,1)
 	return Vector3(w,t,n)
 
@@ -73,6 +77,7 @@ func values(c: Vector2i) -> Vector4:
 	return Vector4(w,t,n,p)
 
 func biome_of(v: Vector4) -> String:
+	if v.y<-6.0: return "ice"
 	if v.y<2.0: return "tundra"
 	if v.x<0.25: return "desert"
 	if v.x>0.78: return "wetland"
@@ -80,6 +85,7 @@ func biome_of(v: Vector4) -> String:
 	return "grassland"
 
 func biome_at(p: Vector2) -> String:
+	if Shape.is_ocean(p.x,p.y) and Shape.on_surface(p): return "ocean"
 	return biome_of(values(cell_of(p)))
 
 func biome_name(id: String) -> String:

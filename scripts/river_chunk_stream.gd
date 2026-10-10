@@ -107,6 +107,12 @@ func _decor(st: SurfaceTool,p: Vector2,top: float,v: Vector4,roll: float) -> voi
 
 ## Grass follows the season on topsoil; the river bed shows water; rock shows its mineral colour.
 func _top_color(id: String,p: Vector2,river: bool,natural_top: bool,grass: Color,shade: float,x: int,y: int,z: int) -> Color:
+	# v0.42: snow on high peaks, sand on beaches and the shallow sea floor.
+	if natural_top and y>=34: return Color("eef3f4").lightened(shade*0.4)
+	if natural_top and y>=20: return Color("8d8a7e").lerp(Color("6f7f5c"),clampf((26.0-y)/6.0,0.0,1.0)).lightened(shade)
+	# Under the sea the floor darkens with depth, so the water reads as sea and not as more beach.
+	if natural_top and y<0: return Color("b9ab84").lerp(Color("23485a"),clampf(-float(y)/3.0,0.15,1.0)).lightened(shade*0.3)
+	if natural_top and y<=1 and terrain.Shape.continent(p.x,p.y)<0.1: return Color("d9c9a0").lightened(shade*0.6)
 	if id=="topsoil":
 		var c=grass
 		if p.x>0 and p.y<0: c=c.lerp(Color("9ba49a"),0.35)
@@ -200,6 +206,17 @@ func _build(key: Vector2i) -> Mesh:
 		if absf(z)<=29 or terrain.chunk_at(Vector2(x,z)).x!=key.x or not terrain.inside(Vector2(x,z),1.0): continue
 		if not terrain.river_cell(terrain.cell_center(Vector2(x,z))): continue
 		G.cube(wet,Vector3(x,0.20,z),Vector3(2.85,0.06,cell+0.02),Color("59aab8")); rivers+=1
+	# v0.42: the sea. Runs of sea cells per row become one water strip each.
+	var sea=terrain.Shape.SEA_LEVEL
+	for iz in range(key.y*span,(key.y+1)*span):
+		var run_start=0; var open=false
+		for ix in range(key.x*span,(key.x+1)*span+1):
+			var wet_cell=ix<(key.x+1)*span and terrain.natural_height(Vector2(ix,iz)*cell)<sea-0.05 and not terrain.river_cell(Vector2(ix,iz)*cell)
+			if wet_cell and not open: run_start=ix; open=true
+			elif not wet_cell and open:
+				var length=float(ix-run_start)*cell
+				G.cube(wet,Vector3((run_start-0.5)*cell+length*0.5,sea,iz*cell),Vector3(length,0.06,cell+0.01),Color("2f6f93")); rivers+=1
+				open=false
 	for item in decor: _decor(st,item[0],item[1],item[2],item[3])
 	for tree in terrain.tree_records(key):
 		var p=Vector2(tree.x,tree.z); var h=terrain.ground(p)

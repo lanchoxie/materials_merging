@@ -42,7 +42,7 @@ func _initialize() -> void:
 	var dt=float(now.world.regions.meadow.temperature)-float(ice.world.regions.meadow.temperature)
 	check(absf(dt+float(ice.epoch_info().temperature))<0.5,"the 冰河期 meadow is colder by the era's offset (%.1f °C)" % dt)
 	check(ice.world.regions.meadow.crops.is_empty() and ice.world.events[0].text.contains("末次冰盛期"),"the ice age starts without sown crops, with its own story")
-	check(ice.environment.biome_at(Vector2(0,-3000))=="tundra","the cold north is tundra")
+	check(ice.environment.biome_at(Vector2(0,-1800)) in ["tundra","ice"] and now.environment.biome_at(Vector2(0,-1800))=="desert","the ice age freezes the north (desert today)")
 	check(ice.incident_kinds()==["blizzard"] and ice.incidents_all_seasons() and now.incident_kinds().has("storm"),"each timeline has its own weather")
 	# --- Wild animals.
 	var site=ice.population._site("t",Vector2(500,500),false)

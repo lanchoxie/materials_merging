@@ -10,7 +10,8 @@ func place(v,kind: String,at: Vector2) -> String:
 
 func _initialize() -> void:
 	var s=State.new(); var v=s.planet.v2; var t=v.construction.terrain; var c=v.construction
-	check(t.rules.radius==8192 and t.inside(Vector2(6000,0)) and not t.inside(Vector2(8193,0)),"finite 16 km world has honest consistent bounds")
+	# v0.42: east–west wraps; the surface ends at the polar caps.
+	check(t.inside(Vector2(6000,0)) and t.inside(Vector2(8193,0)) and not t.inside(Vector2(0,7600)) and not t.inside(Vector2(0,-7600)),"the planet wraps east–west and ends at the poles")
 	var old=Vector2(15,14); var height=t.ground(old)
 	check(is_equal_approx(height,preload("res://scripts/river_terrain.gd").new().ground(old)),"existing origin terrain remains deterministic")
 	var p=Vector2(6000,2000); v.population.observe(p)
@@ -19,9 +20,9 @@ func _initialize() -> void:
 	for z in range(-13,14):
 		for x in range(-13,14): v.population.observe(Vector2(x*192,z*192))
 	check(v.population.sites.size()>300,"exploration continues after old 300 site cap")
-	v.population.observe(Vector2(-6000,1200))
-	check(not v.population.visible_sites(Vector2(-6000,1200)).is_empty(),"new locations still have animals after many explored sites")
-	check(v.population.simulation_keys().size()<=13 and v.population.nearby_keys(Vector2(-6000,1200)).size()<=29,"simulation and visibility use local indices not all history")
+	v.population.observe(Vector2(-3000,1800))
+	check(not v.population.visible_sites(Vector2(-3000,1800)).is_empty(),"new locations still have animals after many explored sites")
+	check(v.population.simulation_keys().size()<=13 and v.population.nearby_keys(Vector2(-3000,1800)).size()<=29,"simulation and visibility use local indices not all history")
 	var seconds=v.population.sites[id].seconds; v.population.advance(v.world.regions)
 	check(v.population.sites[id].seconds==seconds and v.population.sites[id].flora==0.2,"remote unobserved habitat retains state without restarting or simulating")
 	v.population.observe(p); check(v.population.sites[id].flora==0.2,"returning does not regenerate consumed flora")

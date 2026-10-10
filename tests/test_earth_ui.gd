@@ -14,7 +14,8 @@ func find_cell(env,want: Callable) -> Vector2i:
 	for j in range(env.size):
 		for i in range(env.size):
 			var c=Vector2i(i,j)
-			if env.cell_center(c).length()<6000 and env.cell_center(c).length()>1500 and want.call(env.values(c)): return c
+			var at=env.cell_center(c)
+			if at.length()<7400 and at.length()>1500 and preload("res://scripts/planet_shape.gd").continent(at.x,at.y)>0.2 and preload("res://scripts/planet_shape.gd").mountains(at.x,at.y,1.0)==0.0 and want.call(env.values(c)): return c
 	return Vector2i(-1,-1)
 
 func _run() -> void:

@@ -42,6 +42,10 @@ func joystick_center() -> Vector2:
 	return Vector2(96,size.y-95)
 
 func _map_input(event: InputEvent) -> void:
+	# v0.42: in the god view a drag turns the globe (emulated mouse events from touch are skipped).
+	if not walking and (event is InputEventScreenDrag or (event is InputEventMouseMotion and event.device!=-1 and event.button_mask&MOUSE_BUTTON_MASK_LEFT)):
+		if view!=null and view.has_method("spin"): view.spin(_local_delta(event.relative))
+		accept_event(); return
 	if event is InputEventScreenTouch and event.pressed:
 		if not walking: terrain_clicked.emit(event.position); accept_event(); return
 		grab_focus()

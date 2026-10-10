@@ -30,6 +30,19 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.42.0 "Blue Planet" (蓝色星球)
+Full notes: [31-globe.md](31-globe.md).
+- **One planet.** It wraps east–west (16 km around) and ends at two polar caps. Continents and oceans have a wadeable
+  shelf, then deep sea that blocks walking.
+- **Ranges.** Mountain ranges of granite, up to about 60 m, with a tree line, alpine rock, snow and caves.
+- **Climate.** It follows latitude in both hemispheres; there are polar ice caps and trees by climate (pine in the
+  cold, oak and birch in the warm).
+- **No fixed places.** The region tabs and the seven far landmarks are gone; the location line shows biome and
+  latitude/longitude.
+- **地球仪.** The god view is a globe with a pin at your last position. Drag turns it.
+- **World map.** It covers the whole planet with a latitude/longitude grid and wraps at the seam.
+- **Tests.** New: `test_globe` (37), `test_globe_ui` (19); 10 tests updated for the new world.
+
 ## v0.41.2 "Wild Harvest" (野外生存)
 Full notes: [30-wild-harvest.md](30-wild-harvest.md).
 - **Gathering.** No stumps and no gathering piles. Felled trees drop timber 3–6 and, by chance, seeds, fibre and fruit;

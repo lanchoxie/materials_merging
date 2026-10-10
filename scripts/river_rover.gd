@@ -94,6 +94,7 @@ func step(dt: float) -> void:
 		body_y=g if g>=body_y else maxf(g,body_y-float(rules.fall)*dt/steps)
 		travelled+=moved
 		if float(state.cap)>0.0: state.charge=maxf(0.0,float(state.charge)-moved/1000.0*float(state.wh_per_km))
+	if absf(position.x)>8192.0: position.x=fposmod(position.x+8192.0,16384.0)-8192.0
 	# Suspension: pitch and roll from the ground under the axles and wheels, low-passed.
 	var f=forward(); var side=Vector2(-f.y,f.x); var half=float(rules.length)*0.45; var w=float(rules.width)*0.45
 	var front=terrain.ground(position+f*half); var back=terrain.ground(position-f*half)

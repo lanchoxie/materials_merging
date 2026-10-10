@@ -46,7 +46,7 @@ func _init() -> void:
 
 func _link_geometry() -> void:
 	construction.terrain.nature=nature
-	construction.terrain.environment=environment; population.environment=environment
+	construction.terrain.environment=environment; population.environment=environment; nature.climate=environment
 	field.terrain=construction.terrain; population.terrain=construction.terrain
 	population.combat=combat; settlement.combat=combat
 	population.ranch=ranch; settlement.ranch=ranch

@@ -16,7 +16,9 @@ func find_cell(env,want: Callable) -> Vector2i:
 	for j in range(env.size):
 		for i in range(env.size):
 			var c=Vector2i(i,j)
-			if env.cell_center(c).length()<7600 and want.call(env.values(c)): return c
+			# v0.42: only solid land (the planet now has oceans).
+			var at=env.cell_center(c)
+			if at.length()<7600 and preload("res://scripts/planet_shape.gd").continent(at.x,at.y)>0.2 and want.call(env.values(c)): return c
 	return Vector2i(-1,-1)
 
 ## A machine block at the cell centre, with a matching one-unit source pack.
@@ -47,7 +49,7 @@ func _initialize() -> void:
 			var c=Vector2i(i,j)
 			if env.cell_center(c).length()<8192: counts[env.biome_of(env.values(c))]=int(counts.get(env.biome_of(env.values(c)),0))+1
 	for b in ["grassland","forest","wetland","desert","tundra"]: check(int(counts.get(b,0))>=40,"the world has a real %s region (%d cells)" % [b,int(counts.get(b,0))])
-	check(env.biome_at(Vector2(0,-6000))=="tundra" and env.biome_at(Vector2(1348,1348))=="forest","north is frozen and the 千米林海 is forest")
+	check(env.values(env.cell_of(Vector2(0,preload("res://scripts/planet_shape.gd").z_for_latitude(80.0)))).y<0.0 and env.biome_at(Vector2(1664,-2176))=="forest","the far north is frozen and the northern woods are forest")
 	check(env.base_water==Climate.new().base_water and env.base_heat==Climate.new().base_heat,"the baseline is deterministic")
 	check(env.tint(env.blend(Vector2.ZERO),Color("749b64")).is_equal_approx(Color("749b64")),"start-area grass keeps its old colour")
 	check(not env.tint(env.values(env.cell_of(Vector2(0,-6000))),Color("749b64")).is_equal_approx(Color("749b64")),"tundra ground is tinted")
@@ -101,7 +103,7 @@ func _initialize() -> void:
 	if cold.x>=0: check(w.environment.biome_of(w.environment.values(cold))!="tundra","warming thaws the edge of the tundra")
 	# --- Wildlife follows the environment.
 	var pop=w.population
-	pop.observe(Vector2(1348,1348))
+	pop.observe(Vector2(1664,-2176))
 	var boars=0; var animals=0
 	for key in pop.active_sites:
 		for a in pop.sites[key].animals:

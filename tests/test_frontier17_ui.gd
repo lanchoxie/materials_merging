@@ -8,8 +8,9 @@ func capture_frontier(name: String,river) -> void:
 func _run() -> void:
 	game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); game.set_process(false)
 	game._show_planet_v2(); await process_frame; await process_frame; var river=game.modal; var v=game.state.planet.v2
-	v.world.paused=true; river._travel("far_river"); await process_frame; await process_frame
-	check(river.view.walker.position.length()>6000 and river.view.first_person,"new distant landmark enters six km first-person terrain")
+	# v0.42: no far landmarks; walk (teleport) six km out onto another part of the continent.
+	v.world.paused=true; river.test_teleport(Vector2(6000,2000),"远方"); await process_frame; await process_frame
+	check(river.view.walker.position.length()>6000 and river.view.first_person,"a place six km away enters first-person terrain")
 	check(not v.population.visible_sites(river.view.walker.position).is_empty(),"far first-person view contains actual local encounter state")
 	await capture_frontier("frontier17-river",river)
 	check(river.view.stream.chunks.size()<=49 and not river.view.stream.chunks.is_empty(),"six km location still renders at most 49 terrain chunks")
@@ -46,7 +47,7 @@ func _run() -> void:
 	check(river.widgets.has("era_recruit") and not river.widgets.era_recruit.disabled,"lost residents have an explicit resettlement route")
 	river.widgets.era_recruit.pressed.emit(); await process_frame
 	check(v.settlement.people.size()==1 and v.ranch.depot.grain==1,"inviting a new resident consumes finite supplies through UI")
-	var timings=[]; river._travel("frontier")
+	var timings=[]; river.test_teleport(Vector2(1348,1348),"frontier")
 	while not river.view.stream.pending.is_empty(): await process_frame
 	for i in range(120):
 		var now=Time.get_ticks_usec(); await process_frame; timings.append((Time.get_ticks_usec()-now)/1000.0)

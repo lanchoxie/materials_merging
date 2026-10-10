@@ -41,6 +41,8 @@ func step(dt: float) -> void:
 	dt=clampf(dt,0,0.1)
 	var frames=maxi(1,ceili(dt*120))
 	for frame in range(frames): _step_motion(dt/frames)
+	# v0.42: the planet wraps east–west.
+	if absf(position.x)>8192.0: position.x=fposmod(position.x+8192.0,16384.0)-8192.0
 	last_position=position
 
 func _floor(p: Vector2,ceiling: float) -> float:

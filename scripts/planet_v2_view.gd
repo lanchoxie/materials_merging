@@ -10,6 +10,15 @@ const Rig=preload("res://scripts/creature_rig.gd")
 const CENTERS=Terrain.CENTERS
 var terrain=Terrain.new()
 var walker=Walker.new(terrain)
+## v0.42 地球仪: the god view is a globe of the whole planet with a pin where the player last stood.
+const Globe=preload("res://scripts/planet_globe.gd")
+const Shape=preload("res://scripts/planet_shape.gd")
+var globe: Node3D
+var globe_pin: MeshInstance3D
+var globe_pitch=0.35
+var globe_shown=false
+const GLOBE_RADIUS=10.0
+const GLOBE_LAYER=1<<19
 ## v0.41 rover: parked or driven in first person, seen from a chase camera while driving.
 const Rover=preload("res://scripts/river_rover.gd")
 var rover
@@ -243,6 +252,57 @@ func focus(id: String,enter: bool=true) -> void:
 		if first_person: walker.enter(id)
 		else: has_walk_position=false
 
+func _ensure_globe() -> void:
+	if globe!=null: return
+	globe=Node3D.new(); add_child(globe)
+	var m=StandardMaterial3D.new(); m.roughness=0.85
+	if terrain.environment!=null: m.albedo_texture=Globe.equirect(terrain.environment)
+	var ball=MeshInstance3D.new(); ball.mesh=Globe.sphere_mesh(GLOBE_RADIUS,m); globe.add_child(ball)
+	var halo=MeshInstance3D.new(); var shell=SphereMesh.new(); shell.radius=GLOBE_RADIUS*1.03; shell.height=GLOBE_RADIUS*2.06
+	var hm=StandardMaterial3D.new(); hm.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA; hm.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	hm.albedo_color=Color(0.55,0.8,1.0,0.10); hm.cull_mode=BaseMaterial3D.CULL_FRONT; shell.material=hm; halo.mesh=shell; globe.add_child(halo)
+	globe_pin=MeshInstance3D.new(); var cone=CylinderMesh.new(); cone.top_radius=0.0; cone.bottom_radius=0.22; cone.height=0.9
+	var pm=StandardMaterial3D.new(); pm.albedo_color=Color("ffd36b"); pm.emission_enabled=true; pm.emission=Color("ffb347"); cone.material=pm
+	globe_pin.mesh=cone; globe.add_child(globe_pin)
+	for node in [ball,halo,globe_pin]: node.layers=GLOBE_LAYER
+	globe.position=Vector3(0,-4000,0)
+
+## Where the player last stood on the planet (home before the first walk).
+func last_position() -> Vector2:
+	return walker.position if has_walk_position else Vector2(10,15)
+
+func pin_lon_lat() -> Vector2:
+	var at=last_position()
+	return Vector2(Shape.longitude(at.x),Shape.latitude(at.y))
+
+func _show_globe(on: bool) -> void:
+	if on==globe_shown: return
+	globe_shown=on
+	_ensure_globe(); globe.visible=on
+	# The globe lives on its own render layer, so the camera simply stops drawing the ground.
+	camera.cull_mask=GLOBE_LAYER if on else (0xFFFFF & ~GLOBE_LAYER)
+	if on:
+		var ll=pin_lon_lat()
+		yaw=deg_to_rad(ll.x); globe_pitch=clampf(deg_to_rad(ll.y)*0.8,-1.1,1.1)
+
+func _globe_camera(dt: float) -> void:
+	var ll=pin_lon_lat()
+	var tip=Globe.sphere_point(ll.x,ll.y,GLOBE_RADIUS)
+	globe_pin.position=tip+tip.normalized()*0.45
+	globe_pin.basis=Basis(Quaternion(Vector3.UP,tip.normalized()))
+	var distance=34.0*zoom
+	var want=Vector3(cos(globe_pitch)*sin(yaw),sin(globe_pitch),cos(globe_pitch)*cos(yaw))*distance
+	want+=globe.position
+	camera.position=want if dt<=0.0 else camera.position.lerp(want,minf(1.0,dt*6.0))
+	camera.look_at(globe.position,Vector3.UP)
+
+## Drag on the globe: sideways spins it, up/down tilts it.
+func tilt(amount: float) -> void:
+	globe_pitch=clampf(globe_pitch+amount,-1.2,1.2)
+
+func spin(delta: Vector2) -> void:
+	yaw-=delta.x*0.006; tilt(delta.y*0.006)
+
 ## The body the input drives: the rover while seated, otherwise the walker.
 func pilot():
 	return rover if driving else walker
@@ -321,8 +381,8 @@ func set_first_person(enabled: bool) -> void:
 	if not enabled and driving: exit_rover()
 	first_person=enabled; walker.stop(); hands.visible=enabled
 	if not enabled: overview_at=walker.position if has_walk_position and walker.position.length()>40 else Vector2.ZERO
-	camera.projection=Camera3D.PROJECTION_PERSPECTIVE if enabled else Camera3D.PROJECTION_ORTHOGONAL
-	camera.near=0.06; camera.far=180; camera.fov=72
+	camera.projection=Camera3D.PROJECTION_PERSPECTIVE
+	camera.near=0.06 if enabled else 0.5; camera.far=180; camera.fov=72 if enabled else 38
 	if enabled and not has_walk_position: walker.enter(selected); has_walk_position=true
 	env.fog_enabled=enabled; env.fog_mode=Environment.FOG_MODE_DEPTH; env.fog_density=1.0
 	env.fog_depth_begin=26; env.fog_depth_end=48; env.fog_sky_affect=0.0
@@ -354,6 +414,7 @@ func orbit(amount: float) -> void:
 	yaw+=amount
 
 func _camera(dt: float) -> void:
+	if first_person: _show_globe(false)
 	if first_person and driving:
 		rover.construction=walker.construction; rover.barriers=walker.barriers
 		rover.step(dt)
@@ -378,16 +439,8 @@ func _camera(dt: float) -> void:
 		var id=terrain.region_at(walker.position)
 		if id!=selected: selected=id; region_selected.emit(id)
 		return
-	var target: Vector3=CENTERS[selected] if close_view else Vector3.ZERO
-	if overview_at!=Vector2.ZERO: target=Vector3(overview_at.x,0,overview_at.y)
-	target.y=_height(target.x,target.z)*0.5
-	var distance=16.0 if close_view else 67.0
-	var offset=Vector3(sin(yaw)*distance,distance*0.9,cos(yaw)*distance)
-	camera.position=camera.position.lerp(target+offset,minf(1,dt*7))
-	camera.size=lerpf(camera.size,(15.0 if close_view else 66.0)*zoom,minf(1,dt*7))
-	camera.look_at(target)
-	marker.position=CENTERS[selected]+Vector3(0,0.3+_height(CENTERS[selected].x,CENTERS[selected].z),0)
-	marker.visible=not close_view and overview_at==Vector2.ZERO
+	# v0.42: the god view is the globe.
+	_show_globe(true); _globe_camera(dt); marker.hide()
 
 ## Tool impact: a short camera dip that settles within a few frames (never moves the walker).
 func kick(amount: float=1.0) -> void:
@@ -479,7 +532,7 @@ func _daylight(phase: float,day: float) -> void:
 	env.ambient_light_color=Color("8ea4c4").lerp(Color("bfd3d0"),phase)
 
 func pick(at: Vector2) -> String:
-	if first_person: return selected
+	if first_person or globe_shown: return selected
 	var origin=camera.project_ray_origin(at); var ray=camera.project_ray_normal(at)
 	for i in range(600):
 		var p=origin+ray*i*0.25; var ground=Vector2(p.x,p.z)
