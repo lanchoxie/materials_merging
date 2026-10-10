@@ -30,6 +30,18 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.43.0 "Starforge Isle" (星锻岛 · 第二浮岛)
+Full notes: [32-starforge-isle.md](32-starforge-isle.md).
+- **Deck.** It grows onto any cell beside it, up to 36 plots, chosen on a deck map. The diorama's hull follows its
+  shape.
+- **员工休息室.** A new building. Staff now have stamina: they tire while their factory runs, rest at home or in the
+  lounge (faster), and come back.
+- **Decorations.** Island-Ⅰ decorations can stand on empty deck plots, from the shared toolbox. Place and store them in
+  the panel, or in first person with a tile ghost.
+- **第一人称登岛.** Walk the deck among the factories and staff. E on a factory opens its management; E on 星锻公寓
+  walks inside (beds, a coffee corner, the furniture you placed).
+- **Tests.** New: `test_starforge_isle` (50), `test_starforge_walk_ui` (24).
+
 ## v0.42.0 "Blue Planet" (蓝色星球)
 Full notes: [31-globe.md](31-globe.md).
 - **One planet.** It wraps east–west (16 km around) and ends at two polar caps. Continents and oceans have a wadeable

@@ -40,10 +40,14 @@
   },
   "plots": {
     "start": 4,
-    "max": 16,
+    "max": 36,
     "coins": 500,
     "credits": 8,
-    "growth": 1.18
+    "growth": 1.18,
+    "span": [
+      -3,
+      6
+    ]
   },
   "power": {
     "starter": 10,
@@ -292,6 +296,29 @@
       "speed_per_level": 0.25,
       "queue_base": 1,
       "story": "冲压钢车架、装上硫化橡胶轮胎和钢化玻璃，再把电机、电池包和控制板接上：一辆能在星球上开的越野车。"
+    },
+    "staff_lounge": {
+      "name": "员工休息室",
+      "en": "Staff Lounge",
+      "accent": "ffb547",
+      "model": "staff_lounge",
+      "cost": {
+        "coins": 1800,
+        "credits": 12
+      },
+      "power": 1,
+      "xp": 20,
+      "max_level": 3,
+      "upgrade_costs": [
+        2500,
+        6000
+      ],
+      "speed_per_level": 0.0,
+      "queue_base": 0,
+      "capacity": 3,
+      "capacity_per_level": 2,
+      "no_licence": true,
+      "story": "玻璃顶的小厅：沙发、咖啡吧和几盆绿植。累了的员工在这里歇得更快，每级多两个座位。"
     }
   },
   "licences": {
@@ -1534,6 +1561,14 @@
         "职称评审名额已满，明年再评",
         "还要带完这一批新人"
       ]
+    },
+    "energy": {
+      "work_seconds": 480,
+      "rest_seconds": 300,
+      "lounge_speed": 1.0,
+      "tired": 20,
+      "rested": 90,
+      "note": "Game seconds. A full shift drains 100 stamina in work_seconds of real production; resting at home refills it in rest_seconds (× apartment comfort); a lounge seat adds lounge_speed. Tired staff stop at `tired` and go back at `rested`."
     }
   },
   "contracts": {
@@ -1678,5 +1713,9 @@
   "rover": {
     "recharge_seconds": 180,
     "note": "回到浮岛时越野车自动充电，约 3 分钟充满；停在太阳能方块 10 米内也会慢慢充电（游戏数值）"
+  },
+  "decor": {
+    "max_per_plot": 24,
+    "note": "v0.43: island-Ⅰ town decorations on empty deck plots, from the shared toolbox"
   }
 }

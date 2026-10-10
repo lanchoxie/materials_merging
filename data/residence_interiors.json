@@ -29,6 +29,12 @@
       "width": 10.8, "depth": 10.8, "floors": false,
       "wall": "f0e5d1", "wood": "876956", "accent": "508c83", "fabric": "ac9774",
       "upgrades": ["主卧、长书墙、会客沙发与室内庭院", "扩建休闲区、第二间卧室与荣誉展廊"]
+    },
+    "staff_housing": {
+      "name": "星锻公寓", "style": "金属骨架、暖光舷窗、共享咖啡角", "max_level": 3,
+      "width": 9.6, "depth": 10.0, "floors": false,
+      "wall": "e4e9ee", "wood": "8b95a3", "accent": "35e0ff", "fabric": "d9775a",
+      "upgrades": ["四张床位与共享咖啡角", "六张床位，加一张休息沙发", "八张床位，加观景展示柜"]
     }
   }
 }

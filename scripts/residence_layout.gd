@@ -12,7 +12,7 @@ var spec: Dictionary={}
 var fixtures: Array=[]
 
 static func accepts(value: String) -> bool:
-	return value in ["house","engineer_house","doctor_dorm","professor_apartment","academician_villa"]
+	return value in ["house","engineer_house","doctor_dorm","professor_apartment","academician_villa","staff_housing"]
 
 func setup(plot: Dictionary, floor_index: int=1) -> void:
 	rules=DATA.load_rules(); kind="engineer_house" if plot.kind=="house" else str(plot.kind)
@@ -38,6 +38,19 @@ func setup(plot: Dictionary, floor_index: int=1) -> void:
 			if level>=4:
 				_add("display",Vector3(right,0,depth/2-2.2),"毕业成果")
 				_add("plant",Vector3(right,0,1.35),"休闲角绿植")
+		"staff_housing":
+			# v0.43 星锻公寓 (island Ⅱ): a bed per resident place (4/6/8), a coffee corner, and the
+			# furniture the home studio made for this block (`furnished`) as extra pieces.
+			var beds=4+2*(level-1)
+			for k in range(beds):
+				var side=-1 if k%2==0 else 1; var row=k/2
+				_add("bed",Vector3(side*(width/2-0.85),0,back+row*2.3),"%d号床" % (k+1))
+			_add("snack",Vector3(0,0,back-0.4),"共享咖啡角")
+			if level>=2: _add("sofa",Vector3(0,0,depth/2-2.0),"休息沙发")
+			if level>=3: _add("display",Vector3(right-0.6,0,depth/2-0.9),"观景展示柜")
+			var extras=["plant","chair","tea","shelf"]
+			for k in range(mini(int(plot.get("furnished",0)),extras.size())):
+				_add(extras[k],[Vector3(left+0.6,0,depth/2-0.9),Vector3(-0.9,0,0.6),Vector3(0.9,0,0.6),Vector3(-1.6,0,-depth/2+0.3)][k],"星锻家具")
 		"professor_apartment":
 			for side in [-1,1]:
 				_add("bed",Vector3(side*(width/2-1.1),0,back),"屏风卧区")

@@ -5,6 +5,7 @@ extends RefCounted
 const ChemIndex=preload("res://scripts/chem_index.gd")
 const Model=preload("res://scripts/material_model.gd")
 const Geology=preload("res://scripts/planet_geology.gd")
+const Town=preload("res://scripts/island_town.gd")
 static var _rules: Dictionary={}
 static var _formula_keys: Dictionary={}
 const FACTORIES=["metal_works","polymer_works","home_studio","inorganic_works","silicon_works","chip_fab","packaging_plant"]
@@ -15,6 +16,12 @@ var xp=0
 var legacy_seen=-1
 var credits=0
 var plots=0
+## v0.43: where each deck plot sits, [x, z] in 3 m cells (index = plot index, so buildings keep their
+## keys). Plots 0..15 default to the old 4-wide grid; expansion picks any cell next to the deck.
+var deck: Array=[]
+## v0.43: island-Ⅰ town decorations on empty deck plots: "plot index" -> [{uid, kind, x, z, rot}].
+var deck_items: Dictionary={}
+var decor_serial=1
 var buildings: Dictionary={}   # "plot index" -> {kind, level, jobs: [{recipe, left}]}
 var items: Dictionary={}       # item id -> count
 var saturation: Dictionary={}  # item id -> 0..1 market saturation
@@ -141,12 +148,126 @@ func plot_cost() -> Dictionary:
 	return {"coins":int(round(float(p.coins)*pow(float(p.growth),n))),"credits":int(round(float(p.credits)*pow(float(p.growth),n)))}
 
 func buy_plot(state) -> String:
+	_sync_deck()
+	return buy_plot_at(state,_next_cell())
+
+## v0.43: expand the deck onto any free cell beside it (like island Ⅰ's plots).
+func buy_plot_at(state,c: Vector2i) -> String:
 	if not unlocked: return "星锻岛尚未开放"
 	if plots>=int(rules().plots.max): return "本版星锻岛最多%d块地" % int(rules().plots.max)
-	var c=plot_cost()
-	if state.coins<c.coins or credits<c.credits: return "扩建甲板需要%d金币和%d工业信用" % [c.coins,c.credits]
-	state.coins-=float(c.coins); credits-=int(c.credits); plots+=1; gain(10)
+	if not frontier().has(c): return "只能紧挨着现有甲板扩建"
+	var cost=plot_cost()
+	if state.coins<cost.coins or credits<cost.credits: return "扩建甲板需要%d金币和%d工业信用" % [cost.coins,cost.credits]
+	state.coins-=float(cost.coins); credits-=int(cost.credits)
+	_sync_deck(); deck.append([c.x,c.y]); plots+=1; gain(10)
 	return "甲板扩建 · 现在%d块地" % plots
+
+static func legacy_cell(i: int) -> Vector2i:
+	return Vector2i(i%4,i/4)
+
+## Fills in cells for plots that have none yet (old saves, or tests that set `plots`).
+func _sync_deck() -> void:
+	while deck.size()>plots: deck.pop_back()
+	while deck.size()<plots:
+		var c=_next_cell(); deck.append([c.x,c.y])
+
+func _taken() -> Dictionary:
+	var taken={}
+	for c in deck: taken[Vector2i(int(c[0]),int(c[1]))]=true
+	return taken
+
+## The next plot cell: the old 4-wide grid first, then the first free cell beside the deck.
+func _next_cell() -> Vector2i:
+	var taken=_taken()
+	for i in range(16):
+		var c=legacy_cell(i)
+		if not taken.has(c) and (taken.is_empty() or _beside(c,taken)): return c
+	var f=_frontier_raw()
+	return f[0] if not f.is_empty() else Vector2i(deck.size()%4,deck.size()/4)
+
+static func _beside(c: Vector2i,taken: Dictionary) -> bool:
+	for d in [Vector2i(1,0),Vector2i(-1,0),Vector2i(0,1),Vector2i(0,-1)]:
+		if taken.has(c+d): return true
+	return false
+
+## Free cells next to the deck, inside the island's bounds, in a stable order.
+func frontier() -> Array:
+	_sync_deck()
+	return _frontier_raw()
+
+func _frontier_raw() -> Array:
+	var taken=_taken(); var span: Array=rules().plots.get("span",[-3,6]); var result=[]
+	for z in range(int(span[0]),int(span[1])+1):
+		for x in range(int(span[0]),int(span[1])+1):
+			var c=Vector2i(x,z)
+			if not taken.has(c) and _beside(c,taken): result.append(c)
+	return result
+
+func cell(i: int) -> Vector2i:
+	_sync_deck()
+	if i<0 or i>=deck.size(): return Vector2i(-99,-99)
+	return Vector2i(int(deck[i][0]),int(deck[i][1]))
+
+## World position of a plot's centre (the old 4-wide grid keeps its exact places).
+static func cell_center(c: Vector2i) -> Vector3:
+	return Vector3((c.x-1.5)*3.0,0,(c.y-1.5)*3.0)
+
+func plot_center(i: int) -> Vector3:
+	return cell_center(cell(i))
+
+func plot_at(c: Vector2i) -> int:
+	_sync_deck()
+	for i in range(deck.size()):
+		if int(deck[i][0])==c.x and int(deck[i][1])==c.y: return i
+	return -1
+
+# --- v0.43 decorations on the deck --------------------------------------------------------------
+## A deck plot in island-Ⅰ form, so the town's tile rules apply: a building fills the whole plot.
+func deck_plot(i: int) -> Dictionary:
+	var c=cell(i)
+	return {"x":c.x,"z":c.y,"kind":"factory" if buildings.has(str(i)) else "empty","items":deck_items.get(str(i),[]),"props":[]}
+
+func decor_error(state,i: int,kind: String,at: Vector2i,rot: int) -> String:
+	if not unlocked: return "星锻岛尚未开放"
+	if i<0 or i>=plots: return "这块甲板还没扩建"
+	if not Town.is_decor(kind) or Town.is_building(kind): return "这不是可以摆放的装饰"
+	if buildings.has(str(i)): return "工厂占满了这块地：装饰摆在空甲板上"
+	if deck_items.get(str(i),[]).size()>=int(rules().decor.max_per_plot): return "这块地已经摆得很满了"
+	if int(state.storage.decorations.get(kind,0))<=0:
+		var locked=state.town_locked(kind)
+		if not locked.is_empty(): return locked
+		if state.coins<state.town_price(kind): return "工具箱里没有，买一件要%d金币" % state.town_price(kind)
+	return Town.fits(deck_plot(i),kind,at,posmod(rot,4))
+
+## Takes the piece from the shared toolbox (or buys it at the island-Ⅰ price) and sets it down.
+func place_decor(state,i: int,kind: String,at: Vector2i,rot: int=0) -> String:
+	var error=decor_error(state,i,kind,at,rot)
+	if not error.is_empty(): return error
+	var stored=int(state.storage.decorations.get(kind,0))
+	if stored>0: state.storage.decorations[kind]=stored-1
+	else: state.coins-=float(state.town_price(kind))
+	if not deck_items.has(str(i)): deck_items[str(i)]=[]
+	deck_items[str(i)].append({"uid":decor_serial,"kind":kind,"x":at.x,"z":at.y,"rot":posmod(rot,4)})
+	decor_serial+=1; gain(2)
+	return "%s摆上了%d号甲板%s" % [state.town_name(kind),i+1," · 从工具箱取出" if stored>0 else ""]
+
+## Back into the shared toolbox (either island can place it again).
+func store_decor(state,i: int,uid: int) -> String:
+	var list: Array=deck_items.get(str(i),[])
+	for k in range(list.size()):
+		if int(list[k].uid)!=uid: continue
+		var kind=str(list[k].kind); list.remove_at(k)
+		if list.is_empty(): deck_items.erase(str(i))
+		state.storage.decorations[kind]=int(state.storage.decorations.get(kind,0))+1
+		return "%s收回工具箱" % state.town_name(kind)
+	return "找不到这件装饰"
+
+## Every placed decoration with its plot: [{plot, item}].
+func decorations() -> Array:
+	var result=[]
+	for key in deck_items:
+		for item in deck_items[key]: result.append({"plot":int(key),"item":item})
+	return result
 
 func power_use() -> int:
 	var total=0
@@ -202,6 +323,7 @@ func build_error(state,plot: int,kind: String) -> String:
 	if not rules().buildings.has(kind): return "未知建筑"
 	if plot<0 or plot>=plots: return "这块甲板还没扩建"
 	if buildings.has(str(plot)): return "这块地上已经有工厂"
+	if not deck_items.get(str(plot),[]).is_empty(): return "先把这块地上的装饰收回工具箱"
 	var spec: Dictionary=rules().buildings[kind]
 	if not spec.get("no_licence",false) and count(kind)>=licences(kind): return "%s的许可证已用完（每%d级岛主等级多一张）" % [spec.name,int(rules().licences.per_ranks)]
 	if power_use()+int(spec.power)>power_cap(): return "岛心电网不够：需要%d，剩余%d" % [int(spec.power),power_cap()-power_use()]
@@ -515,6 +637,7 @@ func tick(state,delta: float) -> Array:
 					gain(int(rules().items[id].xp)*n)
 				crafted+=1; notes.append("%s出炉%s" % [r.name,"（研发博士多出一份）" if extra>0 else ""])
 				_refill(state,key)
+	notes.append_array(_stamina(delta))
 	var m: Dictionary=rules().market
 	var decay=pow(0.5,delta/float(m.half_life))
 	for id in saturation.keys():
@@ -609,7 +732,7 @@ func promote(state,person_id: int) -> String:
 	if not error.is_empty(): return error
 	var p: Dictionary=state.campus.person(person_id); var r=_role(str(p.role))
 	var home=_free_home()
-	staff.append({"id":staff_serial,"name":str(p.name),"role":str(p.role),"specialty":str(p.get("specialty","")),"home":home,"factory":-1})
+	staff.append({"id":staff_serial,"name":str(p.name),"role":str(p.role),"specialty":str(p.get("specialty","")),"home":home,"factory":-1,"energy":100.0,"resting":false})
 	staff_serial+=1
 	service.erase(str(person_id)); delays.erase(str(person_id))
 	state.campus_dismiss(person_id)
@@ -637,7 +760,7 @@ func staff_bonus(plot: int,effect: String) -> float:
 	if plot<0 or arrears>0.0: return 0.0
 	var total=0.0
 	for s in staff:
-		if int(s.factory)!=plot: continue
+		if int(s.factory)!=plot or s.get("resting",false): continue
 		var r=_role(str(s.role))
 		if str(r.effect)==effect: total+=float(r.amount)*comfort(int(s.home))
 	return total
@@ -646,6 +769,49 @@ func comfort(home: int) -> float:
 	var b: Dictionary=buildings.get(str(home),{})
 	if b.is_empty(): return 1.0
 	return 1.0+float(rules().staff.comfort_bonus)*minf(1.0,float(furnished.get(str(home),0))/float(housing_capacity(b)))
+
+# --- v0.43 stamina and rest --------------------------------------------------------------------
+## Staff tire while their factory is producing; at `tired` they go off to rest (home, or a lounge
+## seat if one is free) and come back at `rested`. Unassigned staff rest too. No bonus while resting.
+func lounge_seats() -> int:
+	var total=0
+	for key in buildings:
+		if buildings[key].kind=="staff_lounge": total+=housing_capacity(buildings[key])
+	return total
+
+func working(s: Dictionary) -> bool:
+	if int(s.factory)<0 or s.get("resting",false): return false
+	return not buildings.get(str(int(s.factory)),{}).get("jobs",[]).is_empty()
+
+## Who sits in the lounge right now: resting staff in id order, up to the seats.
+func in_lounge() -> Array:
+	var seats=lounge_seats(); var result=[]
+	for s in staff:
+		if result.size()>=seats: break
+		if s.get("resting",false) or int(s.factory)<0: result.append(int(s.id))
+	return result
+
+func _stamina(delta: float) -> Array:
+	var E: Dictionary=rules().staff.energy; var notes=[]; var lounge=in_lounge()
+	for s in staff:
+		var e=float(s.get("energy",100.0))
+		if working(s):
+			e-=100.0*delta/float(E.work_seconds)
+			if e<=float(E.tired):
+				s.resting=true; notes.append("%s 累了，%s" % [s.name,"去休息室歇一会" if lounge_seats()>in_lounge().size() else "回星锻公寓休息"])
+		elif s.get("resting",false) or int(s.factory)<0:
+			var rate=comfort(int(s.home))+(float(E.lounge_speed) if lounge.has(int(s.id)) else 0.0)
+			e+=100.0*delta/float(E.rest_seconds)*rate
+			if s.get("resting",false) and e>=float(E.rested):
+				s.resting=false
+				if int(s.factory)>=0: notes.append("%s 休息好了，回到工厂" % s.name)
+		s.energy=clampf(e,0.0,100.0)
+	return notes
+
+func status_of(s: Dictionary) -> String:
+	if s.get("resting",false): return "休息室" if in_lounge().has(int(s.id)) else "公寓休息"
+	if int(s.factory)<0: return "休息中"
+	return "工作中" if working(s) else "待命"
 
 func daily_wages() -> int:
 	var total=0
@@ -899,7 +1065,8 @@ func bit_hv() -> float:
 # --- Save ---------------------------------------------------------------------------------------
 func serialize() -> Dictionary:
 	for id in items.keys(): _reconcile(id)
-	return {"version":3,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"suit":suit,"drill":drill,"drill_charge":float(drill_state.charge),"storage":storage.duplicate(),"vehicle":vehicle,"rover_charge":float(rover_state.charge),"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
+	_sync_deck()
+	return {"version":4,"deck":deck.duplicate(true),"deck_items":deck_items.duplicate(true),"decor_serial":decor_serial,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"suit":suit,"drill":drill,"drill_charge":float(drill_state.charge),"storage":storage.duplicate(),"vehicle":vehicle,"rover_charge":float(rover_state.charge),"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
 		"buildings":buildings.duplicate(true),"items":items.duplicate(),"saturation":saturation.duplicate(),"bit":bit,"earned":earned,"crafted":crafted,
 		"service":service.duplicate(),"delays":delays.duplicate(),"service_init":service_init,"staff":staff.duplicate(true),"staff_serial":staff_serial,
 		"wages":wages,"wage_clock":wage_clock,"arrears":arrears,"furnished":furnished.duplicate(),
@@ -909,7 +1076,7 @@ static func _num(v,lo: float,hi: float,whole: bool=true) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
 
 func restore(data) -> bool:
-	if not data is Dictionary or not _num(data.get("version"),1,3) or not data.get("unlocked") is bool: return false
+	if not data is Dictionary or not _num(data.get("version"),1,4) or not data.get("unlocked") is bool: return false
 	var R=rules()
 	if not _num(data.get("xp"),0,1000000000) or not _num(data.get("legacy_seen"),-1,1000000000) or not _num(data.get("credits"),0,float(R.credits.max)): return false
 	if not _num(data.get("plots"),0,float(R.plots.max)) or (data.unlocked and int(data.plots)<int(R.plots.start)): return false
@@ -943,6 +1110,7 @@ func restore(data) -> bool:
 	var v2=int(data.version)>=2
 	if v2 and not _restore_v2_ok(data,R): return false
 	if int(data.version)>=3 and not _restore_v3_ok(data,R): return false
+	if int(data.version)>=4 and not _restore_v4_ok(data,R): return false
 	unlocked=data.unlocked; xp=int(data.xp); legacy_seen=int(data.legacy_seen); credits=int(data.credits); plots=int(data.plots)
 	buildings={}
 	for key in data.buildings:
@@ -969,11 +1137,20 @@ func restore(data) -> bool:
 		for k in data.service: service[str(k)]=float(data.service[k])
 		for k in data.delays: delays[str(k)]=int(data.delays[k])
 		service_init=data.service_init; staff=[]
-		for s2 in data.staff: staff.append({"id":int(s2.id),"name":str(s2.name),"role":str(s2.role),"specialty":str(s2.specialty),"home":int(s2.home),"factory":int(s2.factory)})
+		for s2 in data.staff: staff.append({"id":int(s2.id),"name":str(s2.name),"role":str(s2.role),"specialty":str(s2.specialty),"home":int(s2.home),"factory":int(s2.factory),"energy":float(s2.get("energy",100.0)),"resting":bool(s2.get("resting",false))})
 		staff_serial=int(data.staff_serial); wages=float(data.wages); wage_clock=float(data.wage_clock); arrears=float(data.arrears)
 		for k in data.furnished: furnished[str(k)]=int(data.furnished[k])
 		contracts=data.contracts.duplicate(true); contract_serial=int(data.contract_serial); board_left=float(data.board_left); airship=data.airship.duplicate(true)
 		for c in contracts+([airship.contract] if not airship.is_empty() else []): _normalise_contract(c)
+	deck=[]; deck_items={}; decor_serial=1
+	if int(data.version)>=4:
+		for c in data.deck: deck.append([int(c[0]),int(c[1])])
+		for key in data.deck_items:
+			var list=[]
+			for item in data.deck_items[key]: list.append({"uid":int(item.uid),"kind":str(item.kind),"x":int(item.x),"z":int(item.z),"rot":int(item.get("rot",0))})
+			deck_items[str(key)]=list
+		decor_serial=int(data.decor_serial)
+	_sync_deck()
 	lots={}; settings={}; lot_serial=1; solar=[]
 	if int(data.version)>=3:
 		lot_serial=int(data.lot_serial)
@@ -984,6 +1161,31 @@ func restore(data) -> bool:
 			for knob in data.settings[rid]: set_knob(str(rid),str(knob),float(data.settings[rid][knob]))
 	# Saves before v0.37 (and any drift): units without a lot become default lots.
 	for id in items.keys(): _reconcile(id)
+	return true
+
+## v0.43: the deck is connected, unique and in bounds; decorations fit their empty plots.
+func _restore_v4_ok(data: Dictionary,R: Dictionary) -> bool:
+	if not data.get("deck") is Array or data.deck.size()!=int(data.plots): return false
+	var span: Array=R.plots.get("span",[-3,6]); var seen={}; var order=[]
+	for c in data.deck:
+		if not c is Array or c.size()!=2 or not _num(c[0],float(span[0]),float(span[1])) or not _num(c[1],float(span[0]),float(span[1])): return false
+		var v=Vector2i(int(c[0]),int(c[1]))
+		if seen.has(v) or (not seen.is_empty() and not _beside(v,seen)): return false
+		seen[v]=true; order.append(v)
+	if not data.get("deck_items") is Dictionary or not _num(data.get("decor_serial"),1,1e9): return false
+	var uids={}
+	for key in data.deck_items:
+		if not str(key).is_valid_int() or int(key)<0 or int(key)>=int(data.plots) or data.buildings.has(str(key)) or not data.deck_items[key] is Array: return false
+		if data.deck_items[key].size()>int(R.decor.max_per_plot): return false
+		var probe={"x":order[int(key)].x,"z":order[int(key)].y,"kind":"empty","items":[],"props":[]}
+		for item in data.deck_items[key]:
+			if not item is Dictionary or not _num(item.get("uid"),1,float(data.decor_serial)-1) or uids.has(int(item.uid)): return false
+			if not Town.is_decor(str(item.get("kind",""))) or Town.is_building(str(item.kind)): return false
+			if not _num(item.get("x"),0,11) or not _num(item.get("z"),0,11) or not _num(item.get("rot",0),0,3): return false
+			if not Town.fits(probe,str(item.kind),Vector2i(int(item.x),int(item.z)),int(item.get("rot",0))).is_empty(): return false
+			uids[int(item.uid)]=true; probe.items.append({"uid":int(item.uid),"kind":str(item.kind),"x":int(item.x),"z":int(item.z),"rot":int(item.get("rot",0))})
+	for s2 in data.staff:
+		if not _num(s2.get("energy",100.0),0,100,false) or not s2.get("resting",false) is bool: return false
 	return true
 
 static func _knobs_ok(k,fam: String) -> bool:

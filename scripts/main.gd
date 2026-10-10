@@ -25,6 +25,7 @@ const IslandWalk=preload("res://scripts/island_walk_panel.gd")
 const RefineryPanel=preload("res://scripts/refinery_panel.gd")
 const FabricatorPanel=preload("res://scripts/fabricator_panel.gd")
 const StarforgePanel=preload("res://scripts/starforge_panel.gd")
+const StarforgeWalk=preload("res://scripts/starforge_walk_panel.gd")
 const ReactorLook=preload("res://scripts/reactor_look.gd")
 const Coach=preload("res://scripts/coach.gd")
 const CoachTours=preload("res://scripts/coach_tours.gd")
@@ -217,7 +218,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.42 蓝色星球 · 地球仪 · 大洋与山脉 · 纬度气候" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.43 星锻岛 · 第二浮岛 · 扩建甲板 · 员工休息 · 第一人称登岛" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -1214,6 +1215,20 @@ func _show_starforge() -> void:
 	_label_return(panel)
 	panel.acted.connect(_action)
 	panel.dismissed.connect(_screen_closed.bind(panel))
+	panel.walk_requested.connect(_show_starforge_walk)
+
+## v0.43: walk 星锻岛 in first person. E on a factory opens its management (the walk waits on the
+## return stack); leaving the walk goes back to the management screen.
+func _show_starforge_walk() -> void:
+	if not state.industry.unlocked: return
+	if _resume_existing(StarforgeWalk): return
+	_replace_modal()
+	var panel=StarforgeWalk.new(); add_child(panel); modal=panel; panel.setup(state)
+	panel.dismissed.connect(func():
+		_screen_closed(panel)
+		if modal==null: _show_starforge())
+	panel.requested.connect(func(kind: String,index: int):
+		if kind=="manage": _show_starforge(); modal.focus_plot(index))
 
 ## "+N XP" rises from the rank bar, and a banner marks each new 岛主 rank.
 func _xp_pop() -> void:

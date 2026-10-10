@@ -4,6 +4,9 @@ extends Control
 ## fuse 工业信用) and 装备 (the drill bit for the planet). All rules live in industry.gd.
 signal dismissed
 signal acted(message: String)
+## v0.43: walk the deck in first person.
+signal walk_requested
+const Town=preload("res://scripts/island_town.gd")
 const UI=preload("res://scripts/ui.gd")
 const View=preload("res://scripts/starforge_view.gd")
 const Model=preload("res://scripts/material_model.gd")
@@ -20,13 +23,15 @@ var clock=0.0
 var bars: Array=[]
 var laws_open: Dictionary={}
 var close_button: Button   # recipe id -> showing its property laws
+var walk_button: Button
 
 func setup(model) -> void:
 	state=model
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); theme=UI.make_theme()
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
 	var title=UI.label("星锻岛 · 浮岛 Ⅱ",30,UI.MINT); title.position=Vector2(28,22); add_child(title)
-	header=UI.label("",17,UI.GOLD); header.position=Vector2(300,34); header.size=Vector2(950,30); header.clip_text=true; add_child(header)
+	header=UI.label("",17,UI.GOLD); header.position=Vector2(300,34); header.size=Vector2(790,30); header.clip_text=true; add_child(header)
+	walk_button=UI.button("第一人称登岛",func(): walk_requested.emit()); walk_button.position=Vector2(1104,22); walk_button.size=Vector2(154,48); add_child(walk_button)
 	# v0.37.1: the button used to only emit `dismissed`, leaving this full-screen panel on top with no way back.
 	close_button=UI.button("返回浮岛 Ⅰ",_close); close_button.position=Vector2(1268,22); close_button.size=Vector2(144,48); add_child(close_button)
 	var frame=UI.box(self,Rect2(28,96,760,740))
@@ -41,6 +46,13 @@ func setup(model) -> void:
 	body=UI.column(scroll,10); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	status=UI.paragraph("",16,UI.GOLD); status.position=Vector2(32,848); status.size=Vector2(1370,40); add_child(status)
 	_redraw()
+
+## v0.43: opened from the first-person walk on a building: show its card.
+func focus_plot(index: int) -> void:
+	var b: Dictionary=state.industry.buildings.get(str(index),{})
+	section="factory" if b.get("kind","") in state.industry.FACTORIES else "deck"
+	view.selected=index; _redraw()
+	status.text="%d号地 · %s" % [index+1,state.industry.rules().buildings[b.kind].name if not b.is_empty() else "空甲板"]
 
 func set_return_label(text: String) -> void:
 	close_button.text=text
@@ -71,7 +83,7 @@ func _act(message: String) -> void:
 func _fingerprint() -> String:
 	var ind=state.industry
 	return JSON.stringify([section,ind.unlocked,ind.rank(),ind.credits,ind.plots,ind.buildings.keys(),ind.buildings.values().map(func(b): return [b.kind,b.level,b.jobs.size(),b.get("repeat","")]),ind.items,ind.lots.hash(),ind.bit,int(state.coins)/50,state.materials,state.element_inventory.hash(),state.storage.batches.size(),
-		ind.staff,ind.furnished,ind.contracts.map(func(c): return c.id),ind.airship.is_empty(),ind.arrears>0,ind.candidates(state).map(func(c): return [c.ready,c.delayed]),state.campus.people.size()])
+		ind.staff.map(func(s): return [s.id,s.factory,s.home,ind.status_of(s),int(float(s.get("energy",100.0))/10.0)]),ind.furnished,ind.deck,ind.deck_items,state.storage.decorations.hash(),ind.contracts.map(func(c): return c.id),ind.airship.is_empty(),ind.arrears>0,ind.candidates(state).map(func(c): return [c.ready,c.delayed]),state.campus.people.size()])
 
 func _process(dt: float) -> void:
 	if state==null: return
@@ -94,6 +106,7 @@ func _redraw() -> void:
 	for key in tabs:
 		tabs[key].modulate=UI.MINT if key==section else Color.WHITE
 		tabs[key].disabled=not ind.unlocked
+	walk_button.disabled=not ind.unlocked
 	UI.clear(body)
 	if not ind.unlocked: _unlock(); return
 	match section:
@@ -127,6 +140,9 @@ func _deck() -> void:
 	var expand=_card("甲板 · %d / %d 块地" % [ind.plots,int(R.plots.max)])
 	var b=UI.button("扩建一块甲板 · %d金币 + %d信用" % [c.coins,c.credits],func(): _act(ind.buy_plot(state)))
 	b.disabled=ind.plots>=int(R.plots.max); expand.add_child(b)
+	# v0.43: the deck map. Numbers are plots; ＋ cells beside the deck can be built out right there.
+	expand.add_child(UI.paragraph("甲板地图：点 ＋ 在那个位置扩建（必须紧挨现有甲板）。",13))
+	expand.add_child(_deck_map(ind))
 	expand.add_child(UI.paragraph("电网 %d/%d · 每种工厂许可证 %d 张（岛主每升%d级多一张）" % [ind.power_use(),ind.power_cap(),ind.licences(""),int(R.licences.per_ranks)],13))
 	for i in range(ind.plots):
 		var plot=_card("%d 号地" % (i+1))
@@ -150,12 +166,64 @@ func _deck() -> void:
 				if bld.get("board",false): plot.add_child(UI.label("⚙ 已装工厂控制板 · 速度 +%d%%" % int(float(R.automation.speed)*100),14,UI.MINT))
 				elif int(ind.items.get("control_board",0))>0: plot.add_child(UI.button("装控制板 · 速度 +%d%%（仓库 %d 块）" % [int(float(R.automation.speed)*100),int(ind.items.control_board)],func(): _act(ind.install_board(i))))
 		else:
+			_decor_rows(plot,i)
 			# v0.37: eight kinds of building — the build buttons wrap instead of widening the panel.
 			var choices=HFlowContainer.new(); choices.add_theme_constant_override("h_separation",6); choices.add_theme_constant_override("v_separation",6); plot.add_child(choices)
 			for kind in R.buildings:
 				var spec: Dictionary=R.buildings[kind]; var err=ind.build_error(state,i,kind)
 				var btn=UI.button("建%s\n%d金币+%d信用" % [spec.name,int(spec.cost.coins),int(spec.cost.credits)],func(): view.selected=i; _act(ind.build(state,i,kind)))
 				btn.tooltip_text=err; btn.disabled=not err.is_empty(); btn.add_theme_font_size_override("font_size",13); choices.add_child(btn)
+
+func _deck_map(ind) -> GridContainer:
+	var span: Array=ind.rules().plots.get("span",[-3,6]); var lo=int(span[0]); var hi=int(span[1])
+	var frontier=ind.frontier() if ind.plots<int(ind.rules().plots.max) else []
+	var used_lo=Vector2i(hi,hi); var used_hi=Vector2i(lo,lo)
+	for i in range(ind.plots):
+		var c=ind.cell(i); used_lo=Vector2i(mini(used_lo.x,c.x),mini(used_lo.y,c.y)); used_hi=Vector2i(maxi(used_hi.x,c.x),maxi(used_hi.y,c.y))
+	# Show the deck and one ring around it, never more than the island's bounds.
+	var x0=maxi(lo,used_lo.x-1); var x1=mini(hi,used_hi.x+1); var z0=maxi(lo,used_lo.y-1); var z1=mini(hi,used_hi.y+1)
+	var grid=GridContainer.new(); grid.columns=x1-x0+1; grid.add_theme_constant_override("h_separation",3); grid.add_theme_constant_override("v_separation",3)
+	for z in range(z0,z1+1):
+		for x in range(x0,x1+1):
+			var cell=Vector2i(x,z); var i=ind.plot_at(cell)
+			var btn=Button.new(); btn.custom_minimum_size=Vector2(40,34); btn.focus_mode=Control.FOCUS_NONE; btn.add_theme_font_size_override("font_size",12)
+			if i>=0:
+				btn.text=str(i+1); btn.tooltip_text=str(R_name(ind,i)); btn.pressed.connect(func(): view.selected=i)
+				btn.modulate=Color(str(ind.rules().buildings[ind.buildings[str(i)].kind].accent)) if ind.buildings.has(str(i)) else Color.WHITE
+			elif frontier.has(cell):
+				btn.text="＋"; btn.tooltip_text="在这里扩建"; btn.modulate=UI.MINT
+				btn.pressed.connect(func(): _act(ind.buy_plot_at(state,cell)))
+			else:
+				btn.disabled=true; btn.modulate=Color(1,1,1,0.15)
+			grid.add_child(btn)
+	return grid
+
+func R_name(ind,i: int) -> String:
+	if not ind.buildings.has(str(i)): return "%d号地 · 空甲板" % (i+1)
+	return "%d号地 · %s" % [i+1,ind.rules().buildings[ind.buildings[str(i)].kind].name]
+
+## v0.43: island-Ⅰ decorations on an empty plot: what stands here (收回), and what the toolbox has.
+func _decor_rows(plot: VBoxContainer,i: int) -> void:
+	var ind=state.industry
+	var here: Array=ind.deck_items.get(str(i),[])
+	if not here.is_empty():
+		plot.add_child(UI.label("装饰 %d 件" % here.size(),14,UI.GOLD))
+		var placed=_flow(plot)
+		for item in here:
+			var uid=int(item.uid)
+			var back=UI.button("收回%s" % state.town_name(str(item.kind)),func(): _act(ind.store_decor(state,i,uid)))
+			back.add_theme_font_size_override("font_size",13); placed.add_child(back)
+	var kinds=[]
+	for kind in state.storage.decorations:
+		if int(state.storage.decorations[kind])>0 and Town.is_decor(str(kind)) and not Town.is_building(str(kind)): kinds.append(str(kind))
+	if kinds.is_empty():
+		if here.is_empty(): plot.add_child(UI.paragraph("空甲板：可以建工厂，也可以摆浮岛 Ⅰ 工具箱里的装饰（第一人称登岛后对准地面按 E 摆放）。",13))
+		return
+	var row=_flow(plot)
+	for kind in kinds:
+		var at=Town.first_fit(ind.deck_plot(i),kind,0)
+		var put=UI.button("摆%s ×%d" % [state.town_name(kind),int(state.storage.decorations[kind])],func(): _act(ind.place_decor(state,i,kind,at,0)))
+		put.disabled=at.x<0; put.add_theme_font_size_override("font_size",13); row.add_child(put)
 
 func _factories() -> void:
 	var ind=state.industry; var R=ind.rules(); var any=false
@@ -240,6 +308,8 @@ func _staff() -> void:
 	var ind=state.industry; var R=ind.rules()
 	var pay=_card("星锻岛员工 · 日薪合计 %d 金币" % ind.daily_wages(),UI.GOLD)
 	pay.add_child(UI.paragraph("员工从浮岛 Ⅰ 晋升而来，住在星锻公寓，按在岛时间计薪（每游戏日结算）。欠薪时员工加成暂停。",14))
+	var E: Dictionary=R.staff.energy
+	pay.add_child(UI.paragraph("体力：工厂开工时消耗，降到%d%%就去休息，恢复到%d%%再回岗；休息时没有加成。公寓家具让休息更快，员工休息室每个座位再快 %d%%（现有 %d 座）。" % [int(E.tired),int(E.rested),int(float(E.lounge_speed)*100),ind.lounge_seats()],13))
 	if ind.arrears>0: pay.add_child(UI.button("补发欠薪 %.0f 金币" % ind.arrears,func(): _act(ind.pay_arrears(state))))
 	for s in ind.staff:
 		var role: Dictionary=R.staff.roles[s.role]
@@ -247,6 +317,10 @@ func _staff() -> void:
 		card.add_child(UI.paragraph(str(role.story),13))
 		var where="休息中" if int(s.factory)<0 else "%d号地 %s" % [int(s.factory)+1,R.buildings[ind.buildings[str(int(s.factory))].kind].name]
 		card.add_child(UI.label("住 %d号地公寓 · 工作：%s · 日薪 %d" % [int(s.home)+1,where,int(role.daily_pay)],14,UI.TEXT))
+		# v0.43: stamina. Working drains it; resting (faster in a lounge, and in a furnished flat) refills it.
+		var energy=ProgressBar.new(); energy.custom_minimum_size=Vector2(0,14); energy.max_value=100; energy.show_percentage=false; card.add_child(energy)
+		var who=s; bars.append([energy,func(): return float(who.get("energy",100.0))])
+		card.add_child(UI.label("体力 %d%% · %s" % [int(float(s.get("energy",100.0))),ind.status_of(s)],14,UI.GOLD if s.get("resting",false) else UI.MINT))
 		var row=_flow(card)
 		for key in ind.buildings:
 			if ind.buildings[key].kind not in ind.FACTORIES: continue

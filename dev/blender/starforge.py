@@ -300,7 +300,33 @@ def vehicle_assembly():
         for y in (-0.9, -0.2): box((0.12, 0.26, 0.26), (x, y, 0.33), mat("tyre", "26282c"))
     holo_logo(2.7, "ffcf5c"); export("vehicle_assembly")
 
+# --- v0.43 员工休息室 Staff Lounge: a glass pavilion with sofas, a coffee bar, plants and warm light.
+def staff_lounge():
+    clear(); plinth(accent=AMBER)
+    frame = mat("frame", GUN, metal=0.6, rough=0.45); glass = mat("glass", "bfe9ff", metal=0.1, rough=0.1)
+    warm = mat("warm", "ffd9a0", emit=2.4); sofa = mat("sofa", "d9775a", rough=0.8); leaf = mat("leaf", "4f9a5a", rough=0.8)
+    box((2.2, 1.9, 0.06), (0, 0, 1.55), mat("roof", "e8edf2", metal=0.2, rough=0.35))
+    box((2.24, 1.94, 0.04), (0, 0, 1.6), mat("roofstrip", AMBER, emit=3.0))
+    for x in (-1.05, 1.05):
+        for y in (-0.9, 0.9): box((0.08, 0.08, 1.35), (x, y, 0.88), frame)
+    box((2.1, 0.03, 1.2), (0, 0.92, 0.85), glass)
+    box((0.03, 1.8, 1.2), (-1.06, 0, 0.85), glass)
+    box((0.03, 1.8, 1.2), (1.06, 0, 0.85), glass)
+    # Two sofas facing a low table, a coffee bar along the back, potted plants by the door.
+    for y in (-0.45, 0.35):
+        box((1.0, 0.36, 0.2), (-0.25, y, 0.3), sofa)
+        box((1.0, 0.1, 0.32), (-0.25, y + (0.15 if y > 0 else -0.15), 0.46), sofa)
+    box((0.55, 0.3, 0.06), (-0.25, -0.05, 0.36), mat("table", "9c6b45", rough=0.6))
+    box((0.4, 1.2, 0.5), (0.78, 0.1, 0.43), mat("bar", "c9ced6", metal=0.4, rough=0.35))
+    cyl(0.07, 0.18, (0.78, -0.2, 0.77), mat("cup", "f2f5f6"), verts=10)
+    cyl(0.06, 0.3, (0.78, 0.35, 0.83), mat("machine", DARK, metal=0.5), verts=8)
+    for x in (-0.85, 0.55):
+        cyl(0.11, 0.2, (x, -0.8, 0.3), mat("pot", "8a5a3c"), verts=10)
+        sphere(0.2, (x, -0.8, 0.55), leaf)
+    sphere(0.1, (0, 0, 1.4), warm); sphere(0.08, (-0.6, 0.3, 1.4), warm); sphere(0.08, (0.5, -0.4, 1.4), warm)
+    holo_logo(2.0, AMBER); export("staff_lounge")
+
 import sys
 only = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship, test_bench, inorganic_works, silicon_works, chip_fab, packaging_plant, battery_works, vehicle_assembly):
+for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship, test_bench, inorganic_works, silicon_works, chip_fab, packaging_plant, battery_works, vehicle_assembly, staff_lounge):
     if not only or build.__name__ in only: build()
