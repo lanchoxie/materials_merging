@@ -529,6 +529,24 @@
       "material": "metal",
       "shape": "slope",
       "description": "1份碳钢锭加工为8块金属坡顶。斜坡屋面，也能当坡道走上去。塑料和金属件的原料来自星锻岛仓库。"
+    },
+    "field_farm_robot": {
+      "id": "field_farm_robot",
+      "version": 1,
+      "name": "农业机器人",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 40,
+      "natural_inputs": {
+        "timber": 1
+      },
+      "industry_inputs": {
+        "motor": 2,
+        "logic_chip": 1,
+        "lead_acid": 1
+      },
+      "description": "1份木料做底座，星锻岛的2台电机、1块逻辑芯片和1块铅酸蓄电池做成一台农业机器人。放在种植箱旁边：它照看周围8米内的种植箱——成熟就收获、空了就补种、干了就浇水。收成存在机器人的料斗里，走过去按 E 取出，同时给它补种子。"
     }
   },
   "cooking": {
@@ -582,5 +600,15 @@
       }
     },
     "campfire_reach": 3.5
+  },
+  "robots": {
+    "radius": 8.0,
+    "period": 6,
+    "water_add": 0.4,
+    "dry": 0.35,
+    "hopper_grain": 60,
+    "hopper_seeds": 12,
+    "seed_load": 6,
+    "note": "每台机器人每6个游戏秒做一件事：先收获成熟的、再给空箱播种（用料斗里的种子）、再给偏干的浇水（自带集雨水箱，每次+0.4湿度）。收成留在料斗，玩家按E取出。"
   }
 }

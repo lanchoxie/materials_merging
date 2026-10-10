@@ -30,6 +30,15 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.46.0 "Farm Robots" (农业机器人)
+Full notes: [35-farm-robots.md](35-farm-robots.md).
+- **农业机器人.** A placeable machine made from 星锻岛 motors, a logic chip and a battery. It tends the planters within
+  8 m: harvests ripe crops into its hopper, sows empty boxes from its seed bin, and waters dry ones.
+- **Visible.** A little robot drives out from its dock to work each box.
+- **The backpack stays yours.** E on the robot takes its harvest and loads it with seeds. It leaves the settlement
+  farmer's boxes alone and can't be taken down while loaded.
+- **Tests.** New: `test_farm_robots` (20).
+
 ## v0.45.0 "Tunnel Boring Machine" (盾构机)
 Full notes: [34-tbm.md](34-tbm.md).
 - **盾构机.** Built at the vehicle assembly plant and sent to the planet like the rover. It bores a 3×3 tunnel a metre at

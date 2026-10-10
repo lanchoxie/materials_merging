@@ -147,6 +147,10 @@
     "field_slope_metal": {
       "units": 8,
       "kind": "slope_metal"
+    },
+    "field_farm_robot": {
+      "units": 1,
+      "kind": "farm_robot"
     }
   },
   "kinds": {
@@ -352,6 +356,11 @@
       "shape": "slope",
       "material": "metal",
       "roof": true
+    },
+    "farm_robot": {
+      "name": "农业机器人",
+      "color": "6fd38f",
+      "machine": true
     }
   },
   "scope": "一包构件拆成8块；拆回原批次，全部收回才可还原整包。方块须与地面连通，暂不模拟真实结构强度。太阳能输出为统一的游戏服务点，不是实测器件效率。",

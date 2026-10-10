@@ -94,6 +94,9 @@ static func prompt(v,target: Dictionary) -> String:
 			var G: Dictionary=v.field.rules.garden
 			match str(target.kind):
 				"sprinkler": return text+" · 周围%d米内的种植箱自动保持湿润；附近大片土地变湿润、略降温" % int(G.sprinkler_radius)
+				"farm_robot":
+					var key=str(target.get("key","")); var hop: Dictionary=v.field.robots.get(key,{"grain":0,"seeds":0}); var work: Dictionary=v.field.robot_work.get(key,{})
+					return text+" · 照看%d米内的种植箱 · %s · 料斗 谷穗%d 种子%d · E 取出收成并补种子" % [int(v.field.rules.robots.radius),str(work.get("action","待命")),int(hop.grain),int(hop.seeds)]
 				"fertilizer_spreader": return text+" · 周围%d米内的种植箱长得快%d%%；附近土壤变肥（带少量污染）" % [int(G.fertilizer_radius),roundi((float(G.fertilizer_growth)-1.0)*100)]
 				"oxygen_tower": return text+" · 提高全球大气含氧量（现在 %.1f%%）：湿地水体溶氧更高，鱼更健康" % float(v.environment.o2)
 				"co2_tower": return text+" · 提高全球 CO₂（现在 %d ppm）：全球升温 %+.1f °C，作物长得稍快" % [roundi(float(v.environment.co2)),float(v.environment.warming())]

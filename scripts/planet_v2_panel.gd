@@ -349,6 +349,9 @@ func _collect() -> void:
 	_update_actor()
 	var aimed=state.planet.v2.Target.query(state.planet.v2)
 	if aimed.get("kind","")=="campfire": _cook_menu(); return
+	if aimed.get("kind","")=="farm_robot" and aimed.get("type","")=="block":
+		var held_robot: Dictionary=state.planet.v2.inventory.entries(state).get(str(state.planet.v2.inventory.slots[state.planet.v2.inventory.selected]),{})
+		if held_robot.get("action",{}).get("type","")!="remove": view.hands.swing(); _act("v2_robot",{"key":aimed.key}); return
 	# v0.44: E on a door opens or shuts it (unless the hammer is out to take it down).
 	if aimed.get("type","")=="block" and state.planet.v2.construction.is_door(state.planet.v2.construction.blocks.get(str(aimed.get("key","")),{})):
 		var held: Dictionary=state.planet.v2.inventory.entries(state).get(str(state.planet.v2.inventory.slots[state.planet.v2.inventory.selected]),{})

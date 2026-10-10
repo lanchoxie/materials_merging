@@ -46,7 +46,9 @@ func entries(state) -> Dictionary:
 		if not construction.is_empty():
 			category="components"; icon="solar" if construction.kind=="solar" else "block"
 			if construction.kind in ["floor","roof","fence","planter"]: icon=construction.kind
-			if c.rules.kinds[construction.kind].get("machine",false):
+			if construction.kind=="farm_robot":
+				icon="machine"; description="农业机器人：放在种植箱旁，自动收获、补种、浇水周围8米内的种植箱；收成存在它的料斗里，走过去按 E 取出。\n"+description
+			elif c.rules.kinds[construction.kind].get("machine",false):
 				icon="machine"; description="地球环境设备：放在地面后持续改变周围约256米的环境或全球大气，拆回后逐渐恢复。
 "+description
 			quantity=c.available(str(construction.kind),p.products,recipe_id)

@@ -57,6 +57,9 @@ func sync(v) -> void:
 		if rules.facilities.has(b.kind): facility(key,b.kind)
 	v.construction.occupied=v.field.gardens.duplicate()
 	v.construction.occupied.merge(v.organics.protected_keys())
+	# v0.46: a farm robot with harvest or seeds in its hopper is emptied (E) before it can be taken down.
+	for key in v.field.robots:
+		if int(v.field.robots[key].grain)>0 or int(v.field.robots[key].seeds)>0: v.construction.occupied[key]=true
 	for key in facilities:
 		if facilities[key].stock>0 or facilities[key].integrity<0.999: v.construction.occupied[key]=true
 	for job in jobs.values():

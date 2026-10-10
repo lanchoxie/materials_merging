@@ -113,7 +113,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   shapes × four materials, doors that open, glass windows, walkable slopes, plastic/metal from 星锻岛.
 - ✅ v0.45 "Tunnel Boring Machine" (tag `v0.45.0`; see [34-tbm.md](34-tbm.md)): 3×3 tunnel boring, bulk ore,
   batch refining (4 ores per coke).
-- Next: farm robots (plant, water, harvest planters) → airplane (with the curved horizon) → spaceship → second planet.
+- ✅ v0.46 "Farm Robots" (tag `v0.46.0`; see [35-farm-robots.md](35-farm-robots.md)): robots harvest, sow and
+  water planters into their own hopper.
+- Next: airplane (with the curved horizon) → spaceship → second planet; then native factions.
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal
   doors, windows, boards, bricks, roofs) → 盾构机 (bulk ore) → farm robots → airplane → spaceship → second planet.

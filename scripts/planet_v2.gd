@@ -259,6 +259,7 @@ func _step() -> void:
 		_event("%s栖地恢复，一只新的%s #%d 从外界迁入。" % [r.name,species(kind).name,a.id])
 
 	ranch.tick(self)
+	field.robot_tick(self)
 
 func collect_wild(at: Vector2) -> String:
 	if not population.harvest(at): return "走近成熟野生植被再采集；采集后需要等待再生"

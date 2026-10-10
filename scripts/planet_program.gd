@@ -376,6 +376,10 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			var shown: String=preload("res://scripts/river_miniatures.gd").exhibit(home().construction,str(payload.get("id","")),int(payload.get("plot",-1)),state.plots)
 			home_saved()
 			return shown
+		"v2_robot":
+			# v0.46: E on a farm robot empties its hopper and loads seeds.
+			if not v2.active: return "请先进入星球"
+			return v2.field.robot_service(str(payload.get("key","")),v2.world,v2.construction)
 		"v2_door":
 			# v0.44: E on a door opens or shuts it.
 			if not v2.active: return "请先进入星球"

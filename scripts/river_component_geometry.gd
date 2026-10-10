@@ -2,6 +2,15 @@ extends RefCounted
 const G=preload("res://scripts/river_geometry.gd")
 static func draw(st: SurfaceTool,p: Vector3,kind: String,color: Color) -> void:
 	if kind in ["sprinkler","oxygen_tower","co2_tower","fertilizer_spreader"]: _machine(st,p+Vector3(0,-0.5,0),kind,color); return
+	if kind=="farm_robot":
+		# v0.46: the robot's charging dock (the robot itself is drawn by the field view and drives out).
+		var base=p+Vector3(0,-0.5,0)
+		G.cube(st,base+Vector3(0,0.06,0),Vector3(0.95,0.12,0.95),Color("2f3a42"))
+		G.cube(st,base+Vector3(0,0.13,0),Vector3(0.8,0.02,0.8),Color("d9b45a"))
+		G.cube(st,base+Vector3(-0.38,0.6,-0.38),Vector3(0.08,1.1,0.08),Color("5b6670"))
+		G.cube(st,base+Vector3(-0.2,1.15,-0.2),Vector3(0.5,0.04,0.5),Color("233c70"))
+		G.cube(st,base+Vector3(-0.38,0.95,-0.38),Vector3(0.12,0.12,0.12),color.lightened(0.4))
+		return
 	if kind=="campfire":
 		# v0.39: a ring of stones, crossed logs and a stepped flame (the view adds sparks and light).
 		var base=p+Vector3(0,-0.5,0)

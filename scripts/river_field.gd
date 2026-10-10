@@ -134,18 +134,100 @@ func water_error(key: String) -> String:
 func water(key: String) -> void:
 	gardens[key].moisture=minf(1,gardens[key].moisture+float(rules.garden.water_add)); gardens[key].waterings+=1; revision+=1
 
+## v0.41.2: grain and seeds are rolled per harvest (deterministic per box and time).
+func crop_roll(key: String,elapsed: int) -> Dictionary:
+	var amount=span(rules.garden.harvest_grain_range,roll(key,elapsed))
+	var seeds=0
+	for i in range(rules.garden.seed_chances.size()):
+		if roll(key,elapsed*7+i+1)<float(rules.garden.seed_chances[i]): seeds+=1
+	return {"grain":amount,"seeds":seeds}
+
 func harvest(key: String,world: Dictionary) -> String:
 	if not gardens.has(key): return "箱里还没有作物；从背包装备种子"
 	if gardens[key].growth<1: return "作物尚未成熟"
-	# v0.41.2: grain and seeds are rolled per harvest (deterministic per box and time).
-	var salt=int(world.elapsed)
-	var amount=span(rules.garden.harvest_grain_range,roll(key,salt))
+	var crop=crop_roll(key,int(world.elapsed)); var amount=int(crop.grain); var seeds=int(crop.seeds)
 	if not can_add("grain",amount): return "谷穗格已满，先取用收获"
-	var seeds=0
-	for i in range(rules.garden.seed_chances.size()):
-		if roll(key,salt*7+i+1)<float(rules.garden.seed_chances[i]): seeds+=1
 	stock.grain+=amount; world.seeds+=seeds; gardens.erase(key); revision+=1
 	return "收入背包：谷穗 ×%d%s；回浮岛仍可取用" % [amount,"，留种 ×%d" % seeds if seeds>0 else "，这次没留下种子"]
+
+# --- v0.46 农业机器人 ----------------------------------------------------------------------------
+## Each robot's hopper (saved): {"<block key>": {grain, seeds}}. What it is doing right now (not
+## saved, for the view and the prompt): {"<block key>": {target, action, at}}.
+var robots: Dictionary={}
+var robot_work: Dictionary={}
+
+func hopper(key: String) -> Dictionary:
+	if not robots.has(key): robots[key]={"grain":0,"seeds":0}
+	return robots[key]
+
+## Called once per game second from planet_v2._step. Every `period` seconds (staggered per robot)
+## each robot tends one planter in its radius: harvest ripe → sow an empty box → water a dry one.
+## Planters a settlement farmer is already walking to are left alone.
+func robot_tick(v) -> void:
+	var c=v.construction; var R: Dictionary=rules.robots; var now=int(v.world.elapsed)
+	var bots=[]
+	for k in c.blocks:
+		if c.blocks[k].kind=="farm_robot": bots.append(k)
+	for k in robots.keys():
+		if not c.blocks.has(k) or c.blocks[k].kind!="farm_robot": robots.erase(k)
+	for k in robot_work.keys():
+		if k not in bots: robot_work.erase(k)
+	if bots.is_empty(): return
+	bots.sort()
+	var taken={}
+	for j in v.ranch.jobs.values(): taken[str(j.get("target",""))]=true
+	var planters=[]
+	for k in c.blocks:
+		if c.blocks[k].kind=="planter": planters.append(k)
+	planters.sort()
+	for k in bots:
+		var hop=hopper(k)
+		if posmod(now+abs(hash(k))%int(R.period),int(R.period))!=0: continue
+		var b: Dictionary=c.blocks[k]; var at=Vector2(float(b.x),float(b.z))
+		var best=""; var rank=9
+		for pk in planters:
+			if taken.has(pk): continue
+			var p: Dictionary=c.blocks[pk]
+			if Vector2(float(p.x),float(p.z)).distance_to(at)>float(R.radius): continue
+			var r=9
+			if gardens.has(pk):
+				if float(gardens[pk].growth)>=1.0 and int(hop.grain)<int(R.hopper_grain): r=0
+				elif float(gardens[pk].moisture)<float(R.dry): r=2
+			elif int(hop.seeds)>0: r=1
+			if r<rank: rank=r; best=pk
+		if best=="": robot_work[k]={"target":"","action":"待命","at":now}; continue
+		taken[best]=true
+		match rank:
+			0:
+				var crop=crop_roll(best,now)
+				hop.grain=mini(int(R.hopper_grain),int(hop.grain)+int(crop.grain)); hop.seeds=mini(int(R.hopper_seeds),int(hop.seeds)+int(crop.seeds))
+				gardens.erase(best); v.settlement.harvests+=1
+				robot_work[k]={"target":best,"action":"收获","at":now}
+			1:
+				hop.seeds=int(hop.seeds)-1
+				gardens[best]={"growth":0.0,"moisture":float(rules.garden.initial_moisture),"waterings":0}
+				robot_work[k]={"target":best,"action":"播种","at":now}
+			2:
+				gardens[best].moisture=minf(1.0,float(gardens[best].moisture)+float(R.water_add)); gardens[best].waterings=int(gardens[best].waterings)+1
+				robot_work[k]={"target":best,"action":"浇水","at":now}
+		revision+=1
+
+## E on a robot: take its harvest into the backpack and top its seed bin up from the backpack.
+func robot_service(key: String,world: Dictionary,c) -> String:
+	if c.blocks.get(key,{}).get("kind")!="farm_robot": return "这里没有农业机器人"
+	var hop=hopper(key); var R: Dictionary=rules.robots
+	var grain=mini(int(hop.grain),int(rules.max_stock)-int(stock.grain))
+	stock.grain+=grain; hop.grain=int(hop.grain)-grain
+	var extra=maxi(0,int(hop.seeds)-int(R.seed_load)); hop.seeds=int(hop.seeds)-extra; world.seeds=int(world.seeds)+extra
+	var load=mini(maxi(0,int(R.seed_load)-int(hop.seeds)),int(world.get("seeds",0)))
+	hop.seeds=int(hop.seeds)+load; world.seeds=int(world.seeds)-load
+	revision+=1
+	var parts=[]
+	if grain>0: parts.append("取出谷穗 ×%d" % grain)
+	if extra>0: parts.append("多余种子 ×%d 回背包" % extra)
+	if load>0: parts.append("补种子 ×%d" % load)
+	if int(hop.grain)>0: parts.append("谷穗格满，料斗还剩 %d" % int(hop.grain))
+	return "农业机器人 · "+("、".join(parts) if not parts.is_empty() else "料斗是空的，背包也没有种子可补")+" · 料斗种子 %d" % int(hop.seeds)
 
 func covered(b: Dictionary,c) -> bool:
 	# A vertical column lookup stays bounded even with hundreds of planted boxes.
@@ -177,7 +259,7 @@ func tick(world: Dictionary,c,organics=null) -> void:
 		if plot.moisture>=float(rules.garden.minimum_moisture): plot.growth=minf(1,plot.growth+(organics.growth_factor(key) if organics!=null else 1.0)*(float(rules.garden.roof_growth_multiplier) if roof else 1.0)*(float(G.fertilizer_growth) if fed else 1.0)/float(rules.garden.growth_seconds))
 
 func serialize() -> Dictionary:
-	return {"version":1,"stock":stock.duplicate(),"changed":changed.duplicate(true),"crafts":crafts.duplicate(true),"gardens":gardens.duplicate(true)}
+	return {"version":1,"stock":stock.duplicate(),"changed":changed.duplicate(true),"crafts":crafts.duplicate(true),"gardens":gardens.duplicate(true),"robots":robots.duplicate(true)}
 
 func restore(data,c,now: int) -> bool:
 	if not data is Dictionary or data.get("version")!=1: return false
@@ -198,9 +280,18 @@ func restore(data,c,now: int) -> bool:
 		var row=data.gardens[key]
 		if c.blocks.get(key,{}).get("kind")!="planter" or not row is Dictionary: return false
 		if not _num(row.get("growth"),0,1) or not _num(row.get("moisture"),0,1) or not _num(row.get("waterings"),0,1000000,true): return false
+	# v0.46: robot hoppers belong to robot blocks and stay within their bins.
+	var hoppers=data.get("robots",{})
+	if not hoppers is Dictionary: return false
+	for key in hoppers:
+		var h=hoppers[key]
+		if c.blocks.get(key,{}).get("kind")!="farm_robot" or not h is Dictionary: return false
+		if not _num(h.get("grain"),0,int(rules.robots.hopper_grain),true) or not _num(h.get("seeds"),0,int(rules.robots.hopper_seeds),true): return false
 	stock={}
 	for id in rules.resources: stock[id]=int(data.stock.get(id,0))
 	changed={}; crafts=data.crafts.duplicate(true); gardens=data.gardens.duplicate(true); revision+=1
+	robots={}; robot_work={}
+	for key in hoppers: robots[key]={"grain":int(hoppers[key].grain),"seeds":int(hoppers[key].seeds)}
 	return true
 
 func _num(v,lo: float,hi: float,whole: bool=false) -> bool:
