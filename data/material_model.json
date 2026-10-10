@@ -786,6 +786,50 @@
           "source": ""
         }
       ]
+    },
+    "rover": {
+      "name": "星球越野车",
+      "knobs": {},
+      "inherit": {
+        "t": "battery_pack"
+      },
+      "inherit_default": {
+        "t": 90
+      },
+      "inherit_knobs": {
+        "t": {
+          "label": "电芯涂层厚度",
+          "unit": "µm"
+        }
+      },
+      "cells": 16,
+      "wh_per_km": 80.0,
+      "mass_kg": 420,
+      "show": [
+        "pack_wh",
+        "range_km",
+        "c_rate"
+      ],
+      "score": {
+        "range_km": 1.0
+      },
+      "laws": [
+        {
+          "text": "两个电池包共 16 节电芯：能量 = 节数 × 单节能量",
+          "tag": "近似精确",
+          "source": ""
+        },
+        {
+          "text": "小型电动车每公里约 60–110 Wh（这里取 80 Wh/km）：续航 = 电池能量 ÷ 每公里耗电",
+          "tag": "简化模型",
+          "source": "greet2020"
+        },
+        {
+          "text": "车身约 420 kg，钢材占乘用车质量的 45–70%（Argonne GREET）",
+          "tag": "真实数据",
+          "source": "greet2020"
+        }
+      ]
     }
   }
 }

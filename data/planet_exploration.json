@@ -29,5 +29,26 @@
   "mouse_sensitivity": 0.003,
   "touch_sensitivity": 0.004,
   "joystick_radius": 58.0,
-  "max_waypoints": 24
+  "max_waypoints": 24,
+  "rover": {
+    "max_speed": 10.0,
+    "boost_speed": 14.0,
+    "crawl": 1.5,
+    "accel": 4.5,
+    "brake": 9.0,
+    "drag": 2.5,
+    "reverse_share": 0.4,
+    "wheelbase": 2.2,
+    "max_steer": 0.55,
+    "length": 2.6,
+    "width": 1.5,
+    "climb": 1.05,
+    "fall": 12.0,
+    "water_factor": 0.45,
+    "suspension": 8.0,
+    "enter_distance": 3.5,
+    "park_solar_radius": 10.0,
+    "park_charge_seconds": 300,
+    "note": "自定义运动学：自行车模型转向，加速/刹车/拖曳；能爬一格台阶（1.05 m），树木、建筑、世界边缘会挡住；数值为游戏数值"
+  }
 }

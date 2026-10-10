@@ -51,7 +51,10 @@ var suit=""                    # v0.39: worn insulated suit item id ("" = none)
 ## and battery storage units on the island grid.
 var drill=""
 var drill_state: Dictionary={"charge":0.0,"cap":0.0,"factor":1.0,"wh":3.0}
-var storage: Array=[]            # efficiencies of panels installed on the island grid
+var storage: Array=[]
+## v0.41: the deployed planet rover and its battery (shared by reference with the planet view's rover).
+var vehicle=""
+var rover_state: Dictionary={"charge":0.0,"cap":0.0,"wh_per_km":80.0}            # efficiencies of panels installed on the island grid
 
 static func rules() -> Dictionary:
 	if _rules.is_empty(): _rules=JSON.parse_string(FileAccess.get_file_as_string("res://data/industry.json"))
@@ -244,7 +247,7 @@ func install_board(plot: int) -> String:
 
 ## Items held back from sale and recipes: the equipped bit and headlamp.
 func reserved(id: String) -> int:
-	return 1 if (id==bit or id==lamp or id==suit or id==drill) and id!="" else 0
+	return 1 if (id==bit or id==lamp or id==suit or id==drill or id==vehicle) and id!="" else 0
 
 # --- Evidence: the player must have made the real compound ---------------------------------
 static func _keys_for(formula: String) -> Array:
@@ -851,6 +854,27 @@ func recharge(dt: float) -> void:
 	if float(drill_state.cap)<=0.0: return
 	drill_state.charge=minf(float(drill_state.cap),float(drill_state.charge)+float(drill_state.cap)/float(rules().drill.recharge_seconds)*dt)
 
+func deploy_rover(id: String) -> String:
+	if id=="": vehicle=""; update_rover(); return "越野车已收回星锻岛"
+	if not rules().items.get(id,{}).get("vehicle",false) or int(items.get(id,0))<1: return "没有这辆越野车"
+	vehicle=id; update_rover()
+	return "越野车已派往地球：电池 %.0f Wh，续航约 %.1f km。进入星球第一人称后在你身边，E 上车" % [float(rover_state.cap),float(rover_state.cap)/float(rover_state.wh_per_km)]
+
+func update_rover() -> void:
+	if vehicle!="" and int(items.get(vehicle,0))<1: vehicle=""
+	var best=best_lot(vehicle) if vehicle!="" else -1
+	if best<0:
+		rover_state.cap=0.0; rover_state.charge=0.0; return
+	var p=lot_props(vehicle,lots[vehicle][best])
+	rover_state.cap=float(p.pack_wh); rover_state.wh_per_km=float(Model.family("rover").wh_per_km)
+	rover_state.charge=clampf(float(rover_state.charge),0.0,float(rover_state.cap))
+
+## `seconds` for a full charge: the island charger, or slower solar blocks by a parked rover.
+func recharge_rover(dt: float,seconds: float=-1.0) -> void:
+	if float(rover_state.cap)<=0.0: return
+	var full=float(rules().rover.recharge_seconds) if seconds<=0.0 else seconds
+	rover_state.charge=minf(float(rover_state.cap),float(rover_state.charge)+float(rover_state.cap)/full*dt)
+
 func equip_suit(id: String) -> String:
 	if id=="": suit=""; return "已脱下保温服"
 	if not rules().items.get(id,{}).has("suit") or int(items.get(id,0))<1: return "没有这件保温服"
@@ -875,7 +899,7 @@ func bit_hv() -> float:
 # --- Save ---------------------------------------------------------------------------------------
 func serialize() -> Dictionary:
 	for id in items.keys(): _reconcile(id)
-	return {"version":3,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"suit":suit,"drill":drill,"drill_charge":float(drill_state.charge),"storage":storage.duplicate(),"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
+	return {"version":3,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"suit":suit,"drill":drill,"drill_charge":float(drill_state.charge),"storage":storage.duplicate(),"vehicle":vehicle,"rover_charge":float(rover_state.charge),"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
 		"buildings":buildings.duplicate(true),"items":items.duplicate(),"saturation":saturation.duplicate(),"bit":bit,"earned":earned,"crafted":crafted,
 		"service":service.duplicate(),"delays":delays.duplicate(),"service_init":service_init,"staff":staff.duplicate(true),"staff_serial":staff_serial,
 		"wages":wages,"wage_clock":wage_clock,"arrears":arrears,"furnished":furnished.duplicate(),
@@ -913,6 +937,7 @@ func restore(data) -> bool:
 	if not data.get("suit","") is String or (str(data.get("suit",""))!="" and not R.items.get(data.suit,{}).has("suit")): return false
 	if not data.get("drill","") is String or (str(data.get("drill",""))!="" and not R.items.get(data.drill,{}).get("drill",false)): return false
 	if not _num(data.get("drill_charge",0.0),0,100000,false) or not data.get("storage",[]) is Array or data.get("storage",[]).size()>int(R.storage.max): return false
+	if not data.get("vehicle","") is String or (str(data.get("vehicle",""))!="" and not R.items.get(data.vehicle,{}).get("vehicle",false)) or not _num(data.get("rover_charge",0.0),0,1000000,false): return false
 	for u in data.get("storage",[]):
 		if not _num(u,1,2): return false
 	var v2=int(data.version)>=2
@@ -935,6 +960,7 @@ func restore(data) -> bool:
 	for id in data.saturation: saturation[id]=float(data.saturation[id])
 	bit=data.bit; lamp=str(data.get("lamp","")); suit=str(data.get("suit","")); drill=str(data.get("drill",""))
 	drill_state.charge=float(data.get("drill_charge",0.0)); storage=[]
+	vehicle=str(data.get("vehicle","")); rover_state.charge=float(data.get("rover_charge",0.0))
 	for u in data.get("storage",[]): storage.append(int(u))
 	earned=int(data.earned); crafted=int(data.crafted); pending_xp=0
 	service={}; delays={}; service_init=false; staff=[]; staff_serial=1; wages=0.0; wage_clock=0.0; arrears=0.0

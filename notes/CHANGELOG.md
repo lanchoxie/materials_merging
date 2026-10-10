@@ -30,6 +30,17 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.41.0 "Rover" (越野车)
+Industry release. Full notes: [28-rover.md](28-rover.md).
+- **载具总装厂.** It builds a 星球越野车 from steel, rubber tyres, glass, two motors, two battery packs and a control board.
+  Its range comes from the packs: 80 Wh/km, about 2.3 km.
+- **Real driving on Earth.** E to get in or out. WASD/joystick to drive, Shift to boost, Space for the handbrake, drag to
+  look around. A chase camera follows.
+- **How it handles.** It climbs one-block steps; trees and walls stop it; the suspension tilts with the ground; water
+  slows it; a flat battery leaves it crawling.
+- **Charging.** It charges on the island, or slowly when parked by a solar block.
+- **Tests.** New: `test_rover` (23 checks) and `test_rover_ui` (16).
+
 ## v0.40.0 "Batteries & Power" (电池与能源)
 Industry release. Full notes: [27-batteries.md](27-batteries.md).
 - **电池工厂.**

@@ -217,7 +217,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.40 电池与能源  ·  磷酸铁锂 · 充电电钻 · 储能" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.41 越野车  ·  真实驾驶 · 追尾视角 · 续航" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -1613,6 +1613,7 @@ func _show_test_panel(planet: Control = null) -> void:
 	row.add_child(UI.button("硅钙磷原料包", func(): run.call(TestMode.silicon_kit(state))))
 	row.add_child(UI.button("芯片原料包", func(): run.call(TestMode.chip_kit(state))))
 	row.add_child(UI.button("电池原料包", func(): run.call(TestMode.battery_kit(state))))
+	row.add_child(UI.button("越野车", func(): run.call(TestMode.rover_kit(state))))
 	body.add_child(UI.label("地球", 20, UI.GOLD))
 	row = UI.row(body, 8)
 	row.add_child(UI.button("快进 1 天", func(): run.call(TestMode.skip_planet(state, 60))))

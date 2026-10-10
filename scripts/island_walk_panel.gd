@@ -38,6 +38,10 @@ var showcase_button
 var residence_index=-1
 var exit_residence_button
 
+## The exploration input drives `pilot()` (v0.41: the planet returns its rover while seated).
+func pilot():
+	return walker
+
 func setup(model) -> void:
 	state=model; set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)

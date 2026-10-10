@@ -284,7 +284,23 @@ def battery_works():
     box((0.9, 0.04, 0.2), (0.1, 0.6, 0.4), mat("strip", "b6ff5c", emit=2.0))
     holo_logo(3.6, "b6ff5c"); export("battery_works")
 
+# --- v0.41 载具总装厂 Vehicle Assembly: a long hall with a gantry crane over a yellow rover on a turntable.
+def vehicle_assembly():
+    clear(); plinth(accent="ffcf5c")
+    gm = mat("gun", GUN, metal=0.6, rough=0.45); paint = mat("paint", "ffcf5c", metal=0.3, rough=0.4)
+    box((2.2, 0.9, 0.9), (0, 0.75, 0.63), mat("hall", "c9ced6", metal=0.4, rough=0.35))
+    box((2.22, 0.92, 0.08), (0, 0.75, 1.12), gm)
+    for x in (-0.95, 0.95): box((0.1, 0.1, 1.8), (x, -0.55, 1.08), gm)
+    box((2.0, 0.12, 0.1), (0, -0.55, 1.95), mat("crane", "ffcf5c", emit=1.5))
+    cyl(0.7, 0.06, (0, -0.55, 0.21), mat("turntable", DARK), verts=20)
+    box((0.6, 1.0, 0.28), (0, -0.55, 0.45), paint)
+    box((0.5, 0.5, 0.22), (0, -0.4, 0.7), paint)
+    box((0.52, 0.52, 0.03), (0, -0.4, 0.83), mat("roofpv", "233c70"))
+    for x in (-0.33, 0.33):
+        for y in (-0.9, -0.2): box((0.12, 0.26, 0.26), (x, y, 0.33), mat("tyre", "26282c"))
+    holo_logo(2.7, "ffcf5c"); export("vehicle_assembly")
+
 import sys
 only = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship, test_bench, inorganic_works, silicon_works, chip_fab, packaging_plant, battery_works):
+for build in (metal_works, polymer_works, trade_hub, deck_tile, thruster, home_studio, staff_housing, airship, test_bench, inorganic_works, silicon_works, chip_fab, packaging_plant, battery_works, vehicle_assembly):
     if not only or build.__name__ in only: build()

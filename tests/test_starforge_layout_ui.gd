@@ -23,7 +23,7 @@ func _run() -> void:
 	await process_frame; await RenderingServer.frame_post_draw
 	preload("res://scripts/test_mode.gd").open_starforge(s,900); ind.gain(Industry.step(14)); ind.solar=[0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4]
 	s.coins=900000; ind.plots=12
-	var kinds=["metal_works","polymer_works","trade_hub","home_studio","staff_housing","inorganic_works","silicon_works","test_bench","chip_fab","packaging_plant","battery_works"]
+	var kinds=["metal_works","polymer_works","trade_hub","home_studio","staff_housing","inorganic_works","silicon_works","test_bench","chip_fab","packaging_plant","battery_works","vehicle_assembly"]
 	for i in range(kinds.size()): ind.build(s,i,kinds[i])
 	preload("res://scripts/test_mode.gd").finish_service(s)
 	for i in range(3): s.campus_hire("engineer")

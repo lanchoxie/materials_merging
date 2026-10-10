@@ -100,7 +100,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   寒潮暴雪, mammoths and woolly rhinos, 保温服.
 - ✅ v0.40 "Batteries & Power" (tag `v0.40.0`; see [27-batteries.md](27-batteries.md)): battery works, LFP thickness
   trade-off, packs, motor, cordless drill on Earth, grid storage.
-- Next: v0.41 industry — the rover with real driving (vehicle assembly, planet vehicle controller; plan in 14-industry-island.md).
+- ✅ v0.41 "Rover" (tag `v0.41.0`; see [28-rover.md](28-rover.md)): vehicle assembly, kinematic rover with chase camera,
+  enter/exit, Wh/km range, charging.
+- Next: v0.42 planet — Settlers/Bronze/Clash: native factions, war events, incident director (plan in 14-industry-island.md).
 - Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
   more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,
   and the remaining eras.

@@ -94,6 +94,13 @@ static func battery_kit(s) -> String:
 		if not keys.is_empty(): s.index_found[keys[0]]=true
 	return "测试：电池原料包 · 元素各 +40，PE/IC/硬铝/钻头各 +4，PbSO₄ 和 LiFePO₄ 已记入索引"
 
+## v0.41: a finished, charged rover sent to Earth (skips the long vehicle chain).
+static func rover_kit(s) -> String:
+	var ind=s.industry
+	ind.items["rover"]=int(ind.items.get("rover",0))+1; ind._reconcile("rover")
+	ind.deploy_rover("rover"); s.sync_gear(); ind.rover_state.charge=ind.rover_state.cap
+	return "测试：一辆充满电的越野车已派往地球（%.0f Wh）" % float(ind.rover_state.cap)
+
 ## v0.38: everything the chip fab and packaging plant need, plus the phenol and CsPbBr₃ gates.
 static func chip_kit(s) -> String:
 	for el in ["Cs","Pb","Br","Cl","Cu","F","Al","O","C","H","Sn"]: s.element_inventory[el]=int(s.element_inventory.get(el,0))+40

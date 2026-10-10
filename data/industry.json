@@ -273,6 +273,25 @@
       "speed_per_level": 0.25,
       "queue_base": 2,
       "story": "涂布机把磷酸铁锂浆料刮在铝箔上，烘干、辊压、卷绕成电芯；隔壁的铅酸线做储能电池。窗里的电量条随充放电起落。"
+    },
+    "vehicle_assembly": {
+      "name": "载具总装厂",
+      "en": "Vehicle Assembly",
+      "accent": "ffcf5c",
+      "model": "vehicle_assembly",
+      "cost": {
+        "coins": 25000,
+        "credits": 80
+      },
+      "power": 4,
+      "xp": 60,
+      "max_level": 2,
+      "upgrade_costs": [
+        40000
+      ],
+      "speed_per_level": 0.25,
+      "queue_base": 1,
+      "story": "冲压钢车架、装上硫化橡胶轮胎和钢化玻璃，再把电机、电池包和控制板接上：一辆能在星球上开的越野车。"
     }
   },
   "licences": {
@@ -970,6 +989,27 @@
       "equation": "电能 → 电机转矩 → 钻头",
       "source": "moses1990",
       "model": "power_drill"
+    },
+    "rover": {
+      "name": "星球越野车",
+      "building": "vehicle_assembly",
+      "method": "钢车架 + 橡胶轮胎 + 玻璃 + 2 电机 + 2 电池包 + 控制板",
+      "inputs": {
+        "item:steel_ingot": 4,
+        "item:rubber": 4,
+        "item:glass": 1,
+        "item:motor": 2,
+        "item:battery_pack": 2,
+        "item:control_board": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "rover": 1
+      },
+      "seconds": 90,
+      "equation": "电池 → 电机控制器 → 双电机四驱",
+      "source": "greet2020",
+      "model": "rover"
     }
   },
   "items": {
@@ -1284,6 +1324,15 @@
       "xp": 30,
       "model": "power_drill",
       "drill": true
+    },
+    "rover": {
+      "name": "星球越野车",
+      "icon": "bit",
+      "color": "ffcf5c",
+      "sell": 2400,
+      "xp": 80,
+      "model": "rover",
+      "vehicle": true
     }
   },
   "sources": [
@@ -1438,6 +1487,10 @@
       "id": "moses1990",
       "cite": "Moses, Electrical steels: past, present and future developments, IEE Proc. A 137, 233–245 (1990)",
       "doi": "10.1049/ip-a-2.1990.0039"
+    },
+    {
+      "id": "greet2020",
+      "cite": "Argonne National Laboratory, GREET vehicle-cycle model: vehicle material composition (2020)"
     }
   ],
   "staff": {
@@ -1549,7 +1602,8 @@
           "power_diode",
           "insulated_suit",
           "power_drill",
-          "battery_pack"
+          "battery_pack",
+          "rover"
         ]
       },
       {
@@ -1620,5 +1674,9 @@
   "drill": {
     "recharge_seconds": 120,
     "note": "回到浮岛时电钻自动充电，约 2 分钟充满（游戏数值）"
+  },
+  "rover": {
+    "recharge_seconds": 180,
+    "note": "回到浮岛时越野车自动充电，约 3 分钟充满；停在太阳能方块 10 米内也会慢慢充电（游戏数值）"
   }
 }

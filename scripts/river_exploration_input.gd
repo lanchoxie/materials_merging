@@ -35,7 +35,7 @@ func set_walking(enabled: bool) -> void:
 func clear_input() -> void:
 	keys.clear(); move_touch=-1; look_touch=-1; stick=Vector2.ZERO; mouse_look=false; mouse_stick=false
 	primary_down=false
-	if view!=null: view.walker.stop()
+	if view!=null: view.pilot().stop()
 	queue_redraw()
 
 func joystick_center() -> Vector2:
@@ -76,7 +76,7 @@ func _input(event: InputEvent) -> void:
 		if event.index==move_touch:
 			_stick(get_global_transform_with_canvas().affine_inverse()*event.position); get_viewport().set_input_as_handled()
 		elif event.index==look_touch:
-			view.walker.look(_local_delta(event.relative),float(view.terrain.rules.touch_sensitivity)); get_viewport().set_input_as_handled()
+			view.pilot().look(_local_delta(event.relative),float(view.terrain.rules.touch_sensitivity)); get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and not event.pressed and event.button_index in [MOUSE_BUTTON_LEFT,MOUSE_BUTTON_RIGHT]:
 		var local=get_global_transform_with_canvas().affine_inverse()*event.position
 		var tap=primary_down and event.button_index==MOUSE_BUTTON_LEFT and event.device>=0
@@ -89,7 +89,7 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and (mouse_look or mouse_stick):
 		primary_motion+=_local_delta(event.relative).length()
 		if mouse_stick: _stick(get_global_transform_with_canvas().affine_inverse()*event.position)
-		else: view.walker.look(_local_delta(event.relative),float(view.terrain.rules.mouse_sensitivity))
+		else: view.pilot().look(_local_delta(event.relative),float(view.terrain.rules.mouse_sensitivity))
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and (has_focus() or not event.pressed):
 		var code=event.physical_keycode if event.physical_keycode!=0 else event.keycode
@@ -100,7 +100,7 @@ func _input(event: InputEvent) -> void:
 			elif code==KEY_E: collect_requested.emit()
 			elif code==KEY_F: attack_requested.emit()
 			elif code in [KEY_B,KEY_TAB]: build_requested.emit()
-			else: view.walker.jump()
+			else: view.pilot().jump()
 			get_viewport().set_input_as_handled()
 		if code in [KEY_W,KEY_A,KEY_S,KEY_D,KEY_UP,KEY_LEFT,KEY_DOWN,KEY_RIGHT,KEY_SHIFT]:
 			if event.pressed: keys[code]=true
@@ -127,8 +127,8 @@ func _process(_dt: float) -> void:
 func _refresh_movement() -> void:
 	if not walking or view==null: return
 	var axis=Vector2(int(keys.has(KEY_D) or keys.has(KEY_RIGHT))-int(keys.has(KEY_A) or keys.has(KEY_LEFT)),int(keys.has(KEY_S) or keys.has(KEY_DOWN))-int(keys.has(KEY_W) or keys.has(KEY_UP)))
-	view.walker.movement=(axis+stick).limit_length(1)
-	view.walker.running=keys.has(KEY_SHIFT)
+	view.pilot().movement=(axis+stick).limit_length(1)
+	view.pilot().running=keys.has(KEY_SHIFT)
 
 func _draw() -> void:
 	if not walking or view==null: return
@@ -143,7 +143,7 @@ func _draw() -> void:
 	var map_center=Vector2(size.x-92,size.y-94); var scale=2.1
 	draw_circle(map_center,68,Color(0.04,0.12,0.14,0.8))
 	draw_circle(map_center,63,Color("678366"))
-	var player=view.walker.position
+	var player=view.pilot().position
 	for i in range(-27,28):
 		var z=player.y+i; var relative=Vector2(view.terrain.river_x(z),z)-player
 		if relative.length()>27: continue
@@ -154,4 +154,4 @@ func _draw() -> void:
 		if relative.length()<29: draw_circle(map_center+relative*scale,2.5,Color("ffe0a3"))
 	var pos=map_center
 	draw_circle(pos,4,mint)
-	draw_line(pos,pos+Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw))*12,mint,2,true)
+	draw_line(pos,pos+Vector2(-sin(view.pilot().yaw),-cos(view.pilot().yaw))*12,mint,2,true)

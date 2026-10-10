@@ -36,6 +36,9 @@ var active=false
 var observer_id=0
 ## v0.39 timeline: "present" or "ice" (see rules.epochs). The time gate swaps whole PlanetV2 saves.
 var epoch="present"
+## v0.41: where this era's rover is parked ({} = not here yet), and whether the player is driving.
+var rover_at: Dictionary={}
+var driving=false
 
 func _init() -> void:
 	world=fresh()
@@ -332,7 +335,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize()}
+	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate()}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -357,6 +360,12 @@ func _number(v,lo: float,hi: float,whole: bool=false) -> bool:
 func restore(data) -> bool:
 	if not data is Dictionary or data.get("version")!=1 or not data.get("world") is Dictionary: return false
 	if not data.get("epoch","present") is String or not rules.epochs.has(str(data.get("epoch","present"))): return false
+	var parked=data.get("rover",{})
+	if not parked is Dictionary: return false
+	if not parked.is_empty():
+		for k in ["x","z","heading"]:
+			if not _number(parked.get(k),-9000,9000): return false
+		if Vector2(float(parked.x),float(parked.z)).length()>8192.0: return false
 	var w: Dictionary=data.world
 	if w.get("version")!=1 or not w.get("paused") is bool or not _number(w.get("speed"),1,8,true): return false
 	if int(w.speed) not in [1,4,8]: return false
@@ -457,5 +466,7 @@ func restore(data) -> bool:
 	world=w.duplicate(true); population=restored_population; construction=restored_construction; settlement=restored_settlement; nature=restored_nature; combat=restored_combat; actor={}; active=false
 	_link_geometry()
 	set_epoch(str(data.get("epoch","present")))
+	rover_at={}; driving=false
+	if not parked.is_empty(): rover_at={"x":float(parked.x),"z":float(parked.z),"heading":float(parked.heading)}
 	ranch.sync(self)
 	return true

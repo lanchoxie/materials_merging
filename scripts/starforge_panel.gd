@@ -343,6 +343,21 @@ func _gear() -> void:
 		var spare=int(ind.items.get(id,0))-ind.reserved(id)
 		var b=UI.button("接入%s（仓库 %d）" % [R.items[id].name,spare],func(): _act(ind.install_storage(id)))
 		b.disabled=spare<1 or ind.storage.size()>=int(R.storage.max); hooks.add_child(b)
+	# v0.41: the planet rover.
+	for id in R.items:
+		if not R.items[id].get("vehicle",false) or int(ind.items.get(id,0))<1: continue
+		var out=ind.vehicle==id; ind.update_rover()
+		var car=_card("%s × %d%s" % [R.items[id].name,int(ind.items[id]),"（在地球上）" if out else ""],Color("ffcf5c"))
+		var best=ind.best_lot(id)
+		if best>=0:
+			var lot: Dictionary=ind.lots[id][best]
+			car.add_child(UI.paragraph("%s\n%s" % [Model.knob_text(ind.modelled(id),lot.k),Model.describe(ind.modelled(id),lot.k,float(lot.q),bool(lot.m))],13))
+		if out:
+			car.add_child(UI.label("电量 %.0f / %.0f Wh · 续航 %.1f km · 回到浮岛自动充电" % [float(ind.rover_state.charge),float(ind.rover_state.cap),float(ind.rover_state.charge)/maxf(1.0,float(ind.rover_state.wh_per_km))],14,UI.MINT))
+			var bar=ProgressBar.new(); bar.max_value=1.0; bar.show_percentage=false; bar.custom_minimum_size=Vector2(0,8); car.add_child(bar)
+			bars.append([bar,func(): return float(ind.rover_state.charge)/maxf(1.0,float(ind.rover_state.cap))])
+		car.add_child(UI.paragraph("地球第一人称：走到车旁 E 上车，WASD/摇杆驾驶，Shift 加速，空格手刹，E 下车。",13))
+		car.add_child(UI.button("收回越野车" if out else "派往地球",func(): _act(ind.deploy_rover("" if out else id)); state.sync_gear()))
 	# v0.40: the cordless drill.
 	for id in R.items:
 		if not R.items[id].get("drill",false) or int(ind.items.get(id,0))<1: continue

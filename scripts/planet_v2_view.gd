@@ -10,6 +10,13 @@ const Rig=preload("res://scripts/creature_rig.gd")
 const CENTERS=Terrain.CENTERS
 var terrain=Terrain.new()
 var walker=Walker.new(terrain)
+## v0.41 rover: parked or driven in first person, seen from a chase camera while driving.
+const Rover=preload("res://scripts/river_rover.gd")
+var rover
+var driving=false
+var rover_parked=false
+var rover_node: Node3D
+var chase_ready=false
 var hands
 var ranch
 var first_person=false
@@ -236,8 +243,82 @@ func focus(id: String,enter: bool=true) -> void:
 		if first_person: walker.enter(id)
 		else: has_walk_position=false
 
+## The body the input drives: the rover while seated, otherwise the walker.
+func pilot():
+	return rover if driving else walker
+
+func _ensure_rover() -> void:
+	if rover!=null: return
+	rover=Rover.new(terrain,terrain.rules.rover)
+	rover_node=_rover_mesh(); add_child(rover_node); rover_node.hide()
+
+## Park the rover (or hide it when `at` is null).
+func park_rover(at,facing: float=0.0) -> void:
+	_ensure_rover()
+	if at==null: rover_parked=false; driving=false; rover_node.hide(); return
+	rover.construction=walker.construction; rover.barriers=walker.barriers
+	rover.place(at,facing); rover_parked=true; _pose_rover()
+
+func enter_rover() -> void:
+	if not rover_parked: return
+	driving=true; chase_ready=false; walker.stop(); hands.hide(); rover.stop()
+
+## Climb out beside the rover; returns false when there is no free spot (stay seated).
+func exit_rover() -> bool:
+	if not driving: return false
+	var f=rover.forward(); var side=Vector2(-f.y,f.x)
+	for offset in [side*2.2,-side*2.2,-f*2.8,f*2.8,side*3.5,-side*3.5]:
+		var p=rover.position+offset
+		if terrain.inside(p,2) and not terrain.blocked(p,walker.barriers) and (walker.construction==null or not walker.construction.overlaps(p,terrain.ground(p),float(terrain.rules.body_height))):
+			driving=false; rover.stop(); rover.speed=0.0
+			walker.position=p; walker.yaw=rover.heading; walker.pitch=-0.12; walker.reset_height(); walker.stop()
+			hands.visible=first_person
+			return true
+	return false
+
+## Chassis, cab frame, roof solar, four wheels and headlights: cubes, like everything else here.
+func _rover_mesh() -> Node3D:
+	var root=Node3D.new()
+	var material=StandardMaterial3D.new(); material.vertex_color_use_as_albedo=true; material.roughness=0.6
+	var st=G.surface(material)
+	var paint=Color("ffcf5c"); var dark=Color("2f3a42"); var steel=Color("8b95a3")
+	G.cube(st,Vector3(0,0.75,0),Vector3(1.5,0.45,2.6),paint)
+	G.cube(st,Vector3(0,0.52,0),Vector3(1.3,0.12,2.4),dark)
+	G.cube(st,Vector3(0,1.12,0.35),Vector3(1.32,0.32,1.2),paint.darkened(0.1))
+	for x in [-0.62,0.62]:
+		for z in [-0.25,0.95]: G.cube(st,Vector3(x,1.55,z),Vector3(0.07,0.75,0.07),steel)
+	G.cube(st,Vector3(0,1.94,0.35),Vector3(1.36,0.06,1.32),Color("233c70"))
+	G.cube(st,Vector3(0,1.32,-0.28),Vector3(1.2,0.5,0.04),Color(0.7,0.9,1.0))
+	for x in [-0.45,0.45]: G.cube(st,Vector3(x,0.82,-1.31),Vector3(0.26,0.14,0.04),Color("fff6c8"))
+	G.cube(st,Vector3(0,0.9,1.31),Vector3(1.1,0.12,0.04),Color("c94f3d"))
+	var body=MeshInstance3D.new(); body.mesh=st.commit(); root.add_child(body)
+	var wheels=[]
+	for x in [-0.82,0.82]:
+		for z in [-0.88,0.88]:
+			var ws=G.surface(material)
+			G.cube(ws,Vector3.ZERO,Vector3(0.32,0.62,0.62),Color("26282c"))
+			G.cube(ws,Vector3(signf(x)*0.17,0,0),Vector3(0.04,0.3,0.3),steel)
+			var wheel=MeshInstance3D.new(); wheel.mesh=ws.commit(); wheel.position=Vector3(x,0.32,z); root.add_child(wheel); wheels.append(wheel)
+	var beam=SpotLight3D.new(); beam.position=Vector3(0,0.85,-1.35); beam.light_color=Color("fff2c8"); beam.spot_range=22; beam.spot_angle=34; beam.light_energy=2.0; beam.hide(); root.add_child(beam)
+	root.set_meta("wheels",wheels); root.set_meta("beam",beam)
+	return root
+
+func _pose_rover() -> void:
+	if rover_node==null: return
+	rover_node.visible=rover_parked
+	if not rover_parked: return
+	rover_node.position=Vector3(rover.position.x,rover.body_y,rover.position.y)
+	rover_node.rotation=Vector3(rover.tilt.x,rover.heading,rover.tilt.y)
+	var spin=rover.travelled/0.31
+	for w in rover_node.get_meta("wheels"): w.rotation.x=-spin
+	rover_node.get_meta("beam").visible=driving and lamp_needed(_sun_phase())
+
+func _sun_phase() -> float:
+	return sin(float(snapshot.get("elapsed",0))/60.0*TAU-PI/2)*0.5+0.5 if not snapshot.is_empty() else 1.0
+
 func set_first_person(enabled: bool) -> void:
 	if first_person==enabled: return
+	if not enabled and driving: exit_rover()
 	first_person=enabled; walker.stop(); hands.visible=enabled
 	if not enabled: overview_at=walker.position if has_walk_position and walker.position.length()>40 else Vector2.ZERO
 	camera.projection=Camera3D.PROJECTION_PERSPECTIVE if enabled else Camera3D.PROJECTION_ORTHOGONAL
@@ -273,6 +354,23 @@ func orbit(amount: float) -> void:
 	yaw+=amount
 
 func _camera(dt: float) -> void:
+	if first_person and driving:
+		rover.construction=walker.construction; rover.barriers=walker.barriers
+		rover.step(dt)
+		# The seat carries the walker along, so observers, the trail and targeting follow the rover.
+		walker.position=rover.position; walker.feet_y=rover.body_y+0.45; walker.last_position=walker.position; walker.yaw=rover.heading
+		var ang=rover.heading+rover.look_yaw
+		var target=Vector3(rover.position.x,rover.body_y+1.3,rover.position.y)
+		var want=target+Vector3(sin(ang),0,cos(ang))*7.0+Vector3(0,2.4-rover.look_pitch*5.0,0)
+		want.y=maxf(want.y,terrain.ground(Vector2(want.x,want.z))+0.6)
+		camera.position=want if not chase_ready else camera.position.lerp(want,minf(1.0,dt*6.0))
+		chase_ready=true
+		camera.look_at(target); hands.hide(); marker.hide()
+		_pose_rover()
+		var id=terrain.region_at(rover.position)
+		if id!=selected: selected=id; region_selected.emit(id)
+		return
+	if rover_node!=null: _pose_rover()
 	if first_person:
 		var before=walker.position
 		walker.step(dt); hands.moving=walker.movement.length(); camera.position=walker.eye(); camera.rotation=Vector3(walker.pitch,walker.yaw,0); marker.hide()

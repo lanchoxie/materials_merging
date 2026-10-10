@@ -222,6 +222,7 @@ func _travel_waypoint(id: String) -> void:
 
 func _primary() -> void:
 	if is_instance_valid(backpack): return
+	if view.driving: return
 	_update_actor()
 	var v=state.planet.v2
 	var item: Dictionary=inventory_items.get(v.inventory.slots[v.inventory.selected],{})
@@ -230,7 +231,7 @@ func _primary() -> void:
 	else: _collect()
 
 func _attack() -> void:
-	if not view.first_person or is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
+	if not view.first_person or view.driving or is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
 	_update_actor()
 	var v=state.planet.v2; var target=v.Target.query(v)
 	var before=float(target.entity.row.get("health",1)) if target.has("entity") else 0.0
@@ -240,8 +241,45 @@ func _attack() -> void:
 		encounter_hud.hit_flash=0.3
 		view.field_view.feedback(target.point)
 
+## v0.41: the rover follows the deployed vehicle; it appears beside the player the first time.
+func _sync_rover() -> void:
+	var v=state.planet.v2; var ind=state.industry
+	view._ensure_rover(); view.rover.state=ind.rover_state
+	if ind.vehicle=="":
+		if view.driving: view.exit_rover()
+		view.park_rover(null); v.rover_at={}; v.driving=false; return
+	if view.driving:
+		v.rover_at={"x":view.rover.position.x,"z":view.rover.position.y,"heading":view.rover.heading}; return
+	if v.rover_at.is_empty() and view.first_person:
+		var f=Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw)); var side=Vector2(-f.y,f.x)
+		for offset in [f*3.0+side*1.2,f*3.0-side*1.2,side*2.8,-side*2.8,-f*3.0]:
+			var p=view.walker.position+offset
+			if view.terrain.inside(p,3) and not view.terrain.blocked(p,view.walker.barriers):
+				v.rover_at={"x":p.x,"z":p.y,"heading":view.walker.yaw}; break
+	if v.rover_at.is_empty(): view.park_rover(null); return
+	var at=Vector2(float(v.rover_at.x),float(v.rover_at.z))
+	if not view.rover_parked or view.rover.position.distance_to(at)>0.5: view.park_rover(at,float(v.rover_at.heading))
+
+func near_rover() -> bool:
+	return view.rover_parked and not view.driving and view.walker.position.distance_to(view.rover.position)<=float(view.terrain.rules.rover.enter_distance)
+
+func _toggle_rover() -> bool:
+	var v=state.planet.v2
+	if view.driving:
+		if view.exit_rover():
+			v.driving=false; v.rover_at={"x":view.rover.position.x,"z":view.rover.position.y,"heading":view.rover.heading}
+			message="下车了 · 越野车停在原地，电量 %d%%" % roundi(100*float(view.rover.state.charge)/maxf(1.0,float(view.rover.state.cap)))
+		else: message="四周没有下车的空地，往开阔处开一点"
+		_live(); return true
+	if near_rover():
+		view.enter_rover(); v.driving=true
+		message="上车 · WASD/摇杆驾驶 · Shift 加速 · 空格手刹 · 拖动看四周 · E 下车"
+		_live(); return true
+	return false
+
 func _collect() -> void:
 	if is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
+	if _toggle_rover(): return
 	_update_actor()
 	var id=str(state.planet.v2.inventory.slots[state.planet.v2.inventory.selected])
 	if id.is_empty(): message="这一格是空的，按 B 从背包装备物品。"; _live(); return
@@ -392,6 +430,13 @@ func _aim() -> void:
 		aim_label.text=found.error if not found.error.is_empty() else "%s · 绿框是展开位置 · E 展开" % str(item.get("name","作品"))
 	aim_label.text=InteractionHelp.prompt(v,item,target,aim_label.text)
 	action_button.text=InteractionHelp.button_text(action,target)
+	if view.driving:
+		var r=view.rover
+		aim_label.text="越野车 · %d km/h · 电量 %d%% · 续航 %.1f km%s · E 下车" % [roundi(absf(r.speed)*3.6),roundi(100*float(r.state.charge)/maxf(1.0,float(r.state.cap))),r.range_km()," · 没电了，只能慢慢挪：回浮岛或停在太阳能方块旁充电" if float(r.state.charge)<=0.0 else (" · 撞到了" if r.bumped<0.6 else "")]
+		action_button.text="下车 E"
+	elif near_rover():
+		aim_label.text="星球越野车 · 电量 %d%% · E 上车" % roundi(100*float(view.rover.state.charge)/maxf(1.0,float(view.rover.state.cap)))
+		action_button.text="上车 E"
 	attack_button.text="收拳中…" if v.combat.attack_left>0 else "攻击 F"
 	attack_button.disabled=v.combat.player_health<=0 or v.combat.attack_left>0
 
@@ -727,6 +772,7 @@ func _sync() -> void:
 	view.journey_view.sync(v.journey,at,not view.first_person)
 	view.weather=v.incidents.sky(v)
 	view.lamp_spec=state.industry.lamp_spec()
+	_sync_rover()
 	_live(); _aim()
 
 func _process(dt: float) -> void:
@@ -754,6 +800,7 @@ func handle_back() -> bool:
 	if is_instance_valid(backpack): _close_backpack(); return true
 	# Back closes an open side panel first, then leaves first person, and only then the planet.
 	if view.first_person and show_details: _toggle_details(); return true
+	if view.driving: _toggle_rover(); return true
 	if view.first_person: _enter(); return true
 	_close(); return true
 
