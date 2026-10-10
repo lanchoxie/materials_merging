@@ -432,6 +432,18 @@ func _gear() -> void:
 			bars.append([bar,func(): return float(ind.rover_state.charge)/maxf(1.0,float(ind.rover_state.cap))])
 		car.add_child(UI.paragraph("地球第一人称：走到车旁 E 上车，WASD/摇杆驾驶，Shift 加速，空格手刹，E 下车。",13))
 		car.add_child(UI.button("收回越野车" if out else "派往地球",func(): _act(ind.deploy_rover("" if out else id)); state.sync_gear()))
+	# v0.45: the tunnel boring machine.
+	for id in R.items:
+		if not R.items[id].get("tbm",false) or int(ind.items.get(id,0))<1: continue
+		var out=ind.tbm==id; ind.update_tbm()
+		var tbm_card=_card("%s × %d%s" % [R.items[id].name,int(ind.items[id]),"（在地球上）" if out else ""],Color("f2b134"))
+		tbm_card.add_child(UI.paragraph("3×3 截面，每掘进1米切下最多9格岩土，全部收进矿物仓；越硬的岩石越慢，每格耗电 %.1f Wh。赤铁矿在地下12米以下，孔雀石在地表下几米，铝土矿贴近地表。成批的矿石送精炼厂「整炉」冶炼：一份焦炭还原四份矿石。" % float(R.tbm.wh_per_cell),13))
+		if out:
+			tbm_card.add_child(UI.label("电量 %.0f / %.0f Wh · 回到浮岛自动充电" % [float(ind.tbm_state.charge),float(ind.tbm_state.cap)],14,UI.MINT))
+			var tbm_bar=ProgressBar.new(); tbm_bar.max_value=1.0; tbm_bar.show_percentage=false; tbm_bar.custom_minimum_size=Vector2(0,8); tbm_card.add_child(tbm_bar)
+			bars.append([tbm_bar,func(): return float(ind.tbm_state.charge)/maxf(1.0,float(ind.tbm_state.cap))])
+		tbm_card.add_child(UI.paragraph("地球第一人称：走到盾构机旁 E 进入，W 掘进、S 后退、A/D 转向、空格切换 水平/下潜/上爬，E 离开。",13))
+		tbm_card.add_child(UI.button("收回盾构机" if out else "派往地球",func(): _act(ind.deploy_tbm("" if out else id)); state.sync_gear()))
 	# v0.40: the cordless drill.
 	for id in R.items:
 		if not R.items[id].get("drill",false) or int(ind.items.get(id,0))<1: continue

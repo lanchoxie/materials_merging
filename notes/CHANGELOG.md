@@ -30,6 +30,17 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.45.0 "Tunnel Boring Machine" (盾构机)
+Full notes: [34-tbm.md](34-tbm.md).
+- **盾构机.** Built at the vehicle assembly plant and sent to the planet like the rover. It bores a 3×3 tunnel a metre at
+  a time (level, dive or climb), turns in quarter turns, and backs up through its own tunnel.
+- **Bulk ore.** Every cell it cuts goes into the mineral store, so hematite, malachite, coal and the rest come out in
+  bulk. A full store drops the extra and keeps boring.
+- **Batch refining.** New 整炉 processes reduce four ores with one coke: 4 hematite + 1 coal → 16 Fe, and likewise for
+  Cu and Al. Metal is now cheap.
+- **Fix.** A rover parked far north or south no longer breaks loading (the old 8 km disc check).
+- **Tests.** New: `test_tbm` (31), `test_tbm_ui` (14).
+
 ## v0.44.0 "Building Materials" (百工建材)
 Full notes: [33-building-materials.md](33-building-materials.md).
 - **Twenty new building parts:** five shapes × wood, stone, plastic and metal.

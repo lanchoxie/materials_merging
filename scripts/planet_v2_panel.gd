@@ -124,7 +124,7 @@ func setup(model) -> void:
 		var slot=InventorySlot.new(); play_bar.add_child(slot); slot.custom_minimum_size=Vector2(56,72); hotbar_slots.append(slot)
 		slot.pressed.connect(_select_slot.bind(i))
 	action_button=UI.button("操作 E",_collect,true); action_button.focus_mode=Control.FOCUS_NONE; play_bar.add_child(action_button)
-	var jump_button=UI.button("跳跃 ␣",func(): view.walker.jump()); jump_button.focus_mode=Control.FOCUS_NONE; play_bar.add_child(jump_button)
+	var jump_button=UI.button("跳跃 ␣",func(): view.pilot().jump()); jump_button.focus_mode=Control.FOCUS_NONE; play_bar.add_child(jump_button)
 	var bag_button=UI.button("背包 B",_open_backpack); bag_button.focus_mode=Control.FOCUS_NONE; play_bar.add_child(bag_button)
 	play_bar.hide()
 	aim_label=UI.label("",15,UI.GOLD); aim_label.position=Vector2(350,606); add_child(aim_label); aim_label.hide()
@@ -261,6 +261,53 @@ func _sync_rover() -> void:
 	var at=Vector2(float(v.rover_at.x),float(v.rover_at.z))
 	if not view.rover_parked or view.rover.position.distance_to(at)>0.5: view.park_rover(at,float(v.rover_at.heading))
 
+## v0.45: the 盾构机 follows the deployed machine; it appears in front of the player the first time.
+func _sync_tbm() -> void:
+	var v=state.planet.v2; var ind=state.industry
+	view.v2=v; view._ensure_tbm(ind.rules().tbm); view.tbm.state=ind.tbm_state
+	if ind.tbm=="":
+		if view.boring: view.exit_tbm()
+		view.park_tbm(null); v.tbm_at={}; v.boring=false; return
+	if view.boring: v.tbm_at=_tbm_record(); return
+	if v.tbm_at.is_empty() and view.first_person:
+		var f=Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw))
+		for k in [3.0,4.0,5.0]:
+			var p=(view.walker.position+f*k).round()
+			if view.terrain.inside(p,4) and not view.terrain.deep_water(p):
+				v.tbm_at={"x":int(p.x),"y":floori(view.terrain.ground(p)+0.01),"z":int(p.y),"facing":view.walker.construction.facing_rot(Vector3(f.x,0,f.y)),"grade":0}; break
+	if v.tbm_at.is_empty(): view.park_tbm(null); return
+	var at=Vector3i(int(v.tbm_at.x),int(v.tbm_at.y),int(v.tbm_at.z))
+	if not view.tbm_parked or view.tbm.cell!=at or view.tbm.facing!=int(v.tbm_at.facing): view.park_tbm(at,int(v.tbm_at.facing),int(v.tbm_at.grade))
+
+func _tbm_record() -> Dictionary:
+	var c: Vector3i=view.tbm.cell
+	return {"x":c.x,"y":c.y,"z":c.z,"facing":view.tbm.facing,"grade":view.tbm.grade}
+
+func near_tbm() -> bool:
+	if not view.tbm_parked or view.boring: return false
+	var c: Vector3i=view.tbm.cell
+	return view.walker.position.distance_to(Vector2(c.x,c.z))<=3.6 and absf(view.walker.feet_y-c.y)<2.6
+
+func _toggle_tbm() -> bool:
+	var v=state.planet.v2
+	if view.boring:
+		if view.exit_tbm():
+			v.boring=false; v.tbm_at=_tbm_record()
+			message="离开盾构机 · "+view.tbm.haul_text()
+		else: message="周围没有能站的地方，先后退一点"
+		_live(); return true
+	if near_tbm():
+		view.enter_tbm(); v.boring=true; view.tbm.haul={}; view.tbm.overflow=0
+		message="进入盾构机 · W 掘进 · S 后退 · A/D 转向 · 空格切换 水平/下潜/上爬 · E 离开"
+		_live(); return true
+	return false
+
+## The machine's dashboard (replaces the aim line while boring).
+func _tbm_text() -> String:
+	var t=view.tbm; var c: Vector3i=t.cell
+	var depth=floori(view.terrain.ground(Vector2(c.x,c.z)))-c.y
+	return "盾构机 · %s · %s · 电量 %d%%\n%s\n%s%s" % [t.GRADES[t.grade],"地下 %d 米" % depth if depth>0 else "地面",roundi(100.0*float(t.state.charge)/maxf(1.0,float(t.state.cap))),t.preview(view.v2),t.haul_text()," · "+t.message if t.message!="" else ""]
+
 var cook_box: PanelContainer
 func _cook_menu() -> void:
 	if is_instance_valid(cook_box): cook_box.queue_free()
@@ -296,6 +343,7 @@ func _toggle_rover() -> bool:
 
 func _collect() -> void:
 	if is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
+	if _toggle_tbm(): return
 	if _toggle_rover(): return
 	# v0.41.2: E at a campfire opens the cooking menu.
 	_update_actor()
@@ -432,6 +480,9 @@ func _update_actor() -> void:
 func _aim() -> void:
 	_update_actor()
 	if not view.first_person or is_instance_valid(backpack): return
+	# v0.45: while boring the dashboard takes the hotbar's place.
+	play_bar.visible=not view.boring; aim_label.position.y=520.0 if view.boring else 606.0
+	if view.boring: aim_label.text=_tbm_text(); view.construction_view.ghost.hide(); return
 	var v=state.planet.v2
 	var id=str(v.inventory.slots[v.inventory.selected]); var item: Dictionary=inventory_items.get(id,{})
 	var action: Dictionary=item.get("action",{})
@@ -812,6 +863,7 @@ func _sync() -> void:
 	view.weather=v.incidents.sky(v)
 	view.lamp_spec=state.industry.lamp_spec()
 	_sync_rover()
+	_sync_tbm()
 	_live(); _aim()
 
 func _process(dt: float) -> void:

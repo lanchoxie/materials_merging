@@ -1037,6 +1037,24 @@
       "equation": "电池 → 电机控制器 → 双电机四驱",
       "source": "greet2020",
       "model": "rover"
+    },
+    "tbm": {
+      "name": "盾构机",
+      "building": "vehicle_assembly",
+      "method": "钢壳护盾 + 刀盘 + 3 电机 + 2 电池包 + 控制板",
+      "inputs": {
+        "item:steel_ingot": 6,
+        "item:motor": 3,
+        "item:battery_pack": 2,
+        "item:control_board": 1
+      },
+      "evidence": [],
+      "outputs": {
+        "tbm": 1
+      },
+      "seconds": 120,
+      "equation": "刀盘切削岩面 → 螺旋输送机出渣 → 管片支护",
+      "source": "worldsteel"
     }
   },
   "items": {
@@ -1360,6 +1378,14 @@
       "xp": 80,
       "model": "rover",
       "vehicle": true
+    },
+    "tbm": {
+      "name": "盾构机",
+      "icon": "bit",
+      "color": "f2b134",
+      "sell": 5200,
+      "xp": 150,
+      "tbm": true
     }
   },
   "sources": [
@@ -1717,5 +1743,14 @@
   "decor": {
     "max_per_plot": 24,
     "note": "v0.43: island-Ⅰ town decorations on empty deck plots, from the shared toolbox"
+  },
+  "tbm": {
+    "cap_wh": 1200,
+    "wh_per_cell": 1.0,
+    "recharge_seconds": 240,
+    "base_seconds": 0.5,
+    "seconds_per_hit": 0.06,
+    "reverse_seconds": 0.8,
+    "note": "3×3 截面，每掘进1米切下最多9格岩土，全部按格收进矿物仓（满999后多出的丢弃并计数）。电量按格消耗；回到浮岛自动充电约4分钟（游戏数值）。"
   }
 }

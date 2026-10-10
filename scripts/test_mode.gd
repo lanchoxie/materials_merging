@@ -57,6 +57,14 @@ static func max_refinery(s) -> String:
 	return "测试：精炼厂升到 Lv%d" % r.level
 
 ## v0.34: open 星锻岛 without its unlock conditions, with credits and XP to try every factory.
+## v0.45: a ready 盾构机 on the planet (made, charged and deployed).
+static func give_tbm(s) -> String:
+	var ind=s.industry
+	if not ind.unlocked: open_starforge(s,200)
+	ind.items["tbm"]=int(ind.items.get("tbm",0))+1; ind._reconcile("tbm")
+	ind.deploy_tbm("tbm"); ind.tbm_state.charge=float(ind.tbm_state.cap)
+	return "测试：盾构机已派往地球并充满电"
+
 static func open_starforge(s,credits: int) -> String:
 	var ind=s.industry
 	if not ind.unlocked: ind.unlocked=true; ind.plots=int(ind.rules().plots.start)

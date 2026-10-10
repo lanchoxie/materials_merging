@@ -19,6 +19,14 @@ var globe_pitch=0.35
 var globe_shown=false
 const GLOBE_RADIUS=10.0
 const GLOBE_LAYER=1<<19
+## v0.45 盾构机: parked on the planet, or bored from its seat (a chase camera inside the tunnel).
+const Tbm=preload("res://scripts/planet_tbm.gd")
+var tbm
+var boring=false
+var tbm_parked=false
+var tbm_node: Node3D
+## The planet model the TBM bores into (set by the panel).
+var v2
 ## v0.41 rover: parked or driven in first person, seen from a chase camera while driving.
 const Rover=preload("res://scripts/river_rover.gd")
 var rover
@@ -305,7 +313,84 @@ func spin(delta: Vector2) -> void:
 
 ## The body the input drives: the rover while seated, otherwise the walker.
 func pilot():
+	if boring: return tbm
 	return rover if driving else walker
+
+func _ensure_tbm(spec: Dictionary) -> void:
+	if tbm!=null: return
+	tbm=Tbm.new(spec); tbm_node=_tbm_mesh(); add_child(tbm_node); tbm_node.hide()
+
+## Park the TBM with its floor at cell `at` (or hide it when `at` is null).
+func park_tbm(at,face: int=0,grade: int=0) -> void:
+	if tbm==null: return
+	if at==null: tbm_parked=false; boring=false; tbm_node.hide(); return
+	tbm.place(at,face); tbm.grade=grade; tbm_parked=true; _pose_tbm()
+
+func enter_tbm() -> void:
+	if not tbm_parked: return
+	boring=true; walker.stop(); hands.hide(); tbm.stop(); tbm.look_yaw=0.0
+
+## Climb out behind the machine (in the tunnel), or beside it; false if there's nowhere to stand.
+func exit_tbm() -> bool:
+	if not boring: return false
+	var c: Vector3i=tbm.cell; var d=Vector2(tbm.dir().x,tbm.dir().z); var s=Vector2(tbm.side().x,tbm.side().z)
+	# Cell centres only: the stepped floor of a dive tunnel changes from one cell to the next.
+	for offset in [-d*3,-d*3+s,-d*3-s,-d*4,-d*2,-d*2+s,-d*2-s,s*2,-s*2]:
+		var p=Vector2(c.x,c.z)+offset
+		if not terrain.inside(p,3): continue
+		# A dive or climb leaves the tunnel floor a metre or two off the machine's floor behind it.
+		var feet: float=walker.construction.floor_at(p,c.y+2.7) if walker.construction!=null else terrain.ground(p)
+		if not is_finite(feet) or feet<c.y-2.6 or feet>c.y+2.7: continue
+		if terrain.overlaps(p,feet,float(terrain.rules.body_height)): continue
+		if walker.construction!=null and walker.construction.overlaps(p,feet,float(terrain.rules.body_height)): continue
+		boring=false; tbm.stop()
+		walker.position=p; walker.feet_y=feet; walker.last_position=p; walker.yaw=tbm.facing_yaw(); walker.pitch=-0.1; walker.stop()
+		hands.visible=first_person
+		return true
+	return false
+
+func _tbm_mesh() -> Node3D:
+	var root=Node3D.new()
+	var mat=func(hex: String,metal: float,emit: bool=false):
+		var m=StandardMaterial3D.new(); m.albedo_color=Color(hex); m.metallic=metal; m.roughness=0.45
+		if emit: m.emission_enabled=true; m.emission=Color(hex)
+		return m
+	var add=func(parent: Node3D,mesh: Mesh,at: Vector3,material: Material,turn: Vector3=Vector3.ZERO) -> MeshInstance3D:
+		var n=MeshInstance3D.new(); n.mesh=mesh; n.position=at; n.rotation=turn; n.material_override=material; parent.add_child(n); return n
+	var shell=CylinderMesh.new(); shell.top_radius=1.36; shell.bottom_radius=1.36; shell.height=2.4; shell.radial_segments=18
+	add.call(root,shell,Vector3(0,0,0.1),mat.call("f2b134",0.3),Vector3(PI/2,0,0))
+	for z in [-0.55,0.75]:
+		var band=CylinderMesh.new(); band.top_radius=1.39; band.bottom_radius=1.39; band.height=0.14; band.radial_segments=18
+		add.call(root,band,Vector3(0,0,z),mat.call("2a3038",0.4),Vector3(PI/2,0,0))
+	var cutter=Node3D.new(); cutter.position=Vector3(0,0,-1.28); root.add_child(cutter)
+	var disc=CylinderMesh.new(); disc.top_radius=1.44; disc.bottom_radius=1.44; disc.height=0.2; disc.radial_segments=18
+	add.call(cutter,disc,Vector3.ZERO,mat.call("6b7682",0.7),Vector3(PI/2,0,0))
+	var spoke=BoxMesh.new(); spoke.size=Vector3(0.2,2.7,0.12)
+	for k in range(3): add.call(cutter,spoke,Vector3(0,0,-0.14),mat.call("2a3038",0.5),Vector3(0,0,k*PI/3))
+	var tooth=BoxMesh.new(); tooth.size=Vector3(0.14,0.14,0.16)
+	for k in range(12):
+		var a=k*TAU/12.0; var r=0.55+0.6*float(k%2)
+		add.call(cutter,tooth,Vector3(cos(a)*r,sin(a)*r,-0.2),mat.call("d9dee3",0.8))
+	var hub=SphereMesh.new(); hub.radius=0.26; hub.height=0.4
+	add.call(cutter,hub,Vector3(0,0,-0.2),mat.call("ffcf5c",0.6,true))
+	var gantry=BoxMesh.new(); gantry.size=Vector3(1.9,1.3,1.2)
+	add.call(root,gantry,Vector3(0,-0.4,1.85),mat.call("8b95a3",0.5))
+	var window=BoxMesh.new(); window.size=Vector3(1.0,0.36,0.04)
+	add.call(root,window,Vector3(0,0.05,2.46),mat.call("7fd8ff",0.1,true))
+	var belt=BoxMesh.new(); belt.size=Vector3(0.36,0.22,2.6)
+	add.call(root,belt,Vector3(0.75,-1.0,1.7),mat.call("2a3038",0.3))
+	var lamp=OmniLight3D.new(); lamp.position=Vector3(0,0.4,-1.9); lamp.omni_range=9.0; lamp.light_energy=1.7; lamp.light_color=Color("ffe2b0"); root.add_child(lamp)
+	var cab=OmniLight3D.new(); cab.position=Vector3(0,0.6,3.2); cab.omni_range=6.0; cab.light_energy=0.9; cab.light_color=Color("cfe8ff"); root.add_child(cab)
+	root.set_meta("cutter",cutter)
+	return root
+
+func _pose_tbm() -> void:
+	if tbm_node==null: return
+	tbm_node.visible=tbm_parked
+	if not tbm_parked: return
+	tbm_node.position=tbm.centre()
+	tbm_node.rotation=Vector3(0.14*tbm.grade,lerp_angle(tbm_node.rotation.y,tbm.facing_yaw(),0.25),0)
+	tbm_node.get_meta("cutter").rotation.z=tbm.spin
 
 func _ensure_rover() -> void:
 	if rover!=null: return
@@ -379,6 +464,7 @@ func _sun_phase() -> float:
 func set_first_person(enabled: bool) -> void:
 	if first_person==enabled: return
 	if not enabled and driving: exit_rover()
+	if not enabled and boring and not exit_tbm(): boring=false
 	first_person=enabled; walker.stop(); hands.visible=enabled
 	if not enabled: overview_at=walker.position if has_walk_position and walker.position.length()>40 else Vector2.ZERO
 	camera.projection=Camera3D.PROJECTION_PERSPECTIVE
@@ -415,6 +501,21 @@ func orbit(amount: float) -> void:
 
 func _camera(dt: float) -> void:
 	if first_person: _show_globe(false)
+	if first_person and boring:
+		if v2!=null: tbm.step(dt,v2)
+		var ctr: Vector3=tbm.centre()
+		# The seat carries the walker along (targeting, the trail and the map follow the machine).
+		walker.position=Vector2(ctr.x,ctr.z); walker.feet_y=ctr.y-1.5; walker.last_position=walker.position; walker.yaw=tbm.facing_yaw()
+		var ang=tbm.facing_yaw()+tbm.look_yaw; var back=Vector3(sin(ang),0,cos(ang))
+		# Chase camera behind the machine, pulled in closer when rock is behind (after a turn).
+		var want=ctr+Vector3(0,0.6-tbm.look_pitch*1.5,0)
+		for dist in [3.6,2.6,1.6,0.4]:
+			want=ctr+back*dist+Vector3(0,0.6-tbm.look_pitch*1.5,0)
+			if terrain.material(Vector3i(roundi(want.x),floori(want.y),roundi(want.z)))=="": break
+		camera.position=want; camera.look_at(ctr-back*2.5+Vector3(0,-0.15,0)); hands.hide(); marker.hide()
+		_pose_tbm()
+		return
+	if tbm_node!=null: _pose_tbm()
 	if first_person and driving:
 		rover.construction=walker.construction; rover.barriers=walker.barriers
 		rover.step(dt)

@@ -318,6 +318,48 @@
       "seconds": 55,
       "equation": "2Ca₃(PO₄)₂ + 6SiO₂ + 10C → P₄ + 6CaSiO₃ + 10CO",
       "detail": "石英砂把钙结合成硅酸钙炉渣，焦炭把磷还原成磷蒸气后冷凝。白磷有毒易燃，工厂在水下保存它。"
+    },
+    "hematite_bulk": {
+      "name": "高炉炼铁 · 整炉",
+      "method": "高炉 · 焦炭还原（整炉连续出铁）",
+      "inputs": {
+        "hematite": 4,
+        "coal": 1
+      },
+      "outputs": {
+        "Fe": 16
+      },
+      "seconds": 80,
+      "equation": "Fe₂O₃ + 3CO → 2Fe + 3CO₂（热风连续操作，焦比更低）",
+      "detail": "盾构机成批运回的赤铁矿可以整炉冶炼：连续鼓入热风，一份焦炭还原四份矿石。"
+    },
+    "malachite_bulk": {
+      "name": "孔雀石炼铜 · 整炉",
+      "method": "焙烧 + 碳还原（整炉）",
+      "inputs": {
+        "malachite": 4,
+        "coal": 1
+      },
+      "outputs": {
+        "Cu": 16
+      },
+      "seconds": 70,
+      "equation": "2CuO + C → 2Cu + CO₂",
+      "detail": "成批孔雀石先一起焙烧成氧化铜，再整炉用焦炭还原。"
+    },
+    "gibbsite_bulk": {
+      "name": "铝土矿炼铝 · 整槽",
+      "method": "拜耳法 + 霍尔–埃鲁电解（整槽）",
+      "inputs": {
+        "gibbsite": 4,
+        "coal": 1
+      },
+      "outputs": {
+        "Al": 8
+      },
+      "seconds": 90,
+      "equation": "2Al₂O₃ + 3C → 4Al + 3CO₂（碳阳极电解）",
+      "detail": "成批铝土矿溶出、焙烧成氧化铝后整槽电解；碳阳极按批消耗。"
     }
   }
 }
