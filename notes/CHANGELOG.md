@@ -30,6 +30,18 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.41.1 custom reactors (user request)
+Full notes: [29-custom-reactors.md](29-custom-reactors.md).
+- **Reference geometry.** A custom molecule that matches a real PubChem 3D molecule gets a reference geometry: a match %,
+  target bond lengths, and income like a preset (×0.8).
+- **结构工坊.** It shows the match % and coins/s live, the target length for the picked bond, and new 键长 ±0.02/±0.05
+  buttons.
+- **我的炉型.** Save a design and build it from 「＋ 反应炉」 like a preset. Designs that are applied or built are saved
+  automatically.
+- **空白反应炉.** Build a reactor from scratch on an empty plot.
+- **Fix.** Island walk works with the v0.41 shared exploration input.
+- **Tests.** New: `test_custom_reactors` (23 checks).
+
 ## v0.41.0 "Rover" (越野车)
 Industry release. Full notes: [28-rover.md](28-rover.md).
 - **载具总装厂.** It builds a 星球越野车 from steel, rubber tyres, glass, two motors, two battery packs and a control board.

@@ -102,6 +102,8 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   trade-off, packs, motor, cordless drill on Earth, grid storage.
 - ✅ v0.41 "Rover" (tag `v0.41.0`; see [28-rover.md](28-rover.md)): vehicle assembly, kinematic rover with chase camera,
   enter/exit, Wh/km range, charging.
+- ✅ v0.41.1 custom reactors (tag `v0.41.1`; see [29-custom-reactors.md](29-custom-reactors.md)): 我的炉型, 空白反应炉,
+  PubChem reference geometry; island-walk input fix.
 - Next: v0.42 planet — Settlers/Bronze/Clash: native factions, war events, incident director (plan in 14-industry-island.md).
 - Backlog the user listed on 2026-10-07 (to fold into the interleaved plan in [14-industry-island.md](14-industry-island.md)):
   more element ores (P from apatite etc.; Cs exists but is very rare), gear upgrades, settlement/community upgrades,

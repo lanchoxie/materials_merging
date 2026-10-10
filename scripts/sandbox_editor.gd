@@ -12,6 +12,10 @@ const ChemIndex = preload("res://scripts/chem_index.gd")
 const LIMIT := 20.0
 var state
 var reactor_index := -1
+## v0.41.1: >=0 when the editor builds a new reactor on this empty plot (空白反应炉).
+var build_plot := -1
+var match_label: Label
+var template_button: Button
 var draft: Dictionary = {}
 var original: Dictionary = {}
 var history: Array = []
@@ -63,7 +67,8 @@ var confirmation: ConfirmationDialog
 var return_button: Button
 var return_label="返回作品库"
 
-func setup(model, structure: Dictionary, index: int = -1) -> void:
+func setup(model, structure: Dictionary, index: int = -1, plot: int = -1) -> void:
+	build_plot = plot if index < 0 else -1
 	state = model
 	reactor_index = index
 	draft = structure.duplicate(true)
@@ -254,6 +259,10 @@ func _build_tools() -> void:
 	var bonds := UI.row(body)
 	bonds.add_child(UI.button("建立 / 修改连接", _set_bond))
 	bonds.add_child(UI.button("移除连接", _remove_bond))
+	# v0.41.1: tune a bond length directly (moves the second atom along the bond), like the preset editor.
+	var lengths := UI.row(body)
+	for step in [-0.05, -0.02, 0.02, 0.05]:
+		lengths.add_child(UI.button("键长 %+.2f" % step, _stretch.bind(step)))
 	body.add_child(UI.label("晶胞与重复 · 正交教学晶胞", 15, UI.GOLD))
 	periodic_toggle = CheckButton.new()
 	periodic_toggle.text = "启用周期边界（PBC）"
@@ -297,9 +306,19 @@ func _build_footer() -> void:
 	save_button = UI.button("保存作品", _save, true)
 	save_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	actions.add_child(save_button)
-	apply_button = UI.button("应用到所选炉", _request_apply)
+	apply_button = UI.button("建造到此空地" if build_plot >= 0 else "应用到所选炉", _request_apply)
 	apply_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	actions.add_child(apply_button)
+	# v0.41.1: keep a design as a buildable reactor type, next to the presets.
+	template_button = UI.button("存为我的炉型", _save_template)
+	template_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	actions.add_child(template_button)
+	# Over the top-left of the 3D view, where it is always visible while dragging atoms.
+	match_label = UI.paragraph("", 15, UI.GOLD)
+	match_label.position = Vector2(52, 150)
+	match_label.size = Vector2(820, 46)
+	match_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(match_label)
 	notice = UI.label("草稿自由编辑；保存不消耗元素。只有应用到反应炉时结算。", 13, UI.MUTED)
 	notice.position = Vector2(38, 870)
 	notice.size = Vector2(1358, 25)
@@ -407,6 +426,19 @@ func _nudge(axis: int, amount: float) -> void:
 	_render()
 	_update_readout()
 
+func _stretch(amount: float) -> void:
+	var a := pair_a.selected; var b := pair_b.selected
+	if a < 0 or b < 0 or a == b: _message("先在上面选两个原子"); return
+	var from := _position(a); var to := _position(b); var span := to - from
+	if span.length() < 0.05: return
+	var next := from + span.normalized() * maxf(0.3, span.length() + amount)
+	for axis in range(3):
+		if absf(next[axis]) > LIMIT: _message("超出工作台范围"); return
+	_checkpoint()
+	draft.positions[b] = [snappedf(next.x, 0.001), snappedf(next.y, 0.001), snappedf(next.z, 0.001)]
+	_render()
+	_update_readout()
+
 func _set_bond() -> void:
 	if pair_a.selected < 0 or pair_b.selected < 0 or pair_a.selected == pair_b.selected:
 		_message("请选两个不同的原子。")
@@ -487,8 +519,8 @@ func _save() -> void:
 ## v0.31: for a reactor, elements with no stock (and not already in the reactor) can't be chosen,
 ## and without an installing doctor only coordinates may change.
 func _apply_gates() -> void:
-	if reactor_index < 0: return
-	var held: Array = state.reactor_work(state.reactors[reactor_index]).atoms
+	if reactor_index < 0 and build_plot < 0: return
+	var held: Array = state.reactor_work(state.reactors[reactor_index]).atoms if reactor_index >= 0 else []
 	for symbol in element_buttons:
 		if int(state.element_inventory.get(symbol, 0)) <= 0 and not held.has(symbol):
 			var button: Button = element_buttons[symbol]
@@ -504,7 +536,8 @@ func _apply_gates() -> void:
 		add_child(doctor_banner)
 
 func _quote() -> Dictionary:
-	if reactor_index < 0: return {"ready": false, "message": "先在小岛选中反应炉，再打开作品即可应用。", "fee": 0, "required": {}}
+	if build_plot >= 0: return state.custom_reactor_quote(build_plot, draft)
+	if reactor_index < 0: return {"ready": false, "message": "先在小岛选中反应炉，再打开作品即可应用；或在空地「＋ 反应炉」里选「空白反应炉」。", "fee": 0, "required": {}}
 	if not state.has_method("sandbox_reactor_quote"): return {"ready": false, "message": "该反应炉暂不支持应用作品。", "fee": 0, "required": {}}
 	return state.sandbox_reactor_quote(reactor_index, draft)
 
@@ -514,7 +547,8 @@ func _request_apply() -> void:
 		_message(str(quote.get("message", "暂时无法应用")))
 		return
 	pending_confirmation = _apply
-	confirmation.dialog_text = "将作品应用到所选反应炉？\n费用：%d 金币，元素按下方报价结算。\n更换组成需博士装炉，旧批次和待收金币保留。" % int(quote.get("fee", 0))
+	if build_plot >= 0: confirmation.dialog_text = "在这块空地建造这个反应炉？\n100 金币 + 结构里的全部元素；之后也会存进「我的炉型」。"
+	else: confirmation.dialog_text = "将作品应用到所选反应炉？\n费用：%d 金币，元素按下方报价结算。\n更换组成需博士装炉，旧批次和待收金币保留。" % int(quote.get("fee", 0))
 	confirmation.popup_centered()
 
 func _apply() -> void:
@@ -523,10 +557,29 @@ func _apply() -> void:
 		_message(str(quote.get("message", "暂时无法应用")))
 		_update_readout()
 		return
+	draft.name = name_input.text.strip_edges()
+	if build_plot >= 0:
+		var built: String = state.place_custom_reactor(build_plot, draft)
+		_message(built)
+		if built.contains("开始建造"):
+			original = draft.duplicate(true); applied.emit(); _close()
+		return
 	var result = state.apply_sandbox_to_reactor(reactor_index, draft)
+	if not str(result).begins_with("金币") and not draft.atoms.is_empty(): state.save_player_template(draft)
 	_message(str(result))
 	_update_readout()
 	applied.emit()
+
+func _save_template() -> void:
+	draft.name = name_input.text.strip_edges()
+	_message(state.save_player_template(draft))
+
+## The reactor this design would sit in: the selected one, or a stand-in for a new build.
+func _probe() -> Dictionary:
+	var carrier := "water"; var level := 1
+	if reactor_index >= 0:
+		carrier = str(state.reactors[reactor_index].template); level = int(state.reactors[reactor_index].level)
+	return state.design_probe(draft, carrier, level)
 
 func _request_close() -> void:
 	if draft != original:
@@ -579,6 +632,15 @@ func _update_readout() -> void:
 		var button: Button = element_buttons[symbol]
 		button.add_theme_stylebox_override("normal", UI.style(Color("31574f") if symbol == element_choice else UI.INNER, 10, UI.MINT if symbol == element_choice else UI.LINE))
 	_update_bond_text()
+	if match_label != null:
+		if draft.atoms.is_empty() or draft.mode == "art": match_label.text = ""
+		else:
+			var probe := _probe(); var info: Dictionary = state.structure_data(probe)
+			if bool(info.get("known", false)) or info.has("geometry_ref"):
+				match_label.text = "几何匹配 %d%% · 预计 %.2f 金币/秒（Lv.%d）\n参考：%s" % [roundi(state.quality(probe)*100), state.income(probe), int(probe.level), str(info.get("reference_name", info.get("name", "")))]
+			else:
+				match_label.text = "没有可用的参考几何：按探索作品计 %.2f 金币/秒\n连成化学索引里的真实分子，或从预设开始，就能调键长拿匹配度" % state.income(probe)
+	template_button.disabled = draft.atoms.is_empty()
 	var quote := _quote()
 	var needs: Array[String] = []
 	for symbol in quote.get("required", {}): needs.append("%s×%d" % [symbol, int(quote.required[symbol])])
@@ -600,6 +662,13 @@ func _update_bond_text() -> void:
 		return
 	var index := _bond_index(a, b)
 	bond_label.text = "间距 %.3f Å · %s" % [_position(a).distance_to(_position(b)), "尚未连接" if index < 0 else "当前连接级数 %d" % _edge_order(draft.bonds[index])]
+	# v0.41.1: the reference length for this bond, like the preset atom editor.
+	if index >= 0 and draft.mode != "art":
+		var info: Dictionary = state.structure_data(_probe())
+		if bool(info.get("known", false)) or info.has("geometry_ref"):
+			for bond in info.get("bonds", []):
+				if (int(bond[0]) == a and int(bond[1]) == b) or (int(bond[0]) == b and int(bond[1]) == a):
+					bond_label.text += " · 目标 %.3f Å" % float(bond[2]); break
 
 func _position(index: int) -> Vector3:
 	var p: Array = draft.positions[index]

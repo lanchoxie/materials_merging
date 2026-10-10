@@ -59,6 +59,9 @@ var economy = Economy.new()
 var sandbox: RefCounted
 var science: RefCounted
 var sandbox_works: Array = []
+## v0.41.1 我的炉型: custom designs the player can build like presets ({id "my:N", name, work}).
+var player_templates: Array = []
+const PLAYER_TEMPLATE_MAX = 24
 var science_unlocked: Array = []
 var science_runs: Array = []
 var science_pending: Dictionary = {}
@@ -289,7 +292,106 @@ func sandbox_reference(work: Dictionary) -> Dictionary:
 	var info := SandboxReference.describe(work,templates,elements)
 	info["index"] = ChemIndex.identify(work)
 	if not info.known and ChemIndex.is_find(info.index): info.formula = ChemIndex.formula(info.index.entry)
+	if not info.known: _pubchem_geometry(work,info)
 	return info
+
+## v0.41.1: a custom molecule whose bond graph matches a PubChem entry with real 3D coordinates
+## gets that geometry as its reference (bond lengths and angles), so it can be tuned for a match %
+## and earns like a preset. 2D layouts, crystals and art are left alone.
+func _pubchem_geometry(work: Dictionary, info: Dictionary) -> void:
+	var found: Dictionary = info.get("index",{})
+	if found.get("kind")!="molecule" or found.get("match")!="graph" or str(work.get("mode","science"))=="art" or bool(work.get("periodic",false)): return
+	var m: Dictionary = found.entry
+	if str(m.get("geometry",""))!="3d": return
+	var mapping: Array = SandboxReference.match_graph(work.atoms,work.bonds,{"atoms":m.atoms,"bond_orders":m.bonds})
+	if mapping.size()!=work.atoms.size(): return
+	var ref: Array = []
+	for i in range(mapping.size()): ref.append(_v(m.positions[int(mapping[i])]))
+	var bonds: Array = []; var neighbours := {}
+	for b in work.bonds:
+		var a := int(b[0]); var c := int(b[1])
+		bonds.append([a,c,snappedf(ref[a].distance_to(ref[c]),0.001)])
+		if not neighbours.has(a): neighbours[a]=[]
+		if not neighbours.has(c): neighbours[c]=[]
+		neighbours[a].append(c); neighbours[c].append(a)
+	var angles: Array = []
+	for center in neighbours:
+		var around: Array = neighbours[center]
+		for x in range(around.size()):
+			for y in range(x+1,around.size()):
+				var u: Vector3 = ref[int(around[x])]-ref[center]; var w: Vector3 = ref[int(around[y])]-ref[center]
+				if u.length()>0.0001 and w.length()>0.0001: angles.append([int(around[x]),center,int(around[y]),snappedf(rad_to_deg(u.angle_to(w)),0.1)])
+	info.bonds=bonds; info.angles=angles
+	var positions: Array = []
+	for p in ref: positions.append([p.x,p.y,p.z])
+	info.positions=positions
+	info.geometry_ref="pubchem:%d" % int(m.cid)
+	info.reference_name="%s · PubChem 参考几何" % str(m.name)
+	info.source="PubChem CID %d 的三维坐标（构象参考，不是能量最低证明）" % int(m.cid)
+
+## A reactor-shaped probe for previews: match % and income of a design before it is built.
+func design_probe(work: Dictionary, carrier: String="water", level: int=1) -> Dictionary:
+	return {"template":carrier if templates.has(carrier) else "water","sandbox":true,"work_name":str(work.get("name","我的作品")),"atoms":work.atoms.duplicate(),"positions":work.positions.duplicate(true),"bonds":work.bonds.duplicate(true),"mode":str(work.get("mode","science")),"periodic":bool(work.get("periodic",false)),"cell_lengths":work.get("cell",[6.0,6.0,6.0]).duplicate(),"level":level,"build_left":0.0}
+
+## v0.41.1 我的炉型 ------------------------------------------------------------------------------
+func save_player_template(work: Dictionary) -> String:
+	if not sandbox_validate(work) or work.atoms.is_empty(): return "空结构不能存为炉型"
+	var name := str(work.get("name","我的炉型")).strip_edges().left(48)
+	if name.is_empty(): name="我的炉型"
+	for t in player_templates:
+		if str(t.name)==name:
+			t.work=work.duplicate(true); t.work.name=name
+			return "已更新我的炉型「%s」" % name
+	if player_templates.size()>=PLAYER_TEMPLATE_MAX: return "我的炉型最多%d个，先删掉一个" % PLAYER_TEMPLATE_MAX
+	var serial := 1
+	for t in player_templates: serial=maxi(serial,int(str(t.id).trim_prefix("my:"))+1)
+	var copy := work.duplicate(true); copy.name=name
+	player_templates.append({"id":"my:%d" % serial,"name":name,"work":copy})
+	return "已存为我的炉型「%s」：在空地「＋ 反应炉」里可以直接建造" % name
+
+func remove_player_template(id: String) -> String:
+	for t in player_templates:
+		if str(t.id)==id: player_templates.erase(t); return "已删除炉型「%s」" % t.name
+	return "没有这个炉型"
+
+func player_template(id: String) -> Dictionary:
+	for t in player_templates:
+		if str(t.id)==id: return t
+	return {}
+
+## Building a reactor straight from a design: 100 coins, every atom, a doctor, a free plot.
+func custom_reactor_quote(plot_index: int, work: Dictionary) -> Dictionary:
+	var q := {"ready":false,"fee":100,"required":{},"message":""}
+	if plot_index < 0 or plot_index >= plots.size(): q.message="请选择有效的土地"; return q
+	if not sandbox_validate(work) or work.atoms.is_empty(): q.message="至少放一个原子；结构必须在工作台范围内"; return q
+	q.required = _atom_counts(work.atoms)
+	if not plots[plot_index].unlocked or plots[plot_index].kind != "empty": q.message="请在已开拓的空地上建造"; return q
+	var probe: Dictionary = plots[plot_index].duplicate(); probe.kind = "reactor"
+	if not Town.island_free(plots, plot_index, Town.primary_rect(probe)).is_empty(): q.message="反应炉需要地块中央8×8格的空位；先挪开这里的装饰"; return q
+	if coins < 100.0: q.message="建造反应炉需要100金币"; return q
+	var gate := install_status()
+	if not gate.ok: q.message = gate.message; return q
+	q.message = element_shortage(q.required)
+	if not q.message.is_empty(): return q
+	q.ready = true
+	q.message = "100金币 + 结构里的全部元素"
+	return q
+
+func place_custom_reactor(plot_index: int, work: Dictionary) -> String:
+	var q := custom_reactor_quote(plot_index, work)
+	if not q.ready: return q.message
+	coins -= 100.0
+	for s in q.required: element_inventory[s] -= int(q.required[s])
+	var info := sandbox_reference(work)
+	var carrier := str(info.reference_id) if bool(info.known) and templates.has(str(info.reference_id)) else "water"
+	var r := _new_reactor(plot_index, carrier, 12.0)
+	_install_sandbox(r, work)
+	reactors.append(r)
+	plots[plot_index].kind = "reactor"
+	plots[plot_index].rid = reactors.size() - 1
+	layout.mark_changed()
+	save_player_template(work)
+	return "%s 开始建造：%s（12秒后上线）" % [r.id, str(work.get("name","我的作品"))]
 
 func sandbox_reactor_quote(index: int, work: Dictionary) -> Dictionary:
 	var q := {"ready":false,"changed":false,"fee":0,"required":{},"message":"请选择反应炉"}
@@ -517,7 +619,7 @@ func quality(r: Dictionary) -> float:
 	if not templates.has(r.get("template", "")):
 		return 0.0
 	var template: Dictionary = structure_data(r)
-	if not template.known: return 0.0
+	if not template.known and not template.has("geometry_ref"): return 0.0
 	var positions = r.get("positions", [])
 	if not _valid_positions(positions, template.atoms.size()):
 		return 0.0
@@ -562,7 +664,11 @@ func income_breakdown(r: Dictionary) -> Dictionary:
 	var info: Dictionary = structure_data(r)
 	var result: Dictionary = economy.breakdown(info, quality(r), int(r.level), float(r.get("build_left", 0.0)) > 0.0)
 	result.known = info.known
-	if not info.known:
+	if not info.known and info.has("geometry_ref"):
+		# v0.41.1: a real PubChem molecule with 3D geometry earns like a preset, slightly discounted.
+		result.index = true; result.known = true
+		result.rate = float(result.rate) * float(economy.rules.get("index_geometry_factor", 0.8))
+	elif not info.known:
 		# A real compound from the index earns more than a hypothesis, still far below a tuned template.
 		result.index = ChemIndex.is_find(info.get("index",{}))
 		result.rate = 0.0 if float(r.get("build_left",0.0)) > 0.0 else float(economy.rules.exploration_rate) * (ChemIndex.INDEX_RATE_FACTOR if result.index else 1.0)
@@ -1244,7 +1350,7 @@ func save_game(path: String = "") -> String:
 	var snapshot = {"version": 28, "industry": industry.serialize(), "fabricator": fabricator.serialize(), "index_found": index_found.keys(), "refinery": refinery.serialize(), "coach": coach_seen.keys(), "best_fit": best_fit, "star_rewards": star_rewards, "milestones_claimed": milestones_claimed, "saved_at": int(Time.get_unix_time_from_system()), "planet":planet.serialize(), "storage":storage.serialize(),"market":market.serialize(),"logistics_rounds":logistics.rounds.duplicate(), "campus":campus.serialize(), "payroll":payroll.serialize(), "coins": coins, "materials": materials, "upgrades": upgrades,
 		"element_inventory":element_inventory,
 		"engineers": engineers, "scientists": scientists, "crate_count": crate_count,
-		"discovered": discovered, "plots": plots, "reactors": reactors,
+		"discovered": discovered, "plots": plots, "reactors": reactors, "player_templates": player_templates,
 		"deliveries": deliveries, "total_harvests": total_harvests,
 		"dry_harvests": _dry_harvests, "serial": _serial,
 		"visitor_cooldown": visitor_cooldown, "visitor_visits": visitor_visits, "visitor_skips": visitor_skips,
@@ -1470,6 +1576,14 @@ func _validate_save(data) -> bool:
 			if plot>=data.plots.size() or not data.plots[plot].unlocked or data.plots[plot].kind=="plaza" or exhibits.has(plot): return false
 			exhibits[plot]=true
 	if int(data.version)>=8 and not _valid_town(data): return false
+	# v0.41.1 我的炉型 (optional).
+	var designs=data.get("player_templates",[])
+	if not designs is Array or designs.size()>PLAYER_TEMPLATE_MAX: return false
+	var design_ids={}
+	for t in designs:
+		if not t is Dictionary or not t.get("id") is String or not str(t.id).begins_with("my:") or not str(t.id).trim_prefix("my:").is_valid_int() or design_ids.has(t.id): return false
+		if not t.get("name") is String or str(t.name).length()>48 or not t.get("work") is Dictionary or not sandbox_validate(t.work) or t.work.atoms.is_empty(): return false
+		design_ids[t.id]=true
 	return open_count <= MAX_UNLOCKED_PLOTS+1
 
 func load_game(path: String = "") -> bool:
@@ -1520,6 +1634,8 @@ func load_game(path: String = "") -> bool:
 	scientists = int(data.scientists)
 	crate_count = int(data.crate_count)
 	discovered = data.discovered.duplicate(true)
+	player_templates = []
+	for t in data.get("player_templates",[]): player_templates.append({"id":str(t.id),"name":str(t.name),"work":t.work.duplicate(true)})
 	plots = data.plots.duplicate(true)
 	reactors = data.reactors.duplicate(true)
 	deliveries = int(data.deliveries)

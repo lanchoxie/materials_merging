@@ -217,7 +217,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.41 越野车  ·  真实驾驶 · 追尾视角 · 续航" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.41.1 越野车 · 我的炉型 · 空白反应炉" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -961,6 +961,8 @@ func _show_templates(build: bool) -> void:
 		var banner = UI.paragraph("⚠ " + str(gate.message) + "。没有博士时不能建新炉、换配方或替换元素，只能在原子工作台微调坐标。",15,UI.GOLD)
 		banner.name = "DoctorBanner"
 		body.add_child(banner)
+	_custom_reactor_cards(body,build)
+	body.add_child(UI.label("预设结构",19,UI.MINT))
 	for key in state.templates:
 		if state.templates[key].get("substitution_only",false) and key not in state.campus.unlocked_materials: continue
 		var tpl: Dictionary = state.templates[key]
@@ -978,6 +980,39 @@ func _show_templates(build: bool) -> void:
 		choose.disabled = not quote.ready
 		v.add_child(choose)
 		if not quote.ready and quote.message != str(gate.message): v.add_child(UI.paragraph(str(quote.message),12,Color("ffb4a8")))
+
+## v0.41.1: a blank reactor to build from scratch, and 我的炉型 next to the presets.
+func _custom_reactor_cards(body: VBoxContainer, build: bool) -> void:
+	if build:
+		var blank=PanelContainer.new(); body.add_child(blank); var b=UI.column(blank,6)
+		b.add_child(UI.label("空白反应炉 · 自己搭",20,UI.GOLD))
+		b.add_child(UI.paragraph("打开结构工坊，从零放原子、连键；搭成化学索引里的真实分子就能按参考几何调键长、看匹配度和收益。建好后自动存进「我的炉型」。",13))
+		b.add_child(UI.button("开始搭建（100金币 + 用到的元素）",func(): _open_sandbox_editor(state.new_sandbox_structure("我的反应炉"),selected_plot),true))
+	if state.player_templates.is_empty():
+		body.add_child(UI.paragraph("我的炉型：在结构工坊点「存为我的炉型」，自己的设计就会出现在这里，和预设一样一键建造。",13,UI.MUTED))
+		return
+	body.add_child(UI.label("我的炉型  ·  %d 个" % state.player_templates.size(),19,UI.LILAC))
+	for t in state.player_templates:
+		var work: Dictionary=t.work
+		var probe: Dictionary=state.design_probe(work)
+		var info: Dictionary=state.structure_data(probe)
+		var tuned=bool(info.get("known",false)) or info.has("geometry_ref")
+		var panel=PanelContainer.new(); body.add_child(panel); var v=UI.column(panel,6)
+		v.add_child(UI.label("%s   %s" % [state.sandbox_formula(work),t.name],19,UI.LILAC))
+		v.add_child(UI.paragraph("%d个原子 · %s" % [work.atoms.size(),("几何匹配 %d%% · 现在约 %.2f 金币/秒 · 参考：%s" % [roundi(state.quality(probe)*100),state.income(probe),str(info.get("reference_name",info.get("name","")))]) if tuned else "探索作品（无参考几何）· %.2f 金币/秒" % state.income(probe)],13))
+		var row=UI.row(v,8)
+		if build:
+			var quote: Dictionary=state.custom_reactor_quote(selected_plot,work)
+			var needs: Array=[]
+			for symbol in quote.required: needs.append("%s×%d（有%d）" % [symbol,int(quote.required[symbol]),int(state.element_inventory.get(symbol,0))])
+			v.add_child(UI.paragraph("需要元素："+"、".join(needs),13,UI.MINT if quote.ready else UI.MUTED))
+			var go=UI.button("建造此反应炉  ·  100金币",func(): var m=state.place_custom_reactor(selected_plot,work); _close_modal(); _select_plot(selected_plot); _action(m))
+			go.disabled=not quote.ready; row.add_child(go)
+			row.add_child(UI.button("先调一调再建",func(): _open_sandbox_editor(work.duplicate(true),selected_plot)))
+			if not quote.ready and quote.message!=str(state.install_status().message): v.add_child(UI.paragraph(str(quote.message),12,Color("ffb4a8")))
+		else:
+			row.add_child(UI.button("装载到这座炉（在工坊里确认）",func(): _open_sandbox_editor(work.duplicate(true))))
+		row.add_child(UI.button("删除",func(): _action(state.remove_player_template(str(t.id))); _show_templates(build)))
 
 func _show_map(_frontier: bool=true) -> void:
 	# Expansion is performed on the island, never in a separate matrix.
@@ -1000,8 +1035,13 @@ func _show_income() -> void:
 	var b: Dictionary = state.income_breakdown(r)
 	var body = _dialog("每一枚金币，从哪里来", "%s · %s · Lv.%d" % [r.id,tpl.formula,r.level])
 	body.add_child(UI.label("%.2f  金币 / 秒" % b.rate,38,UI.GOLD))
+	if not tpl.known and tpl.has("geometry_ref"):
+		body.add_child(UI.paragraph("这是化学索引里的真实分子：按 PubChem 三维坐标作参考几何，和预设一样按复杂度、几何匹配和等级计算，再乘 %.2f。" % float(state.economy.rules.get("index_geometry_factor",0.8)),17,UI.MINT))
+		body.add_child(UI.label("几何匹配  %d%%" % roundi(state.quality(r)*100),22,UI.MINT))
+		body.add_child(UI.paragraph("%.2f 基础速率 × %.3f 几何反馈 × %.2f 等级加成 × %.2f" % [b.base_rate,b.geometry_factor,b.level_factor,float(state.economy.rules.get("index_geometry_factor",0.8))],16,UI.TEXT))
+		return
 	if not tpl.known:
-		body.add_child(UI.label("探索津贴 · 每秒0.15金币",23,UI.MINT))
+		body.add_child(UI.label("探索津贴 · 每秒%.2f金币" % b.rate,23,UI.MINT))
 		body.add_child(UI.paragraph("你已创造新的元素组合。目前没有适用的参考几何，无法判断科学匹配度。",18))
 		body.add_child(UI.paragraph("探索津贴不随复杂度或炉等级放大；自创作品另有展示品库存，等待创意收购商，不掉落建材。",17))
 		body.add_child(UI.paragraph("可以继续摆放、替换和保存；恢复为受支持的组成后，重新按该结构的参考几何生产。",17))
@@ -1041,17 +1081,21 @@ func _show_sandbox() -> void:
 	if works.size() > 0:
 		body.add_child(UI.label("我的作品库  ·  %d 件" % works.size(),20,UI.LILAC))
 		for work in works:
-			body.add_child(UI.button("☆ %s  ·  %s  ·  打开作品" % [work.name,work.formula],_open_sandbox_editor.bind(work)))
+			var line=UI.row(body,8)
+			line.add_child(UI.button("☆ %s  ·  %s  ·  打开作品" % [work.name,work.formula],_open_sandbox_editor.bind(work)))
+			line.add_child(UI.button("存为我的炉型",func(): _action(state.save_player_template(work))))
 	body.add_child(UI.paragraph("工作台支持增删原子、增加/移除连接、命名保存；晶胞和周期边界将在后续结构章节加入。",13,UI.MUTED))
 	_coach("sandbox")
 
-func _open_sandbox_editor(structure: Dictionary) -> void:
+func _open_sandbox_editor(structure: Dictionary, build_plot: int=-1) -> void:
 	var editor = SandboxEditor.new()
 	_begin_structure_editor(editor)
-	editor.setup(state,structure,selected_reactor)
+	editor.setup(state,structure,selected_reactor if build_plot<0 else -1,build_plot)
 	_label_return(editor)
 	editor.saved.connect(func(): _toast("作品已保存，可以继续编辑或装入炉子"))
-	editor.applied.connect(func(): _action("已提交博士装炉；旧炉继续生产，完成后切换新分子" if not state.reactors[editor.reactor_index].get("installation",{}).is_empty() else "坐标已保存，反应釜继续生产"))
+	editor.applied.connect(func():
+		if editor.build_plot>=0: _select_plot(editor.build_plot); _action("新反应炉开始建造，已存进「我的炉型」"); return
+		_action("已提交博士装炉；旧炉继续生产，完成后切换新分子" if not state.reactors[editor.reactor_index].get("installation",{}).is_empty() else "坐标已保存，反应釜继续生产"))
 	editor.synthesis_requested.connect(func(): _show_organic_synthesis(editor.reactor_index))
 	editor.dismissed.connect(func(): _finish_structure_editor(editor,true))
 
