@@ -88,6 +88,8 @@ static func prompt(v,target: Dictionary) -> String:
 		"block":
 			if target.kind=="mixing_tank": return text+" · E 查看配料 / 背包拿起有机物或水样加料"
 			if target.kind=="campfire": return text+" · E 烹饪（烤肉 / 谷物粥 / 热汤）· 站在旁边取暖"
+			var door: Dictionary=v.construction.blocks.get(str(target.get("key","")),{})
+			if v.construction.is_door(door): return text+(" · E 关门" if door.get("open",false) else " · E 开门")
 			# v0.41.2: say what each machine actually does, with its live numbers.
 			var G: Dictionary=v.field.rules.garden
 			match str(target.kind):

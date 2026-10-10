@@ -79,27 +79,42 @@ func collect(n: Dictionary,now: int) -> String:
 func can_add(id: String,amount: int) -> bool:
 	return stock.has(id) and amount>=0 and int(stock[id])+amount<=int(rules.max_stock)
 
-func crafting_error(recipe: String) -> String:
+## v0.44: plastic and metal building parts (and window glass) also take 星锻岛 items:
+## `industry_inputs` on the recipe, checked and taken from `industry` (state.industry).
+func crafting_error(recipe: String,industry=null) -> String:
 	if not rules.recipes.has(recipe): return "未知采集工艺"
 	if crafts.size()>=int(rules.max_craft_records): return "加工来源记录已满"
 	for id in rules.recipes[recipe].natural_inputs:
 		if int(stock[id])<int(rules.recipes[recipe].natural_inputs[id]): return "缺少"+str(rules.resources[id].name)+"，先到星球采集"
+	var extra: Dictionary=rules.recipes[recipe].get("industry_inputs",{})
+	for id in extra:
+		if industry==null or int(industry.items.get(id,0))<int(extra[id]):
+			return "缺少%s：在星锻岛生产（仓库 %d / %d）" % [industry.rules().items[id].name if industry!=null else id,int(industry.items.get(id,0)) if industry!=null else 0,int(extra[id])]
 	return ""
 
-func reserve(recipe: String,serial: int) -> String:
-	var error=crafting_error(recipe)
+func reserve(recipe: String,serial: int,industry=null) -> String:
+	var error=crafting_error(recipe,industry)
 	if not error.is_empty(): return error
 	var inputs: Dictionary=rules.recipes[recipe].natural_inputs
 	for id in inputs: stock[id]-=int(inputs[id])
-	crafts[str(serial)]={"recipe":recipe,"inputs":inputs.duplicate(),"complete":false}; revision+=1
+	crafts[str(serial)]={"recipe":recipe,"inputs":inputs.duplicate(),"complete":false}
+	var extra: Dictionary=rules.recipes[recipe].get("industry_inputs",{})
+	if not extra.is_empty():
+		for id in extra: industry.take_item(id,int(extra[id]))
+		crafts[str(serial)]["industry"]=extra.duplicate()
+	revision+=1
 	return ""
 
-func cancel(serial: int) -> String:
+func cancel(serial: int,industry=null) -> String:
 	var record: Dictionary=crafts.get(str(serial),{})
 	if record.is_empty() or record.complete: return "找不到预留材料"
 	for id in record.inputs:
 		if not can_add(id,int(record.inputs[id])): return "材料格已满，先消耗一些材料再取消"
+	if record.has("industry") and industry==null: return "星锻岛仓库不可用，暂时不能退回"
 	for id in record.inputs: stock[id]+=int(record.inputs[id])
+	# Industry parts go back to the 星锻岛 store (as fresh standard lots).
+	for id in record.get("industry",{}):
+		industry.items[id]=mini(9999,int(industry.items.get(id,0))+int(record.industry[id])); industry._reconcile(id)
 	crafts.erase(str(serial)); revision+=1
 	return ""
 
@@ -178,6 +193,7 @@ func restore(data,c,now: int) -> bool:
 		var row=data.crafts[id]
 		if not str(id).is_valid_int() or int(id)<1 or not row is Dictionary or not rules.recipes.has(row.get("recipe")) or not row.get("complete") is bool: return false
 		if row.get("inputs")!=rules.recipes[row.recipe].natural_inputs: return false
+		if row.get("industry",{})!=rules.recipes[row.recipe].get("industry_inputs",{}): return false
 	for key in data.gardens:
 		var row=data.gardens[key]
 		if c.blocks.get(key,{}).get("kind")!="planter" or not row is Dictionary: return false

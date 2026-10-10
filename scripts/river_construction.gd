@@ -23,18 +23,79 @@ func cell_at(p: Vector3) -> Vector3i:
 func base(c: Vector3i) -> int:
 	return floori(terrain.ground(Vector2(c.x, c.z)))
 
+# --- v0.44 building materials: a kind's shape decides how much of its cell is solid ---------------
+func shape_of(kind: String) -> Dictionary:
+	return rules.get("shapes",{}).get(str(rules.kinds.get(kind,{}).get("shape","")),{})
+
+func is_door(b: Dictionary) -> bool:
+	return bool(shape_of(str(b.get("kind",""))).get("door",false))
+
+## The block filling cell c: its own, or the door standing in the cell below (doors are 2 cells).
+func occupant(c: Vector3i) -> Dictionary:
+	var b: Dictionary=blocks.get(key(c),{})
+	if not b.is_empty(): return b
+	var below: Dictionary=blocks.get(key(c+Vector3i.DOWN),{})
+	if not below.is_empty() and is_door(below): return below
+	return {}
+
+## Which way a rotated piece faces: 0 −z, 1 +x, 2 +z, 3 −x (the way the builder was looking).
+const FACING=[Vector2(0,-1),Vector2(1,0),Vector2(0,1),Vector2(-1,0)]
+static func facing_rot(direction: Vector3) -> int:
+	var d=Vector2(direction.x,direction.z)
+	if d.length()<0.001: return 0
+	var best=0
+	for r in range(4):
+		if d.dot(FACING[r])>d.dot(FACING[best]): best=r
+	return best
+
+## Solid height above the floor of cell `c` at ground point p (0 = you can walk through it).
+## Slopes rise 0→1 away from where the builder stood; slabs are half a cell; open doors are open.
+func solid_height(b: Dictionary, c: Vector3i, p: Vector2) -> float:
+	var shape=shape_of(str(b.kind))
+	if shape.is_empty(): return 1.0
+	if shape.get("door",false): return 0.0 if b.get("open",false) else 1.0
+	if shape.get("slope",false):
+		var t=(p-Vector2(c.x,c.z)).dot(FACING[int(b.get("rot",0))])+0.5
+		return clampf(t,0.05,1.0)
+	return float(shape.get("height",1.0))
+
+## Walls for the settlement: the old wooden block plus every brick and window kind.
+func count_walls(near: Vector2=Vector2(INF,INF), radius: float=INF) -> int:
+	var count := 0
+	for b in blocks.values():
+		if (b.kind=="block" or rules.kinds[b.kind].get("wall",false)) and (not is_finite(near.x) or Vector2(b.x,b.z).distance_to(near)<=radius): count+=1
+	return count
+
+## v0.44: open or close a door. Closing is refused while you stand in the doorway.
+func toggle_door(k: String, actor: Dictionary) -> String:
+	var b: Dictionary=blocks.get(k,{})
+	if b.is_empty() or not is_door(b): return "这里没有门"
+	if b.get("open",false) and actor.has("feet"):
+		var feet: Vector3=actor.feet; var r=float(terrain.rules.player_radius)
+		if absf(feet.x-b.x)<0.5+r and absf(feet.z-b.z)<0.5+r and feet.y<b.y+2 and feet.y+float(terrain.rules.body_height)>b.y: return "先走出门洞再关门"
+	b.open=not b.get("open",false); revision+=1
+	return "%s开了" % rules.kinds[b.kind].name if b.open else "%s关上了" % rules.kinds[b.kind].name
+
 func neighbors(c: Vector3i) -> Array:
 	return [c+Vector3i.LEFT,c+Vector3i.RIGHT,c+Vector3i.UP,c+Vector3i.DOWN,c+Vector3i.FORWARD,c+Vector3i.BACK]
 
 func connected(items: Dictionary) -> bool:
 	var reached := {}; var queue: Array = []
+	# A door's upper half is part of the door: things beside or above it connect through it.
+	var uppers := {}
 	for k in items:
-		if int(items[k].y) == base(cell(items[k])): reached[k] = true; queue.append(cell(items[k]))
+		if is_door(items[k]): uppers[key(cell(items[k])+Vector3i.UP)] = k
+	for k in items:
+		if int(items[k].y) == base(cell(items[k])):
+			reached[k] = true; queue.append(cell(items[k]))
+			if is_door(items[k]): queue.append(cell(items[k])+Vector3i.UP)
 	var i := 0
 	while i < queue.size():
 		for n in neighbors(queue[i]):
-			var k := key(n)
-			if items.has(k) and not reached.has(k): reached[k] = true; queue.append(n)
+			var k := key(n); var owner: String = k if items.has(k) else str(uppers.get(k,""))
+			if owner != "" and not reached.has(owner):
+				reached[owner] = true; queue.append(cell(items[owner]))
+				if is_door(items[owner]): queue.append(cell(items[owner])+Vector3i.UP)
 		i += 1
 	return reached.size() == items.size()
 
@@ -42,9 +103,13 @@ func trace(origin: Vector3, direction: Vector3) -> Dictionary:
 	var previous := cell_at(origin)
 	for i in range(1, int(float(rules.reach) / 0.04) + 1):
 		var p := origin + direction.normalized() * (i * 0.04)
-		var c := cell_at(p); var k := key(c); var flat := Vector2(p.x,p.z)
-		if blocks.has(k):
-			return {"hit":k,"target":c+_face(previous-c),"point":p}
+		var c := cell_at(p); var flat := Vector2(p.x,p.z)
+		var occ := occupant(c)
+		if not occ.is_empty():
+			# v0.44: only the solid part of a slab or slope stops the ray; doors are always aimable.
+			var solid := 1.0 if is_door(occ) else solid_height(occ,c,flat)
+			if p.y < c.y + solid + 0.001:
+				return {"hit":key(cell(occ)),"target":c+_face(previous-c),"point":p}
 		if not terrain.inside(flat,1): return {}
 		if terrain.solid(c) and p.y < c.y + terrain.cell_height(c):
 			var normal := _face(previous-c)
@@ -68,7 +133,10 @@ func overlaps(p: Vector2, feet: float, height: float) -> bool:
 	for x in range(floori(p.x-radius+0.5),floori(p.x+radius+0.5)+1):
 		for z in range(floori(p.y-radius+0.5),floori(p.y+radius+0.5)+1):
 			for y in range(floori(feet+0.001),floori(feet+height-0.001)+1):
-				if blocks.has(key(Vector3i(x,y,z))): return true
+				var c := Vector3i(x,y,z); var occ := occupant(c)
+				if occ.is_empty(): continue
+				var top := y + solid_height(occ,c,p)
+				if top > y + 0.001 and feet < top - 0.001: return true
 	return false
 
 func floor_at(p: Vector2, ceiling: float) -> float:
@@ -80,8 +148,11 @@ func floor_at(p: Vector2, ceiling: float) -> float:
 	if terrain.bridge(p) and terrain.ground(p) <= ceiling+0.001: h=maxf(h,terrain.ground(p))
 	for x in range(floori(p.x-radius+0.5),floori(p.x+radius+0.5)+1):
 		for z in range(floori(p.y-radius+0.5),floori(p.y+radius+0.5)+1):
-			for y in range(floori(ceiling)-1, floori(h)-1, -1):
-				if y+1 <= ceiling+0.001 and blocks.has(key(Vector3i(x,y,z))): h=maxf(h,y+1); break
+			for y in range(floori(ceiling), floori(h)-1, -1):
+				var c := Vector3i(x,y,z); var occ := occupant(c)
+				if occ.is_empty(): continue
+				var s := solid_height(occ,c,p)
+				if s > 0.0 and y+s <= ceiling+0.001: h=maxf(h,y+s); break
 	return h
 
 func count_kind(kind: String, near: Vector2=Vector2(INF,INF), radius: float=INF) -> int:
@@ -125,9 +196,14 @@ func available(kind: String, products: Array, recipe_id: String="") -> int:
 		if r.get("kind") == kind and (recipe_id.is_empty() or p.recipe==recipe_id): result += int(r.units)
 	return result
 
-func place_error(c: Vector3i, actor: Dictionary, check_reach: bool=true) -> String:
+func place_error(c: Vector3i, actor: Dictionary, check_reach: bool=true, kind: String="") -> String:
 	if blocks.size() >= int(rules.max_blocks): return "本星球已放满512块构件"
-	if blocks.has(key(c)): return "这里已经有构件"
+	if not occupant(c).is_empty(): return "这里已经有构件"
+	var tall: bool = bool(shape_of(kind).get("door",false))
+	if tall:
+		var up := c+Vector3i.UP
+		if not occupant(up).is_empty() or (terrain.solid(up) and terrain.cell_height(up) > 0.0): return "门有两格高，上面一格要空着"
+		if up.y > base(c)+int(rules.height_limit): return "请放在地表附近，建筑最高8层"
 	var below: Dictionary=blocks.get(key(c+Vector3i.DOWN),{})
 	if not below.is_empty() and rules.kinds[below.kind].get("machine",false): return "环境设备上方要留空，不能叠放构件"
 	var flat := Vector2(c.x,c.z)
@@ -135,11 +211,11 @@ func place_error(c: Vector3i, actor: Dictionary, check_reach: bool=true) -> Stri
 	if terrain.blocked(flat,obstacles): return "这里有树木或已有设施，请换一个位置"
 	if terrain.solid(c) and terrain.cell_height(c) >= 1.0: return "这里被岩土占据，请换一个位置"
 	var feet: Vector3 = actor.feet
-	if absf(feet.x-c.x)<0.8 and absf(feet.z-c.z)<0.8 and feet.y<c.y+1 and feet.y+float(terrain.rules.body_height)>c.y: return "构件会碰到你，请退开一点"
+	if absf(feet.x-c.x)<0.8 and absf(feet.z-c.z)<0.8 and feet.y<c.y+(2 if tall else 1) and feet.y+float(terrain.rules.body_height)>c.y: return "构件会碰到你，请退开一点"
 	if check_reach and Vector3(c.x,c.y+0.5,c.z).distance_to(actor.eye)>float(rules.reach)+0.9: return "离得太远，请走近些"
 	if c.y == base(c): return ""
 	for n in neighbors(c):
-		if blocks.has(key(n)): return ""
+		if not occupant(n).is_empty(): return ""
 	return "构件需要连接地面或已有建筑"
 
 func interact(mode: String, kind: String, products: Array, actor: Dictionary, recipe_id: String="") -> String:
@@ -155,7 +231,7 @@ func interact(mode: String, kind: String, products: Array, actor: Dictionary, re
 		var b: Dictionary = blocks[k]; sources[b.source].remaining+=1; blocks.erase(k); revision+=1
 		return "已拆回1块"+str(rules.kinds[b.kind].name)+"，回到原材料包"
 	if mode != "place" or not rules.kinds.has(kind): return "请选择建造工具"
-	var reason := place_error(hit.target,actor)
+	var reason := place_error(hit.target,actor,true,kind)
 	if not reason.is_empty(): return reason
 	var source_id := ""
 	for id in sources:
@@ -171,7 +247,11 @@ func interact(mode: String, kind: String, products: Array, actor: Dictionary, re
 	if source_id.is_empty(): return "背包缺少对应成品；木构方块需要构件包，太阳能方块需要工坊光伏组件"
 	var c: Vector3i=hit.target
 	sources[source_id].remaining-=1
-	blocks[key(c)]={"x":c.x,"y":c.y,"z":c.z,"kind":kind,"source":source_id}; revision+=1
+	var piece := {"x":c.x,"y":c.y,"z":c.z,"kind":kind,"source":source_id}
+	var shape := shape_of(kind)
+	if shape.get("rotate",false): piece["rot"]=facing_rot(actor.get("direction",Vector3.FORWARD))
+	if shape.get("door",false): piece["open"]=false
+	blocks[key(c)]=piece; revision+=1
 	return "已搭建"+str(rules.kinds[kind].name)+"；消耗1块材料"
 
 func repack(id: String, products: Array, limit: int) -> String:
@@ -203,6 +283,8 @@ func restore(data) -> bool:
 		var c:=cell(b)
 		if key(c)!=k or not terrain.inside(Vector2(c.x,c.z),2) or c.y<base(c) or c.y>base(c)+int(rules.height_limit): return false
 		if rules.recipes[data.sources[b.source].product.recipe].kind!=b.kind: return false
+		if not _piece_ok(b): return false
+		if is_door(b) and (data.blocks.has(key(c+Vector3i.UP)) or c.y+1>base(c)+int(rules.height_limit)): return false
 		counts[b.source]+=1
 	var boxes=data.get("miniatures",{})
 	if not boxes is Dictionary or boxes.size()>16 or not _integer(data.get("miniature_serial",1),1,1000000): return false
@@ -219,13 +301,20 @@ func restore(data) -> bool:
 			for axis in ["x","y","z"]:
 				if not _integer(b.get(axis),0,7): return false
 			var k=key(cell(b))
-			if seen.has(k) or rules.recipes[data.sources[b.source].product.recipe].kind!=b.kind: return false
+			if seen.has(k) or rules.recipes[data.sources[b.source].product.recipe].kind!=b.kind or not _piece_ok(b): return false
 			seen[k]=true
 			if not replica: counts[b.source]+=1
 	for id in counts:
 		if counts[id]!=int(rules.recipes[data.sources[id].product.recipe].units): return false
 	if not connected(data.blocks): return false
 	sources=data.sources.duplicate(true); blocks=data.blocks.duplicate(true); miniatures=boxes.duplicate(true); miniature_serial=int(data.get("miniature_serial",1)); revision+=1
+	return true
+
+## v0.44: `rot` only on rotating shapes (0–3), `open` only on doors (bool).
+func _piece_ok(b: Dictionary) -> bool:
+	var shape := shape_of(str(b.kind))
+	if b.has("rot") and (not shape.get("rotate",false) or not _integer(b.rot,0,3)): return false
+	if b.has("open") and (not shape.get("door",false) or not b.open is bool): return false
 	return true
 
 func _integer(value, lo: int, hi: int) -> bool:

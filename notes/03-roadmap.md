@@ -109,8 +109,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   climate, globe god view, no fixed places. Curved horizon moves to the airplane release.
 - ✅ v0.43 "Starforge Isle" (tag `v0.43.0`; see [32-starforge-isle.md](32-starforge-isle.md)): island Ⅱ grows like
   island Ⅰ, staff rest (lounge), decorations, first-person walk and apartment interior.
-- Next: building materials (wood/stone/plastic/metal doors, windows, boards, bricks, roofs) → 盾构机 → farm robots →
-  airplane → spaceship → second planet.
+- ✅ v0.44 "Building Materials" (tag `v0.44.0`; see [33-building-materials.md](33-building-materials.md)): five
+  shapes × four materials, doors that open, glass windows, walkable slopes, plastic/metal from 星锻岛.
+- Next: 盾构机 (tunnel boring machine, bulk ore) → farm robots → airplane → spaceship → second planet.
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal
   doors, windows, boards, bricks, roofs) → 盾构机 (bulk ore) → farm robots → airplane → spaceship → second planet.

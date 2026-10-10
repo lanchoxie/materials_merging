@@ -54,6 +54,106 @@ static func draw(st: SurfaceTool,p: Vector3,kind: String,color: Color) -> void:
 		_:
 			for y in [-0.25,0.25]: G.cube(st,p+Vector3(0,y,0),Vector3(1.004,0.015,1.004),Color("97704e"))
 
+# --- v0.44 building materials -------------------------------------------------------------------
+## One shaped piece: slab, brick wall, door (2 cells, open or shut), window (glass on `glass_st`)
+## or roof slope, in wood / stone / plastic / metal. `rot` turns it to face the way it was built.
+static func piece(st: SurfaceTool, glass_st: SurfaceTool, b: Dictionary, rules: Dictionary) -> void:
+	var kind: Dictionary=rules.kinds[b.kind]; var mat: Dictionary=rules.materials[str(kind.material)]
+	var color=Color(str(mat.color)); var trim=Color(str(mat.trim)); var m=str(kind.material)
+	var base=Vector3(float(b.x),float(b.y),float(b.z)); var r=int(b.get("rot",0))
+	match str(kind.shape):
+		"slab":
+			_box(st,base,Vector3(0,0.25,0),Vector3(1,0.5,1),r,color)
+			_surface_marks(st,base,0.5,m,color,trim,r)
+		"brick":
+			_box(st,base,Vector3(0,0.5,0),Vector3(1,1,1),r,color)
+			if m=="metal":
+				for x in [-0.3,0.0,0.3]: _box(st,base,Vector3(x,0.5,0),Vector3(0.05,1.0,1.012),r,trim)
+				for x in [-0.3,0.0,0.3]: _box(st,base,Vector3(0,0.5,x),Vector3(1.012,1.0,0.05),r,trim)
+			elif m=="plastic":
+				_box(st,base,Vector3(0,0.06,0),Vector3(1.01,0.1,1.01),r,trim)
+				_box(st,base,Vector3(0,0.94,0),Vector3(1.01,0.1,1.01),r,trim)
+			else:
+				# Courses of bricks (or logs): mortar lines, joints staggered row by row.
+				var mortar=trim if m=="stone" else color.darkened(0.3)
+				for y in [0.25,0.5,0.75]: _box(st,base,Vector3(0,y,0),Vector3(1.008,0.025,1.008),r,mortar)
+				for row in range(4):
+					var y=0.125+row*0.25; var offsets=[-0.25,0.25] if row%2==0 else [0.0]
+					for o in offsets:
+						_box(st,base,Vector3(o,y,0),Vector3(0.025,0.22,1.008),r,mortar)
+						_box(st,base,Vector3(0,y,o),Vector3(1.008,0.22,0.025),r,mortar)
+		"door":
+			# Frame posts and lintel; the leaf shut in the middle, or swung back on its left hinge.
+			for x in [-0.46,0.46]: _box(st,base,Vector3(x,1.0,0),Vector3(0.08,2.0,0.2),r,trim)
+			_box(st,base,Vector3(0,1.96,0),Vector3(1.0,0.08,0.2),r,trim)
+			var shut=not b.get("open",false)
+			var leaf_at=Vector3(0,0.96,0) if shut else Vector3(-0.38,0.96,-0.42)
+			var leaf_size=Vector3(0.84,1.9,0.08) if shut else Vector3(0.08,1.9,0.84)
+			_box(st,base,leaf_at,leaf_size,r,color)
+			if shut:
+				for y in [0.5,1.4]: _box(st,base,Vector3(0,y,0),Vector3(0.7,0.5,0.1),r,color.lightened(0.08) if m!="metal" else trim.lightened(0.2))
+				_box(st,base,Vector3(0.3,0.95,0),Vector3(0.06,0.06,0.16),r,Color("d9b45a"))
+			else:
+				_box(st,base,Vector3(-0.38,0.95,-0.12),Vector3(0.16,0.06,0.06),r,Color("d9b45a"))
+		"window":
+			for y in [0.06,0.94]: _box(st,base,Vector3(0,y,0),Vector3(1.0,0.12,0.22),r,trim)
+			for x in [-0.44,0.44]: _box(st,base,Vector3(x,0.5,0),Vector3(0.12,1.0,0.22),r,trim)
+			_box(st,base,Vector3(0,0.5,0),Vector3(0.05,0.8,0.08),r,trim)
+			_box(st,base,Vector3(0,0.5,0),Vector3(0.8,0.05,0.08),r,trim)
+			_box(st,base,Vector3(0,0.02,0.16),Vector3(1.0,0.04,0.12),r,color)
+			var pane=Color(0.72,0.9,0.98,0.32)
+			_box(glass_st if glass_st!=null else st,base,Vector3(0,0.5,0),Vector3(0.78,0.78,0.03),r,pane)
+		"slope":
+			_wedge(st,base,r,color)
+			# Tile or seam lines across the roof face.
+			for t in [0.25,0.5,0.75]:
+				var y=0.05+0.95*t; var z=0.5-t
+				_box(st,base,Vector3(0,y+0.015,z),Vector3(1.0,0.03,0.05),r,trim if m!="wood" else color.darkened(0.25))
+
+## Seams on a slab's top: planks for wood, flagstones for stone, a rim for plastic, rivets for metal.
+static func _surface_marks(st: SurfaceTool,base: Vector3,top: float,m: String,color: Color,trim: Color,r: int) -> void:
+	match m:
+		"wood":
+			for x in [-0.25,0.0,0.25]: _box(st,base,Vector3(x,top,0),Vector3(0.02,0.012,1.002),r,color.darkened(0.3))
+		"stone":
+			_box(st,base,Vector3(0,top,0),Vector3(1.002,0.012,0.025),r,trim)
+			_box(st,base,Vector3(0,top,0),Vector3(0.025,0.012,1.002),r,trim)
+		"plastic":
+			for z in [-0.47,0.47]: _box(st,base,Vector3(0,top,z),Vector3(1.0,0.012,0.06),r,trim)
+		"metal":
+			for x in [-0.4,0.4]:
+				for z in [-0.4,0.4]: _box(st,base,Vector3(x,top,z),Vector3(0.05,0.03,0.05),r,trim.lightened(0.3))
+
+## Turn a local offset by the piece's rotation (0 faces −z, then +x, +z, −x).
+static func _turn(v: Vector3,r: int) -> Vector3:
+	match posmod(r,4):
+		1: return Vector3(-v.z,v.y,v.x)
+		2: return Vector3(-v.x,v.y,-v.z)
+		3: return Vector3(v.z,v.y,-v.x)
+	return v
+
+## An axis-aligned box given in the piece's local frame (base = the cell's floor centre).
+static func _box(st: SurfaceTool,base: Vector3,at: Vector3,size: Vector3,r: int,color: Color) -> void:
+	var s=size if posmod(r,2)==0 else Vector3(size.z,size.y,size.x)
+	G.cube(st,base+_turn(at,r),s,color)
+
+## A roof wedge: high (1 m) at the far side (local −z), low at the near side.
+static func _wedge(st: SurfaceTool,base: Vector3,r: int,color: Color) -> void:
+	var low=0.05
+	var pts={"a":Vector3(-0.5,0,0.5),"b":Vector3(0.5,0,0.5),"c":Vector3(0.5,0,-0.5),"d":Vector3(-0.5,0,-0.5),
+		"e":Vector3(-0.5,low,0.5),"f":Vector3(0.5,low,0.5),"g":Vector3(0.5,1,-0.5),"h":Vector3(-0.5,1,-0.5)}
+	for k in pts: pts[k]=base+_turn(pts[k],r)
+	var mid=base+Vector3(0,0.35,0)
+	for f in [["e","f","g","h"],["d","c","b","a"],["c","d","h","g"],["a","b","f","e"],["b","c","g","f"],["d","a","e","h"]]:
+		_outward(st,[pts[f[0]],pts[f[1]],pts[f[2]],pts[f[3]]],color,mid)
+
+## Draws a quad facing away from `inside`, whatever order its corners were given in.
+static func _outward(st: SurfaceTool,q: Array,color: Color,inside: Vector3) -> void:
+	var normal=(q[2]-q[0]).cross(q[1]-q[0])
+	var centre=(q[0]+q[1]+q[2]+q[3])*0.25
+	if normal.dot(centre-inside)<0.0: q=[q[3],q[2],q[1],q[0]]
+	G.face(st,q,color)
+
 ## v0.32 Earth machines: one 1 m footprint each, tall silhouettes that read from far away.
 ## p is the ground point of the block. Animated sprays and smoke are added by the view.
 static func _machine(st: SurfaceTool,p: Vector3,kind: String,color: Color) -> void:

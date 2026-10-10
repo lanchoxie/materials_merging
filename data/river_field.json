@@ -209,6 +209,326 @@
         "stone": 2
       },
       "description": "3份木料和2份石料做成2处篝火：取暖、照明，寒潮时保护营地。"
+    },
+    "field_slab_wood": {
+      "id": "field_slab_wood",
+      "version": 1,
+      "name": "建材 · 木地板",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 16,
+      "natural_inputs": {
+        "timber": 2
+      },
+      "material": "wood",
+      "shape": "slab",
+      "description": "2份木料加工为8块木地板。半格高：铺地、楼板，叠起来就是台阶。全部用星球采集的原料。"
+    },
+    "field_slab_stone": {
+      "id": "field_slab_stone",
+      "version": 1,
+      "name": "建材 · 石板",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 16,
+      "natural_inputs": {
+        "stone": 2
+      },
+      "material": "stone",
+      "shape": "slab",
+      "description": "2份石料加工为8块石板。半格高：铺地、楼板，叠起来就是台阶。全部用星球采集的原料。"
+    },
+    "field_slab_plastic": {
+      "id": "field_slab_plastic",
+      "version": 1,
+      "name": "建材 · 塑料板",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 16,
+      "natural_inputs": {},
+      "industry_inputs": {
+        "pe": 1
+      },
+      "material": "plastic",
+      "shape": "slab",
+      "description": "1份聚乙烯粒料加工为8块塑料板。半格高：铺地、楼板，叠起来就是台阶。塑料和金属件的原料来自星锻岛仓库。"
+    },
+    "field_slab_metal": {
+      "id": "field_slab_metal",
+      "version": 1,
+      "name": "建材 · 金属楼板",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 16,
+      "natural_inputs": {},
+      "industry_inputs": {
+        "steel_ingot": 1
+      },
+      "material": "metal",
+      "shape": "slab",
+      "description": "1份碳钢锭加工为8块金属楼板。半格高：铺地、楼板，叠起来就是台阶。塑料和金属件的原料来自星锻岛仓库。"
+    },
+    "field_brick_wood": {
+      "id": "field_brick_wood",
+      "version": 1,
+      "name": "建材 · 原木砖墙",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 22,
+      "natural_inputs": {
+        "timber": 4
+      },
+      "material": "wood",
+      "shape": "brick",
+      "description": "4份木料加工为8块原木砖墙。整格砖墙，带砖缝。全部用星球采集的原料。"
+    },
+    "field_brick_stone": {
+      "id": "field_brick_stone",
+      "version": 1,
+      "name": "建材 · 石砖墙",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 22,
+      "natural_inputs": {
+        "stone": 4
+      },
+      "material": "stone",
+      "shape": "brick",
+      "description": "4份石料加工为8块石砖墙。整格砖墙，带砖缝。全部用星球采集的原料。"
+    },
+    "field_brick_plastic": {
+      "id": "field_brick_plastic",
+      "version": 1,
+      "name": "建材 · 塑料砖墙",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 22,
+      "natural_inputs": {},
+      "industry_inputs": {
+        "pe": 2
+      },
+      "material": "plastic",
+      "shape": "brick",
+      "description": "2份聚乙烯粒料加工为8块塑料砖墙。整格砖墙，带砖缝。塑料和金属件的原料来自星锻岛仓库。"
+    },
+    "field_brick_metal": {
+      "id": "field_brick_metal",
+      "version": 1,
+      "name": "建材 · 金属墙板",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 22,
+      "natural_inputs": {},
+      "industry_inputs": {
+        "steel_ingot": 2
+      },
+      "material": "metal",
+      "shape": "brick",
+      "description": "2份碳钢锭加工为8块金属墙板。整格砖墙，带砖缝。塑料和金属件的原料来自星锻岛仓库。"
+    },
+    "field_door_wood": {
+      "id": "field_door_wood",
+      "version": 1,
+      "name": "建材 · 木门",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {
+        "timber": 3
+      },
+      "material": "wood",
+      "shape": "door",
+      "description": "3份木料加工为2块木门。两格高，E 开关；开着时可以走过。全部用星球采集的原料。"
+    },
+    "field_door_stone": {
+      "id": "field_door_stone",
+      "version": 1,
+      "name": "建材 · 石门",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {
+        "stone": 3,
+        "timber": 1
+      },
+      "material": "stone",
+      "shape": "door",
+      "description": "3份石料、1份木料加工为2块石门。两格高，E 开关；开着时可以走过。全部用星球采集的原料。"
+    },
+    "field_door_plastic": {
+      "id": "field_door_plastic",
+      "version": 1,
+      "name": "建材 · 塑料门",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {},
+      "industry_inputs": {
+        "pe": 1
+      },
+      "material": "plastic",
+      "shape": "door",
+      "description": "1份聚乙烯粒料加工为2块塑料门。两格高，E 开关；开着时可以走过。塑料和金属件的原料来自星锻岛仓库。"
+    },
+    "field_door_metal": {
+      "id": "field_door_metal",
+      "version": 1,
+      "name": "建材 · 金属门",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {},
+      "industry_inputs": {
+        "steel_ingot": 1
+      },
+      "material": "metal",
+      "shape": "door",
+      "description": "1份碳钢锭加工为2块金属门。两格高，E 开关；开着时可以走过。塑料和金属件的原料来自星锻岛仓库。"
+    },
+    "field_window_wood": {
+      "id": "field_window_wood",
+      "version": 1,
+      "name": "建材 · 木框窗",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {
+        "timber": 2
+      },
+      "industry_inputs": {
+        "glass": 1
+      },
+      "material": "wood",
+      "shape": "window",
+      "description": "2份木料、1份钠钙玻璃板加工为4块木框窗。玻璃窗：挡路但透光，可以看到外面。玻璃板来自星锻岛仓库。"
+    },
+    "field_window_stone": {
+      "id": "field_window_stone",
+      "version": 1,
+      "name": "建材 · 石框窗",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {
+        "stone": 2
+      },
+      "industry_inputs": {
+        "glass": 1
+      },
+      "material": "stone",
+      "shape": "window",
+      "description": "2份石料、1份钠钙玻璃板加工为4块石框窗。玻璃窗：挡路但透光，可以看到外面。玻璃板来自星锻岛仓库。"
+    },
+    "field_window_plastic": {
+      "id": "field_window_plastic",
+      "version": 1,
+      "name": "建材 · 塑钢窗",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {},
+      "industry_inputs": {
+        "pe": 1,
+        "glass": 1
+      },
+      "material": "plastic",
+      "shape": "window",
+      "description": "1份聚乙烯粒料、1份钠钙玻璃板加工为4块塑钢窗。玻璃窗：挡路但透光，可以看到外面。塑料和金属件的原料来自星锻岛仓库。"
+    },
+    "field_window_metal": {
+      "id": "field_window_metal",
+      "version": 1,
+      "name": "建材 · 金属框窗",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {},
+      "industry_inputs": {
+        "steel_ingot": 1,
+        "glass": 1
+      },
+      "material": "metal",
+      "shape": "window",
+      "description": "1份碳钢锭、1份钠钙玻璃板加工为4块金属框窗。玻璃窗：挡路但透光，可以看到外面。塑料和金属件的原料来自星锻岛仓库。"
+    },
+    "field_slope_wood": {
+      "id": "field_slope_wood",
+      "version": 1,
+      "name": "建材 · 木瓦坡顶",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {
+        "timber": 2,
+        "fiber": 2
+      },
+      "material": "wood",
+      "shape": "slope",
+      "description": "2份木料、2份纤维加工为8块木瓦坡顶。斜坡屋面，也能当坡道走上去。全部用星球采集的原料。"
+    },
+    "field_slope_stone": {
+      "id": "field_slope_stone",
+      "version": 1,
+      "name": "建材 · 石板坡顶",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {
+        "stone": 3
+      },
+      "material": "stone",
+      "shape": "slope",
+      "description": "3份石料加工为8块石板坡顶。斜坡屋面，也能当坡道走上去。全部用星球采集的原料。"
+    },
+    "field_slope_plastic": {
+      "id": "field_slope_plastic",
+      "version": 1,
+      "name": "建材 · 塑料坡顶",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {},
+      "industry_inputs": {
+        "pe": 1
+      },
+      "material": "plastic",
+      "shape": "slope",
+      "description": "1份聚乙烯粒料加工为8块塑料坡顶。斜坡屋面，也能当坡道走上去。塑料和金属件的原料来自星锻岛仓库。"
+    },
+    "field_slope_metal": {
+      "id": "field_slope_metal",
+      "version": 1,
+      "name": "建材 · 金属坡顶",
+      "reference": "natural",
+      "input": "",
+      "fee": 0,
+      "seconds": 20,
+      "natural_inputs": {},
+      "industry_inputs": {
+        "steel_ingot": 1
+      },
+      "material": "metal",
+      "shape": "slope",
+      "description": "1份碳钢锭加工为8块金属坡顶。斜坡屋面，也能当坡道走上去。塑料和金属件的原料来自星锻岛仓库。"
     }
   },
   "cooking": {

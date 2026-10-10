@@ -31,7 +31,7 @@ func checklist(world: Dictionary, construction) -> Array:
 
 func metric(id: String,world: Dictionary,construction) -> float:
 	match id:
-		"blocks": return construction.count_kind("block",center(),rules.radius)
+		"blocks": return construction.count_walls(center(),rules.radius)
 		"shelter": return construction.shelter_cells(center(),rules.radius)
 		"solar": return construction.count_kind("solar",center(),rules.radius)
 		"harvests": return harvests

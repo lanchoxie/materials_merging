@@ -3,6 +3,8 @@ extends Node3D
 const G=preload("res://scripts/river_geometry.gd")
 const Components=preload("res://scripts/river_component_geometry.gd")
 var material: Material
+## v0.44: window panes go on a second, see-through surface per chunk.
+var glass_material: StandardMaterial3D
 var chunks: Dictionary={}
 var seen=""
 var ghost: MeshInstance3D
@@ -56,11 +58,17 @@ func sync(model,at: Vector2) -> void:
 		if not grouped.has(k): chunks[k].queue_free(); chunks.erase(k)
 	for k in grouped:
 		if not chunks.has(k): chunks[k]=MeshInstance3D.new(); add_child(chunks[k])
-		var st=G.surface(material)
+		var st=G.surface(material); var glass=null; var panes=0
 		for b in grouped[k]:
 			var p=Vector3(b.x,b.y+0.5,b.z)
-			Components.draw(st,p,str(b.kind),Color(model.rules.kinds[b.kind].color))
-		chunks[k].mesh=st.commit()
+			if model.rules.kinds[b.kind].has("shape"):
+				if model.rules.kinds[b.kind].shape=="window":
+					if glass==null: glass=G.surface(_glass())
+					panes+=1
+				Components.piece(st,glass,b,model.rules)
+			else: Components.draw(st,p,str(b.kind),Color(model.rules.kinds[b.kind].color))
+		var mesh: ArrayMesh=st.commit()
+		chunks[k].mesh=glass.commit(mesh) if panes>0 else mesh
 	var wanted={}
 	for b in model.blocks.values():
 		if not FX.has(str(b.kind)) or Vector2(b.x,b.z).distance_to(at)>70 or wanted.size()>=16: continue
@@ -69,6 +77,13 @@ func sync(model,at: Vector2) -> void:
 		if not wanted.has(k): effects[k].queue_free(); effects.erase(k)
 	for k in wanted:
 		if not effects.has(k): effects[k]=_effect(wanted[k]); add_child(effects[k])
+
+func _glass() -> StandardMaterial3D:
+	if glass_material==null:
+		glass_material=StandardMaterial3D.new(); glass_material.vertex_color_use_as_albedo=true
+		glass_material.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA; glass_material.roughness=0.08; glass_material.metallic_specular=0.9
+		glass_material.cull_mode=BaseMaterial3D.CULL_DISABLED
+	return glass_material
 
 func _effect(b: Dictionary) -> CPUParticles3D:
 	var spec: Array=FX[str(b.kind)]
@@ -97,9 +112,13 @@ func preview(model,actor: Dictionary,mode: String,products: Array,recipe_id: Str
 		if str(hit.hit).is_empty(): return "拆卸锤用于自建构件；挖地请在背包装备地形铲"
 		c=model.cell(model.blocks[hit.hit]); error="remove"
 	else:
-		error=model.place_error(c,actor)
+		error=model.place_error(c,actor,true,mode)
 		if error.is_empty() and model.available(mode,products,recipe_id)<1: error="材料不足，按B打开背包前往工艺车间"
 	ghost.position=Vector3(c.x,c.y+0.5,c.z)
+	# v0.44: a door's ghost is two cells tall; a slab's is half a cell.
+	var shape: Dictionary=model.shape_of(mode) if mode!="remove" else {}
+	if shape.get("door",false): ghost.scale=Vector3(1,2,1); ghost.position.y+=0.5
+	elif shape.has("height") and float(shape.height)<1.0: ghost.scale=Vector3(1,float(shape.height),1); ghost.position.y-=0.5-float(shape.height)/2.0
 	ghost_material.albedo_color=Color(0.4,0.95,0.7,0.32) if error.is_empty() else Color(1,0.5,0.4,0.32)
 	ghost.show()
 	return "E 拆回此构件" if mode=="remove" else ("E 放置"+str(model.rules.kinds[mode].name) if error.is_empty() else error)

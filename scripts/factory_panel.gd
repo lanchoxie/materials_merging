@@ -91,7 +91,7 @@ func _key() -> String:
 	var affordable=state.coins>=float(p.recipe(selected_recipe).get("fee",0))
 	for batch in state.storage.batches: batches.append([batch.id,batch.quantity])
 	for job in state.campus.research_jobs: research.append([job.id,int(job.progress)/5])
-	return str([affordable,WorkshopAccess.status(state).ready,p.production_mode,p.joined,p.qualified,p.extra_qualifications,p.reports,p.circuit_reports,p.products.size(),p.job.get("id",0),p.supplies,p.feed,p.v2.field.stock,p.home().construction.miniatures.size(),p.materials.records.size(),p.materials.designs.size(),p.laminates.stock,p.laminates.feed,p.laminates.job.get("id",0),state.campus.unlocked_materials,research,batches])
+	return str([affordable,WorkshopAccess.status(state).ready,p.production_mode,p.joined,p.qualified,p.extra_qualifications,p.reports,p.circuit_reports,p.products.size(),p.job.get("id",0),p.supplies,p.feed,p.v2.field.stock,p.home().construction.miniatures.size(),state.industry.items.hash(),p.materials.records.size(),p.materials.designs.size(),p.laminates.stock,p.laminates.feed,p.laminates.job.get("id",0),state.campus.unlocked_materials,research,batches])
 
 func _redraw(reset_scroll: bool=false) -> void:
 	scroll_memory.refresh(scroll,reset_scroll)
@@ -244,10 +244,16 @@ func _natural_workshop(info: Dictionary) -> void:
 	_text("星球采集 → 背包原料 → 工程师加工 → 回星球搭建",16,UI.GOLD)
 	for id in info.natural_inputs:
 		_text("%s  %d / %d份" % [field.rules.resources[id].name,field.stock[id],info.natural_inputs[id]],18,UI.MINT if int(field.stock[id])>=int(info.natural_inputs[id]) else UI.GOLD)
+	# v0.44: plastic, metal and glass come from the 星锻岛 store.
+	var ind=state.industry; var extra: Dictionary=info.get("industry_inputs",{})
+	for id in extra:
+		_text("%s（星锻岛）  %d / %d份" % [ind.rules().items[id].name,int(ind.items.get(id,0)),int(extra[id])],18,UI.MINT if int(ind.items.get(id,0))>=int(extra[id]) else UI.GOLD)
 	_text("预留上述原料，标准工时%d秒。没有额外原料购买费；工程师继续按原规则领取薪酬。取消时原料全部退回。" % int(info.seconds),15)
 	if not p.joined: _button("登记车间合作",func(): _do("join"),true)
-	elif p.job.is_empty(): _button("加工采集材料",func(): _do("pack",{"recipe":selected_recipe}),true,not access.ready or not field.crafting_error(selected_recipe).is_empty())
-	if p.joined: _batch_buttons(info,not access.ready or not field.crafting_error(selected_recipe).is_empty())
+	elif p.job.is_empty(): _button("加工采集材料",func(): _do("pack",{"recipe":selected_recipe}),true,not access.ready or not field.crafting_error(selected_recipe,state.industry).is_empty())
+	if p.joined: _batch_buttons(info,not access.ready or not field.crafting_error(selected_recipe,state.industry).is_empty())
+	var why=field.crafting_error(selected_recipe,state.industry)
+	if p.joined and not why.is_empty(): _text(why,15,UI.GOLD)
 	else:
 		progress_text=UI.paragraph("",17,UI.MINT); body.add_child(progress_text)
 		progress=ProgressBar.new(); progress.custom_minimum_size.y=12; progress.show_percentage=false; body.add_child(progress)

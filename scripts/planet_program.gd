@@ -82,16 +82,23 @@ func copy_quote(state,id: String) -> Dictionary:
 		var r=str(c.sources.get(str(b.source),{}).get("product",{}).get("recipe",""))
 		if not v2.field.rules.recipes.has(r): q.message="这件作品含有非原料构件（%s），复制台只能复制用采集原料做的建筑" % (r if r!="" else "未知"); return q
 		counts[r]=int(counts.get(r,0))+1
+	q.industry={}
 	for r in counts:
 		var units=int(v2.construction.rules.recipes[r].units)
 		var n=int(ceil(float(counts[r])/float(units))); q.packages[r]=n
 		for res in v2.field.rules.recipes[r].natural_inputs: q.inputs[res]=int(q.inputs.get(res,0))+n*int(v2.field.rules.recipes[r].natural_inputs[res])
+		var extra: Dictionary=v2.field.rules.recipes[r].get("industry_inputs",{})
+		for item in extra: q.industry[item]=int(q.industry.get(item,0))+n*int(extra[item])
 	q.blocks=c.miniatures[id].blocks.size()
 	var lacking=[]
 	for res in q.inputs:
 		if int(v2.field.stock.get(res,0))<int(q.inputs[res]): lacking.append("%s %d/%d" % [v2.field.rules.resources[res].name,int(v2.field.stock.get(res,0)),int(q.inputs[res])])
+	for item in q.industry:
+		if int(state.industry.items.get(item,0))<int(q.industry[item]): lacking.append("%s %d/%d（星锻岛）" % [state.industry.rules().items[item].name,int(state.industry.items.get(item,0)),int(q.industry[item])])
 	if not lacking.is_empty(): q.message="原料不够："+"、".join(lacking); return q
-	q.ready=true; q.message="复制 %d 块：消耗 %s" % [q.blocks,"、".join(q.inputs.keys().map(func(k): return "%s×%d" % [v2.field.rules.resources[k].name,int(q.inputs[k])]))]
+	var parts=q.inputs.keys().map(func(k): return "%s×%d" % [v2.field.rules.resources[k].name,int(q.inputs[k])])
+	parts.append_array(q.industry.keys().map(func(k): return "%s×%d" % [state.industry.rules().items[k].name,int(q.industry[k])]))
+	q.ready=true; q.message="复制 %d 块：消耗 %s" % [q.blocks,"、".join(parts)]
 	return q
 
 func copy_building(state,id: String) -> String:
@@ -99,6 +106,7 @@ func copy_building(state,id: String) -> String:
 	if not q.ready: return q.message
 	var home_world=home(); var c=home_world.construction; var source_box: Dictionary=c.miniatures[id]
 	for res in q.inputs: v2.field.stock[res]=int(v2.field.stock[res])-int(q.inputs[res])
+	for item in q.industry: state.industry.take_item(item,int(q.industry[item]))
 	v2.field.revision+=1
 	# One issued workshop product per package; the craft record travels with the player (v2.field).
 	var pools={}
@@ -107,6 +115,7 @@ func copy_building(state,id: String) -> String:
 		for i in range(int(q.packages[r])):
 			var pid=serial; serial+=1
 			v2.field.crafts[str(pid)]={"recipe":r,"complete":true,"inputs":info.natural_inputs.duplicate()}
+			if info.has("industry_inputs"): v2.field.crafts[str(pid)]["industry"]=info.industry_inputs.duplicate()
 			var product={"id":pid,"recipe":r,"recipe_version":int(info.version),"source_batch":"river:"+str(pid)}
 			c.sources[str(pid)]={"product":product,"remaining":units}
 			if not pools.has(r): pools[r]=[]
@@ -335,7 +344,7 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 		"cancel_pack":
 			if job.is_empty(): return "装罐台当前空闲"
 			if recipe(str(job.recipe)).has("natural_inputs"):
-				var reason=v2.field.cancel(int(job.id))
+				var reason=v2.field.cancel(int(job.id),state.industry)
 				if not reason.is_empty(): return reason
 				job.clear(); return "采集材料已全部退回背包"
 			# Supply is reserved until completion; service fee covers interrupted work.
@@ -367,6 +376,10 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			var shown: String=preload("res://scripts/river_miniatures.gd").exhibit(home().construction,str(payload.get("id","")),int(payload.get("plot",-1)),state.plots)
 			home_saved()
 			return shown
+		"v2_door":
+			# v0.44: E on a door opens or shuts it.
+			if not v2.active: return "请先进入星球"
+			return v2.construction.toggle_door(str(payload.get("key","")),v2.actor)
 		"v2_build", "v2_dismantle":
 			if not v2.active: return "请先进入星球"
 			v2.ranch.sync(v2)
@@ -435,7 +448,7 @@ func _pack_natural(state,info: Dictionary) -> String:
 	if not access.ready: return access.message
 	if not job.is_empty(): return "车间正在加工，请等当前订单完成"
 	if products.size()>=int(config.workshop.product_limit): return "成品仓已满"
-	var reason=v2.field.reserve(str(info.id),serial)
+	var reason=v2.field.reserve(str(info.id),serial,state.industry)
 	if not reason.is_empty(): return reason
 	production_mode="island"
 	job={"id":serial,"recipe":str(info.id),"recipe_version":int(info.version),"left":float(info.seconds),"duration":float(info.seconds),"fee":0,"source_batch":"river:"+str(serial)}

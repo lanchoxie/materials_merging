@@ -67,6 +67,86 @@
     "field_campfire": {
       "units": 2,
       "kind": "campfire"
+    },
+    "field_slab_wood": {
+      "units": 8,
+      "kind": "slab_wood"
+    },
+    "field_slab_stone": {
+      "units": 8,
+      "kind": "slab_stone"
+    },
+    "field_slab_plastic": {
+      "units": 8,
+      "kind": "slab_plastic"
+    },
+    "field_slab_metal": {
+      "units": 8,
+      "kind": "slab_metal"
+    },
+    "field_brick_wood": {
+      "units": 8,
+      "kind": "brick_wood"
+    },
+    "field_brick_stone": {
+      "units": 8,
+      "kind": "brick_stone"
+    },
+    "field_brick_plastic": {
+      "units": 8,
+      "kind": "brick_plastic"
+    },
+    "field_brick_metal": {
+      "units": 8,
+      "kind": "brick_metal"
+    },
+    "field_door_wood": {
+      "units": 2,
+      "kind": "door_wood"
+    },
+    "field_door_stone": {
+      "units": 2,
+      "kind": "door_stone"
+    },
+    "field_door_plastic": {
+      "units": 2,
+      "kind": "door_plastic"
+    },
+    "field_door_metal": {
+      "units": 2,
+      "kind": "door_metal"
+    },
+    "field_window_wood": {
+      "units": 4,
+      "kind": "window_wood"
+    },
+    "field_window_stone": {
+      "units": 4,
+      "kind": "window_stone"
+    },
+    "field_window_plastic": {
+      "units": 4,
+      "kind": "window_plastic"
+    },
+    "field_window_metal": {
+      "units": 4,
+      "kind": "window_metal"
+    },
+    "field_slope_wood": {
+      "units": 8,
+      "kind": "slope_wood"
+    },
+    "field_slope_stone": {
+      "units": 8,
+      "kind": "slope_stone"
+    },
+    "field_slope_plastic": {
+      "units": 8,
+      "kind": "slope_plastic"
+    },
+    "field_slope_metal": {
+      "units": 8,
+      "kind": "slope_metal"
     }
   },
   "kinds": {
@@ -132,7 +212,213 @@
       "name": "篝火",
       "color": "e0763c",
       "machine": true
+    },
+    "slab_wood": {
+      "name": "木地板",
+      "color": "bd9267",
+      "shape": "slab",
+      "material": "wood",
+      "roof": true
+    },
+    "slab_stone": {
+      "name": "石板",
+      "color": "a6aba3",
+      "shape": "slab",
+      "material": "stone",
+      "roof": true
+    },
+    "slab_plastic": {
+      "name": "塑料板",
+      "color": "e6eef2",
+      "shape": "slab",
+      "material": "plastic",
+      "roof": true
+    },
+    "slab_metal": {
+      "name": "金属楼板",
+      "color": "8b95a3",
+      "shape": "slab",
+      "material": "metal",
+      "roof": true
+    },
+    "brick_wood": {
+      "name": "原木砖墙",
+      "color": "bd9267",
+      "shape": "brick",
+      "material": "wood",
+      "roof": true,
+      "wall": true
+    },
+    "brick_stone": {
+      "name": "石砖墙",
+      "color": "a6aba3",
+      "shape": "brick",
+      "material": "stone",
+      "roof": true,
+      "wall": true
+    },
+    "brick_plastic": {
+      "name": "塑料砖墙",
+      "color": "e6eef2",
+      "shape": "brick",
+      "material": "plastic",
+      "roof": true,
+      "wall": true
+    },
+    "brick_metal": {
+      "name": "金属墙板",
+      "color": "8b95a3",
+      "shape": "brick",
+      "material": "metal",
+      "roof": true,
+      "wall": true
+    },
+    "door_wood": {
+      "name": "木门",
+      "color": "bd9267",
+      "shape": "door",
+      "material": "wood"
+    },
+    "door_stone": {
+      "name": "石门",
+      "color": "a6aba3",
+      "shape": "door",
+      "material": "stone"
+    },
+    "door_plastic": {
+      "name": "塑料门",
+      "color": "e6eef2",
+      "shape": "door",
+      "material": "plastic"
+    },
+    "door_metal": {
+      "name": "金属门",
+      "color": "8b95a3",
+      "shape": "door",
+      "material": "metal"
+    },
+    "window_wood": {
+      "name": "木框窗",
+      "color": "bd9267",
+      "shape": "window",
+      "material": "wood",
+      "wall": true
+    },
+    "window_stone": {
+      "name": "石框窗",
+      "color": "a6aba3",
+      "shape": "window",
+      "material": "stone",
+      "wall": true
+    },
+    "window_plastic": {
+      "name": "塑钢窗",
+      "color": "e6eef2",
+      "shape": "window",
+      "material": "plastic",
+      "wall": true
+    },
+    "window_metal": {
+      "name": "金属框窗",
+      "color": "8b95a3",
+      "shape": "window",
+      "material": "metal",
+      "wall": true
+    },
+    "slope_wood": {
+      "name": "木瓦坡顶",
+      "color": "bd9267",
+      "shape": "slope",
+      "material": "wood",
+      "roof": true
+    },
+    "slope_stone": {
+      "name": "石板坡顶",
+      "color": "a6aba3",
+      "shape": "slope",
+      "material": "stone",
+      "roof": true
+    },
+    "slope_plastic": {
+      "name": "塑料坡顶",
+      "color": "e6eef2",
+      "shape": "slope",
+      "material": "plastic",
+      "roof": true
+    },
+    "slope_metal": {
+      "name": "金属坡顶",
+      "color": "8b95a3",
+      "shape": "slope",
+      "material": "metal",
+      "roof": true
     }
   },
-  "scope": "一包构件拆成8块；拆回原批次，全部收回才可还原整包。方块须与地面连通，暂不模拟真实结构强度。太阳能输出为统一的游戏服务点，不是实测器件效率。"
+  "scope": "一包构件拆成8块；拆回原批次，全部收回才可还原整包。方块须与地面连通，暂不模拟真实结构强度。太阳能输出为统一的游戏服务点，不是实测器件效率。",
+  "materials": {
+    "wood": {
+      "name": "木",
+      "color": "bd9267",
+      "trim": "8a6440"
+    },
+    "stone": {
+      "name": "石",
+      "color": "a6aba3",
+      "trim": "7d8380"
+    },
+    "plastic": {
+      "name": "塑料",
+      "color": "e6eef2",
+      "trim": "5fb3cf"
+    },
+    "metal": {
+      "name": "金属",
+      "color": "8b95a3",
+      "trim": "4f5863",
+      "sheen": true
+    }
+  },
+  "shapes": {
+    "slab": {
+      "name": "板",
+      "height": 0.5,
+      "units": 8,
+      "roof": true,
+      "note": "半格高：铺地、楼板，叠起来就是台阶"
+    },
+    "brick": {
+      "name": "砖墙",
+      "height": 1.0,
+      "units": 8,
+      "roof": true,
+      "wall": true,
+      "note": "整格砖墙，带砖缝"
+    },
+    "door": {
+      "name": "门",
+      "height": 2.0,
+      "units": 2,
+      "rotate": true,
+      "door": true,
+      "note": "两格高，E 开关；开着时可以走过"
+    },
+    "window": {
+      "name": "窗",
+      "height": 1.0,
+      "units": 4,
+      "rotate": true,
+      "glass": true,
+      "wall": true,
+      "note": "玻璃窗：挡路但透光，可以看到外面"
+    },
+    "slope": {
+      "name": "坡屋顶",
+      "height": 1.0,
+      "units": 8,
+      "rotate": true,
+      "roof": true,
+      "slope": true,
+      "note": "斜坡屋面，也能当坡道走上去"
+    }
+  }
 }

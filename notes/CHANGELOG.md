@@ -30,6 +30,20 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.44.0 "Building Materials" (百工建材)
+Full notes: [33-building-materials.md](33-building-materials.md).
+- **Twenty new building parts:** five shapes × wood, stone, plastic and metal.
+  - 板 (half-cell slabs: floors and stairs).
+  - 砖墙.
+  - 门: two cells tall; E opens it and you can walk through when it's open.
+  - 窗: see-through glass.
+  - 坡屋顶: a walkable ramp.
+- **Materials.** Wood and stone come from the planet; plastic (PE pellets) and metal (carbon steel ingots) come from
+  星锻岛, and every window takes one glass pane. Cancelling a craft refunds them.
+- **Placement.** Doors, windows and slopes face the way you were looking when you placed them. The settlement counts
+  the new walls.
+- **Tests.** New: `test_building_materials` (40).
+
 ## v0.43.0 "Starforge Isle" (星锻岛 · 第二浮岛)
 Full notes: [32-starforge-isle.md](32-starforge-isle.md).
 - **Deck.** It grows onto any cell beside it, up to 36 plots, chosen on a deck map. The diorama's hull follows its

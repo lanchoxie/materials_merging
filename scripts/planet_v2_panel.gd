@@ -299,7 +299,13 @@ func _collect() -> void:
 	if _toggle_rover(): return
 	# v0.41.2: E at a campfire opens the cooking menu.
 	_update_actor()
-	if state.planet.v2.Target.query(state.planet.v2).get("kind","")=="campfire": _cook_menu(); return
+	var aimed=state.planet.v2.Target.query(state.planet.v2)
+	if aimed.get("kind","")=="campfire": _cook_menu(); return
+	# v0.44: E on a door opens or shuts it (unless the hammer is out to take it down).
+	if aimed.get("type","")=="block" and state.planet.v2.construction.is_door(state.planet.v2.construction.blocks.get(str(aimed.get("key","")),{})):
+		var held: Dictionary=state.planet.v2.inventory.entries(state).get(str(state.planet.v2.inventory.slots[state.planet.v2.inventory.selected]),{})
+		if held.get("action",{}).get("type","")!="remove":
+			view.hands.swing(); _act("v2_door",{"key":aimed.key}); return
 	_update_actor()
 	var id=str(state.planet.v2.inventory.slots[state.planet.v2.inventory.selected])
 	if id.is_empty(): message="这一格是空的，按 B 从背包装备物品。"; _live(); return
@@ -578,7 +584,17 @@ func _building() -> void:
 	start.add_child(UI.paragraph("① 用斧头砍树得木料、纤维和野果，用采掘镐挖岩石得石料。\n② 在浮岛连通工艺车间、安排工程师，加工墙、屋顶和种植箱。\n③ 把成品放入快捷栏，在星球搭建。\n④ 装备种子瞄准箱子播种，用水样或标准水箱浇这一箱；成熟后手套收获。",15))
 	start.add_child(UI.button("前往采集坡",_travel.bind("homestead"),true))
 	for recipe in state.planet.v2.field.rules.recipes:
+		if state.planet.v2.field.rules.recipes[recipe].has("material"): continue
 		start.add_child(UI.button("加工 · "+str(state.planet.recipe(recipe).name),func(): workshop_requested.emit(recipe)))
+	# v0.44: twenty building parts — five shapes in four materials.
+	var mats=_card("建材 · 木 / 石 / 塑料 / 金属")
+	mats.add_child(UI.paragraph("板（半格，叠成台阶）、砖墙、门（两格高，E 开关）、窗（玻璃透光）、坡屋顶（能走上去）。木和石用星球采集的木料、石料；塑料要星锻岛的聚乙烯粒料，金属要碳钢锭，每扇窗还要一块钠钙玻璃板。门、窗和坡顶朝着你放置时面对的方向。",14))
+	var grid=GridContainer.new(); grid.columns=4; grid.add_theme_constant_override("h_separation",4); grid.add_theme_constant_override("v_separation",4); mats.add_child(grid)
+	for shape in state.planet.v2.construction.rules.shapes:
+		for material in state.planet.v2.construction.rules.materials:
+			var rid="field_%s_%s" % [shape,material]
+			var b=UI.button(str(state.planet.v2.construction.rules.kinds["%s_%s" % [shape,material]].name),func(): workshop_requested.emit(rid))
+			b.add_theme_font_size_override("font_size",13); b.size_flags_horizontal=Control.SIZE_EXPAND_FILL; grid.add_child(b)
 	var card=_card("把背包材料搭成家")
 	card.add_child(UI.paragraph("一包工坊结构构件可搭8块木构。打开背包，把构件装备到快捷栏；瞄准近处地面或方块表面，绿色预览后单击或按E放置。触屏点底部放置按钮。能搭台阶、墙和屋顶，也能安装车间制造的光伏组件。",15))
 	card.add_child(UI.button("打开背包装备构件",_open_backpack,true))
