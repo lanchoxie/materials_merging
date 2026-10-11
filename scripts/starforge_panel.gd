@@ -251,8 +251,11 @@ func _factories() -> void:
 			line.add_child(UI.label("%s%s" % ["🔒 " if q.get("locked",false) else "",r.name],16,UI.MUTED if q.get("locked",false) else UI.MINT))
 			line.add_child(UI.paragraph("%s → %s\n%s · %s" % ["＋".join(ins),"＋".join(outs),r.method,r.equation],12))
 			if r.has("model") and not q.get("locked",false): _knobs(line,id,str(r.model))
-			var go=UI.button("投料" if q.ready else str(q.message),func(): _act(ind.start(state,plot,id)))
-			go.disabled=not q.ready; go.add_theme_font_size_override("font_size",13); line.add_child(go)
+			# v0.48: a long "missing inputs" reason wraps under a short button (big recipes list many inputs).
+			var why=str(q.message); var short=why.length()<=18
+			var go=UI.button("投料" if q.ready else (why if short else "原料不足"),func(): _act(ind.start(state,plot,id)))
+			go.disabled=not q.ready; go.tooltip_text=why; go.add_theme_font_size_override("font_size",13); line.add_child(go)
+			if not q.ready and not short: line.add_child(UI.paragraph(why,12,UI.GOLD))
 			if not q.get("locked",false):
 				# v0.37.1: fill the queue in one tap, or loop the recipe while inputs last (also offline).
 				var more=_flow(line); var room=ind.queue_room(plot)
@@ -444,6 +447,17 @@ func _gear() -> void:
 			bars.append([tbm_bar,func(): return float(ind.tbm_state.charge)/maxf(1.0,float(ind.tbm_state.cap))])
 		tbm_card.add_child(UI.paragraph("地球第一人称：走到盾构机旁 E 进入，W 掘进、S 后退、A/D 转向、空格切换 水平/下潜/上爬，E 离开。",13))
 		tbm_card.add_child(UI.button("收回盾构机" if out else "派往地球",func(): _act(ind.deploy_tbm("" if out else id)); state.sync_gear()))
+	# v0.48: the starship.
+	for id in R.items:
+		if not R.items[id].get("ship",false) or int(ind.items.get(id,0))<1: continue
+		var commissioned=ind.ship==id; ind.update_ship()
+		var ship_card=_card("%s × %d%s" % [R.items[id].name,int(ind.items[id]),"（已启用）" if commissioned else ""],Color("c9a7ff"))
+		ship_card.add_child(UI.paragraph("在星球上 E 登船打开星图：跃迁到另一颗星球的轨道（每次 %.0f Wh），然后从地球仪视角第一人称降落。背包、种子、矿物和标本跟着你走；每颗星球的建筑和地形各自保留。" % float(R.ship.jump_wh),13))
+		if commissioned:
+			ship_card.add_child(UI.label("电量 %.0f / %.0f Wh · 回到浮岛自动充电" % [float(ind.ship_state.charge),float(ind.ship_state.cap)],14,UI.MINT))
+			var ship_bar=ProgressBar.new(); ship_bar.max_value=1.0; ship_bar.show_percentage=false; ship_bar.custom_minimum_size=Vector2(0,8); ship_card.add_child(ship_bar)
+			bars.append([ship_bar,func(): return float(ind.ship_state.charge)/maxf(1.0,float(ind.ship_state.cap))])
+		ship_card.add_child(UI.button("停回船坞" if commissioned else "启用星际飞船",func(): _act(ind.deploy_ship("" if commissioned else id)); state.sync_gear()))
 	# v0.47: the amphibious plane.
 	for id in R.items:
 		if not R.items[id].get("plane",false) or int(ind.items.get(id,0))<1: continue

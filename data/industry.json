@@ -1075,6 +1075,27 @@
       "seconds": 150,
       "equation": "升力 L = ½ρv²SC_L：速度够快，机翼就能把飞机托起来",
       "source": "polmear2017"
+    },
+    "starship": {
+      "name": "星际飞船",
+      "building": "vehicle_assembly",
+      "method": "硬铝船体 + 碳钢龙骨 + 6 电机 + 6 电池包 + 3 控制板 + 4 逻辑芯片 + 玻璃舷窗",
+      "inputs": {
+        "item:duralumin": 16,
+        "item:steel_ingot": 10,
+        "item:motor": 6,
+        "item:battery_pack": 6,
+        "item:control_board": 3,
+        "item:logic_chip": 4,
+        "item:glass": 4
+      },
+      "evidence": [],
+      "outputs": {
+        "starship": 1
+      },
+      "seconds": 240,
+      "equation": "星际跃迁（游戏设定）：电池储能驱动跃迁引擎，一次跃迁到另一颗星球的轨道",
+      "source": "polmear2017"
     }
   },
   "items": {
@@ -1414,6 +1435,14 @@
       "sell": 9800,
       "xp": 220,
       "plane": true
+    },
+    "starship": {
+      "name": "星际飞船",
+      "icon": "bit",
+      "color": "c9a7ff",
+      "sell": 42000,
+      "xp": 600,
+      "ship": true
     }
   },
   "sources": [
@@ -1796,5 +1825,11 @@
     "sink": 6.0,
     "crash_speed": 9.0,
     "note": "电动水陆两栖小飞机：在地面或水面滑跑到 24 m/s 后拉起；满电约 75 公里。回到浮岛自动充电约 5 分钟（游戏数值）。"
+  },
+  "ship": {
+    "cap_wh": 6000,
+    "jump_wh": 2500,
+    "recharge_seconds": 360,
+    "note": "星际飞船：每次跃迁消耗 2500 Wh，回到浮岛约 6 分钟充满（游戏设定）。"
   }
 }

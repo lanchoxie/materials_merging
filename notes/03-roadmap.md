@@ -117,7 +117,10 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   water planters into their own hopper.
 - ✅ v0.47 "Floatplane" (tag `v0.47.0`; see [36-airplane.md](36-airplane.md)): floatplane, far terrain, curved
   horizon.
-- Next: spaceship → second planet (reuse the timeline save swap for planets); then native factions.
+- ✅ v0.48 "Starship" (tag `v0.48.0`; see [37-starship.md](37-starship.md)): planet profiles, 赤砂星, the starship
+  and the star map. **The 2026-10-11 plan is complete.**
+- Next (open): native factions (原住民派系) / war events / incident director; more planets (data-only profiles); a
+  ship that flies in the world; more element ores.
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal
   doors, windows, boards, bricks, roofs) → 盾构机 (bulk ore) → farm robots → airplane → spaceship → second planet.

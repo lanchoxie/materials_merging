@@ -34,21 +34,31 @@ static func x_for_longitude(lon: float) -> float:
 static func on_surface(p: Vector2,margin: float=0.0) -> bool:
 	return p.y>=NORTH+60.0+margin and p.y<=SOUTH-60.0-margin
 
+## v0.48: a planet profile (data/planets.json) shifts the generator; {} is Earth exactly.
+static var _planets: Dictionary={}
+static func planets() -> Dictionary:
+	if _planets.is_empty(): _planets=JSON.parse_string(FileAccess.get_file_as_string("res://data/planets.json"))
+	return _planets
+
+static func profile_of(id: String) -> Dictionary:
+	return planets().planets.get(id,{})
+
 ## Continent field: > 0 is land. Periodic in x (whole-number harmonics of the circumference).
-static func continent(x: float,z: float) -> float:
+static func continent(x: float,z: float,p: Dictionary={}) -> float:
 	x=wrap_x(x)
 	var t=x/CIRC*TAU
-	var n=0.55*sin(t+0.7+z*0.00031)+0.38*sin(t*3.0-1.1+z*0.0007)+0.26*cos(t*5.0+2.0-z*0.0011)
-	n+=0.20*sin(z*0.0009+cos(t*2.0)*1.5)+0.12*sin(t*11.0+z*0.0021)+0.07*cos(t*23.0-z*0.0043)
-	n-=0.10
+	var ph: Array=p.get("phase",[0.0,0.0,0.0,0.0])
+	var n=0.55*sin(t+0.7+float(ph[0])+z*0.00031)+0.38*sin(t*3.0-1.1+float(ph[1])+z*0.0007)+0.26*cos(t*5.0+2.0+float(ph[2])-z*0.0011)
+	n+=0.20*sin(z*0.0009+cos(t*2.0+float(ph[3]))*1.5)+0.12*sin(t*11.0+z*0.0021)+0.07*cos(t*23.0-z*0.0043)
+	n-=float(p.get("sea_bias",0.10))
 	# Home stays on a continent; the date line is open ocean.
 	var home=Vector2(x,z).length()
 	n+=1.1*(1.0-smoothstep(900.0,3600.0,home))
 	n-=1.8*smoothstep(6800.0,7900.0,absf(x))
 	return n
 
-static func is_ocean(x: float,z: float) -> bool:
-	return continent(x,z)<0.0
+static func is_ocean(x: float,z: float,p: Dictionary={}) -> bool:
+	return continent(x,z,p)<0.0
 
 ## Sea floor depth below sea level (metres, positive): a wadeable shelf at the shore, then
 ## deeper away from the coast.
@@ -60,12 +70,12 @@ static func coast(c: float) -> float:
 	return smoothstep(0.0,0.10,c)
 
 ## Mountain ranges inside continents, kept away from home. Ridged folds, up to ~55 m.
-static func mountains(x: float,z: float,c: float) -> float:
+static func mountains(x: float,z: float,c: float,p: Dictionary={}) -> float:
 	x=wrap_x(x)
 	var t=x/CIRC*TAU
 	var fold=1.0-absf(sin(t*4.0+z*0.0013+sin(z*0.0005)*2.0)*cos(z*0.0021-cos(t*3.0)*1.4))
 	var range_mask=smoothstep(0.18,0.5,c)*smoothstep(1500.0,3200.0,Vector2(x,z).length())
-	return floor(60.0*pow(fold,5.0)*range_mask)
+	return floor(float(p.get("mountain",60.0))*pow(fold,5.0)*range_mask)
 
 ## 「北纬23.1° 东经0.1°」 for a ground position.
 static func coordinates(p: Vector2) -> String:

@@ -67,6 +67,9 @@ var tbm_state: Dictionary={"charge":0.0,"cap":0.0}
 ## v0.47 水陆两栖小飞机: the deployed plane ("" = none) and its battery.
 var plane=""
 var plane_state: Dictionary={"charge":0.0,"cap":0.0}
+## v0.48 星际飞船: the commissioned ship ("" = none) and its jump battery.
+var ship=""
+var ship_state: Dictionary={"charge":0.0,"cap":0.0}
 var rover_state: Dictionary={"charge":0.0,"cap":0.0,"wh_per_km":80.0}            # efficiencies of panels installed on the island grid
 
 static func rules() -> Dictionary:
@@ -375,7 +378,7 @@ func install_board(plot: int) -> String:
 
 ## Items held back from sale and recipes: the equipped bit and headlamp.
 func reserved(id: String) -> int:
-	return 1 if (id==bit or id==lamp or id==suit or id==drill or id==vehicle or id==tbm or id==plane) and id!="" else 0
+	return 1 if (id==bit or id==lamp or id==suit or id==drill or id==vehicle or id==tbm or id==plane or id==ship) and id!="" else 0
 
 # --- Evidence: the player must have made the real compound ---------------------------------
 static func _keys_for(formula: String) -> Array:
@@ -1076,6 +1079,23 @@ func recharge_plane(dt: float,seconds: float=-1.0) -> void:
 	var full=float(rules().plane.recharge_seconds) if seconds<=0.0 else seconds
 	plane_state.charge=minf(float(plane_state.cap),float(plane_state.charge)+float(plane_state.cap)/full*dt)
 
+## v0.48: commission the starship (it appears beside you on the planet; E boards it).
+func deploy_ship(id: String) -> String:
+	if id=="": ship=""; update_ship(); return "星际飞船已停回星锻岛船坞"
+	if not rules().items.get(id,{}).get("ship",false) or int(items.get(id,0))<1: return "没有星际飞船"
+	ship=id; update_ship()
+	return "星际飞船已启用：电池 %.0f Wh，每次跃迁 %.0f Wh。进入星球第一人称后停在你身边，E 登船选航线" % [float(ship_state.cap),float(rules().ship.jump_wh)]
+
+func update_ship() -> void:
+	if ship!="" and int(items.get(ship,0))<1: ship=""
+	ship_state.cap=float(rules().ship.cap_wh) if ship!="" else 0.0
+	ship_state.charge=clampf(float(ship_state.charge),0.0,float(ship_state.cap))
+
+func recharge_ship(dt: float,seconds: float=-1.0) -> void:
+	if float(ship_state.cap)<=0.0: return
+	var full=float(rules().ship.recharge_seconds) if seconds<=0.0 else seconds
+	ship_state.charge=minf(float(ship_state.cap),float(ship_state.charge)+float(ship_state.cap)/full*dt)
+
 func recharge_tbm(dt: float,seconds: float=-1.0) -> void:
 	if float(tbm_state.cap)<=0.0: return
 	var full=float(rules().tbm.recharge_seconds) if seconds<=0.0 else seconds
@@ -1106,7 +1126,7 @@ func bit_hv() -> float:
 func serialize() -> Dictionary:
 	for id in items.keys(): _reconcile(id)
 	_sync_deck()
-	return {"version":4,"deck":deck.duplicate(true),"deck_items":deck_items.duplicate(true),"decor_serial":decor_serial,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"suit":suit,"drill":drill,"drill_charge":float(drill_state.charge),"storage":storage.duplicate(),"vehicle":vehicle,"rover_charge":float(rover_state.charge),"tbm":tbm,"tbm_charge":float(tbm_state.charge),"plane":plane,"plane_charge":float(plane_state.charge),"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
+	return {"version":4,"deck":deck.duplicate(true),"deck_items":deck_items.duplicate(true),"decor_serial":decor_serial,"lots":lots.duplicate(true),"settings":settings.duplicate(true),"lot_serial":lot_serial,"solar":solar.duplicate(),"lamp":lamp,"suit":suit,"drill":drill,"drill_charge":float(drill_state.charge),"storage":storage.duplicate(),"vehicle":vehicle,"rover_charge":float(rover_state.charge),"tbm":tbm,"tbm_charge":float(tbm_state.charge),"plane":plane,"plane_charge":float(plane_state.charge),"ship":ship,"ship_charge":float(ship_state.charge),"unlocked":unlocked,"xp":xp,"legacy_seen":legacy_seen,"credits":credits,"plots":plots,
 		"buildings":buildings.duplicate(true),"items":items.duplicate(),"saturation":saturation.duplicate(),"bit":bit,"earned":earned,"crafted":crafted,
 		"service":service.duplicate(),"delays":delays.duplicate(),"service_init":service_init,"staff":staff.duplicate(true),"staff_serial":staff_serial,
 		"wages":wages,"wage_clock":wage_clock,"arrears":arrears,"furnished":furnished.duplicate(),
@@ -1147,6 +1167,7 @@ func restore(data) -> bool:
 	if not data.get("vehicle","") is String or (str(data.get("vehicle",""))!="" and not R.items.get(data.vehicle,{}).get("vehicle",false)) or not _num(data.get("rover_charge",0.0),0,1000000,false): return false
 	if not data.get("tbm","") is String or (str(data.get("tbm",""))!="" and not R.items.get(data.tbm,{}).get("tbm",false)) or not _num(data.get("tbm_charge",0.0),0,float(R.tbm.cap_wh),false): return false
 	if not data.get("plane","") is String or (str(data.get("plane",""))!="" and not R.items.get(data.plane,{}).get("plane",false)) or not _num(data.get("plane_charge",0.0),0,float(R.plane.cap_wh),false): return false
+	if not data.get("ship","") is String or (str(data.get("ship",""))!="" and not R.items.get(data.ship,{}).get("ship",false)) or not _num(data.get("ship_charge",0.0),0,float(R.ship.cap_wh),false): return false
 	for u in data.get("storage",[]):
 		if not _num(u,1,2): return false
 	var v2=int(data.version)>=2
@@ -1173,6 +1194,7 @@ func restore(data) -> bool:
 	vehicle=str(data.get("vehicle","")); rover_state.charge=float(data.get("rover_charge",0.0))
 	tbm=str(data.get("tbm","")); tbm_state.charge=float(data.get("tbm_charge",0.0))
 	plane=str(data.get("plane","")); plane_state.charge=float(data.get("plane_charge",0.0))
+	ship=str(data.get("ship","")); ship_state.charge=float(data.get("ship_charge",0.0))
 	for u in data.get("storage",[]): storage.append(int(u))
 	earned=int(data.earned); crafted=int(data.crafted); pending_xp=0
 	service={}; delays={}; service_init=false; staff=[]; staff_serial=1; wages=0.0; wage_clock=0.0; arrears=0.0

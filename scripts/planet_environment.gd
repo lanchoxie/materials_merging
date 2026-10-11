@@ -25,11 +25,20 @@ var _seen_build=-1
 var _shift=0.0
 ## v0.39: the timeline's climate offset (冰河期 −16 °C); constant per planet instance, never saved here.
 var epoch_offset=0.0
+## v0.48: the planet's profile (temperature and water offsets; which land is sea).
+var profile: Dictionary={}
 
 func _init() -> void:
 	size=int(rules.grid); cell=float(rules.cell_size); origin=float(rules.origin)
 	o2=float(rules.baseline.o2); co2=float(rules.baseline.co2)
 	base_water.resize(size*size); base_heat.resize(size*size); base_food.resize(size*size)
+	_bake()
+
+## v0.48: another planet's climate (call before anything is changed by machines).
+func set_profile(p: Dictionary) -> void:
+	profile=p; _bake()
+
+func _bake() -> void:
 	for j in range(size):
 		for i in range(size):
 			var b=baseline(origin+(i+0.5)*cell,origin+(j+0.5)*cell)
@@ -47,7 +56,8 @@ func baseline(x: float,z: float) -> Vector3:
 	# v0.42: temperature follows latitude (both hemispheres), not distance north of home.
 	var L: Dictionary=rules.latitude
 	var lat_t=float(L.equator)-float(L.pole_drop)*pow(absf(Shape.latitude(z))/90.0,float(L.exponent))
-	var t=lerpf(float(b.temperature),lat_t+5*n1,k)
+	var t=lerpf(float(b.temperature),lat_t+5*n1,k)+float(profile.get("temperature",0.0))
+	w=clampf(w+float(profile.get("water",0.0)),0,1)
 	var n=clampf(float(b.nutrients)+k*(0.16*n3+0.3*(w-float(b.water))),0,1)
 	return Vector3(w,t,n)
 
@@ -85,7 +95,7 @@ func biome_of(v: Vector4) -> String:
 	return "grassland"
 
 func biome_at(p: Vector2) -> String:
-	if Shape.is_ocean(p.x,p.y) and Shape.on_surface(p): return "ocean"
+	if Shape.is_ocean(p.x,p.y,profile) and Shape.on_surface(p): return "ocean"
 	return biome_of(values(cell_of(p)))
 
 func biome_name(id: String) -> String:

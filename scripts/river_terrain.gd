@@ -4,6 +4,8 @@ const Geology=preload("res://scripts/planet_geology.gd")
 ## v0.42: continents, oceans, mountain ranges, poles and the wrap (scripts/planet_shape.gd).
 const Shape=preload("res://scripts/planet_shape.gd")
 const CENTERS={"wetland":Vector3(-10,0,10),"riverbank":Vector3(-10,0,-10),"meadow":Vector3(10,0,10),"highland":Vector3(10,0,-10)}
+## v0.48: this world's planet profile (data/planets.json; {} = Earth). Set by PlanetV2.set_planet().
+var profile: Dictionary={}
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/planet_exploration.json"))
 var nature
 ## v0.32: the climate field (PlanetEnvironment) for ground colours; null in bare tests.
@@ -50,10 +52,10 @@ func chunk_tree_origins(key: Vector2i) -> Array[Vector2]:
 			if clearing or sin(ix*21.1+iz*43.8)<-0.1: continue
 			# v0.42: no trees in the sea or on beaches; how dense a wood is depends on the biome.
 			if p.length()>300.0:
-				var cont=Shape.continent(p.x,p.y)
+				var cont=Shape.continent(p.x,p.y,profile)
 				if cont<0.08 and pad_mask(p)>=1.0: continue
 				# Tree line: bare rock and snow high on the ranges.
-				if Shape.mountains(p.x,p.y,cont)>20.0: continue
+				if Shape.mountains(p.x,p.y,cont,profile)>20.0: continue
 				if environment!=null:
 					var keep={"forest":1.0,"wetland":0.6,"grassland":0.35,"tundra":0.15,"desert":0.03,"ice":0.0,"ocean":0.0}.get(environment.biome_at(p),0.5)
 					if Geology._hash(ix,iz,7,11)>float(keep): continue
@@ -115,7 +117,7 @@ func natural_height(p: Vector2) -> float:
 
 func river_cell(c: Vector2) -> bool:
 	# The river runs over land only; at the coast it meets the sea.
-	return absf(c.x-river_x(c.y))<2.0 and Shape.continent(c.x,c.y)>0.03
+	return absf(c.x-river_x(c.y))<2.0 and Shape.continent(c.x,c.y,profile)>0.03
 
 ## River water, or the sea over a sea floor below sea level.
 func water_at(p: Vector2) -> bool:
@@ -168,7 +170,7 @@ func material(c: Vector3i) -> String:
 func natural_material(c: Vector3i) -> String:
 	if not natural_solid(c): return ""
 	var p=Vector2(c.x,c.z)
-	return Geology.natural(c,natural_height(p),river_cell(p))
+	return Geology.natural(c,natural_height(p),river_cell(p),profile)
 
 ## Highest standing surface in one column at or below `ceiling`.
 func floor_below(x: int,z: int,ceiling: float) -> float:
@@ -217,11 +219,11 @@ func legacy_height(c: Vector2) -> float:
 	h+=relief(c)
 	h=maxf(h,0.27)
 	# v0.42: the continent shapes the land. Legacy pads (old far builds) always stay dry land.
-	var cont=Shape.continent(c.x,c.y)
+	var cont=Shape.continent(c.x,c.y,profile)
 	if pad_mask(c)<1.0: cont=maxf(cont,0.15)
 	if cont<0.0: return -Shape.ocean_depth(cont)
 	h=lerpf(0.35,h,Shape.coast(cont))
-	h+=Shape.mountains(c.x,c.y,cont)*pad_mask(c)*smoothstep(3.0,90.0,absf(c.x-river_x(c.y)))
+	h+=Shape.mountains(c.x,c.y,cont,profile)*pad_mask(c)*smoothstep(3.0,90.0,absf(c.x-river_x(c.y)))
 	return h
 
 ## v0.33.2 relief: rolling hills and ridges that stay flat inside the start bend (so home, the
@@ -303,6 +305,14 @@ func pad_mask(c: Vector2) -> float:
 	var d=INF
 	for at in near: d=minf(d,c.distance_to(at))
 	return smoothstep(PAD_FLAT,PAD_RAMP,d)
+
+## v0.48: switch this terrain to another planet's generator (and forget everything cached).
+func set_profile(p: Dictionary) -> void:
+	profile=p
+	_cave_columns.clear(); _cave_cells.clear(); _height_cache.clear(); tree_cache.clear(); _trunks.clear()
+	trees=[]
+	for z in range(-2,2):
+		for x in range(-2,2): trees.append_array(chunk_trees(Vector2i(x,z)))
 
 func set_pads(keys: Array) -> void:
 	pads={}; _pad_near={}; _cave_columns.clear(); _cave_cells.clear(); _height_cache.clear(); tree_cache.clear(); _trunks.clear()

@@ -106,15 +106,20 @@ func _decor(st: SurfaceTool,p: Vector2,top: float,v: Vector4,roll: float) -> voi
 			G.cube(st,at+Vector3(0,0.17,0),Vector3(0.03,0.34,0.03),Color("5b8a45")); G.cube(st,at+Vector3(0,0.36,0),Vector3(0.11,0.07,0.11),bloom)
 
 ## Grass follows the season on topsoil; the river bed shows water; rock shows its mineral colour.
+## v0.48: a planet's soil colour (赤砂星 is rust red), or none on Earth.
+func _tint() -> Color:
+	var t=str(terrain.profile.get("soil_tint",""))
+	return Color(t) if t!="" else Color("d9c9a0")
+
 func _top_color(id: String,p: Vector2,river: bool,natural_top: bool,grass: Color,shade: float,x: int,y: int,z: int) -> Color:
 	# v0.42: snow on high peaks, sand on beaches and the shallow sea floor.
 	if natural_top and y>=34: return Color("eef3f4").lightened(shade*0.4)
 	if natural_top and y>=20: return Color("8d8a7e").lerp(Color("6f7f5c"),clampf((26.0-y)/6.0,0.0,1.0)).lightened(shade)
 	# Under the sea the floor darkens with depth, so the water reads as sea and not as more beach.
 	if natural_top and y<0: return Color("b9ab84").lerp(Color("23485a"),clampf(-float(y)/3.0,0.15,1.0)).lightened(shade*0.3)
-	if natural_top and y<=1 and terrain.Shape.continent(p.x,p.y)<0.1: return Color("d9c9a0").lightened(shade*0.6)
+	if natural_top and y<=1 and terrain.Shape.continent(p.x,p.y,terrain.profile)<0.1: return Color("d9c9a0").lerp(_tint(),0.4).lightened(shade*0.6)
 	if id=="topsoil":
-		var c=grass
+		var c=grass.lerp(_tint(),0.45) if terrain.profile.get("soil_tint","")!="" else grass
 		if p.x>0 and p.y<0: c=c.lerp(Color("9ba49a"),0.35)
 		if terrain.on_path(p): c=Color("bdad83")
 		return c.lightened(shade)
@@ -160,7 +165,7 @@ func _build(key: Vector2i) -> Mesh:
 				if roll<0.02 and not near_edit and not river and p.length()>40 and not terrain.on_path(p): decor.append([p,top,v,roll])
 			if not near_edit and not rim:
 				# Fast path: untouched heightmap column. One top face plus the exposed side bands.
-				var yc=ceili(top)-1; var id: String=Geology.natural(Vector3i(ix,yc,iz),top,river)
+				var yc=ceili(top)-1; var id: String=Geology.natural(Vector3i(ix,yc,iz),top,river,terrain.profile)
 				G.face(st,[Vector3(x0,top,z0),Vector3(x1,top,z0),Vector3(x1,top,z1),Vector3(x0,top,z1)],_top_color(id,p,river,true,tile_grass,shade,ix,yc,iz))
 				for d in DIRS:
 					var low: float=tops[col+Vector2i(d.x,d.z)]
@@ -168,7 +173,7 @@ func _build(key: Vector2i) -> Mesh:
 					var a=p+Vector2(d.x,d.z)*cell/2; var tangent=Vector2(-d.z,d.x)*cell/2
 					for y in range(floori(low),yc+1):
 						var y0=maxf(low,y); var y1=minf(top,y+1)
-						var mid: String=id if y==yc else Geology.natural(Vector3i(ix,y,iz),top,river)
+						var mid: String=id if y==yc else Geology.natural(Vector3i(ix,y,iz),top,river,terrain.profile)
 						G.face(st,[Vector3(a.x-tangent.x,y0,a.y-tangent.y),Vector3(a.x+tangent.x,y0,a.y+tangent.y),Vector3(a.x+tangent.x,y1,a.y+tangent.y),Vector3(a.x-tangent.x,y1,a.y-tangent.y)],_side_color(mid,d,ix,y,iz))
 				continue
 			var lo=ceili(top)-1; var hi=ceili(top)-1; var edge=false
@@ -187,7 +192,7 @@ func _build(key: Vector2i) -> Mesh:
 			for y in range(lo,hi+1):
 				var c=Vector3i(ix,y,iz)
 				if not _solid(c,voxels,tops,bedrock): continue
-				var h=_height(c,voxels,tops); var id: String=voxels[c] if voxels.has(c) else Geology.natural(c,top,river); var yt=y+h
+				var h=_height(c,voxels,tops); var id: String=voxels[c] if voxels.has(c) else Geology.natural(c,top,river,terrain.profile); var yt=y+h
 				if h<1.0 or not _solid(c+Vector3i.UP,voxels,tops,bedrock):
 					G.face(st,[Vector3(x0,yt,z0),Vector3(x1,yt,z0),Vector3(x1,yt,z1),Vector3(x0,yt,z1)],_top_color(id,p,river,not voxels.has(c) and y==ceili(top)-1,tile_grass,shade,ix,y,iz))
 				if y>bedrock and not _solid(c+Vector3i.DOWN,voxels,tops,bedrock):

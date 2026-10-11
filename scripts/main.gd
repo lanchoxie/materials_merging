@@ -218,7 +218,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.47 水陆两栖小飞机 · 远景地形 · 弯曲的地平线" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.48 星际飞船 · 赤砂星 · 星图跃迁" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -486,6 +486,10 @@ func _enter_light_bridge() -> void:
 func _show_time_gate() -> void:
 	var body=_dialog("时间之门 · 彩虹光桥","同一条河湾，不同的时代。背包里的原料、种子、矿物和标本图鉴跟着你走；建筑、营地和动物留在各自的时代。")
 	var here=str(state.planet.v2.epoch)
+	if state.planet.v2.planet!="earth":
+		body.add_child(UI.paragraph("时间之门只连着地球的各个时代。你现在在%s：彩虹光桥直接通往这里的着陆点；要穿越时代，先乘飞船回地球。" % str(state.planet.v2.planet_info().name),16))
+		body.add_child(UI.button("走过光桥",func(): _close_modal(); _cross_light_bridge(),true))
+		return
 	for id in state.planet.v2.rules.epochs:
 		var e: Dictionary=state.planet.v2.rules.epochs[id]
 		var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(Color("213c45") if id!=here else Color("2b4d4a"),14)); body.add_child(card)
@@ -494,6 +498,30 @@ func _show_time_gate() -> void:
 		if e.has("story"): col.add_child(UI.paragraph(str(e.story),15))
 		if e.has("note"): col.add_child(UI.paragraph(str(e.note),12,UI.MUTED))
 		col.add_child(UI.button("回到%s的河湾" % e.name if id==here else "穿越到%s" % e.name,func(): _through_gate(id),true))
+
+## v0.48 星图: every planet with its globe map; the current one is marked. Launching jumps the ship
+## (Wh from its battery), swaps the world and reopens the planet view in orbit over the destination.
+func _show_voyage() -> void:
+	var Shape=preload("res://scripts/planet_shape.gd"); var Globe=preload("res://scripts/planet_globe.gd")
+	var ind=state.industry; var here=str(state.planet.v2.planet)
+	var body=_dialog("星图 · 星际航行","飞船电量 %.0f / %.0f Wh · 每次跃迁 %.0f Wh。背包、种子、矿物和标本跟着你走；每颗星球上的建筑、地形和生灵留在原地。" % [float(ind.ship_state.charge),float(ind.ship_state.cap),float(ind.rules().ship.jump_wh)],true)
+	for id in Shape.planets().order:
+		var info: Dictionary=Shape.profile_of(id)
+		var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(Color("2b4d4a") if id==here else Color("213c45"),14)); body.add_child(card)
+		var row=UI.row(card,14)
+		var env=preload("res://scripts/planet_environment.gd").new(); env.set_profile({} if id=="earth" else info)
+		var map=TextureRect.new(); map.texture=Globe.equirect(env); map.custom_minimum_size=Vector2(300,150); map.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; map.stretch_mode=TextureRect.STRETCH_SCALE; row.add_child(map)
+		var col=UI.column(row,6); col.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		col.add_child(UI.label("%s · %s%s" % [info.name,info.title,"（你在这里）" if id==here else ""],21,UI.MINT if id==here else Color("e8c8ff")))
+		col.add_child(UI.paragraph(str(info.description),15))
+		var go=UI.button("留在%s" % info.name if id==here else "跃迁到%s" % info.name,func(): _launch(id),true)
+		go.disabled=id==here or float(ind.ship_state.charge)<float(ind.rules().ship.jump_wh); col.add_child(go)
+
+func _launch(id: String) -> void:
+	var message: String=state.planet.voyage(state,id)
+	if not message.begins_with("跃迁完成"): _toast(message); return
+	_close_all(); state.sync_gear()
+	_show_planet_v2(); _toast(message)
 
 func _through_gate(id: String) -> void:
 	_close_modal()
@@ -1174,6 +1202,7 @@ func _show_planet_v2() -> void:
 	panel.workshop_requested.connect(_show_factory)
 	panel.synthesis_requested.connect(func(): _show_organic_synthesis())
 	panel.test_requested.connect(func(): _show_test_panel(panel))
+	panel.voyage_requested.connect(_show_voyage)
 	_ambience("amb_river")
 	panel.dismissed.connect(func():
 		_screen_closed(panel)
@@ -1672,6 +1701,7 @@ func _show_test_panel(planet: Control = null) -> void:
 	row.add_child(UI.button("硅钙磷原料包", func(): run.call(TestMode.silicon_kit(state))))
 	row.add_child(UI.button("盾构机（派往地球）", func(): run.call(TestMode.give_tbm(state))))
 	row.add_child(UI.button("小飞机（派往地球）", func(): run.call(TestMode.give_plane(state))))
+	row.add_child(UI.button("星际飞船", func(): run.call(TestMode.give_ship(state))))
 	row.add_child(UI.button("芯片原料包", func(): run.call(TestMode.chip_kit(state))))
 	row.add_child(UI.button("电池原料包", func(): run.call(TestMode.battery_kit(state))))
 	row.add_child(UI.button("越野车", func(): run.call(TestMode.rover_kit(state))))

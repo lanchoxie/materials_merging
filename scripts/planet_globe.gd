@@ -7,7 +7,8 @@ const BIOME_COLORS={"tundra":Color("dfe8ea"),"desert":Color("d6c38c"),"wetland":
 static var _cache: Dictionary={}
 
 static func color_at(env,x: float,z: float) -> Color:
-	var cont=Shape.continent(x,z)
+	var p: Dictionary=env.profile if "profile" in env else {}
+	var cont=Shape.continent(x,z,p)
 	if cont<0.0:
 		var deep=smoothstep(0.0,0.6,-cont)
 		var sea=Color("3d8fb0").lerp(Color("1b4d6e"),deep)
@@ -16,7 +17,9 @@ static func color_at(env,x: float,z: float) -> Color:
 	var v: Vector4=env.blend(Vector2(x,z))
 	var c: Color=BIOME_COLORS.get(env.biome_of(v),Color("86a865"))
 	if cont<0.1: c=c.lerp(Color("d9c9a0"),1.0-cont/0.1)
-	var m=Shape.mountains(x,z,cont)
+	var tint=str(p.get("globe_tint",""))
+	if tint!="": c=c.lerp(Color(tint),0.45)
+	var m=Shape.mountains(x,z,cont,p)
 	if m>0.0:
 		c=c.lerp(Color("8a8378"),clampf(m/40.0,0.0,0.75))
 		if m>=34.0: c=c.lerp(Color("f2f5f6"),0.8)
@@ -24,7 +27,7 @@ static func color_at(env,x: float,z: float) -> Color:
 
 ## Equirectangular texture (longitude across, latitude down), cached per size and climate offset.
 static func equirect(env,w: int=256,h: int=128) -> ImageTexture:
-	var key="eq:%d:%d:%.1f" % [w,h,float(env.epoch_offset)]
+	var key="eq:%d:%d:%.1f:%s" % [w,h,float(env.epoch_offset),str(env.profile.get("name","earth"))]
 	if _cache.has(key): return _cache[key]
 	var image=Image.create(w,h,false,Image.FORMAT_RGB8)
 	for j in range(h):
@@ -39,7 +42,7 @@ static func equirect(env,w: int=256,h: int=128) -> ImageTexture:
 
 ## The flat map: x from −8192 to 8192 across, z from the north cap to the south cap down.
 static func flat(env,w: int=256,h: int=240) -> ImageTexture:
-	var key="flat:%d:%d:%.1f" % [w,h,float(env.epoch_offset)]
+	var key="flat:%d:%d:%.1f:%s" % [w,h,float(env.epoch_offset),str(env.profile.get("name","earth"))]
 	if _cache.has(key): return _cache[key]
 	var image=Image.create(w,h,false,Image.FORMAT_RGB8)
 	for j in range(h):

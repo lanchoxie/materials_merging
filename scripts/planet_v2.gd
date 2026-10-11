@@ -1,4 +1,5 @@
 extends RefCounted
+const Shape=preload("res://scripts/planet_shape.gd")
 ## Deterministic, bounded game simulation. Inventory transactions live in PlanetProgram.
 const Population=preload("res://scripts/river_population.gd")
 var population=Population.new()
@@ -43,6 +44,10 @@ var driving=false
 ## player is in its seat.
 var tbm_at: Dictionary={}
 var boring=false
+## v0.48: which planet this world is (data/planets.json), and the 星际飞船 parked here ({} = not
+## here). The ship travels with the player between planets.
+var planet="earth"
+var ship_at: Dictionary={}
 ## v0.47 小飞机: where it is parked ({x, z, heading}) and whether the player is flying it.
 var plane_at: Dictionary={}
 var flying=false
@@ -68,6 +73,23 @@ func epoch_info() -> Dictionary:
 	return rules.epochs.get(epoch,{})
 
 ## A brand-new world in another timeline (the first trip through the time gate).
+## v0.48: generate this world as `id` (Earth's profile is {} so Earth stays byte-identical).
+func set_planet(id: String) -> void:
+	planet=id if Shape.planets().planets.has(id) else "earth"
+	var p: Dictionary={} if planet=="earth" else Shape.profile_of(planet)
+	construction.terrain.set_profile(p); environment.set_profile(p)
+
+func planet_info() -> Dictionary:
+	return Shape.profile_of(planet)
+
+## Earth's timelines keep their old keys ("present", "ice"); other planets are "<planet>:<epoch>".
+func world_key() -> String:
+	return epoch if planet=="earth" else "%s:%s" % [planet,epoch]
+
+func begin_planet(id: String) -> void:
+	set_planet(id); begin_epoch("present")
+	if planet!="earth": world.events=[{"time":0,"text":"飞船降落在%s：%s" % [str(planet_info().name),str(planet_info().description)]}]
+
 func begin_epoch(id: String) -> void:
 	set_epoch(id); world=fresh()
 	if not bool(epoch_info().get("crops",true)):
@@ -345,7 +367,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate()}
+	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate()}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -377,6 +399,11 @@ func restore(data) -> bool:
 			if not _number(parked.get(k),-9000,9000): return false
 		# v0.42 planet: anywhere on the surface (the old 8 km disc check rejected far-north parking).
 		if absf(float(parked.x))>8192.0 or absf(float(parked.z))>7600.0: return false
+	if not data.get("planet","earth") is String or not Shape.planets().planets.has(str(data.get("planet","earth"))): return false
+	var ship=data.get("ship",{})
+	if not ship is Dictionary: return false
+	if not ship.is_empty():
+		if not _number(ship.get("x"),-8192,8192) or not _number(ship.get("z"),-7600,7600) or not _number(ship.get("heading"),-9000,9000): return false
 	var aircraft=data.get("plane",{})
 	if not aircraft is Dictionary: return false
 	if not aircraft.is_empty():
@@ -449,6 +476,10 @@ func restore(data) -> bool:
 	if data.has("population") and not restored_population.restore(data.population): return false
 	var restored_nature=Nature.new()
 	var restored_construction=Construction.new()
+	# v0.48: the planet's generator first — everything below reads its terrain.
+	var world_planet=str(data.get("planet","earth"))
+	var world_profile: Dictionary={} if world_planet=="earth" else Shape.profile_of(world_planet)
+	restored_construction.terrain.set_profile(world_profile)
 	# v0.33.2: saves made before relief existed keep their old ground where they built or dug.
 	if data.has("terrain"):
 		if not restored_construction.terrain.pads_restore(data.terrain): return false
@@ -470,6 +501,7 @@ func restore(data) -> bool:
 	var restored_organics=Organics.new()
 	if data.has("organics") and not restored_organics.restore(data.organics,restored_construction): return false
 	var restored_environment=Climate.new()
+	restored_environment.set_profile(world_profile)
 	if data.has("environment") and not restored_environment.restore(data.environment): return false
 	var restored_incidents=Incidents.new()
 	if data.has("incidents") and not restored_incidents.restore(data.incidents,int(w.elapsed)): return false
@@ -486,7 +518,10 @@ func restore(data) -> bool:
 	inventory=restored_inventory
 	world=w.duplicate(true); population=restored_population; construction=restored_construction; settlement=restored_settlement; nature=restored_nature; combat=restored_combat; actor={}; active=false
 	_link_geometry()
+	planet=world_planet
 	set_epoch(str(data.get("epoch","present")))
+	ship_at={}
+	if not ship.is_empty(): ship_at={"x":float(ship.x),"z":float(ship.z),"heading":float(ship.heading)}
 	rover_at={}; driving=false
 	if not parked.is_empty(): rover_at={"x":float(parked.x),"z":float(parked.z),"heading":float(parked.heading)}
 	plane_at={}; flying=false

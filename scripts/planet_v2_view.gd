@@ -19,6 +19,49 @@ var globe_pitch=0.35
 var globe_shown=false
 const GLOBE_RADIUS=10.0
 const GLOBE_LAYER=1<<19
+## v0.48 星际飞船: parked on the planet; boarding opens the star map (no flight in the world).
+var ship_node: Node3D
+var ship_parked=false
+var ship_at=Vector2.ZERO
+
+func park_ship(at,heading: float=0.0) -> void:
+	if at==null:
+		ship_parked=false
+		if ship_node!=null: ship_node.hide()
+		return
+	if ship_node==null: ship_node=_ship_mesh(); add_child(ship_node)
+	ship_at=at; ship_parked=true
+	ship_node.position=Vector3(at.x,terrain.ground(at),at.y); ship_node.rotation=Vector3(0,heading,0); ship_node.show()
+
+func _ship_mesh() -> Node3D:
+	var root=Node3D.new()
+	var mat=func(hex: String,metal: float=0.4,emit: bool=false):
+		var m=StandardMaterial3D.new(); m.albedo_color=Color(hex); m.metallic=metal; m.roughness=0.35
+		if emit: m.emission_enabled=true; m.emission=Color(hex)
+		return m
+	var add=func(mesh: Mesh,at: Vector3,material: Material,turn: Vector3=Vector3.ZERO):
+		var n=MeshInstance3D.new(); n.mesh=mesh; n.position=at; n.rotation=turn; n.material_override=material; root.add_child(n); return n
+	var hull=CapsuleMesh.new(); hull.radius=1.5; hull.height=9.0
+	add.call(hull,Vector3(0,3.2,0),mat.call("e8ecf2",0.5),Vector3(PI/2,0,0))
+	var nose=CylinderMesh.new(); nose.top_radius=0.0; nose.bottom_radius=1.2; nose.height=2.4
+	add.call(nose,Vector3(0,3.2,-5.4),mat.call("c9a7ff",0.4),Vector3(-PI/2,0,0))
+	var canopy=SphereMesh.new(); canopy.radius=0.9; canopy.height=1.2
+	add.call(canopy,Vector3(0,4.4,-2.6),mat.call("7fd8ff",0.1,true))
+	for side in [-1,1]:
+		var wing=BoxMesh.new(); wing.size=Vector3(4.2,0.18,3.0)
+		add.call(wing,Vector3(side*2.8,2.7,1.4),mat.call("8b95a3",0.6),Vector3(0,0,side*0.18))
+		var leg=BoxMesh.new(); leg.size=Vector3(0.2,2.2,0.2)
+		add.call(leg,Vector3(side*1.6,1.1,-1.5),mat.call("2a3038",0.6))
+		add.call(leg,Vector3(side*1.6,1.1,2.5),mat.call("2a3038",0.6))
+		var engine=CylinderMesh.new(); engine.top_radius=0.55; engine.bottom_radius=0.7; engine.height=1.6
+		add.call(engine,Vector3(side*1.1,3.0,4.9),mat.call("5b6670",0.7),Vector3(PI/2,0,0))
+		var glow=CylinderMesh.new(); glow.top_radius=0.45; glow.bottom_radius=0.45; glow.height=0.1
+		add.call(glow,Vector3(side*1.1,3.0,5.75),mat.call("9ff3ff",0.0,true),Vector3(PI/2,0,0))
+	var fin=BoxMesh.new(); fin.size=Vector3(0.16,2.2,2.0)
+	add.call(fin,Vector3(0,5.0,3.6),mat.call("c9a7ff",0.4))
+	var lamp=OmniLight3D.new(); lamp.position=Vector3(0,1.0,0); lamp.omni_range=8.0; lamp.light_energy=0.8; lamp.light_color=Color("d9c8ff"); root.add_child(lamp)
+	return root
+
 ## v0.47 小飞机: parked, or flown from a chase camera; far terrain and an opening fog while flying.
 const Aircraft=preload("res://scripts/planet_plane.gd")
 var plane
@@ -741,6 +784,11 @@ func _daylight(phase: float,day: float) -> void:
 	sky_phase=phase
 	sky_material.sky_top_color=Color("1a2c4c").lerp(Color("4f93c9"),phase)
 	sky_material.sky_horizon_color=Color("d9906a").lerp(Color("bcdbe0"),smoothstep(0.1,0.7,phase)).lerp(Color("2a3a55"),1.0-smoothstep(0.0,0.25,phase))
+	# v0.48: another planet's sky (赤砂星's dusty orange horizon).
+	var tint=str(terrain.profile.get("sky_tint",""))
+	if tint!="":
+		sky_material.sky_horizon_color=sky_material.sky_horizon_color.lerp(Color(tint),0.55)
+		sky_material.sky_top_color=sky_material.sky_top_color.lerp(Color(tint).darkened(0.35),0.3)
 	sky_material.ground_horizon_color=sky_material.sky_horizon_color
 	sky_material.sun_angle_max=10.0+phase*20.0
 	env.fog_light_color=sky_material.sky_horizon_color

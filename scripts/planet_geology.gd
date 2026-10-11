@@ -24,7 +24,8 @@ static func _blob(c: Vector3i,size: Vector3i,salt: int,chance: float) -> bool:
 	return _hash(floori(float(c.x)/size.x),floori(float(c.y)/size.y),floori(float(c.z)/size.z),salt)<chance
 
 ## top: the natural column top (metres). river: true for the river bed columns.
-static func natural(c: Vector3i,top: float,river: bool) -> String:
+## `p`: the planet profile (v0.48) — ore richness (hematite) differs between planets.
+static func natural(c: Vector3i,top: float,river: bool,p: Dictionary={}) -> String:
 	if c.y<=bedrock_y(): return "bedrock"
 	var depth=ceili(top)-1-c.y
 	if river and depth<2: return "sand"
@@ -48,9 +49,9 @@ static func natural(c: Vector3i,top: float,river: bool) -> String:
 		if c.y<-17 and _blob(c,Vector3i(2,2,2),71,0.012): return "pollucite"
 		if _blob(c,Vector3i(2,3,2),81,0.04): return "spodumene"
 		if _blob(c,Vector3i(3,2,3),91,0.045): return "cassiterite"
-		if _blob(c,Vector3i(3,3,3),101,0.05): return "hematite"
+		if _blob(c,Vector3i(3,3,3),101,0.05*float(p.get("hematite",1.0))): return "hematite"
 		return "granite"
-	if _blob(c,Vector3i(3,3,3),111,0.06): return "hematite"
+	if _blob(c,Vector3i(3,3,3),111,0.06*float(p.get("hematite",1.0))): return "hematite"
 	return "basalt"
 
 static func describe(id: String) -> String:

@@ -42,26 +42,30 @@ func _init() -> void:
 ## The gate opens once the present-day camp reaches the era named in planet_v2.json time_gate.
 func gate_ready() -> bool:
 	if gate_open: return true
-	if v2.epoch=="present" and v2.settlement.era>=int(v2.rules.time_gate.requires_era): gate_open=true
+	if v2.planet=="earth" and v2.epoch=="present" and v2.settlement.era>=int(v2.rules.time_gate.requires_era): gate_open=true
 	return gate_open
+
+## The present-day Earth world is "home" (miniatures, exhibits, the island's town checks).
+func at_home() -> bool:
+	return v2.planet=="earth" and v2.epoch=="present"
 
 ## Miniatures and their island exhibits always belong to the present-day river: while the player is
 ## in another era the island reads (and edits) the stored present world through this.
 func home():
-	if v2.epoch=="present": return v2
+	if at_home(): return v2
 	if _home==null:
 		_home=PlanetV2.new()
 		if not _home.restore(timelines.get("present",{})): _home=PlanetV2.new()
 	return _home
 
 func home_saved() -> void:
-	if v2.epoch!="present" and _home!=null: timelines["present"]=_home.serialize()
+	if not at_home() and _home!=null: timelines["present"]=_home.serialize()
 
 ## The present world's save dict inside a PlanetProgram save (for LabState's town validation).
 static func home_data(planet_data) -> Dictionary:
 	if not planet_data is Dictionary: return {}
 	var live=planet_data.get("v2",{})
-	if live is Dictionary and str(live.get("epoch","present"))=="present": return live
+	if live is Dictionary and str(live.get("epoch","present"))=="present" and str(live.get("planet","earth"))=="earth": return live
 	var stored=planet_data.get("timelines",{})
 	return stored.get("present",{}) if stored is Dictionary else {}
 
@@ -170,13 +174,35 @@ const CARRY_FIELD=["stock","crafts"]
 const CARRY_NATURE=["seeds","minerals","discovered"]
 func travel(to: String) -> String:
 	if not v2.rules.epochs.has(to): return "没有这个时代"
+	if v2.planet!="earth": return "时间之门只通往地球的各个时代：先乘飞船回地球"
 	if to==v2.epoch: return "已经在%s" % str(v2.epoch_info().name)
 	if not gate_ready(): return gate_hint()
-	var here: Dictionary=v2.serialize(); var from=v2.epoch
-	var there: Dictionary
-	if timelines.has(to): there=timelines[to].duplicate(true)
-	else:
-		var fresh=PlanetV2.new(); fresh.begin_epoch(to); there=fresh.serialize()
+	var reason=_swap(to,func(): var fresh=PlanetV2.new(); fresh.begin_epoch(to); return fresh.serialize())
+	if not reason.is_empty(): return "时间之门不稳定：目标时代的存档无法读取"
+	return "穿过时间之门：%s · %s" % [str(v2.epoch_info().name),str(v2.epoch_info().get("era",""))]
+
+## v0.48 星际航行: fly the ship to another planet's present day. The ship, the backpack and what the
+## player carries go along; each planet's buildings, terrain and life stay where they are.
+func voyage(state,planet_id: String) -> String:
+	var ind=state.industry
+	if not PlanetV2.Shape.planets().planets.has(planet_id): return "星图上没有这颗星球"
+	if ind.ship=="": return "需要一艘星际飞船：在星锻岛载具总装厂建造并派往星球"
+	if planet_id==v2.planet: return "已经在%s" % str(PlanetV2.Shape.profile_of(planet_id).name)
+	var cost=float(ind.rules().ship.jump_wh)
+	if float(ind.ship_state.charge)<cost: return "飞船电量不足：跃迁要 %.0f Wh，现在 %.0f Wh（回浮岛充电）" % [cost,float(ind.ship_state.charge)]
+	var key=planet_id if planet_id=="earth" else planet_id+":present"
+	if planet_id=="earth": key="present"
+	var reason=_swap(key,func(): var fresh=PlanetV2.new(); fresh.begin_planet(planet_id); return fresh.serialize(),true)
+	if not reason.is_empty(): return "航线不稳定：目标星球的存档无法读取"
+	ind.ship_state.charge=float(ind.ship_state.charge)-cost
+	var info=PlanetV2.Shape.profile_of(planet_id)
+	return "跃迁完成：飞船进入%s（%s）轨道 · 第一人称进入就降落在着陆点" % [str(info.name),str(info.title)]
+
+## Swap the live world for `key` (made by `make` the first time). Carried things move across; with
+## `ship` the parked ship moves to the landing site beside the new world's start.
+func _swap(key: String,make: Callable,ship: bool=false) -> String:
+	var here: Dictionary=v2.serialize(); var from=v2.world_key()
+	var there: Dictionary=timelines[key].duplicate(true) if timelines.has(key) else make.call()
 	for k in CARRY_FIELD: there.field[k]=here.field[k]
 	for k in CARRY_NATURE: there.nature[k]=here.nature[k]
 	there.inventory=here.inventory; there.specimens=here.specimens; there.combat.player_health=here.combat.player_health
@@ -185,10 +211,12 @@ func travel(to: String) -> String:
 	for k in CARRY_FIELD: here.field[k]=left_behind.field[k]
 	for k in CARRY_NATURE: here.nature[k]=left_behind.nature[k]
 	here.inventory=left_behind.inventory; here.specimens=left_behind.specimens
+	if ship:
+		there.ship={"x":14.0,"z":21.0,"heading":0.0}; here.ship={}
 	var next=PlanetV2.new()
-	if not next.restore(there): return "时间之门不稳定：目标时代的存档无法读取"
-	timelines.erase(to); timelines[from]=here; v2=next; _home=null
-	return "穿过时间之门：%s · %s" % [str(v2.epoch_info().name),str(v2.epoch_info().get("era",""))]
+	if not next.restore(there): return "restore"
+	timelines.erase(key); timelines[from]=here; v2=next; _home=null
+	return ""
 
 func recipe_ids() -> Array:
 	return ["standard_water_crate"]+config.recipes.keys()+v2.field.rules.recipes.keys()
@@ -653,10 +681,19 @@ func restore(data,state) -> bool:
 		else: return false
 	# v0.39: inactive timelines are full worlds of their own; their products share the id space.
 	var saved_lines=data.get("timelines",{})
-	if not saved_lines is Dictionary or saved_lines.size()>restored_v2.rules.epochs.size()-1 or not data.get("gate_open",false) is bool: return false
+	# v0.48: Earth's eras keep bare keys; other planets are "<planet>:present".
+	var world_keys=restored_v2.rules.epochs.keys()
+	for id in PlanetV2.Shape.planets().planets:
+		if id!="earth": world_keys.append(id+":present")
+	if not saved_lines is Dictionary or saved_lines.size()>world_keys.size()-1 or not data.get("gate_open",false) is bool: return false
+	var needs_gate=restored_v2.planet=="earth" and restored_v2.epoch!="present"
+	var ships=0 if restored_v2.ship_at.is_empty() else 1
 	for e in saved_lines:
 		var line=PlanetV2.new()
-		if e==restored_v2.epoch or not restored_v2.rules.epochs.has(e) or not line.restore(saved_lines[e]) or line.epoch!=e: return false
+		if e==restored_v2.world_key() or not e in world_keys or not line.restore(saved_lines[e]) or line.world_key()!=e: return false
+		if not str(e).contains(":") and e!="present": needs_gate=true
+		if not line.ship_at.is_empty(): ships+=1
+		if ships>1: return false
 		if not line.field.crafts.is_empty(): return false
 		for source in line.construction.sources.values():
 			if not _valid_product(source.product,data,ids): return false
@@ -668,7 +705,7 @@ func restore(data,state) -> bool:
 			elif receipt.get("kind")!="sample" or not receipt.get("work") is Dictionary or not state.sandbox_validate(receipt.work): return false
 		for receipt in line.organics.inputs.values():
 			if not state.sandbox_validate(receipt.work) or state.sandbox_reference(receipt.work).get("reference_id","")!=receipt.reference: return false
-	if not saved_lines.is_empty() and not data.get("gate_open",false): return false
+	if needs_gate and not data.get("gate_open",false): return false
 	timelines=saved_lines.duplicate(true); gate_open=bool(data.get("gate_open",false)); _home=null
 	laminates=factory; materials=archive; retired_planet=retired.data
 	production_mode=data.production_mode

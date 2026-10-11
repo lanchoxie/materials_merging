@@ -4,6 +4,8 @@ signal acted(message: String)
 signal workshop_requested(recipe_id: String)
 signal synthesis_requested
 signal test_requested
+## v0.48: E at the starship opens the star map (handled by main: launching swaps the world).
+signal voyage_requested
 const UI=preload("res://scripts/ui.gd")
 const View=preload("res://scripts/planet_v2_view.gd")
 const ExplorationInput=preload("res://scripts/river_exploration_input.gd")
@@ -64,7 +66,8 @@ func setup(model) -> void:
 	selected_region=str(state.planet.v2.world.current_region)
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg=ColorRect.new(); bg.color=UI.BG; bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(bg)
-	var heading=UI.label("蓝色星球 · 从河湾出发，走遍整颗星球",30,UI.MINT); heading.position=Vector2(28,18); add_child(heading)
+	var here_planet: Dictionary=state.planet.v2.planet_info()
+	var heading=UI.label("蓝色星球 · 从河湾出发，走遍整颗星球" if state.planet.v2.planet=="earth" else "%s · %s" % [here_planet.name,here_planet.title],30,UI.MINT if state.planet.v2.planet=="earth" else Color("f0a878")); heading.position=Vector2(28,18); add_child(heading)
 	var sub=UI.label("地球仪 ↔ 第一人称   /   大洋、大陆、山脉与两极冰盖，纬度决定气候与植被   /   环绕一圈约16公里",14,UI.MUTED); sub.position=Vector2(30,62); add_child(sub)
 	var close=UI.button("返回浮岛",_close); close.position=Vector2(1288,22); close.size=Vector2(124,48); add_child(close)
 	time_label=UI.label("",19,UI.GOLD); time_label.position=Vector2(680,28); time_label.size=Vector2(580,38); time_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; add_child(time_label)
@@ -261,6 +264,24 @@ func _sync_rover() -> void:
 	var at=Vector2(float(v.rover_at.x),float(v.rover_at.z))
 	if not view.rover_parked or view.rover.position.distance_to(at)>0.5: view.park_rover(at,float(v.rover_at.heading))
 
+## v0.48: the starship stands where it landed (or beside the player the first time it is commissioned).
+func _sync_ship() -> void:
+	var v=state.planet.v2; var ind=state.industry
+	if ind.ship=="":
+		view.park_ship(null); v.ship_at={}; return
+	if v.ship_at.is_empty() and view.first_person:
+		var f=Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw)); var side=Vector2(-f.y,f.x)
+		for offset in [f*9.0+side*6.0,f*9.0-side*6.0,side*9.0,-side*9.0,f*12.0]:
+			var p=view.walker.position+offset
+			if view.terrain.inside(p,8) and not view.terrain.blocked(p,view.walker.barriers) and not view.terrain.water_at(p):
+				v.ship_at={"x":p.x,"z":p.y,"heading":view.walker.yaw}; break
+	if v.ship_at.is_empty(): view.park_ship(null); return
+	var at=Vector2(float(v.ship_at.x),float(v.ship_at.z))
+	if not view.ship_parked or view.ship_at.distance_to(at)>0.5: view.park_ship(at,float(v.ship_at.heading))
+
+func near_ship() -> bool:
+	return view.ship_parked and view.first_person and not view.driving and not view.flying and not view.boring and view.walker.position.distance_to(view.ship_at)<=6.0
+
 ## v0.47: the plane follows the deployed aircraft; it is parked beside the player the first time.
 func _sync_plane() -> void:
 	var v=state.planet.v2; var ind=state.industry
@@ -384,6 +405,7 @@ func _toggle_rover() -> bool:
 
 func _collect() -> void:
 	if is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
+	if near_ship(): message="登上星际飞船 · 打开星图"; _live(); voyage_requested.emit(); return
 	if _toggle_plane(): return
 	if _toggle_tbm(): return
 	if _toggle_rover(): return
@@ -913,6 +935,7 @@ func _sync() -> void:
 	_sync_rover()
 	_sync_tbm()
 	_sync_plane()
+	_sync_ship()
 	_live(); _aim()
 
 func _process(dt: float) -> void:

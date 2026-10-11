@@ -113,7 +113,7 @@ func _draw_map() -> void:
 	var z=maxf(top,Shape.NORTH); var last=Vector2.INF
 	while z<=minf(bottom,Shape.SOUTH):
 		var x=view.terrain.river_x(z); var s=to_screen(Vector2(x,z))
-		if Shape.continent(x,z)>0.03:
+		if Shape.continent(x,z,view.terrain.profile)>0.03:
 			if last!=Vector2.INF and (map_rect.has_point(last) or map_rect.has_point(s)): canvas.draw_line(last,s,Color("5fb3cf"),maxf(2.0,3.0*scale_px),true)
 			last=s
 		else: last=Vector2.INF

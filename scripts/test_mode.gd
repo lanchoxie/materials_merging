@@ -73,6 +73,14 @@ static func give_plane(s) -> String:
 	ind.deploy_plane("plane"); ind.plane_state.charge=float(ind.plane_state.cap)
 	return "测试：小飞机已派往地球并充满电"
 
+## v0.48: a commissioned, fully charged starship.
+static func give_ship(s) -> String:
+	var ind=s.industry
+	if not ind.unlocked: open_starforge(s,200)
+	ind.items["starship"]=int(ind.items.get("starship",0))+1; ind._reconcile("starship")
+	ind.deploy_ship("starship"); ind.ship_state.charge=float(ind.ship_state.cap)
+	return "测试：星际飞船已启用并充满电"
+
 static func open_starforge(s,credits: int) -> String:
 	var ind=s.industry
 	if not ind.unlocked: ind.unlocked=true; ind.plots=int(ind.rules().plots.start)
@@ -176,6 +184,6 @@ static func biome_spot(env,biome: String) -> Vector2:
 		for i in range(env.size):
 			var p: Vector2=env.cell_center(Vector2i(i,j))
 			if p.length()<1500 or not Shape.on_surface(p,200.0) or p.length()>=best.length(): continue
-			if Shape.continent(p.x,p.y)<0.15: continue
+			if Shape.continent(p.x,p.y,env.profile)<0.15: continue
 			if env.biome_at(p)==biome: best=p
 	return best
