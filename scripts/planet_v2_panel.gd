@@ -370,6 +370,28 @@ func _tbm_text() -> String:
 	var depth=floori(view.terrain.ground(Vector2(c.x,c.z)))-c.y
 	return "盾构机 · %s · %s · 电量 %d%%\n%s\n%s%s" % [t.GRADES[t.grade],"地下 %d 米" % depth if depth>0 else "地面",roundi(100.0*float(t.state.charge)/maxf(1.0,float(t.state.cap))),t.preview(view.v2),t.haul_text()," · "+t.message if t.message!="" else ""]
 
+## v0.49: talk with 溪石部落 — what they are building, their stock, friendship; gifts and trade.
+var native_box: PanelContainer
+func _native_menu() -> void:
+	if is_instance_valid(native_box): native_box.queue_free()
+	var v=state.planet.v2; var n=v.natives
+	native_box=PanelContainer.new(); native_box.add_theme_stylebox_override("panel",UI.style(Color(0.08,0.07,0.05,0.95),14))
+	native_box.position=viewport_box.position+Vector2(viewport_box.size.x*0.5-250,70); native_box.size=Vector2(500,10); add_child(native_box)
+	var col=UI.column(native_box,8)
+	col.add_child(UI.label("%s · 族长%s" % [n.rules.tribe.name,n.chief().get("name","")],20,Color("f0c890")))
+	var left=n.missing(v.construction).size()
+	col.add_child(UI.paragraph("友好度 %d%%（%s） · 库存 木料%d 石块%d 食物%d\n%s" % [roundi(n.friendship*100),n.mood(),int(n.stock.timber),int(n.stock.stone),int(n.stock.food),"两座小屋还差 %d 块，工匠%s正在%s" % [left,n._builder().name,n._builder().task] if left>0 else "两座小屋都已建好，部落在这里安了家"],14))
+	if not n.news.is_empty(): col.add_child(UI.paragraph("近况：%s" % n.news.back(),13,UI.MUTED))
+	var row=UI.row(col,6)
+	row.add_child(UI.button("送食物 ×%d" % int(n.rules.gift.food_amount),func(): _native_act("v2_native_gift",{"kind":"food"})))
+	row.add_child(UI.button("送木料 ×%d" % int(n.rules.gift.timber_amount),func(): _native_act("v2_native_gift",{"kind":"timber"})))
+	col.add_child(UI.button("交易：木料×%d + 纤维×%d → 生肉×%d" % [int(n.rules.trade.give.timber),int(n.rules.trade.give.fiber),int(n.rules.trade.get.meat)],func(): _native_act("v2_native_trade",{})))
+	col.add_child(UI.paragraph("友好度到 %d%% 时，族长每天回赠一只部落陶罐。拆他们的房子或对他们动手会让友好度下降。" % roundi(float(n.rules.friendship.gift_back)*100),12,UI.MUTED))
+	col.add_child(UI.button("告辞",func(): native_box.queue_free()))
+
+func _native_act(command: String,payload: Dictionary) -> void:
+	message=state.planet.command(state,command,payload); _live(); _native_menu()
+
 var cook_box: PanelContainer
 func _cook_menu() -> void:
 	if is_instance_valid(cook_box): cook_box.queue_free()
@@ -413,6 +435,7 @@ func _collect() -> void:
 	_update_actor()
 	var aimed=state.planet.v2.Target.query(state.planet.v2)
 	if aimed.get("kind","")=="campfire": _cook_menu(); return
+	if aimed.get("entity",{}).get("type","")=="native": _native_menu(); return
 	if aimed.get("kind","")=="farm_robot" and aimed.get("type","")=="block":
 		var held_robot: Dictionary=state.planet.v2.inventory.entries(state).get(str(state.planet.v2.inventory.slots[state.planet.v2.inventory.selected]),{})
 		if held_robot.get("action",{}).get("type","")!="remove": view.hands.swing(); _act("v2_robot",{"key":aimed.key}); return
@@ -928,6 +951,8 @@ func _sync() -> void:
 	view.settlement_view.paused=v.world.paused
 	view.settlement_view.depot_position=v.ranch.depot_at(v)
 	view.settlement_view.sync(v.settlement,at)
+	view.native_view.paused=v.world.paused
+	view.native_view.sync(v.natives,at)
 	view.life_view.era=v.settlement.era
 	view.journey_view.sync(v.journey,at,not view.first_person)
 	view.weather=v.incidents.sky(v)

@@ -48,6 +48,9 @@ var boring=false
 ## here). The ship travels with the player between planets.
 var planet="earth"
 var ship_at: Dictionary={}
+## v0.49: the native tribe (present-day Earth only).
+const Natives=preload("res://scripts/river_natives.gd")
+var natives=Natives.new()
 ## v0.47 小飞机: where it is parked ({x, z, heading}) and whether the player is flying it.
 var plane_at: Dictionary={}
 var flying=false
@@ -55,6 +58,7 @@ var flying=false
 func _init() -> void:
 	world=fresh()
 	_link_geometry()
+	natives.enabled=true
 
 func _link_geometry() -> void:
 	construction.terrain.nature=nature
@@ -76,6 +80,7 @@ func epoch_info() -> Dictionary:
 ## v0.48: generate this world as `id` (Earth's profile is {} so Earth stays byte-identical).
 func set_planet(id: String) -> void:
 	planet=id if Shape.planets().planets.has(id) else "earth"
+	natives.enabled=planet=="earth" and epoch=="present"
 	var p: Dictionary={} if planet=="earth" else Shape.profile_of(planet)
 	construction.terrain.set_profile(p); environment.set_profile(p)
 
@@ -92,6 +97,7 @@ func begin_planet(id: String) -> void:
 
 func begin_epoch(id: String) -> void:
 	set_epoch(id); world=fresh()
+	natives=Natives.new(); natives.enabled=planet=="earth" and epoch=="present"
 	if not bool(epoch_info().get("crops",true)):
 		for r in world.regions.values(): r.crops=[]
 	world.events=[{"time":0,"text":str(epoch_info().get("story","河湾已苏醒。"))}]
@@ -285,6 +291,7 @@ func _step() -> void:
 
 	ranch.tick(self)
 	field.robot_tick(self)
+	natives.tick(self)
 
 func collect_wild(at: Vector2) -> String:
 	if not population.harvest(at): return "走近成熟野生植被再采集；采集后需要等待再生"
@@ -367,7 +374,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate()}
+	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize()}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -489,6 +496,14 @@ func restore(data) -> bool:
 	var restored_combat=Combat.new()
 	if data.has("combat") and not restored_combat.restore(data.combat): return false
 	if data.has("construction") and not restored_construction.restore(data.construction): return false
+	# v0.49: the tribe (older saves have none yet: a fresh tribe settles on present-day Earth).
+	var restored_natives=Natives.new()
+	if data.has("natives"):
+		if not restored_natives.restore(data.natives,restored_construction): return false
+	else:
+		for b in restored_construction.blocks.values():
+			if Natives.is_native(b): return false
+		restored_natives.enabled=world_planet=="earth" and str(data.get("epoch","present"))=="present"
 	var restored_settlement=Settlement.new()
 	if data.has("settlement") and not restored_settlement.restore(data.settlement): return false
 	var restored_inventory=Inventory.new()
@@ -517,6 +532,7 @@ func restore(data) -> bool:
 	field=restored_field; restored_construction.occupied=field.gardens
 	inventory=restored_inventory
 	world=w.duplicate(true); population=restored_population; construction=restored_construction; settlement=restored_settlement; nature=restored_nature; combat=restored_combat; actor={}; active=false
+	natives=restored_natives
 	_link_geometry()
 	planet=world_planet
 	set_epoch(str(data.get("epoch","present")))

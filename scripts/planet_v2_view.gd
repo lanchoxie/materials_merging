@@ -69,6 +69,8 @@ var flying=false
 var plane_parked=false
 var plane_node: Node3D
 var far_terrain
+## v0.49: the native tribe's people and woodpile.
+var native_view
 var sea_node: MeshInstance3D
 ## v0.45 盾构机: parked on the planet, or bored from its seat (a chase camera inside the tunnel).
 const Tbm=preload("res://scripts/planet_tbm.gd")
@@ -175,6 +177,7 @@ func _ready() -> void:
 	life_view=LifeView.new(); life_view.terrain=terrain; life_view.material=mat; life_view.water_material=water_mat; terrain_root.add_child(life_view)
 	construction_view=preload("res://scripts/river_construction_view.gd").new(); construction_view.material=mat; terrain_root.add_child(construction_view)
 	settlement_view=preload("res://scripts/river_settlement_view.gd").new(); settlement_view.material=mat; settlement_view.terrain=terrain; terrain_root.add_child(settlement_view)
+	native_view=preload("res://scripts/river_native_view.gd").new(); native_view.material=mat; native_view.terrain=terrain; terrain_root.add_child(native_view)
 	field_view=preload("res://scripts/river_field_view.gd").new(); field_view.material=mat; terrain_root.add_child(field_view)
 	organic_view=preload("res://scripts/river_organic_view.gd").new(); organic_view.material=mat; terrain_root.add_child(organic_view)
 	journey_view=preload("res://scripts/journey_view.gd").new(); journey_view.material=mat; journey_view.terrain=terrain; terrain_root.add_child(journey_view)
@@ -301,6 +304,8 @@ func entity_hitboxes() -> Dictionary:
 		_entity_shape(shapes,("wild:" if parts[1]=="animal" else "visitor:")+parts[0]+":"+parts[2],life_view.moving[key])
 	for id in settlement_view.members:
 		_entity_shape(shapes,"resident:"+str(int(id)),settlement_view.members[id].get_child(0))
+	for id in native_view.members:
+		_entity_shape(shapes,"native:"+str(int(id)),native_view.members[id].get_child(0))
 	return shapes
 
 func _entity_shape(shapes: Dictionary,key: String,node: MeshInstance3D) -> void:

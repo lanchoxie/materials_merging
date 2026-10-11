@@ -34,6 +34,11 @@ func entities(v) -> Array:
 				out.append({"key":key,"type":"visitor" if human else "wild","row":a,"position":Vector2(s.x+a.x,s.z+a.z),"origin":Vector2(s.x,s.z),"scale":1.0,"fish":false,"name":a.name if human else str(WILD_NAMES.get(a.species,"林间小鹿")),"height":1.55 if human else float(WILD_HEIGHT.get(a.species,0.8)),"id":a.id,"site":s.id})
 	for a in v.settlement.people:
 		out.append({"key":"resident:"+str(int(a.id)),"type":"resident","row":a,"position":Vector2(a.x,a.z),"origin":Vector2.ZERO,"scale":1.0,"fish":false,"name":a.name,"height":1.65,"id":a.id})
+	# v0.49: the tribe's people (talk to the chief with E).
+	if v.natives.enabled:
+		for a in v.natives.members:
+			if Vector2(a.x,a.z).distance_to(observer)>70.0: continue
+			out.append({"key":"native:"+str(int(a.id)),"type":"native","row":a,"position":Vector2(a.x,a.z),"origin":Vector2.ZERO,"scale":1.0,"fish":false,"name":a.name,"height":1.62,"id":a.id})
 	return out
 
 func busy(key: String) -> bool:
@@ -47,6 +52,8 @@ func strike(target: Dictionary,v) -> String:
 	if attack_left>0: return "稍等，手臂还在收回"
 	if not target.has("entity") or target.distance>float(rules.reach): return "靠近目标后再挥击"
 	var e: Dictionary=target.entity
+	# v0.49: the tribe's people dodge; it costs friendship, not health.
+	if e.type=="native": attack_left=float(rules.hit_cooldown); return v.natives.attacked(e.row)
 	if e.row.get("health",1)<=0: return "目标已经离开"
 	if not records.has(e.key) and records.size()>=int(rules.max_records): return "遭遇记录已满，等待已有怒气消退"
 	v.ranch.attacked(e,int(v.world.elapsed))

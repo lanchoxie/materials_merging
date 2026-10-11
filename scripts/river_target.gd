@@ -108,7 +108,10 @@ static func prompt(v,target: Dictionary) -> String:
 				if plot.is_empty(): return text+" · 装备种子播种"
 				return text+" · 生长%.0f%% / 湿度%.0f%% · %s" % [plot.growth*100,plot.moisture*100,"E 收获" if plot.growth>=1 else ("需要浇水" if plot.moisture<0.25 else ("叶尖受损，停止追加肥料" if v.organics.injury(target.key)>0.15 else ("补肥生长中" if v.organics.growth_factor(target.key)>1 else "正在生长")))]
 			return text+" · 装备拆卸锤可收回"
-		"creature": return text+" · 血量%.0f%% · %s" % [target.health*100,v.combat.reaction(target.entity)]
+		"creature":
+			# v0.49: the tribe's people are talked to, not fought.
+			if target.entity.type=="native": return text+" · %s · %s · E 交谈（友好度 %d%%，%s）" % [target.entity.row.title,target.entity.row.task,roundi(v.natives.friendship*100),v.natives.mood()]
+			return text+" · 血量%.0f%% · %s" % [target.health*100,v.combat.reaction(target.entity)]
 		"animal": return text+" · 健康%.0f%% · %s" % [target.health*100,"观察水质与溶氧" if target.fish else "装备野果喂食"]
 		"depot": return text+" · 食物%d · 水%d · E 把背包里的口粮/谷穗/野果和水样存进来" % [v.settlement.stored_food(),int(v.ranch.depot.water)]
 		"facility": return text+(" · E 开关围栏" if target.recipe=="frame_bundle" else " · 背包补充相应运行材料")

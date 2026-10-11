@@ -11,6 +11,7 @@ static func survey(c,target: Dictionary) -> Dictionary:
 		if chosen.has(k): continue
 		if chosen.size()>=64: return {"error":"一盒最多收纳64块；先用拆卸锤拆开作品之间的连接"}
 		if c.occupied.has(k): return {"error":"先收获作品里种植箱的作物"}
+		if c.is_native(c.blocks[k]): return {"error":"这是部落的房子，不能装进微缩盒"}
 		chosen[k]=c.blocks[k]
 		for n in c.neighbors(c.cell(c.blocks[k])):
 			var next=c.key(n)

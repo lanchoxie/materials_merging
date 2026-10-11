@@ -110,7 +110,8 @@ func _initialize() -> void:
 	rv.field.stock.timber=4; real.planet.command(real,"pack",{"recipe":"field_wall","production_mode":"island"}); real.planet.tick(60,1)
 	above(rv,Vector2(15,14)); real.planet.command(real,"v2_build",{"kind":"block","recipe":"field_wall"})
 	var rc=rv.construction
-	check(rc.blocks.size()==1,"factory-issued material can be placed before packing")
+	# v0.49: the tribe may already be building its village; count the player's own blocks.
+	check(rc.blocks.size()-rc.native_count()==1,"factory-issued material can be placed before packing")
 	real.planet.command(real,"v2_mini_pack"); real.planet.command(real,"v2_mini_exhibit",{"id":"1","plot":4})
 	var reload=State.new()
 	check(reload.planet.restore(JSON.parse_string(JSON.stringify(real.planet.serialize())),reload) and reload.planet.v2.construction.miniatures.size()==1,"full production ledger with exhibited model round-trips through planet save validation")

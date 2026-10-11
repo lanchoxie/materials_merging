@@ -30,6 +30,16 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.49.0 "Settlers" (溪石部落)
+Full notes: [38-settlers.md](38-settlers.md).
+- **The first native tribe.** 溪石部落 settles a level spot near home on present-day Earth.
+- **They build.** Their builder puts up two huts block by block from their own stock, with the same block kit as the
+  player (log walls, fibre roofs, stone campfires). The huts give real shelter.
+- **Their village is theirs.** They gather and eat each day. Take one of their blocks and they notice and rebuild it.
+- **Talking to them.** E on a tribe member opens the chief's menu: gifts (friendship; good friends give a pottery jar
+  back each day) and trade (timber + fibre → meat). Raising a hand only costs friendship.
+- **Tests.** New: `test_natives` (28); `test_sandbox12` counts the player's own blocks.
+
 ## v0.48.0 "Starship" (星际飞船 · 赤砂星)
 Full notes: [37-starship.md](37-starship.md).
 - **A second planet: 赤砂星.** Hotter, drier, mostly land, with taller ranges and four times the hematite. Rust-red

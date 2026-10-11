@@ -53,6 +53,11 @@
       "name": "热汤",
       "icon": "fruit",
       "color": "d9874f"
+    },
+    "pottery": {
+      "name": "部落陶罐",
+      "icon": "crate",
+      "color": "b8754a"
     }
   },
   "garden": {

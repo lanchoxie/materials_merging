@@ -63,7 +63,7 @@ func solid_height(b: Dictionary, c: Vector3i, p: Vector2) -> float:
 func count_walls(near: Vector2=Vector2(INF,INF), radius: float=INF) -> int:
 	var count := 0
 	for b in blocks.values():
-		if (b.kind=="block" or rules.kinds[b.kind].get("wall",false)) and (not is_finite(near.x) or Vector2(b.x,b.z).distance_to(near)<=radius): count+=1
+		if (b.kind=="block" or rules.kinds[b.kind].get("wall",false)) and not is_native(b) and (not is_finite(near.x) or Vector2(b.x,b.z).distance_to(near)<=radius): count+=1
 	return count
 
 ## v0.44: open or close a door. Closing is refused while you stand in the doorway.
@@ -158,7 +158,7 @@ func floor_at(p: Vector2, ceiling: float) -> float:
 func count_kind(kind: String, near: Vector2=Vector2(INF,INF), radius: float=INF) -> int:
 	var count := 0
 	for b in blocks.values():
-		if b.kind == kind and (not is_finite(near.x) or Vector2(b.x,b.z).distance_to(near)<=radius): count+=1
+		if b.kind == kind and not is_native(b) and (not is_finite(near.x) or Vector2(b.x,b.z).distance_to(near)<=radius): count+=1
 	return count
 
 ## v0.39: a built piece of `kind` within `radius` m of a point (campfires for warmth).
@@ -196,8 +196,17 @@ func available(kind: String, products: Array, recipe_id: String="") -> int:
 		if r.get("kind") == kind and (recipe_id.is_empty() or p.recipe==recipe_id): result += int(r.units)
 	return result
 
+## v0.49: blocks a native tribe built (source "native:tribe") have their own cap and ledger.
+func is_native(b: Dictionary) -> bool:
+	return str(b.get("source","")).begins_with("native:")
+
+func native_count() -> int:
+	var n := 0
+	for b in blocks.values(): n += 1 if is_native(b) else 0
+	return n
+
 func place_error(c: Vector3i, actor: Dictionary, check_reach: bool=true, kind: String="") -> String:
-	if blocks.size() >= int(rules.max_blocks): return "本星球已放满512块构件"
+	if blocks.size()-native_count() >= int(rules.max_blocks): return "本星球已放满512块构件"
 	if not occupant(c).is_empty(): return "这里已经有构件"
 	var tall: bool = bool(shape_of(kind).get("door",false))
 	if tall:
@@ -228,7 +237,12 @@ func interact(mode: String, kind: String, products: Array, actor: Dictionary, re
 		if occupied.has(k): return "先收获作物、用完土壤余肥，或清空设施余料，再拆回"
 		var rest := blocks.duplicate(); rest.erase(k)
 		if not connected(rest): return "上方或旁边还有依赖它的构件，请从边缘往回拆"
-		var b: Dictionary = blocks[k]; sources[b.source].remaining+=1; blocks.erase(k); revision+=1
+		var b: Dictionary = blocks[k]
+		if is_native(b):
+			# v0.49: taking a tribe's block gives you nothing; they notice and rebuild it.
+			blocks.erase(k); revision+=1
+			return "拆下了部落的"+str(rules.kinds[b.kind].name)+"——这是他们的东西，部落会不高兴，也会把它补回去"
+		sources[b.source].remaining+=1; blocks.erase(k); revision+=1
 		return "已拆回1块"+str(rules.kinds[b.kind].name)+"，回到原材料包"
 	if mode != "place" or not rules.kinds.has(kind): return "请选择建造工具"
 	var reason := place_error(hit.target,actor,true,kind)
@@ -267,7 +281,8 @@ func serialize() -> Dictionary:
 
 func restore(data) -> bool:
 	if not data is Dictionary or data.get("version")!=1 or not data.get("sources") is Dictionary or not data.get("blocks") is Dictionary: return false
-	if data.sources.size()>int(rules.max_sources) or data.blocks.size()>int(rules.max_blocks): return false
+	if data.sources.size()>int(rules.max_sources) or data.blocks.size()>int(rules.max_blocks)+NATIVE_MAX: return false
+	var natives := 0
 	var counts := {}
 	for id in data.sources:
 		var s=data.sources[id]
@@ -276,6 +291,14 @@ func restore(data) -> bool:
 		counts[id]=int(s.remaining)
 	for k in data.blocks:
 		var b=data.blocks[k]
+		if b is Dictionary and str(b.get("source","")).begins_with("native:"):
+			# A tribe's block: no product ledger; its kind and place are checked by the natives model.
+			natives += 1
+			if str(b.source)!="native:tribe" or not b.get("kind") in NATIVE_KIT or natives>NATIVE_MAX: return false
+			for axis in ["x","z"]:
+				if not _integer(b.get(axis),-int(terrain.rules.radius),int(terrain.rules.radius)): return false
+			if not _integer(b.get("y"),-16,100) or key(cell(b))!=k: return false
+			continue
 		if not b is Dictionary or not rules.kinds.has(b.get("kind")) or not data.sources.has(b.get("source")): return false
 		for axis in ["x","z"]:
 			if not _integer(b.get(axis),-int(terrain.rules.radius),int(terrain.rules.radius)): return false
@@ -306,6 +329,7 @@ func restore(data) -> bool:
 			if not replica: counts[b.source]+=1
 	for id in counts:
 		if counts[id]!=int(rules.recipes[data.sources[id].product.recipe].units): return false
+	if data.blocks.size()-natives>int(rules.max_blocks): return false
 	if not connected(data.blocks): return false
 	sources=data.sources.duplicate(true); blocks=data.blocks.duplicate(true); miniatures=boxes.duplicate(true); miniature_serial=int(data.get("miniature_serial",1)); revision+=1
 	return true
@@ -316,6 +340,9 @@ func _piece_ok(b: Dictionary) -> bool:
 	if b.has("rot") and (not shape.get("rotate",false) or not _integer(b.rot,0,3)): return false
 	if b.has("open") and (not shape.get("door",false) or not b.open is bool): return false
 	return true
+
+const NATIVE_KIT := ["block","roof","campfire"]
+const NATIVE_MAX := 64
 
 func _integer(value, lo: int, hi: int) -> bool:
 	return (value is float or value is int) and is_finite(float(value)) and float(value)==floor(float(value)) and value>=lo and value<=hi

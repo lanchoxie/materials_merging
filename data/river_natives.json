@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "note": "v0.49 Settlers: the first native tribe on Earth (present day). They live a few hundred metres from home, build two huts with the same block kit as the player (wood walls, fibre roofs, a stone campfire), repair what is taken away, gather each day, eat from their stock, and trade with the player. Game values.",
+  "tribe": {
+    "name": "溪石部落",
+    "search_start": [260, -180],
+    "search_step": 8,
+    "search_rings": 30
+  },
+  "members": [
+    {"id": 1, "name": "岩川", "role": "chief", "title": "族长"},
+    {"id": 2, "name": "苇生", "role": "builder", "title": "工匠"},
+    {"id": 3, "name": "阿栗", "role": "gatherer", "title": "采集者"},
+    {"id": 4, "name": "小溪", "role": "gatherer", "title": "采集者"}
+  ],
+  "huts": [[-4, 0], [4, 0]],
+  "kit": ["block", "roof", "campfire"],
+  "costs": {
+    "block": {"timber": 1},
+    "roof": {"timber": 1},
+    "campfire": {"stone": 2}
+  },
+  "start_stock": {"timber": 12, "stone": 4, "food": 8},
+  "caps": {"timber": 60, "stone": 30, "food": 40},
+  "gather_per_day": {"timber": 8, "stone": 3, "food": 6},
+  "day_seconds": 60,
+  "plan_seconds": 5,
+  "build_seconds": 4,
+  "walk_speed": 1.3,
+  "reach": 1.8,
+  "max_blocks": 64,
+  "friendship": {
+    "removed_block": -0.1,
+    "attacked": -0.3,
+    "gift": 0.1,
+    "daily_drift": 0.02,
+    "trade_min": -0.2,
+    "gift_back": 0.6
+  },
+  "gift": {"food": ["grain", "fruit", "cooked_meat"], "food_amount": 2, "timber_amount": 4, "per_day": 3},
+  "trade": {"give": {"timber": 3, "fiber": 2}, "get": {"meat": 2}, "per_day": 3},
+  "pottery": {"resource": "pottery", "per_day": 1}
+}
