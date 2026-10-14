@@ -218,7 +218,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.51 工艺路线面板 · 元素来源 · 铯榴石更好找" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.52 晶格工作台 · 周期位点吸附 · 结构物态推算" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -608,7 +608,7 @@ func _rebuild_sidebar() -> void:
 		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		badge.add_theme_stylebox_override("panel",UI.style(Color(str(ReactorLook.PHASE_COLORS.get(phase_id,"5b6f73"))).darkened(0.55),10,Color(str(ReactorLook.PHASE_COLORS.get(phase_id,"8aa0a4")))))
 		badge.add_child(UI.label(ReactorLook.PHASE_NAMES.get(phase_id,"未鉴定"),15,Color(str(ReactorLook.PHASE_COLORS.get(phase_id,"c8d4d6")))))
-		badge.tooltip_text = ReactorLook.phase_text(str(tpl.get("reference_id",""))) if not phase_id.is_empty() else "结构未收录，物态未鉴定"
+		badge.tooltip_text = state.reactor_phase_text(r) if not phase_id.is_empty() else "结构未收录，物态未鉴定"
 		formula_row.add_child(badge)
 		badge.pivot_offset = Vector2(24,14); badge.scale = Vector2(0.6,0.6)
 		badge.create_tween().tween_property(badge,"scale",Vector2.ONE,0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

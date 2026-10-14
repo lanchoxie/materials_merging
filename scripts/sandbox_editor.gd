@@ -9,6 +9,8 @@ signal synthesis_requested
 const UI = preload("res://scripts/ui.gd")
 const MAX_ATOMS := 64
 const ChemIndex = preload("res://scripts/chem_index.gd")
+const StructureSandbox = preload("res://scripts/structure_sandbox.gd")
+const ReactorLook = preload("res://scripts/reactor_look.gd")
 const LIMIT := 20.0
 var state
 var reactor_index := -1
@@ -45,7 +47,15 @@ var bond_order: OptionButton
 var bond_label: Label
 var periodic_toggle: CheckButton
 var repeat_toggle: CheckButton
+## v0.52: whether a dragged or nudged atom is pulled onto the cell boundary.
+var snap_to_cell := false
 var cell_inputs: Array = []
+## v0.52 (user: 需要可以知道一些晶格参数，然后显示周期性位点，包括原子是否放置在周期性边界条件上):
+## α/β/γ so the cell can be non-orthogonal, a snap toggle, and a lattice/site readout.
+var angle_inputs: Array = []
+var snap_toggle: CheckButton
+var lattice_label: Label
+var site_label: Label
 var apply_button: Button
 var undo_button: Button
 var delete_button: Button
@@ -282,6 +292,32 @@ func _build_tools() -> void:
 		spin.value_changed.connect(_cell_changed.bind(axis))
 		column.add_child(spin)
 		cell_inputs.append(spin)
+	# v0.52: the three cell angles. 90/90/90 is the old orthogonal cell, so nothing about the
+	# existing presets changes until the player moves one.
+	var angle_row := UI.row(body, 6)
+	for axis in range(3):
+		var column := UI.column(angle_row, 4)
+		column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		column.add_child(UI.label(["α / °", "β / °", "γ / °"][axis], 13))
+		var spin := SpinBox.new()
+		spin.min_value = 30.0
+		spin.max_value = 150.0
+		spin.step = 1.0
+		spin.value = 90.0
+		spin.custom_minimum_size = Vector2(130, 46)
+		spin.value_changed.connect(_angle_changed.bind(axis))
+		column.add_child(spin)
+		angle_inputs.append(spin)
+	# The lattice readout: lengths, angles and the cell volume, recomputed as the spin boxes move.
+	lattice_label = UI.paragraph("", 14, UI.LILAC)
+	body.add_child(lattice_label)
+	snap_toggle = CheckButton.new()
+	snap_toggle.text = "吸附到晶胞边界（周期位点）"
+	snap_toggle.custom_minimum_size.y = 46
+	snap_toggle.toggled.connect(func(value: bool): snap_to_cell = value; _update_readout())
+	body.add_child(snap_toggle)
+	site_label = UI.paragraph("", 14, UI.MINT)
+	body.add_child(site_label)
 	repeat_toggle = CheckButton.new()
 	repeat_toggle.text = "显示 2×2×2 重复（预览不耗原子）"
 	repeat_toggle.custom_minimum_size.y = 46
@@ -340,6 +376,8 @@ func _rebuild(fit: bool = false) -> void:
 	for axis in range(3):
 		cell_inputs[axis].set_value_no_signal(float(draft.cell[axis]))
 		cell_inputs[axis].editable = bool(draft.periodic)
+		angle_inputs[axis].set_value_no_signal(float(_angles()[axis]))
+		angle_inputs[axis].editable = bool(draft.periodic)
 	var old_a: int = maxi(0, pair_a.selected)
 	var old_b: int = maxi(1, pair_b.selected)
 	pair_a.clear()
@@ -423,6 +461,9 @@ func _nudge(axis: int, amount: float) -> void:
 	if is_equal_approx(old, value): return
 	_checkpoint()
 	draft.positions[selected][axis] = value
+	if snap_to_cell and bool(draft.periodic):
+		var snapped := StructureSandbox.snap_to_cell(draft, _position(selected))
+		draft.positions[selected] = [snapped.x, snapped.y, snapped.z]
 	_render()
 	_update_readout()
 
@@ -495,6 +536,46 @@ func _cell_changed(value: float, axis: int) -> void:
 	draft.baseline_id = ""
 	_render()
 	_update_readout()
+
+func _angle_changed(value: float, axis: int) -> void:
+	if updating or not _angles().size()==3: return
+	var angles: Array = _angles()
+	if is_equal_approx(float(angles[axis]), value): return
+	_checkpoint()
+	angles[axis] = value
+	draft["cell_angles"] = angles
+	draft.baseline_id = ""
+	_render()
+	_update_readout()
+
+## The draft's cell angles, defaulting to the orthogonal 90/90/90 for older structures.
+##
+## This is a **pure read**: it must not add the key to the draft. Doing so made `draft != original`
+## true the moment the editor opened, so closing a structure the player never touched raised the
+## "尚未保存的修改" dialog instead of closing (caught by test_organic15_ui).
+func _angles() -> Array:
+	return draft.cell_angles if draft.has("cell_angles") else [90.0, 90.0, 90.0]
+
+## v0.52: the lattice parameters and the volume, and — for the selected atom — its fractional
+## coordinates and which periodic site it sits on (角点/棱心/面心/胞内), with the share of an atom
+## that site represents. This is the answer to "is this atom on the boundary?".
+func _update_lattice_readout() -> void:
+	if lattice_label == null: return
+	if not bool(draft.periodic):
+		lattice_label.text = "启用周期边界后，这里显示晶格参数与位点。"
+		site_label.text = ""
+		return
+	var cell: Array = draft.get("cell", [6.0, 6.0, 6.0]); var angles: Array = _angles()
+	var v := absf(StructureSandbox.lattice(cell, angles).determinant())
+	lattice_label.text = "a=%.3f  b=%.3f  c=%.3f Å　α=%.0f°  β=%.0f°  γ=%.0f°　V=%.1f Å³" % [float(cell[0]), float(cell[1]), float(cell[2]), float(angles[0]), float(angles[1]), float(angles[2]), v]
+	if selected < 0:
+		site_label.text = "选中一个原子，看它的分数坐标与位点。"
+		return
+	var position := Vector3(float(draft.positions[selected][0]), float(draft.positions[selected][1]), float(draft.positions[selected][2]))
+	var frac := StructureSandbox.fractional(draft, position)
+	var site := StructureSandbox.site(frac)
+	var on_cell := "在晶胞上" if float(site.share) < 1.0 else "在晶胞内部"
+	site_label.text = "分数坐标 (%.3f, %.3f, %.3f)　%s：%s · 等效原子 %.3f 个" % [frac.x, frac.y, frac.z, on_cell, str(site.name), float(site.share)]
 
 func _undo() -> void:
 	if history.is_empty(): return
@@ -612,8 +693,15 @@ func _message(value: String) -> void:
 
 func _update_readout() -> void:
 	if selected_label == null: return
-	summary_label.text = "%s  ·  %d / 64 原子  ·  %d 连接" % [state.sandbox_formula(draft), draft.atoms.size(), draft.bonds.size()]
+	# v0.52 (user: 有些气液固还是没展示出来): the authoring surface says what phase this build reads
+	# as, so a custom structure is never a blank chamber in the reactor.
+	var ph: Dictionary = ReactorLook.estimate(draft, str(draft.get("baseline_id","")))
+	var phase_bit := ""
+	if not ph.is_empty():
+		phase_bit = "  ·  %s%s" % [ReactorLook.PHASE_NAMES.get(str(ph.get("phase","")),"未鉴定"),"" if bool(ph.get("exact",false)) else "（推测）"]
+	summary_label.text = "%s  ·  %d / 64 原子  ·  %d 连接%s" % [state.sandbox_formula(draft), draft.atoms.size(), draft.bonds.size(), phase_bit]
 	selected_label.text = "尚未选择原子" if selected < 0 else "%s #%02d    %.2f, %.2f, %.2f Å" % [draft.atoms[selected], selected + 1, draft.positions[selected][0], draft.positions[selected][1], draft.positions[selected][2]]
+	_update_lattice_readout()
 	delete_button.disabled = selected < 0 or composition_locked
 	replace_button.disabled = selected < 0 or composition_locked
 	undo_button.disabled = history.is_empty()
@@ -755,13 +843,16 @@ func _tube(first: Vector3, second: Vector3, radius: float, color: Color) -> void
 	mesh.material_override = material
 	specimens.add_child(mesh)
 
+## v0.52: the cell is drawn from the same lattice matrix the site readout uses, so a non-orthogonal
+## cell (α/β/γ ≠ 90°) is drawn correctly instead of as an axis-aligned box.
 func _draw_cell(offset: Vector3) -> void:
+	var m := StructureSandbox.lattice(draft.get("cell", [6.0, 6.0, 6.0]), _angles())
 	for corner in range(8):
-		var point := offset + Vector3(float(draft.cell[0]) if corner & 1 else 0.0, float(draft.cell[1]) if corner & 2 else 0.0, float(draft.cell[2]) if corner & 4 else 0.0)
+		var point: Vector3 = offset + m * Vector3(1.0 if corner & 1 else 0.0, 1.0 if corner & 2 else 0.0, 1.0 if corner & 4 else 0.0)
 		for bit in [1, 2, 4]:
 			var other: int = corner ^ bit
 			if other <= corner: continue
-			var end := offset + Vector3(float(draft.cell[0]) if other & 1 else 0.0, float(draft.cell[1]) if other & 2 else 0.0, float(draft.cell[2]) if other & 4 else 0.0)
+			var end: Vector3 = offset + m * Vector3(1.0 if other & 1 else 0.0, 1.0 if other & 2 else 0.0, 1.0 if other & 4 else 0.0)
 			_tube(point, end, 0.015, Color("39766c"))
 
 func _fit_view() -> void:
@@ -840,6 +931,9 @@ func _drag(point: Vector2) -> void:
 	if hit == null: return
 	var target: Vector3 = hit + grab_offset
 	target = target.clamp(Vector3.ONE * -LIMIT, Vector3.ONE * LIMIT)
+	# v0.52: with 吸附到晶胞边界 on (and PBC enabled), a near-boundary atom lands exactly on the
+	# boundary and anything outside wraps into the cell — the periodic image you can edit.
+	if snap_to_cell and bool(draft.periodic): target = StructureSandbox.snap_to_cell(draft, target)
 	if target.distance_squared_to(_position(selected)) < 0.000001: return
 	if not drag_saved:
 		_checkpoint()

@@ -53,6 +53,32 @@ static func phase_text(template_id: String) -> String:
 		elif p.get("decomposes", false): parts.append("熔化即分解")
 	return "%s · %s（25 °C）" % [PHASE_NAMES[p.phase], " / ".join(parts)]
 
+## v0.52 (user: 有些气液固还是没展示出来): a phase for structures the sourced table does not cover.
+## The 17 entries in phases.json are real data; anything else used to show 未鉴定 and fill nothing, so
+## a player-built crystal or molecule looked like an empty chamber. This is a clearly-labelled
+## **estimate** from the geometry the player authored — never presented as measured data.
+const METALS: Array = ["Li","Na","Cs","Ca","Mg","Al","Fe","Cu","Pb","Sn","Si","Zn","Ag","Au"]
+
+static func estimate(work: Dictionary, reference_id: String="") -> Dictionary:
+	if not reference_id.is_empty():
+		var p: Dictionary=phase(reference_id)
+		if not p.is_empty(): return {"phase":str(p.phase),"text":phase_text(reference_id),"exact":true}
+	var atoms: Array=work.get("atoms",[])
+	if atoms.is_empty() and work.get("struct",{}).is_empty(): return {}
+	var periodic: bool=bool(work.get("periodic",false)) or not work.get("occupancies",[]).is_empty() or str(work.get("chapter",""))=="晶体"
+	if periodic:
+		return {"phase":"solid","text":"固态 · 晶格（按你的晶胞推测，非实测）","exact":false}
+	var metals: int=0
+	for symbol in atoms:
+		if METALS.has(str(symbol)): metals+=1
+	if atoms.is_empty(): return {}
+	if metals>0:
+		return {"phase":"solid","text":"固态 · 含金属（推测：金属与盐在室温下通常为固体）","exact":false}
+	var n: int=atoms.size()
+	if n<=6: return {"phase":"gas","text":"气态（推测：%d 个小分子，室温下多为气体）" % n,"exact":false}
+	if n<=12: return {"phase":"liquid","text":"液态（推测：%d 个原子，介于气体与固体之间）" % n,"exact":false}
+	return {"phase":"solid","text":"固态（推测：%d 个原子的较大分子）" % n,"exact":false}
+
 static func _num(value) -> String:
 	var v: float = float(value)
 	return str(int(v)) if is_equal_approx(v, roundf(v)) else "%.1f" % v

@@ -1129,7 +1129,12 @@ func reactor_views() -> Array:
 		view.atom_contexts = info.atom_contexts
 		view.bonds = info.bonds
 		if info.known: view.template = info.reference_id
-		view.phase = str(ReactorLook.phase(str(info.reference_id)).get("phase","")) if info.known else ""
+		# v0.52: a structure the sourced table does not cover still gets a phase (an estimate from
+		# its own geometry), so the chamber is never mysteriously empty.
+		var found_phase: Dictionary = ReactorLook.estimate(reactor_work(r), str(info.reference_id) if info.known else "")
+		view.phase = str(found_phase.get("phase",""))
+		view.phase_text = str(found_phase.get("text",""))
+		view.phase_exact = bool(found_phase.get("exact",false))
 		var job: Dictionary = r.get("installation",{})
 		if not job.is_empty():
 			view.install_elements = _install_symbols(job)
@@ -1154,7 +1159,15 @@ func _install_symbols(job: Dictionary) -> Array:
 
 func reactor_phase(r: Dictionary) -> String:
 	var info: Dictionary = structure_data(r)
-	return str(ReactorLook.phase(str(info.reference_id)).get("phase","")) if info.known else ""
+	# v0.52: known compounds use their sourced phase; everything else gets a labelled estimate.
+	return str(ReactorLook.estimate(reactor_work(r), str(info.reference_id) if info.known else "").get("phase",""))
+
+## v0.52: the sentence under the phase badge — real data for known compounds, and a clearly
+## labelled estimate ("推测") for the player's own structures.
+func reactor_phase_text(r: Dictionary) -> String:
+	var info: Dictionary = structure_data(r)
+	var found: Dictionary = ReactorLook.estimate(reactor_work(r), str(info.reference_id) if info.known else "")
+	return str(found.get("text","结构未收录，物态未鉴定"))
 
 func _update_order():
 	order = economy.make_order(deliveries+visitor_skips, templates)

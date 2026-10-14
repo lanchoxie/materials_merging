@@ -8,6 +8,11 @@ func island_refresh() -> void:
 	game.order_bubbles._refresh(); await process_frame; await process_frame
 func tap(at: Vector2) -> void:
 	await game._test_touch(at,true); await game._test_touch(at,false); await process_frame; await process_frame
+	# v0.52: a tap reaches the panel through input, so give the deferred screen time to appear
+	# (this test flaked with "key 'mode' on Nil").
+	for i in range(30):
+		if game.modal != null: break
+		await process_frame
 func run() -> void:
 	Input.emulate_touch_from_mouse=true
 	game=Main.new(); root.add_child(game); game.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

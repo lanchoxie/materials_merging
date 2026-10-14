@@ -126,8 +126,11 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.51 "Guidance" (tag `v0.51.0`; see [40-guidance.md](40-guidance.md)): the 工艺路线 tab — a branching
   craftable panel that names the missing building and breaks a product down to its ore — plus per-element sources
   and uses, and caesium made findable.
-- Next, from the user's 2026-10-14 list: the crystal workbench (lattice parameters, periodic sites,
-  snap-to-boundary); gas/liquid/solid for custom structures and the atom-editing feedback gaps; then Bronze (tech
+- ✅ v0.52 "Lattice" (tag `v0.52.0`; see [41-lattice.md](41-lattice.md)): cell angles and the lattice
+  readout, periodic-site classification (角点/棱心/面心/胞内) with snap-to-boundary, crystal baselines that open
+  as crystals, and a labelled phase estimate for any structure.
+- Next, from the user's 2026-10-14 list: the atom-editing feedback gaps (hover highlight, ghost preview);
+  then Bronze (tech
   diffusion) and Clash (wars — abstract while you are away, real when you are there).
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal

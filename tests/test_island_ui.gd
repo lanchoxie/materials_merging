@@ -4,6 +4,13 @@ var game
 func _initialize() -> void:
 	root.size=Vector2i(1440,900)
 	_run.call_deferred()
+## v0.52: a tap opens the panel through the input path, so it may take more than one frame under
+## load. Wait for it instead of assuming (this test flaked with "key 'mode' on Nil").
+func wait_modal() -> void:
+	for i in range(30):
+		await process_frame
+		if game.modal != null: return
+
 func capture(label: String) -> void:
 	await process_frame; await process_frame; await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("res://artifacts/island-"+label+"-v09.png")
@@ -29,8 +36,8 @@ func _run() -> void:
 		assert(game.world_box.get_global_rect().encloses(bubble.get_global_rect()),"visitor bubbles stay inside the world viewport")
 	var grey=game.order_bubbles.bubbles[3]
 	var grey_tap=grey.get_global_rect().get_center()
-	await game._test_touch(grey_tap,true); await game._test_touch(grey_tap,false); await process_frame
-	assert(game.modal.mode=="mail" and game.modal.focused_visitor==3,"grey bubble opens its request on touch")
+	await game._test_touch(grey_tap,true); await game._test_touch(grey_tap,false); await wait_modal()
+	assert(game.modal!=null and game.modal.mode=="mail" and game.modal.focused_visitor==3,"grey bubble opens its request on touch")
 	game._close_modal()
 	await process_frame
 	var ready=game.order_bubbles.bubbles[1]

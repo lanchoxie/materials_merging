@@ -30,6 +30,19 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.52.0 "Lattice" (晶格工作台)
+Full notes: [41-lattice.md](41-lattice.md).
+- **Cell angles and a lattice readout.** α/β/γ (30–150°) beside a/b/c, with the live sentence
+  `a=6.300 b=6.300 c=6.300 Å α=90° β=90° γ=90° V=250.0 Å³`.
+- **Periodic sites.** The selected atom shows its fractional coordinates and its site class — 角点 ⅛ / 棱心 ¼ /
+  面心 ½ / 胞内 1 — which is the "is it on the periodic boundary?" answer.
+- **吸附到晶胞边界.** A toggle that pulls a dragged or nudged atom onto the cell boundary and wraps anything
+  outside back inside.
+- **Crystals open as crystals.** 钙钛矿 and 钙钛矿氯化物 carry their cell and site occupancies into the editor
+  (their `fixed_display_cell` flag was dead and never read).
+- **A phase for anything.** Custom structures no longer show a blank chamber: a periodic build reads 固态 · 晶格,
+  and unlisted molecules are estimated (gas/liquid/solid) from their composition, always labelled 推测.
+
 ## v0.51.0 "Guidance" (看得懂)
 Full notes: [40-guidance.md](40-guidance.md).
 - **A 工艺路线 tab in the toolbox.** Every item the industry can make, each with a verdict: 已有 / 可生产 /
