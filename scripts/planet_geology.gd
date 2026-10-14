@@ -46,7 +46,10 @@ static func natural(c: Vector3i,top: float,river: bool,p: Dictionary={}) -> Stri
 		if c.y<=-6 and _blob(c,Vector3i(3,2,3),121,0.04): return "apatite"
 		return "limestone"
 	if c.y>-22:
-		if c.y<-17 and _blob(c,Vector3i(2,2,2),71,0.012): return "pollucite"
+		# v0.51 (user: Cs 太难获取): pollucite used to be a 2×2 blob at 1.2 % in a four-metre band
+		# below −17 m, the rarest ore by far, and it gates the only Cs recipe in the game. It is now
+		# a bigger blob, more common, and reachable from −12 m, where the player is actually digging.
+		if c.y<-12 and _blob(c,Vector3i(3,2,3),71,0.03): return "pollucite"
 		if _blob(c,Vector3i(2,3,2),81,0.04): return "spodumene"
 		if _blob(c,Vector3i(3,2,3),91,0.045): return "cassiterite"
 		if _blob(c,Vector3i(3,3,3),101,0.05*float(p.get("hematite",1.0))): return "hematite"

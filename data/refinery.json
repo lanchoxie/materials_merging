@@ -247,6 +247,20 @@
       "equation": "2CsCl + Ca → 2Cs + CaCl₂（真空，约750 °C）",
       "detail": "铯榴石几乎是铯唯一的工业矿物；还原用的钙由石灰石提供（简化）。"
     },
+    "pollucite_bulk": {
+      "name": "铯榴石提铯 · 整炉",
+      "method": "酸浸 + 金属钙真空还原（整炉连续）",
+      "inputs": {
+        "pollucite": 4,
+        "limestone": 2
+      },
+      "outputs": {
+        "Cs": 16
+      },
+      "seconds": 150,
+      "equation": "2CsCl + Ca → 2Cs + CaCl₂（真空连续还原，一份钙还原两份矿石）",
+      "detail": "v0.51：铯榴石最稀有，成批运回来一次炼完更划算——四份矿石加两份石灰石出十六份铯，省一半还原剂。"
+    },
     "hematite_iron": {
       "name": "赤铁矿炼铁",
       "method": "高炉 · 焦炭还原",

@@ -30,6 +30,17 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.51.0 "Guidance" (看得懂)
+Full notes: [40-guidance.md](40-guidance.md).
+- **A 工艺路线 tab in the toolbox.** Every item the industry can make, each with a verdict: 已有 / 可生产 /
+  缺料 / **需建厂** / 未解锁. Nothing is hidden any more, and the reason is on the line itself.
+- **Chains.** Click 看链条 and a product is broken down to the ore and the elements, scaling the amounts to the
+  recipe's real output — with the missing factory named, and its price.
+- **Elements answer both questions.** Where it comes from (extractor, process, ore with its layer and formula)
+  and what uses it. The refinery's element readout shows the same one-liner.
+- **Caesium is no longer a wall.** 铯榴石 generates from −12 m (was a 2×2 blob below −17 m at 1.2 %), and a bulk
+  process turns 4 ore + 2 limestone into 16 Cs.
+
 ## v0.50.0 "Comfort" (顺手)
 Full notes: [39-comfort.md](39-comfort.md).
 - **The planet remembers where you stood.** Walking out of first person and coming back puts you back at the same

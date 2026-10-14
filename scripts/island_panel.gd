@@ -33,7 +33,7 @@ func setup(model, plot: int, page: String="toolbox", visitor: int=-1) -> void:
 	status=UI.label("",16,UI.GOLD); content.add_child(status)
 	if mode!="mail":
 		var tabs=UI.row(content,10)
-		for entry in [["elements","元素"],["products","结构样品"],["industrial","工业成品"],["materials","晶石 / 建材"],["supplies","补给商店"],["decor","道具 / 装饰"]]:
+		for entry in [["guide","工艺路线"],["elements","元素"],["products","结构样品"],["industrial","工业成品"],["materials","晶石 / 建材"],["supplies","补给商店"],["decor","道具 / 装饰"]]:
 			tabs.add_child(UI.button(entry[1],_tab.bind(entry[0])))
 	scroll=ScrollContainer.new(); scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; content.add_child(scroll)
 	body=UI.column(scroll,16); body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
@@ -53,6 +53,7 @@ func _redraw(reset_scroll: bool=false) -> void:
 	if mode=="mail": _mail()
 	else:
 		match section:
+			"guide": _guide()
 			"elements": _elements()
 			"products": _products()
 			"industrial": _industrial()
@@ -60,6 +61,95 @@ func _redraw(reset_scroll: bool=false) -> void:
 			"supplies": _supplies()
 			"decor": _decor()
 	_live()
+
+## v0.51 (user): 树杈状可合成面板 — what you can make, what you still need, and the building you are
+## missing, with every line expanding into its own inputs. Nothing is hidden: a recipe you cannot
+## reach yet still shows the reason.
+const Guide=preload("res://scripts/craft_guide.gd")
+const Geology=preload("res://scripts/planet_geology.gd")
+var guide=null
+var guide_target="item:glass"
+
+func _guide() -> void:
+	if guide==null or guide.state!=state: guide=Guide.new(); guide.setup(state)
+	body.add_child(UI.paragraph("选一件想做的成品，这里会把它拆到矿脉和元素：能做、缺什么、缺哪座工厂，一目了然。还可以点元素，看它从哪来、用来做什么。",18))
+	var modes=UI.row(body,8)
+	for entry in [["item","工业成品"],["el","元素"],["min","矿石"]]:
+		modes.add_child(UI.button(("◆ " if guide_target.begins_with(entry[0]+":") else "")+entry[1],func(): _guide_pick(entry[0]),true))
+	if guide_target.begins_with("el:"):
+		_element_detail(guide_target.get_slice(":",1)); return
+	if guide_target.begins_with("min:"):
+		_mineral_detail(guide_target.get_slice(":",1)); return
+	_guide_list()
+
+## The pick list: everything the industry can output, with its state in one word.
+func _guide_list() -> void:
+	var card=_card("能做的成品")
+	card.add_child(UI.paragraph("状态按你现在的库存、工厂和已解锁配方计算。",14,UI.MUTED))
+	var rows=[]
+	for id in state.industry.rules().recipes:
+		var r: Dictionary=state.industry.rules().recipes[id]
+		for out in r.outputs:
+			rows.append({"id":out,"recipe":id,"name":str(r.name),"qty":int(r.outputs[out])})
+	rows.sort_custom(func(a,b): return str(a.name)<str(b.name))
+	for row in rows:
+		var line=UI.row(card,8)
+		var label=UI.label("%s ×%d%s" % [row.name,row.qty,"（已有 %d）" % int(state.industry.items.get(row.id,0)) if int(state.industry.items.get(row.id,0))>0 else ""],18); label.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		line.add_child(label)
+		# Ask the guide, which knows about the factory and the unlocking experiment too — `quote`
+		# needs a real plot, so it cannot answer "what is stopping me" on its own.
+		var n=guide.node("item:"+str(row.id))
+		var words={"have":"已有","make":"可生产","missing":"缺料","building":"需建厂","locked":"未解锁","mine":"要采集","none":"链条太深"}
+		var tints={"have":UI.MUTED,"make":UI.MINT,"missing":UI.MUTED,"building":UI.GOLD,"locked":UI.LILAC,"mine":UI.MUTED,"none":UI.MUTED}
+		line.add_child(UI.label(str(words.get(n.status,n.status)),16,tints.get(n.status,UI.MUTED)))
+		line.add_child(UI.button("看链条",func(): guide_target="item:"+str(row.id); _redraw(true)))
+	body.add_child(UI.paragraph("提示：「需建厂」表示缺一座工厂；点「看链条」会把它拆到矿石和元素。",14,UI.MUTED))
+
+func _guide_pick(kind: String) -> void:
+	if kind=="item":
+		for id in state.industry.rules().recipes:
+			var r: Dictionary=state.industry.rules().recipes[id]
+			for out in r.outputs: guide_target="item:"+str(out); _redraw(true); return
+	elif kind=="el":
+		for symbol in state.elements: guide_target="el:"+str(symbol); _redraw(true); return
+	else:
+		for id in state.planet.v2.nature.rules.get("rubble_rocks",[]): guide_target="min:"+str(id); _redraw(true); return
+
+func _element_detail(symbol: String) -> void:
+	var row=UI.row(body,8)
+	for sym in state.elements:
+		if sym.length()>2: continue
+		row.add_child(UI.button(("◆ " if sym==symbol else "")+sym,func(): guide_target="el:"+sym; _redraw(true)))
+	var card=_card("%s · %s    库存 %d" % [symbol,state.elements.get(symbol,{}).get("name",symbol),int(state.element_inventory.get(symbol,0))])
+	card.add_child(UI.paragraph(guide.element_guide(symbol),17,UI.LILAC))
+	card.add_child(UI.label("从哪来",20,UI.MINT))
+	for s in guide.element_sources(symbol):
+		var line=UI.paragraph("· %s%s" % [(s.ore+" → " if s.ore!="" else ""),s.name],17)
+		line.text+="　（%s）" % s.note if s.note!="" else ""
+		card.add_child(line)
+	var uses=guide.element_uses(symbol)
+	card.add_child(UI.label("用来做什么",20,UI.MINT))
+	if uses.is_empty(): card.add_child(UI.paragraph("工业上暂时没有配方直接用这个元素。",16,UI.MUTED))
+	for u in uses:
+		var line=UI.paragraph("· %s ×%d → %s（%s）" % [u.name,u.amount,u.output,u.building],17)
+		card.add_child(line)
+
+func _mineral_detail(id: String) -> void:
+	var row=UI.row(body,8)
+	for m in state.planet.v2.nature.rules.get("rubble_rocks",[]): row.add_child(UI.button(("◆ " if m==id else "")+str(Geology.info(m).get("name",m)),func(): guide_target="min:"+m; _redraw(true)))
+	var spec: Dictionary=Geology.info(id)
+	var card=_card("%s · %s" % [spec.get("name",id),spec.get("formula","")])
+	card.add_child(UI.paragraph("矿层：%s　硬度 %s　背包 %d 块" % [spec.get("layer","地下"),spec.get("mohs","—"),int(state.planet.v2.nature.minerals.get(id,0))],17))
+	var el: Dictionary=spec.get("elements",{})
+	var parts=[]
+	for sym in el: parts.append("%s×%d" % [sym,int(el[sym])])
+	card.add_child(UI.paragraph("含元素：%s" % ("、".join(parts) if not parts.is_empty() else "—"),17,UI.LILAC))
+	for pid in guide._refinery.processes:
+		var p: Dictionary=guide._refinery.processes[pid]
+		if not p.inputs.has(id): continue
+		var outs=[]
+		for o in p.outputs: outs.append("%s×%d" % [o,int(p.outputs[o])])
+		card.add_child(UI.paragraph("精炼厂「%s」：%s（%s）" % [p.name,"、".join(outs),str(p.get("equation",""))],16))
 
 func _elements() -> void:
 	body.add_child(UI.paragraph("元素不再用金币购买：海水、空气和水在精炼厂自动产出常见元素；金属和稀有元素要去星球采矿，再到精炼厂提炼。提交更换后，由空闲博士把样品装入反应炉。",18))

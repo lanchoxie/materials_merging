@@ -123,8 +123,10 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   repairs, gathers, and trades with the player.
 - ✅ v0.50 "Comfort" (tag `v0.50.0`; see [39-comfort.md](39-comfort.md)): remembered walk position, a 16×16×16
   miniature box, random 1-5 drops, and a procedural block texture atlas.
-- Next, from the user's 2026-10-14 list: a branching craftable-tech panel naming the building you are missing; where
-  each element comes from (and a shorter road to Cs); the crystal workbench (lattice parameters, periodic sites,
+- ✅ v0.51 "Guidance" (tag `v0.51.0`; see [40-guidance.md](40-guidance.md)): the 工艺路线 tab — a branching
+  craftable panel that names the missing building and breaks a product down to its ore — plus per-element sources
+  and uses, and caesium made findable.
+- Next, from the user's 2026-10-14 list: the crystal workbench (lattice parameters, periodic sites,
   snap-to-boundary); gas/liquid/solid for custom structures and the atom-editing feedback gaps; then Bronze (tech
   diffusion) and Clash (wars — abstract while you are away, real when you are there).
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,

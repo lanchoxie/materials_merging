@@ -6,6 +6,7 @@ signal acted(message: String)
 signal planet_requested
 const UI=preload("res://scripts/ui.gd")
 const Geology=preload("res://scripts/planet_geology.gd")
+const Guide=preload("res://scripts/craft_guide.gd")
 var state
 var close_button: Button
 var guide: HBoxContainer
@@ -104,7 +105,9 @@ func _explain(symbol: String) -> void:
 	var changed=focus_symbol!=symbol
 	focus_symbol=symbol
 	if changed and tiles.has(symbol): _stock()
-	status.text="%s（%s）来源：%s" % [symbol,state.elements.get(symbol,{}).get("name",symbol),state.refinery.how_to_get(symbol)]
+	# v0.51: not just "where from" but the whole picture — the ore, the process, and what it is for.
+	var guide=Guide.new(); guide.setup(state)
+	status.text="%s（%s）来源：%s" % [symbol,state.elements.get(symbol,{}).get("name",symbol),guide.element_guide(symbol)]
 	if tiles.has(symbol): _punch(tiles[symbol])
 
 func _extractors() -> void:
