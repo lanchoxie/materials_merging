@@ -961,6 +961,7 @@ func _sync() -> void:
 	_sync_tbm()
 	_sync_plane()
 	_sync_ship()
+	view.remember_position()
 	_live(); _aim()
 
 func _process(dt: float) -> void:

@@ -57,7 +57,9 @@ func _initialize() -> void:
 	for i in range(20):
 		msg=g.nature.dig({"voxel":cell,"target":cell},g)
 		if not msg.contains("采掘"): break
-	check(int(g.field.stock.stone)==stone+1 and int(g.nature.minerals.get("granite",0))==1,"quarrying granite gives the rock and 石料: "+msg)
+	# v0.50: quarrying yields a random 1-5 of the rock and of 石料 (keyed by the cell).
+	var dug=int(g.nature.minerals.get("granite",0)); var rubble=int(g.field.stock.stone)-stone
+	check(dug in [1,2,3,4,5] and rubble in [1,2,3,4,5],"quarrying granite gives 1-5 of the rock and 1-5 石料 (rock %d, 石料 %d): %s" % [dug,rubble,msg])
 	# --- Crops roll grain and seeds.
 	var f=g.field; var w={"elapsed":1234,"seeds":0}
 	var grains=[]; var seed_counts=[]

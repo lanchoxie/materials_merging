@@ -9,7 +9,7 @@ static func survey(c,target: Dictionary) -> Dictionary:
 	while index<queue.size():
 		var k=queue[index]; index+=1
 		if chosen.has(k): continue
-		if chosen.size()>=64: return {"error":"一盒最多收纳64块；先用拆卸锤拆开作品之间的连接"}
+		if chosen.size()>=256: return {"error":"一盒最多收纳256块；先用拆卸锤拆开作品之间的连接"}
 		if c.occupied.has(k): return {"error":"先收获作品里种植箱的作物"}
 		if c.is_native(c.blocks[k]): return {"error":"这是部落的房子，不能装进微缩盒"}
 		chosen[k]=c.blocks[k]
@@ -19,7 +19,7 @@ static func survey(c,target: Dictionary) -> Dictionary:
 	var low=Vector3i(99999,99999,99999); var high=-low
 	for b in chosen.values(): low=low.min(c.cell(b)); high=high.max(c.cell(b))
 	var result={"error":"","chosen":chosen,"low":low,"high":high}
-	if (high-low).x>7 or (high-low).y>7 or (high-low).z>7: result.error="作品超过8×8×8的微缩盒（%d×%d×%d），先拆小一些" % [(high-low).x+1,(high-low).y+1,(high-low).z+1]; return result
+	if (high-low).x>15 or (high-low).y>15 or (high-low).z>15: result.error="作品超过16×16×16的微缩盒（%d×%d×%d），先拆小一些" % [(high-low).x+1,(high-low).y+1,(high-low).z+1]; return result
 	var rest=c.blocks.duplicate()
 	for k in chosen: rest.erase(k)
 	if not c.connected(rest): result.error="这件作品还支撑着其他建筑，请先拆开连接"

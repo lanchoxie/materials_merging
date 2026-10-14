@@ -90,7 +90,8 @@ func _mining(s,v) -> void:
 		s.planet.command(s,"v2_dig")
 		check(t.solid(below),"%s survives hit %d of %d" % [id,i+1,hits])
 	var message=s.planet.command(s,"v2_dig")
-	check(not t.solid(below) and (int(n.minerals.get(id,0))==1 or id=="topsoil"),"%s breaks on hit %d and enters the backpack: %s" % [id,hits,message])
+	# v0.50: a block yields a random 1-5 of its mineral, keyed by the cell.
+	check(not t.solid(below) and (int(n.minerals.get(id,0)) in [1,2,3,4,5] or id=="topsoil"),"%s breaks on hit %d and enters the backpack: %s" % [id,hits,message])
 	check(n.discovered.has(id) and message.contains("新发现"),"first find is announced and recorded")
 	var items=v.inventory.entries(s)
 	if id!="topsoil":
@@ -108,8 +109,9 @@ func _mining(s,v) -> void:
 	check(n.discovered.has(wall),"scanning also fills the codex")
 	# Put the mined block back where it came from: the save goes back to pristine.
 	if id!="topsoil":
+		var held=int(n.minerals.get(id,0))   # v0.50: one dig yields 1-5, so track what is held.
 		above(v,p); message=s.planet.command(s,"v2_place_rock",{"mineral":id})
-		check(t.material(below)==id and int(n.minerals.get(id,0))==0,"placing a rock spends it and restores the cell: "+message)
+		check(t.material(below)==id and int(n.minerals.get(id,0))==held-1,"placing a rock spends one and restores the cell: "+message)
 		check(not n.voxels.has(below),"a restored natural cell leaves no stored edit")
 	above(v,p); s.planet.command(s,"v2_fill")
 	check(t.natural_height(p)==t.height_at(p) and n.voxels.is_empty(),"refilling the top returns the exact natural ground (slab-aware)")

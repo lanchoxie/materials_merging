@@ -141,6 +141,9 @@ var flake: QuadMesh
 
 func _ready() -> void:
 	mat=StandardMaterial3D.new(); mat.vertex_color_use_as_albedo=true; mat.roughness=0.92; mat.metallic_specular=0.25
+	# v0.50: block faces sample a small procedural atlas (white at UV 0,0, so nothing else changes).
+	mat.albedo_texture=preload("res://scripts/river_textures.gd").atlas()
+	mat.texture_filter=BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	var environment=WorldEnvironment.new(); env=Environment.new(); environment.environment=env
 	env.background_mode=Environment.BG_COLOR; env.background_color=Color("102c37")
 	env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR; env.ambient_light_color=Color("b0cacc"); env.ambient_light_energy=0.8
@@ -335,6 +338,11 @@ func _ensure_globe() -> void:
 	globe_pin.mesh=cone; globe.add_child(globe_pin)
 	for node in [ball,halo,globe_pin]: node.layers=GLOBE_LAYER
 	globe.position=Vector3(0,-4000,0)
+
+## v0.50: remember where the player is standing (called when leaving first person and by the panel).
+func remember_position() -> void:
+	if v2==null or not first_person or driving or flying or boring: return
+	v2.walk_at={"x":walker.position.x,"z":walker.position.y,"yaw":walker.yaw,"pitch":walker.pitch}
 
 ## Where the player last stood on the planet (home before the first walk).
 func last_position() -> Vector2:
@@ -601,10 +609,14 @@ func set_first_person(enabled: bool) -> void:
 		plane.airborne=false; plane.speed=0.0; plane.throttle=0.0; plane.altitude=plane.floor_at(plane.position,INF); flying=false
 		far_terrain.visible=false; sea_node.visible=true; stream.visible=true; _ground_sky(false)
 	first_person=enabled; walker.stop(); hands.visible=enabled
+	# v0.50: entering first person puts you back where you left off (not at the spawn).
+	if enabled and v2!=null and not v2.walk_at.is_empty():
+		walker.position=Vector2(float(v2.walk_at.x),float(v2.walk_at.z)); walker.yaw=float(v2.walk_at.yaw); walker.pitch=float(v2.walk_at.pitch); has_walk_position=true
 	if not enabled: overview_at=walker.position if has_walk_position and walker.position.length()>40 else Vector2.ZERO
 	camera.projection=Camera3D.PROJECTION_PERSPECTIVE
 	camera.near=0.06 if enabled else 0.5; camera.far=180; camera.fov=72 if enabled else 38
 	if enabled and not has_walk_position: walker.enter(selected); has_walk_position=true
+	if not enabled: remember_position()
 	env.fog_enabled=enabled; env.fog_mode=Environment.FOG_MODE_DEPTH; env.fog_density=1.0
 	env.fog_depth_begin=26; env.fog_depth_end=48; env.fog_sky_affect=0.0
 	env.background_mode=Environment.BG_SKY if enabled else Environment.BG_COLOR

@@ -51,6 +51,8 @@ var ship_at: Dictionary={}
 ## v0.49: the native tribe (present-day Earth only).
 const Natives=preload("res://scripts/river_natives.gd")
 var natives=Natives.new()
+## v0.50: where the player last stood, so first person resumes there instead of the spawn point.
+var walk_at: Dictionary={}
 ## v0.47 小飞机: where it is parked ({x, z, heading}) and whether the player is flying it.
 var plane_at: Dictionary={}
 var flying=false
@@ -374,7 +376,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize()}
+	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize(),"walk":walk_at.duplicate()}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -411,6 +413,12 @@ func restore(data) -> bool:
 	if not ship is Dictionary: return false
 	if not ship.is_empty():
 		if not _number(ship.get("x"),-8192,8192) or not _number(ship.get("z"),-7600,7600) or not _number(ship.get("heading"),-9000,9000): return false
+	var stood=data.get("walk",{})
+	if not stood is Dictionary: return false
+	if not stood.is_empty():
+		for k in ["x","z"]:
+			if not _number(stood.get(k),-8192,8192): return false
+		if not _number(stood.get("yaw"),-9000,9000) or not _number(stood.get("pitch"),-1.6,1.6): return false
 	var aircraft=data.get("plane",{})
 	if not aircraft is Dictionary: return false
 	if not aircraft.is_empty():
@@ -540,6 +548,8 @@ func restore(data) -> bool:
 	if not ship.is_empty(): ship_at={"x":float(ship.x),"z":float(ship.z),"heading":float(ship.heading)}
 	rover_at={}; driving=false
 	if not parked.is_empty(): rover_at={"x":float(parked.x),"z":float(parked.z),"heading":float(parked.heading)}
+	walk_at={}
+	if not stood.is_empty(): walk_at={"x":float(stood.x),"z":float(stood.z),"yaw":float(stood.yaw),"pitch":float(stood.pitch)}
 	plane_at={}; flying=false
 	if not aircraft.is_empty(): plane_at={"x":float(aircraft.x),"z":float(aircraft.z),"heading":float(aircraft.heading)}
 	tbm_at={}; boring=false

@@ -314,7 +314,7 @@ func restore(data) -> bool:
 	for id in boxes:
 		var box=boxes[id]
 		if not box is Dictionary or box.get("id")!=id or not str(id).is_valid_int() or int(id)<1 or int(id)>=int(data.get("miniature_serial",1)): return false
-		if not box.get("name") is String or box.name.length()>64 or not _integer(box.get("plot"),-2,4096) or not box.get("blocks") is Array or box.blocks.is_empty() or box.blocks.size()>64: return false
+		if not box.get("name") is String or box.name.length()>64 or not _integer(box.get("plot"),-2,4096) or not box.get("blocks") is Array or box.blocks.is_empty() or box.blocks.size()>256: return false
 		# v0.37.1 display replicas copy the shape, not the material: their pieces are not counted.
 		if not box.get("replica",false) is bool: return false
 		var replica: bool=box.get("replica",false)

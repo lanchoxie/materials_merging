@@ -23,6 +23,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [15-earth.md](15-earth.md) | v0.32: climate field, biomes, environment machines, warming, 环境图 |
 | [16-polish.md](16-polish.md) | v0.33: sky and shadows, shaded hands and tools, chibi residents, rigged planet creatures, water shader |
 | [22-incidents-specimens.md](22-incidents-specimens.md) | v0.36: data-driven era framework, storms/floods/droughts with warnings and preparation, PVC pipes, 标本图鉴 |
+| [39-comfort.md](39-comfort.md) | v0.50: remembered walk position, a 16×16×16 miniature box, random 1-5 drops, a procedural block texture atlas |
 | [38-settlers.md](38-settlers.md) | v0.49: 溪石部落 — village spot, building with the block kit, repair, gathering, friendship, gifts and trade |
 | [37-starship.md](37-starship.md) | v0.48: planet profiles, 赤砂星, world keys, the starship and the star map |
 | [36-airplane.md](36-airplane.md) | v0.47: floatplane flight model, far-terrain LOD, curved-horizon shader, flight-time streaming/observe pauses |

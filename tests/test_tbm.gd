@@ -48,9 +48,11 @@ func _initialize() -> void:
 		var said=m.advance(v); m.busy=0.0
 		if not said.begins_with("掘进") and not said.begins_with("前进"): check(false,"dive step %d: %s" % [i,said]); break
 	check(m.cell.y==g-20 and m.cell.z==start.y-20,"twenty metres of diving: 20 down and 20 forward (y %d)" % m.cell.y)
-	var cut=total(m.haul)-int(m.haul.get("stone",0))+m.overflow
-	check(cut>=150 and total(v.nature.minerals)-before+int(v.field.stock.soil)-soil+m.overflow==cut,"every cut cell went into a store (%d cells)" % cut)
-	check(int(v.field.stock.stone)-stone==int(m.haul.get("stone",0)) and int(m.haul.get("stone",0))>0,"quarried rock also left building stone")
+	# v0.50: each cut cell yields a random 1-5, so cells and stored units are counted separately.
+	var cut=m.cut_cells
+	var ore=total(m.haul)-int(m.haul.get("stone",0))-int(m.haul.get("soil",0))
+	check(cut>=150 and total(v.nature.minerals)-before==ore-m.overflow,"every cut cell went into a store (%d cells, %d units)" % [cut,ore])
+	check(int(v.field.stock.stone)-stone==int(m.haul.get("stone",0)) and int(m.haul.get("stone",0))>=cut/3,"quarried rock also left building stone")
 	check(absf(float(m.state.charge)-(float(R.tbm.cap_wh)-float(cut)*float(R.tbm.wh_per_cell)))<0.01,"the battery paid %.1f Wh per cell" % float(R.tbm.wh_per_cell))
 	check(v.nature.voxels.size()>=cut,"the tunnel is real terrain edits")
 	# Level run in the hematite layer.

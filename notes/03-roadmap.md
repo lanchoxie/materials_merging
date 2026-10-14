@@ -121,8 +121,12 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   and the star map. **The 2026-10-11 plan is complete.**
 - ✅ v0.49 "Settlers" (tag `v0.49.0`; see [38-settlers.md](38-settlers.md)): the first native tribe builds,
   repairs, gathers, and trades with the player.
-- Next: "Bronze" (tech diffusion from the player's materials). "Clash" (wars) waits on Q4. Also open: more planets
-  (data-only profiles), a ship that flies in the world, more element ores.
+- ✅ v0.50 "Comfort" (tag `v0.50.0`; see [39-comfort.md](39-comfort.md)): remembered walk position, a 16×16×16
+  miniature box, random 1-5 drops, and a procedural block texture atlas.
+- Next, from the user's 2026-10-14 list: a branching craftable-tech panel naming the building you are missing; where
+  each element comes from (and a shorter road to Cs); the crystal workbench (lattice parameters, periodic sites,
+  snap-to-boundary); gas/liquid/solid for custom structures and the atom-editing feedback gaps; then Bronze (tech
+  diffusion) and Clash (wars — abstract while you are away, real when you are there).
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal
   doors, windows, boards, bricks, roofs) → 盾构机 (bulk ore) → farm robots → airplane → spaceship → second planet.

@@ -1,6 +1,7 @@
 extends Node3D
 ## Bounded, incremental render cache. Ground/collision queries do not wait for meshes.
 const G=preload("res://scripts/river_geometry.gd")
+const Textures=preload("res://scripts/river_textures.gd")
 var terrain
 var material: Material
 var water_material: Material
@@ -57,6 +58,21 @@ var palette={}
 func _color(id: String) -> Color:
 	if not palette.has(id): palette[id]=Color(str(terrain.Geology.info(id).get("color","958369")))
 	return palette[id]
+
+## v0.50 (user: 矿物质最好有好看的纹理): every underground face samples its material's tile in the
+## block texture atlas, so granite is speckled, ore is flecked and sand is blotchy. Soil, grass and
+## the surface keep the flat quad (their colour already carries the detail). Generated once in code.
+func _hatch(id: String,top: bool) -> int:
+	var kind=str(terrain.Geology.info(id).get("kind",""))
+	return 1 if kind=="" else 2
+
+func _grain(st: SurfaceTool,id: String,q: Array,base: Color,x: int, y: int, z: int, top: bool) -> void:
+	if _hatch(id,top)<2: G.face(st,q,base); return
+	G.face_uv(st,q,base,Textures.uv(id),Textures.span())
+
+## A point inside the quad q=[p0,p1,p2,p3] (u across, v down), so a face can be diced up.
+func _bilinear(q: Array,u: float,v: float) -> Vector3:
+	return q[0]*(1.0-u)*(1.0-v)+q[1]*u*(1.0-v)+q[2]*u*v+q[3]*(1.0-u)*v
 
 ## get() would evaluate a default eagerly; only fall back to the formula outside the cache.
 func _top(c: Vector3i,tops: Dictionary) -> float:
@@ -194,7 +210,7 @@ func _build(key: Vector2i) -> Mesh:
 				if not _solid(c,voxels,tops,bedrock): continue
 				var h=_height(c,voxels,tops); var id: String=voxels[c] if voxels.has(c) else Geology.natural(c,top,river,terrain.profile); var yt=y+h
 				if h<1.0 or not _solid(c+Vector3i.UP,voxels,tops,bedrock):
-					G.face(st,[Vector3(x0,yt,z0),Vector3(x1,yt,z0),Vector3(x1,yt,z1),Vector3(x0,yt,z1)],_top_color(id,p,river,not voxels.has(c) and y==ceili(top)-1,tile_grass,shade,ix,y,iz))
+					_grain(st,id,[Vector3(x0,yt,z0),Vector3(x1,yt,z0),Vector3(x1,yt,z1),Vector3(x0,yt,z1)],_top_color(id,p,river,not voxels.has(c) and y==ceili(top)-1,tile_grass,shade,ix,y,iz),ix,y,iz,true)
 				if y>bedrock and not _solid(c+Vector3i.DOWN,voxels,tops,bedrock):
 					G.face(st,[Vector3(x0,y,z1),Vector3(x1,y,z1),Vector3(x1,y,z0),Vector3(x0,y,z0)],_color(id).darkened(0.25))
 				for d in DIRS:
@@ -203,7 +219,7 @@ func _build(key: Vector2i) -> Mesh:
 						low=y+_height(n,voxels,tops)
 						if low>=yt: continue
 					var a=p+Vector2(d.x,d.z)*cell/2; var tangent=Vector2(-d.z,d.x)*cell/2
-					G.face(st,[Vector3(a.x-tangent.x,low,a.y-tangent.y),Vector3(a.x+tangent.x,low,a.y+tangent.y),Vector3(a.x+tangent.x,yt,a.y+tangent.y),Vector3(a.x-tangent.x,yt,a.y-tangent.y)],_side_color(id,d,ix,y,iz))
+					_grain(st,id,[Vector3(a.x-tangent.x,low,a.y-tangent.y),Vector3(a.x+tangent.x,low,a.y+tangent.y),Vector3(a.x+tangent.x,yt,a.y+tangent.y),Vector3(a.x-tangent.x,yt,a.y-tangent.y)],_side_color(id,d,ix,y,iz),ix,y,iz*2+d.x+d.z,false)
 	# Outside the original experiment: the continued river is natural scenery.
 	var wet=G.surface(water_material) if water_material!=null else st; var rivers=0
 	for iz in range(key.y*span,(key.y+1)*span):

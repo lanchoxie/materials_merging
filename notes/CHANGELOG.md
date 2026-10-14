@@ -30,6 +30,17 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.50.0 "Comfort" (顺手)
+Full notes: [39-comfort.md](39-comfort.md).
+- **The planet remembers where you stood.** Walking out of first person and coming back puts you back at the same
+  spot, facing the same way, instead of the spawn point.
+- **The miniature box is bigger:** 16×16×16 and up to 256 blocks (was 8×8×8 / 64).
+- **Random drops:** quarrying rock and mining ore now give a random **1-5** each (fire 1-5, timber 3-6). Keyed by the
+  block, so a block always yields the same amount.
+- **Blocks have real textures.** A small procedural atlas (built in code, no art files) gives granite its speckle,
+  ore its flecked crystals and sand its blotches. It multiplies the existing colours, and everything that isn't
+  terrain is unchanged.
+
 ## v0.49.0 "Settlers" (溪石部落)
 Full notes: [38-settlers.md](38-settlers.md).
 - **The first native tribe.** 溪石部落 settles a level spot near home on present-day Earth.

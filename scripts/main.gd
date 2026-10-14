@@ -218,7 +218,7 @@ func _build_ui() -> void:
 	toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast_panel.add_child(toast_label)
 	toast_panel.hide()
-	save_label = UI.label("v0.49 溪石部落 · 原住民盖房 · 交谈与交易" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
+	save_label = UI.label("v0.50 记住落脚点 · 大微缩盒 · 随机掉落 · 矿物纹理" + ("  ·  测试版（独立存档）" if TestMode.enabled() else ""), 11, UI.GOLD if TestMode.enabled() else UI.MUTED)
 	save_label.position = Vector2(36, 880)
 	add_child(save_label)
 
@@ -2063,7 +2063,7 @@ func _show_miniatures() -> void:
 	var body=_dialog("河湾作品 · 把探索带回家", "星球上装备微缩器，瞄准自建作品装箱。作品会从原地搬走；「复刻」只做展示用的复制品。",true)
 	var boxes=state.planet.home().construction.miniatures
 	if boxes.is_empty():
-		body.add_child(UI.paragraph("还没有带回来的作品。先用工艺车间做出的构件搭一座小屋、一段桥或雕塑，再用背包里的微缩器收纳。\n每件最多64块、8×8×8格；有作物的种植箱先收获。",18))
+		body.add_child(UI.paragraph("还没有带回来的作品。先用工艺车间做出的构件搭一座小屋、一段桥或雕塑，再用背包里的微缩器收纳。\n每件最多256块、16×16×16格；有作物的种植箱先收获。",18))
 		body.add_child(UI.button("走过光桥去河湾",_show_planet_v2,true)); return
 	body.add_child(UI.paragraph("每块地可以放一座角落展台；也可以在“布置庭院”里买石展台、旋转展台或玻璃展柜，一块地摆很多件。展品仍属于你：收回后可在河湾重新展开。",16,UI.MUTED))
 	for id in boxes:

@@ -46,7 +46,7 @@
       "chance": 0.55,
       "amount": [
         1,
-        2
+        5
       ]
     },
     "fruit": {
@@ -56,6 +56,14 @@
     },
     "note": "砍倒一棵树的掉落按树的编号确定性随机（同一棵树结果固定）；概率为游戏数值"
   },
+  "stone_yield": [
+    1,
+    5
+  ],
+  "ore_yield": [
+    1,
+    5
+  ],
   "rubble_rocks": [
     "granite",
     "basalt",

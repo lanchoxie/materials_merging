@@ -6,6 +6,7 @@ extends RefCounted
 ## costs battery Wh. It turns in quarter turns and backs up through open tunnel. No physics: like the
 ## rover it duck-types the walker for the input code (movement, running, look(), jump(), stop()).
 const Geology=preload("res://scripts/planet_geology.gd")
+const Field=preload("res://scripts/river_field.gd")
 const FACING=[Vector2i(0,-1),Vector2i(1,0),Vector2i(0,1),Vector2i(-1,0)]
 const GRADES={-1:"下潜",0:"水平",1:"上爬"}
 var cell=Vector3i.ZERO     # floor cell under the middle of the machine
@@ -23,8 +24,9 @@ var look_pitch=-0.12
 var turn_latch=false
 var state: Dictionary={"charge":0.0,"cap":0.0}
 var rules: Dictionary={}
-var haul: Dictionary={}    # mineral id (or "soil"/"stone") -> cells collected this trip
+var haul: Dictionary={}    # mineral id (or "soil"/"stone") -> units collected this trip (1-5 a cell)
 var overflow=0             # cells cut while that mineral's store was full (lost)
+var cut_cells=0            # solid cells the machine has cut (haul minus stone/soil, plus overflow)
 var metres=0
 var message=""
 
@@ -116,7 +118,7 @@ func advance(v) -> String:
 		var kept=_collect(v,str(row[1]))
 		if kept!="": got[kept]=int(got.get(kept,0))+1
 	if not s.cells.is_empty(): nature.touch(Vector2(s.next.x,s.next.z),t)
-	from=centre(); cell=s.next; length=float(rules.base_seconds)+float(rules.seconds_per_hit)*float(s.hits); busy=length; metres+=1
+	from=centre(); cell=s.next; length=float(rules.base_seconds)+float(rules.seconds_per_hit)*float(s.hits); busy=length; metres+=1; cut_cells+=s.cells.size()
 	if s.cells.is_empty(): return "前进1米"
 	var parts=[]
 	for id in got: parts.append("%s×%d" % [_name(id),int(got[id])])
@@ -128,17 +130,29 @@ func _name(id: String) -> String:
 	return str(Geology.info(id).get("name",id))
 
 ## One cut cell into the stores; returns what was kept ("" = lost to a full store).
+## v0.50: like hand digging, a cell gives a random 1-5 (keyed by the cell, so a re-run matches),
+## and the haul counts cells so the dashboard adds up.
 func _collect(v,id: String) -> String:
 	var nature=v.nature; var spec: Dictionary=Geology.info(id)
 	nature._discover(id)
+	var key="cut:%d:%d:%d" % [cell.x,cell.y,cell.z]
 	if str(spec.get("yield",""))=="soil":
-		if v.field.can_add("soil",1): v.field.stock.soil+=1; v.field.revision+=1; haul["soil"]=int(haul.get("soil",0))+1; return "soil"
-		overflow+=1; return ""
-	if id in nature.rules.get("rubble_rocks",[]) and v.field.can_add("stone",1):
-		v.field.stock.stone+=1; v.field.revision+=1; haul["stone"]=int(haul.get("stone",0))+1
+		var soil=mini(Field.span([1,2],Field.roll(key,1)),maxi(0,int(v.field.rules.max_stock)-int(v.field.stock.soil)))
+		if soil>0: v.field.stock.soil+=soil; v.field.revision+=1; haul["soil"]=int(haul.get("soil",0))+soil
+		else: overflow+=1
+		return "soil"
+	if id in nature.rules.get("rubble_rocks",[]):
+		var stones=mini(Field.span(nature.rules.stone_yield,Field.roll(key,2)),maxi(0,int(v.field.rules.max_stock)-int(v.field.stock.stone)))
+		if stones>0: v.field.stock.stone+=stones; v.field.revision+=1; haul["stone"]=int(haul.get("stone",0))+stones
 	if int(nature.minerals.get(id,0))>=int(nature.rules.max_mineral_stock): overflow+=1; return ""
-	nature.minerals[id]=int(nature.minerals.get(id,0))+1; haul[id]=int(haul.get(id,0))+1
+	var ore=mini(Field.span(nature.rules.ore_yield,Field.roll(key,3)),maxi(0,int(nature.rules.max_mineral_stock)-int(nature.minerals.get(id,0))))
+	if ore<=0: overflow+=1; return ""
+	nature.minerals[id]=int(nature.minerals.get(id,0))+ore; haul[id]=int(haul.get(id,0))+ore
 	return id
+
+## The ore-yield range for a plain material (topsoil is a field resource, not a mineral).
+func spec_yield(id: String) -> Array:
+	return [1,1] if id=="soil" else Field.span(rules.get("ore_yield",[1,5]),0.0) as Array
 
 ## Back up one metre through open tunnel (or open ground).
 func reverse(v) -> String:

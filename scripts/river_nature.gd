@@ -187,11 +187,18 @@ func dig(aim: Dictionary,v) -> String:
 	if soil:
 		v.field.stock.soil+=1; v.field.revision+=1
 		return "挖出1份土方（表土），这一格已挖空"+found
-	minerals[id]=int(minerals.get(id,0))+1
+	# v0.50 (user): a mined block gives a random 1-5 of its mineral (and of building stone for rock).
+	# The roll is keyed by the cell, so the same block always yields the same amount.
+	var Field=v.field.get_script(); var key="dig:%d:%d:%d" % [c.x,c.y,c.z]
+	var got=mini(Field.span(rules.ore_yield,Field.roll(key,1)),maxi(0,int(rules.max_mineral_stock)-int(minerals.get(id,0))))
+	minerals[id]=int(minerals.get(id,0))+maxi(got,0)
+	var haul=" ×%d" % maxi(got,0)
 	# v0.41.2: quarrying rock also leaves building stone (石料), the old 散石 piles' job.
 	var rubble=""
-	if id in rules.get("rubble_rocks",[]) and v.field.can_add("stone",1): v.field.stock.stone+=1; v.field.revision+=1; rubble="，石料 ×1"
-	return "采到%s%s ×1%s%s" % [spec.name,(" "+str(spec.formula)) if str(spec.formula)!="" else "",rubble,found]
+	if id in rules.get("rubble_rocks",[]):
+		var stones=mini(Field.span(rules.stone_yield,Field.roll(key,2)),maxi(0,int(v.field.rules.max_stock)-int(v.field.stock.stone)))
+		if stones>0: v.field.stock.stone+=stones; v.field.revision+=1; rubble="，石料 ×%d" % stones
+	return "采到%s%s%s%s%s" % [spec.name,(" "+str(spec.formula)) if str(spec.formula)!="" else "",haul,rubble,found]
 
 func place(aim: Dictionary,id: String,v) -> String:
 	var c=aim.get("target")
