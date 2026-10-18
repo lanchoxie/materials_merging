@@ -132,8 +132,8 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.53 "Editor Feel" (tag `v0.53.0`; see [42-editorfeel.md](42-editorfeel.md)): the sandbox editor now
   matches the preset editor's atom feedback (context, fit sentence with stars and a tinted bar, rate, hover naming).
 - ✅ v0.54 "Bronze" (tag `v0.54.0`; see [43-bronze.md](43-bronze.md)): tech diffusion (Cu gifts → Bronze era) and tribal raids (Clash I).
-- Next: more Clash content (multiple factions, supply logistics); or lattice/element/crafting polish.
-  diffusion) and Clash (wars — abstract while you are away, real when you are there).
+- ✅ v0.55 "Clash II" (tag `v0.55.0`; see [44-clash2.md](44-clash2.md)): two raider factions (野营/猎火), supply-based abstract defense, one-day raid warning, trophy drops.
+- Next: more Clash content (third faction, faction diplomacy) or lattice/element/crafting polish.
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal
   doors, windows, boards, bricks, roofs) → 盾构机 (bulk ore) → farm robots → airplane → spaceship → second planet.

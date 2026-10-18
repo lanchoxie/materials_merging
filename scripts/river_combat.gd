@@ -59,7 +59,8 @@ func strike(target: Dictionary,v) -> String:
 	# v0.49: the tribe's people dodge; it costs friendship, not health.
 	if e.type=="native": attack_left=float(rules.hit_cooldown); return v.natives.attacked(e.row)
 	# v0.54 Clash: striking a raider damages them and potentially ends the raid.
-	if e.type=="raider": attack_left=float(rules.hit_cooldown); return v.natives.strike_raider(str(e.id))
+	# v0.55: pass v.field so a repelled raid can drop a trophy into the backpack.
+	if e.type=="raider": attack_left=float(rules.hit_cooldown); return v.natives.strike_raider(str(e.id),v.field)
 	if e.row.get("health",1)<=0: return "目标已经离开"
 	if not records.has(e.key) and records.size()>=int(rules.max_records): return "遭遇记录已满，等待已有怒气消退"
 	v.ranch.attacked(e,int(v.world.elapsed))

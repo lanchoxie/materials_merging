@@ -133,16 +133,48 @@
     "news_event": "溪石部落的族长检视了你带来的铜器，和长老们商议了很久；三天后，他们开始铸造第一批铜斧和铜矛——青铜时代来了"
   },
   "clash": {
-    "note": "v0.54: tribal conflict. An event fires every N days when near another tribal territory.",
+    "note": "v0.54: tribal conflict. v0.55: two raider factions, supply-based abstract defense, a one-day raid warning, and trophy drops.",
     "interval_days": 25,
+    "warning_days": 1,
     "raid_faction": "野营部落",
     "abstract_friendship_cost": -0.2,
     "abstract_stock_loss": {
       "food": 2,
       "timber": 1
     },
-    "abstract_news": "夜里有一队外族人袭击了部落，他们奋力抵抗，损失了些存粮",
-    "repel_news": "你帮助部落击退了外族人，族长的眼神里多了些别的东西",
+    "supply_defense": {
+      "note": "v0.55: a well-stocked tribe defends better while you are away. score = food + timber + stone.",
+      "strong_threshold": 30,
+      "strong_loss_mult": 0.5,
+      "weak_threshold": 10,
+      "weak_loss_mult": 1.5
+    },
+    "factions": [
+      {
+        "id": "野营",
+        "name": "野营部落",
+        "raider_name": "野营战士",
+        "raider_count": 3,
+        "raider_health": 2,
+        "trophy": "trophy_axe",
+        "trophy_chance": 1.0,
+        "abstract_news": "夜里有一队外族人袭击了部落，他们奋力抵抗，损失了些存粮",
+        "raid_news": "一队野营部落的战士向村子逼近！",
+        "repel_news": "你帮助部落击退了野营部落的人，族长的眼神里多了些别的东西"
+      },
+      {
+        "id": "猎火",
+        "name": "猎火部落",
+        "raider_name": "猎火战士",
+        "raider_count": 4,
+        "raider_health": 3,
+        "trophy": "trophy_axe",
+        "trophy_chance": 1.0,
+        "abstract_news": "猎火部落趁夜色袭来，抢走了不少存粮",
+        "raid_news": "猎火部落的战士举着火把逼近村子！",
+        "repel_news": "你与溪石部落并肩击退了猎火部落的袭击"
+      }
+    ],
     "repel_friendship": 0.25,
     "raider_count": 3,
     "raider_health": 2,

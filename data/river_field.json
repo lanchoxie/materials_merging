@@ -58,6 +58,11 @@
       "name": "部落陶罐",
       "icon": "crate",
       "color": "b8754a"
+    },
+    "trophy_axe": {
+      "name": "战斧碎片",
+      "icon": "crate",
+      "color": "8a7060"
     }
   },
   "garden": {

@@ -24,6 +24,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [16-polish.md](16-polish.md) | v0.33: sky and shadows, shaded hands and tools, chibi residents, rigged planet creatures, water shader |
 | [22-incidents-specimens.md](22-incidents-specimens.md) | v0.36: data-driven era framework, storms/floods/droughts with warnings and preparation, PVC pipes, 标本图鉴 |
 | [43-bronze.md](43-bronze.md) | v0.54: Bronze era tech diffusion (孔雀石 gifts), tribal raids (abstract when away, real when present) |
+| [44-clash2.md](44-clash2.md) | v0.55: two raider factions (野营/猎火), supply-based abstract defense, one-day warning, trophy drops |
 | [42-editorfeel.md](42-editorfeel.md) | v0.53: the sandbox editor gains the preset editor's atom feedback — context, fit sentence and bar, rate, hover naming |
 | [41-lattice.md](41-lattice.md) | v0.52: cell angles and the lattice readout, periodic sites and snap-to-boundary, crystals that open as crystals, a phase for any structure |
 | [40-guidance.md](40-guidance.md) | v0.51: 工艺路线 tab (craftable list, chains to the ore, missing buildings), element sources and uses, caesium made findable |

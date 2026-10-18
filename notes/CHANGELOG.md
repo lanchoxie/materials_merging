@@ -30,6 +30,14 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.55.0 "Clash II" (两族战争)
+Full notes: [44-clash2.md](44-clash2.md).
+- **Two raider factions** now alternate attacks: 野营部落 (3 warriors, 2 HP) and 猎火部落 (4 warriors, 3 HP). Adding a third faction later is a data-only change in `river_natives.json`.
+- **Supply-based abstract defense**: when you are away, the tribe's stock loss scales with their supply score (food + timber + stone). Well-stocked tribes lose half; struggling ones lose 50% more.
+- **One-day raid warning**: the chief panel shows a red warning banner the day before a raid, and an "raid in progress" banner while raiders are on the field.
+- **Trophy drops**: defeating the last raider of a real raid awards 战斧碎片 × 1 to the backpack.
+- Save version bumped to 3; `restore()` accepts versions 1–3, so existing saves load fine.
+
 ## v0.54.0 "Bronze" (青铜时代)
 Full notes: [43-bronze.md](43-bronze.md).
 - **The tribe enters the Bronze era** when the player gifts 6× 孔雀石. Gathering improves, the panel shows 🥉 青铜时代, and the news fires the tech-revolution event.

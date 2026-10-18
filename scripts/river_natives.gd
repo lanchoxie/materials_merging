@@ -28,6 +28,9 @@ var copper_gifts=0         # Cu-bearing items/ore the player has given or traded
 var raiders: Array=[]      # when the player is present: [{x,z,task,hp,id}]
 var next_raid_day=-1       # day the next raid is scheduled
 var first_person_active=false  # set by planet_v2 before tick() each step
+var next_warn_day=-1       # day of the pre-raid warning note (one day before the raid)
+var current_faction_id=""  # id of the faction currently raiding
+var _last_faction_idx=-1   # alternates between the two factions each raid cycle
 
 static func is_native(b: Dictionary) -> bool:
 	return str(b.get("source",""))==SOURCE
@@ -101,7 +104,8 @@ func setup(c) -> void:
 	stock={}
 	for k in rules.start_stock: stock[k]=int(rules.start_stock[k])
 	friendship=0.0; built={}; job={}; day=-1; gifts=0; trades=0; pottery=0; news=["%s来到河湾附近，准备在这里安家" % rules.tribe.name]
-	era="neolithic"; copper_gifts=0; raiders=[]; next_raid_day=-1
+	era="neolithic"; copper_gifts=0; raiders=[]; next_raid_day=-1; next_warn_day=-1; current_faction_id=""
+	_last_faction_idx=0
 
 func _note(text: String) -> void:
 	news.append(text)
@@ -135,7 +139,16 @@ func _new_day(now: int) -> void:
 		friendship=move_toward(friendship,0.0,float(rules.friendship.daily_drift))
 		# v0.54 Clash: schedule the first raid once huts are done, then every N days.
 		if next_raid_day<0 and built.size()>=int(rules.max_blocks):
-			next_raid_day=d+int(rules.get("clash",{}).get("interval_days",25))
+			var interval=int(rules.get("clash",{}).get("interval_days",25))
+			next_raid_day=d+interval
+			next_warn_day=next_raid_day-int(rules.get("clash",{}).get("warning_days",1))
+		# v0.55 Clash II: one-day raid warning note.
+		if next_warn_day>=0 and d==next_warn_day:
+			var factions: Array=rules.get("clash",{}).get("factions",[])
+			var next_idx=(_last_faction_idx+1)%maxi(1,factions.size())
+			var fname=str(factions[next_idx].get("name","外族")) if not factions.is_empty() else "外族"
+			_note("侦察者回报：%s的人马明天会来袭" % fname)
+			next_warn_day=-1
 	day=d; gifts=0; trades=0; pottery=0
 
 ## v0.54 Bronze: check whether the tribe should enter the Bronze era.
@@ -146,26 +159,53 @@ func _tick_bronze() -> void:
 	if copper_gifts>=int(B.get("trigger_trades",6)):
 		era="bronze"
 		_note(str(B.get("news_event","部落进入了青铜时代")))
+## v0.55 Clash II: pick the next faction in turn, apply supply-based defense multiplier.
+func _pick_faction() -> Dictionary:
+	var factions: Array=rules.get("clash",{}).get("factions",[])
+	if factions.is_empty():
+		return rules.get("clash",{})
+	_last_faction_idx=(_last_faction_idx+1)%factions.size()
+	current_faction_id=str(factions[_last_faction_idx].get("id",""))
+	return factions[_last_faction_idx]
+
+func _supply_score() -> int:
+	return int(stock.get("food",0))+int(stock.get("timber",0))+int(stock.get("stone",0))
+
 func _tick_clash(v,present: bool) -> void:
 	if next_raid_day<0 or day<next_raid_day: return
-	next_raid_day=day+int(rules.get("clash",{}).get("interval_days",25))
 	var C: Dictionary=rules.get("clash",{})
+	var interval=int(C.get("interval_days",25))
+	next_raid_day=day+interval
+	next_warn_day=next_raid_day-int(C.get("warning_days",1))
+	var faction=_pick_faction()
 	if not present:
-		# Abstract resolution: the tribe defends alone, taking losses.
+		# Abstract resolution: supply score determines how badly they are hurt.
+		var score=_supply_score()
+		var sd: Dictionary=C.get("supply_defense",{})
+		var mult=1.0
+		if score>=int(sd.get("strong_threshold",30)):
+			mult=float(sd.get("strong_loss_mult",0.5))
+		elif score<int(sd.get("weak_threshold",10)):
+			mult=float(sd.get("weak_loss_mult",1.5))
 		for k in C.get("abstract_stock_loss",{}):
-			stock[k]=maxi(0,int(stock.get(k,0))-int(C.abstract_stock_loss[k]))
+			var base=int(C.abstract_stock_loss[k])
+			stock[k]=maxi(0,int(stock.get(k,0))-roundi(base*mult))
 		friendship=clampf(friendship+float(C.get("abstract_friendship_cost",-0.2)),-1.0,1.0)
-		_note(str(C.get("abstract_news","夜里有外族人袭击了部落")))
+		_note(str(faction.get("abstract_news",str(C.get("abstract_news","夜里有外族人袭击了部落")))))
 	else:
 		# Spawn raiders as visible entities near the village.
 		raiders=[]
-		for i in range(int(C.get("raider_count",3))):
-			var angle=float(i)*TAU/float(int(C.get("raider_count",3)))+0.4
-			raiders.append({"id":"raider_%d" % i,"name":str(C.get("raider_name","外族战士")),"x":home.x+cos(angle)*20.0,"z":home.y+sin(angle)*20.0,"task":"进攻","hp":int(C.get("raider_health",2))})
-		_note("一队外族人向村子逼近！")
+		var count=int(faction.get("raider_count",int(C.get("raider_count",3))))
+		var hp=int(faction.get("raider_health",int(C.get("raider_health",2))))
+		var rname=str(faction.get("raider_name",str(C.get("raider_name","外族战士"))))
+		for i in range(count):
+			var angle=float(i)*TAU/float(count)+0.4
+			raiders.append({"id":"raider_%d" % i,"name":rname,"x":home.x+cos(angle)*20.0,"z":home.y+sin(angle)*20.0,"task":"进攻","hp":hp})
+		_note(str(faction.get("raid_news","一队外族人向村子逼近！")))
 
-## v0.54 Clash: a raider is struck. Returns a message. When all raiders fall the raid ends.
-func strike_raider(raider_id: String) -> String:
+## v0.55 Clash II: a raider is struck. When the last raider falls the raid ends, the player
+## gets a faction-specific trophy if their backpack has room, and friendship rises.
+func strike_raider(raider_id: String, field=null) -> String:
 	var C: Dictionary=rules.get("clash",{})
 	for r in raiders:
 		if r.id!=raider_id: continue
@@ -173,11 +213,31 @@ func strike_raider(raider_id: String) -> String:
 		if int(r.hp)<=0:
 			raiders.erase(r)
 			if raiders.is_empty():
-				_note(str(C.get("repel_news","你帮助部落击退了外族人")))
+				_note(str(_current_faction().get("repel_news",C.get("repel_news","你帮助部落击退了外族人"))))
 				friendship=clampf(friendship+float(C.get("repel_friendship",0.25)),-1.0,1.0)
-				return str(C.get("repel_news","击退了外族人")) + " · 友好度 %d%%" % roundi(friendship*100)
+				var msg=str(_current_faction().get("repel_news",C.get("repel_news","击退了外族人"))) + " · 友好度 %d%%" % roundi(friendship*100)
+				msg+=_award_trophy(field)
+				current_faction_id=""
+				return msg
 			return "%s倒下了，还有%d人" % [r.name,raiders.size()]
 	return "没有找到这个目标"
+
+func _current_faction() -> Dictionary:
+	var factions: Array=rules.get("clash",{}).get("factions",[])
+	for f in factions:
+		if str(f.get("id",""))==current_faction_id: return f
+	return {}
+
+func _award_trophy(field) -> String:
+	if field==null: return ""
+	var f=_current_faction()
+	var trophy=str(f.get("trophy",""))
+	if trophy=="": return ""
+	var chance=float(f.get("trophy_chance",1.0))
+	if randf()>chance: return ""
+	if not field.can_add(trophy,1): return " · 背包放不下战利品"
+	field.stock[trophy]=int(field.stock.get(trophy,0))+1; field.revision+=1
+	return " · 获得战斧碎片 ×1"
 
 ## A block they built is gone: someone took it. Friendship drops; it goes back on the build list.
 func _check_removed(c) -> void:
@@ -321,9 +381,10 @@ func attacked(member: Dictionary) -> String:
 
 # --- Save -----------------------------------------------------------------------------------------
 func serialize() -> Dictionary:
-	return {"version":2,"enabled":enabled,"home":[home.x,home.y] if home!=Vector2.INF else [],"members":members.duplicate(true),"stock":stock.duplicate(),
+	return {"version":3,"enabled":enabled,"home":[home.x,home.y] if home!=Vector2.INF else [],"members":members.duplicate(true),"stock":stock.duplicate(),
 		"friendship":friendship,"built":built.keys(),"day":day,"gifts":gifts,"trades":trades,"pottery":pottery,"news":news.duplicate(),
-		"era":era,"copper_gifts":copper_gifts,"next_raid_day":next_raid_day,"raiders":raiders.duplicate(true)}
+		"era":era,"copper_gifts":copper_gifts,"next_raid_day":next_raid_day,"next_warn_day":next_warn_day,
+		"current_faction_id":current_faction_id,"last_faction_idx":_last_faction_idx,"raiders":raiders.duplicate(true)}
 
 static func _num(v,lo: float,hi: float,whole: bool=false) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
@@ -331,7 +392,7 @@ static func _num(v,lo: float,hi: float,whole: bool=false) -> bool:
 ## Checks the tribe and that every native block in the construction store is one of its blueprint
 ## cells with the right kind (no forged native blocks).
 func restore(data,c) -> bool:
-	if not data is Dictionary or (int(data.get("version",0)) not in [1,2]) or not data.get("enabled") is bool: return false
+	if not data is Dictionary or (int(data.get("version",0)) not in [1,2,3]) or not data.get("enabled") is bool: return false
 	var spot=data.get("home",[])
 	if not spot is Array or (spot.size()!=0 and spot.size()!=2): return false
 	var at=Vector2.INF
@@ -370,5 +431,7 @@ func restore(data,c) -> bool:
 		if cells.has(str(key)): built[str(key)]=true
 	day=int(data.day); gifts=int(data.gifts); trades=int(data.trades); pottery=int(data.pottery); news=data.news.duplicate(); job={}
 	era=str(data.get("era","neolithic")); copper_gifts=int(data.get("copper_gifts",0)); next_raid_day=int(data.get("next_raid_day",-1))
+	next_warn_day=int(data.get("next_warn_day",-1)); current_faction_id=str(data.get("current_faction_id",""))
+	_last_faction_idx=int(data.get("last_faction_idx",-1))
 	raiders=[]; for r in data.get("raiders",[]): if r is Dictionary: raiders.append(r.duplicate())
 	return true

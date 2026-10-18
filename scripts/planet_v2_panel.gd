@@ -380,6 +380,15 @@ func _native_menu() -> void:
 	var col=UI.column(native_box,8)
 	col.add_child(UI.label("%s · 族长%s%s" % [n.rules.tribe.name,n.chief().get("name","")," · 🥉 青铜时代" if n.era=="bronze" else ""],20,Color("f0c890")))
 	var left=n.missing(v.construction).size()
+	# v0.55 Clash II: show a warning banner one day before the next raid.
+	if n.next_warn_day>=0 and n.day>=n.next_warn_day and n.raiders.is_empty():
+		var factions: Array=n.rules.get("clash",{}).get("factions",[])
+		var next_idx=(n._last_faction_idx+1)%maxi(1,factions.size())
+		var fname=str(factions[next_idx].get("name","外族")) if not factions.is_empty() else "外族"
+		var warn=UI.paragraph("⚔️ 侦察者来报：%s明天将来袭，备好存粮！" % fname,14,Color("f07050"))
+		col.add_child(warn)
+	elif not n.raiders.is_empty():
+		col.add_child(UI.paragraph("⚔️ 袭击中！%d名外族战士正在逼近，打他们！" % n.raiders.size(),14,Color("f07050")))
 	col.add_child(UI.paragraph("友好度 %d%%（%s） · 库存 木料%d 石块%d 食物%d\n%s" % [roundi(n.friendship*100),n.mood(),int(n.stock.timber),int(n.stock.stone),int(n.stock.food),"两座小屋还差 %d 块，工匠%s正在%s" % [left,n._builder().name,n._builder().task] if left>0 else "两座小屋都已建好，部落在这里安了家"],14))
 	if not n.news.is_empty(): col.add_child(UI.paragraph("近况：%s" % n.news.back(),13,UI.MUTED))
 	var row=UI.row(col,6)
