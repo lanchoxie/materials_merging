@@ -389,6 +389,12 @@ func _native_menu() -> void:
 		col.add_child(warn)
 	elif not n.raiders.is_empty():
 		col.add_child(UI.paragraph("⚔️ 袭击中！%d名外族战士正在逼近，打他们！" % n.raiders.size(),14,Color("f07050")))
+		# v0.56 Diplomacy: offer tribute to send the raiders away without fighting.
+		var fc=n._current_faction(); var tcost: Dictionary=fc.get("tribute_cost",{})
+		if not tcost.is_empty():
+			var cost_parts=[]
+			for k in tcost: cost_parts.append("%s×%d" % [v.field.rules.resources.get(k,{}).get("name",k),int(tcost[k])])
+			col.add_child(UI.button("🤝 进贡求和（%s → 延迟下次袭击）" % "＋".join(cost_parts),func(): _native_act("v2_native_tribute",{})))
 	col.add_child(UI.paragraph("友好度 %d%%（%s） · 库存 木料%d 石块%d 食物%d\n%s" % [roundi(n.friendship*100),n.mood(),int(n.stock.timber),int(n.stock.stone),int(n.stock.food),"两座小屋还差 %d 块，工匠%s正在%s" % [left,n._builder().name,n._builder().task] if left>0 else "两座小屋都已建好，部落在这里安了家"],14))
 	if not n.news.is_empty(): col.add_child(UI.paragraph("近况：%s" % n.news.back(),13,UI.MUTED))
 	var row=UI.row(col,6)

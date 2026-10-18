@@ -30,7 +30,8 @@ var next_raid_day=-1       # day the next raid is scheduled
 var first_person_active=false  # set by planet_v2 before tick() each step
 var next_warn_day=-1       # day of the pre-raid warning note (one day before the raid)
 var current_faction_id=""  # id of the faction currently raiding
-var _last_faction_idx=-1   # alternates between the two factions each raid cycle
+var _last_faction_idx=-1   # alternates between eligible factions each raid cycle
+var raid_cycle=0           # counts completed raid events (used for min_cycle gating)
 
 static func is_native(b: Dictionary) -> bool:
 	return str(b.get("source",""))==SOURCE
@@ -105,7 +106,7 @@ func setup(c) -> void:
 	for k in rules.start_stock: stock[k]=int(rules.start_stock[k])
 	friendship=0.0; built={}; job={}; day=-1; gifts=0; trades=0; pottery=0; news=["%s来到河湾附近，准备在这里安家" % rules.tribe.name]
 	era="neolithic"; copper_gifts=0; raiders=[]; next_raid_day=-1; next_warn_day=-1; current_faction_id=""
-	_last_faction_idx=0
+	_last_faction_idx=0; raid_cycle=0
 
 func _note(text: String) -> void:
 	news.append(text)
@@ -159,14 +160,18 @@ func _tick_bronze() -> void:
 	if copper_gifts>=int(B.get("trigger_trades",6)):
 		era="bronze"
 		_note(str(B.get("news_event","部落进入了青铜时代")))
-## v0.55 Clash II: pick the next faction in turn, apply supply-based defense multiplier.
+## v0.56 Diplomacy: pick the next eligible faction (min_cycle gate), cycling through the list.
 func _pick_faction() -> Dictionary:
 	var factions: Array=rules.get("clash",{}).get("factions",[])
-	if factions.is_empty():
-		return rules.get("clash",{})
-	_last_faction_idx=(_last_faction_idx+1)%factions.size()
-	current_faction_id=str(factions[_last_faction_idx].get("id",""))
-	return factions[_last_faction_idx]
+	if factions.is_empty(): return rules.get("clash",{})
+	# Build the list of factions unlocked for this raid_cycle.
+	var eligible: Array=[]
+	for f in factions:
+		if raid_cycle>=int(f.get("min_cycle",0)): eligible.append(f)
+	if eligible.is_empty(): eligible=factions  # fallback: use all if none qualify
+	_last_faction_idx=(_last_faction_idx+1)%eligible.size()
+	current_faction_id=str(eligible[_last_faction_idx].get("id",""))
+	return eligible[_last_faction_idx]
 
 func _supply_score() -> int:
 	return int(stock.get("food",0))+int(stock.get("timber",0))+int(stock.get("stone",0))
@@ -192,6 +197,7 @@ func _tick_clash(v,present: bool) -> void:
 			stock[k]=maxi(0,int(stock.get(k,0))-roundi(base*mult))
 		friendship=clampf(friendship+float(C.get("abstract_friendship_cost",-0.2)),-1.0,1.0)
 		_note(str(faction.get("abstract_news",str(C.get("abstract_news","夜里有外族人袭击了部落")))))
+		raid_cycle+=1
 	else:
 		# Spawn raiders as visible entities near the village.
 		raiders=[]
@@ -238,6 +244,32 @@ func _award_trophy(field) -> String:
 	if not field.can_add(trophy,1): return " · 背包放不下战利品"
 	field.stock[trophy]=int(field.stock.get(trophy,0))+1; field.revision+=1
 	return " · 获得战斧碎片 ×1"
+
+## v0.56 Diplomacy: pay tribute to end the current real raid and delay the next one.
+## Only works while raiders are actually on the field. Returns a message for the player.
+func negotiate_tribute(field) -> String:
+	if raiders.is_empty(): return "现在没有正在进攻的外族人"
+	var f=_current_faction()
+	if f.is_empty(): return "现在没有正在进攻的外族人"
+	var cost: Dictionary=f.get("tribute_cost",{})
+	if cost.is_empty(): return "这一支人马不愿意接受进贡"
+	# Check the player's backpack has enough of every required resource.
+	for k in cost:
+		if int(field.stock.get(k,0))<int(cost[k]):
+			var rname=str(field.rules.resources.get(k,{}).get("name",k))
+			return "进贡需要 %s×%d，背包里不够" % [rname,int(cost[k])]
+	for k in cost:
+		field.stock[k]=int(field.stock[k])-int(cost[k])
+	field.revision+=1
+	raiders=[]; current_faction_id=""
+	_note(str(f.get("tribute_news","你送上进贡，外族人退走了")))
+	# Delay the next raid by half the interval (peace bought, not free).
+	var C: Dictionary=rules.get("clash",{})
+	var delay=roundi(int(C.get("interval_days",25))*0.5)
+	if next_raid_day>=0: next_raid_day=next_raid_day+delay
+	next_warn_day=next_raid_day-int(C.get("warning_days",1))
+	raid_cycle+=1
+	return "%s · 下次袭击推迟约%d天" % [str(f.get("tribute_news","外族人收下进贡后退走了")),delay]
 
 ## A block they built is gone: someone took it. Friendship drops; it goes back on the build list.
 func _check_removed(c) -> void:
@@ -381,10 +413,10 @@ func attacked(member: Dictionary) -> String:
 
 # --- Save -----------------------------------------------------------------------------------------
 func serialize() -> Dictionary:
-	return {"version":3,"enabled":enabled,"home":[home.x,home.y] if home!=Vector2.INF else [],"members":members.duplicate(true),"stock":stock.duplicate(),
+	return {"version":4,"enabled":enabled,"home":[home.x,home.y] if home!=Vector2.INF else [],"members":members.duplicate(true),"stock":stock.duplicate(),
 		"friendship":friendship,"built":built.keys(),"day":day,"gifts":gifts,"trades":trades,"pottery":pottery,"news":news.duplicate(),
 		"era":era,"copper_gifts":copper_gifts,"next_raid_day":next_raid_day,"next_warn_day":next_warn_day,
-		"current_faction_id":current_faction_id,"last_faction_idx":_last_faction_idx,"raiders":raiders.duplicate(true)}
+		"current_faction_id":current_faction_id,"last_faction_idx":_last_faction_idx,"raid_cycle":raid_cycle,"raiders":raiders.duplicate(true)}
 
 static func _num(v,lo: float,hi: float,whole: bool=false) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
@@ -392,7 +424,7 @@ static func _num(v,lo: float,hi: float,whole: bool=false) -> bool:
 ## Checks the tribe and that every native block in the construction store is one of its blueprint
 ## cells with the right kind (no forged native blocks).
 func restore(data,c) -> bool:
-	if not data is Dictionary or (int(data.get("version",0)) not in [1,2,3]) or not data.get("enabled") is bool: return false
+	if not data is Dictionary or (int(data.get("version",0)) not in [1,2,3,4]) or not data.get("enabled") is bool: return false
 	var spot=data.get("home",[])
 	if not spot is Array or (spot.size()!=0 and spot.size()!=2): return false
 	var at=Vector2.INF
@@ -432,6 +464,6 @@ func restore(data,c) -> bool:
 	day=int(data.day); gifts=int(data.gifts); trades=int(data.trades); pottery=int(data.pottery); news=data.news.duplicate(); job={}
 	era=str(data.get("era","neolithic")); copper_gifts=int(data.get("copper_gifts",0)); next_raid_day=int(data.get("next_raid_day",-1))
 	next_warn_day=int(data.get("next_warn_day",-1)); current_faction_id=str(data.get("current_faction_id",""))
-	_last_faction_idx=int(data.get("last_faction_idx",-1))
+	_last_faction_idx=int(data.get("last_faction_idx",-1)); raid_cycle=int(data.get("raid_cycle",0))
 	raiders=[]; for r in data.get("raiders",[]): if r is Dictionary: raiders.append(r.duplicate())
 	return true

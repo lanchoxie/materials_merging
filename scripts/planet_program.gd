@@ -404,10 +404,12 @@ func command(state,action: String,payload: Dictionary={}) -> String:
 			var shown: String=preload("res://scripts/river_miniatures.gd").exhibit(home().construction,str(payload.get("id","")),int(payload.get("plot",-1)),state.plots)
 			home_saved()
 			return shown
-		"v2_native_gift", "v2_native_trade":
+		"v2_native_gift", "v2_native_trade", "v2_native_tribute":
 			# v0.49: gifts and trade with 溪石部落 (only on present-day Earth, where they live).
 			if not v2.active or not v2.natives.enabled: return "这里没有部落"
 			if action=="v2_native_trade": return v2.natives.trade(v2.field)
+			# v0.56 Diplomacy: pay tribute to send the current raiders away.
+			if action=="v2_native_tribute": return v2.natives.negotiate_tribute(v2.field)
 			var said=v2.natives.gift(v2.field,str(payload.get("kind","food")))
 			if said.contains("回赠") and not v2.natives.take_pottery(v2.field): said=said.replace(" · 回赠一只部落陶罐","")
 			return said

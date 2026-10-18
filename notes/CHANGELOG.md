@@ -30,6 +30,12 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.56.0 "Diplomacy" (议和外交)
+Full notes: [45-diplomacy.md](45-diplomacy.md).
+- **Third raider faction 铁骨部落** joins the rotation after two completed raids (5 warriors, 4 HP each, 12 food tribute). `_pick_faction()` filters by `min_cycle`.
+- **Tribute system**: when raiders are on the field, a 🤝 进贡求和 button in the chief panel pays the faction's food cost to send them away and delay the next raid by half the interval. Peace bought, not permanent.
+- Save version bumped to 4; `restore()` accepts versions 1–4; `raid_cycle` defaults to 0 for older saves.
+
 ## v0.55.0 "Clash II" (两族战争)
 Full notes: [44-clash2.md](44-clash2.md).
 - **Two raider factions** now alternate attacks: 野营部落 (3 warriors, 2 HP) and 猎火部落 (4 warriors, 3 HP). Adding a third faction later is a data-only change in `river_natives.json`.

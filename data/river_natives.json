@@ -156,11 +156,14 @@
         "raider_name": "野营战士",
         "raider_count": 3,
         "raider_health": 2,
+        "min_cycle": 0,
         "trophy": "trophy_axe",
         "trophy_chance": 1.0,
         "abstract_news": "夜里有一队外族人袭击了部落，他们奋力抵抗，损失了些存粮",
         "raid_news": "一队野营部落的战士向村子逼近！",
-        "repel_news": "你帮助部落击退了野营部落的人，族长的眼神里多了些别的东西"
+        "repel_news": "你帮助部落击退了野营部落的人，族长的眼神里多了些别的东西",
+        "tribute_cost": { "food": 6 },
+        "tribute_news": "你送上食物，野营部落的首领打量了一番，点点头，带人离去了"
       },
       {
         "id": "猎火",
@@ -168,11 +171,29 @@
         "raider_name": "猎火战士",
         "raider_count": 4,
         "raider_health": 3,
+        "min_cycle": 0,
         "trophy": "trophy_axe",
         "trophy_chance": 1.0,
         "abstract_news": "猎火部落趁夜色袭来，抢走了不少存粮",
         "raid_news": "猎火部落的战士举着火把逼近村子！",
-        "repel_news": "你与溪石部落并肩击退了猎火部落的袭击"
+        "repel_news": "你与溪石部落并肩击退了猎火部落的袭击",
+        "tribute_cost": { "food": 8 },
+        "tribute_news": "你送上食物，猎火部落的人互看了几眼，拿走后悻悻退走了"
+      },
+      {
+        "id": "铁骨",
+        "name": "铁骨部落",
+        "raider_name": "铁骨勇士",
+        "raider_count": 5,
+        "raider_health": 4,
+        "min_cycle": 2,
+        "trophy": "trophy_axe",
+        "trophy_chance": 1.0,
+        "abstract_news": "铁骨部落的勇士如铁流般涌来，部落损失惨重",
+        "raid_news": "铁骨部落的五名勇士逼近！他们比前两支人马更强！",
+        "repel_news": "你击退了铁骨部落的精锐勇士，部落的孩子们都出来围观",
+        "tribute_cost": { "food": 12 },
+        "tribute_news": "铁骨部落的头领掂了掂食物的重量，冷哼一声，转身带队撤离了"
       }
     ],
     "repel_friendship": 0.25,

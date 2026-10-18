@@ -133,7 +133,8 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   matches the preset editor's atom feedback (context, fit sentence with stars and a tinted bar, rate, hover naming).
 - ✅ v0.54 "Bronze" (tag `v0.54.0`; see [43-bronze.md](43-bronze.md)): tech diffusion (Cu gifts → Bronze era) and tribal raids (Clash I).
 - ✅ v0.55 "Clash II" (tag `v0.55.0`; see [44-clash2.md](44-clash2.md)): two raider factions (野营/猎火), supply-based abstract defense, one-day raid warning, trophy drops.
-- Next: more Clash content (third faction, faction diplomacy) or lattice/element/crafting polish.
+- ✅ v0.56 "Diplomacy" (tag `v0.56.0`; see [45-diplomacy.md](45-diplomacy.md)): third faction 铁骨部落 (unlocks after 2 raid cycles), tribute system (pay food to delay next raid).
+- Next: v0.57 "Craft UI" — iconized tree panel (LoL-style card grid, bright=craftable, dim=missing materials, red=missing building); replaces the current list-style craft_guide display.
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal
   doors, windows, boards, bricks, roofs) → 盾构机 (bulk ore) → farm robots → airplane → spaceship → second planet.
