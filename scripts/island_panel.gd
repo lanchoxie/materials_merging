@@ -68,7 +68,7 @@ func _redraw(reset_scroll: bool=false) -> void:
 const Guide=preload("res://scripts/craft_guide.gd")
 const Geology=preload("res://scripts/planet_geology.gd")
 var guide=null
-var guide_target="item:glass"
+var guide_target="item:__grid"
 
 func _guide() -> void:
 	if guide==null or guide.state!=state: guide=Guide.new(); guide.setup(state)
@@ -82,10 +82,30 @@ func _guide() -> void:
 		_mineral_detail(guide_target.get_slice(":",1)); return
 	_guide_list()
 
-## The pick list: everything the industry can output, with its state in one word.
+## v0.57 Craft UI: icon-card grid — each item is a tile with a status-colored border.
+## Green = craftable now, amber = missing materials, violet = missing building,
+## dim = locked / already have. Tapping a tile opens the inline tree drill-down.
 func _guide_list() -> void:
-	var card=_card("能做的成品")
-	card.add_child(UI.paragraph("状态按你现在的库存、工厂和已解锁配方计算。",14,UI.MUTED))
+	# If a specific item is selected, show its tree instead of the full grid.
+	if guide_target.begins_with("item:") and guide_target != "item:__grid":
+		var id=guide_target.get_slice(":",1)
+		var n=guide.node("item:"+id)
+		var back_row=UI.row(body,8)
+		back_row.add_child(UI.button("← 返回成品格",func(): guide_target="item:__grid"; _redraw(true)))
+		var status_color=_guide_status_color(n.status)
+		var title_col=UI.column(body,4)
+		var hdr=UI.label("%s" % n.name,22,status_color)
+		title_col.add_child(hdr)
+		var words={"have":"✓ 已有","make":"✓ 可生产","missing":"✗ 缺料","building":"⚙ 需建厂","locked":"🔒 未解锁","mine":"⛏ 要采集","none":"？链条太深"}
+		title_col.add_child(UI.paragraph(str(words.get(n.status,"—")),15,status_color))
+		if n.get("detail","")!="": title_col.add_child(UI.paragraph(n.detail,15,UI.MUTED))
+		body.add_child(UI.label("合成链",18,UI.MINT))
+		_guide_tree(body,n,0)
+		return
+	# Full grid: 4 columns of tiles.
+	body.add_child(UI.paragraph("亮色边框 = 可生产 · 橙色 = 缺料 · 紫色 = 需建厂 · 暗色 = 未解锁或已有",14,UI.MUTED))
+	var grid=GridContainer.new(); grid.columns=4; grid.add_theme_constant_override("h_separation",8); grid.add_theme_constant_override("v_separation",8)
+	body.add_child(grid)
 	var rows=[]
 	for id in state.industry.rules().recipes:
 		var r: Dictionary=state.industry.rules().recipes[id]
@@ -93,23 +113,56 @@ func _guide_list() -> void:
 			rows.append({"id":out,"recipe":id,"name":str(r.name),"qty":int(r.outputs[out])})
 	rows.sort_custom(func(a,b): return str(a.name)<str(b.name))
 	for row in rows:
-		var line=UI.row(card,8)
-		var label=UI.label("%s ×%d%s" % [row.name,row.qty,"（已有 %d）" % int(state.industry.items.get(row.id,0)) if int(state.industry.items.get(row.id,0))>0 else ""],18); label.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-		line.add_child(label)
-		# Ask the guide, which knows about the factory and the unlocking experiment too — `quote`
-		# needs a real plot, so it cannot answer "what is stopping me" on its own.
 		var n=guide.node("item:"+str(row.id))
-		var words={"have":"已有","make":"可生产","missing":"缺料","building":"需建厂","locked":"未解锁","mine":"要采集","none":"链条太深"}
-		var tints={"have":UI.MUTED,"make":UI.MINT,"missing":UI.MUTED,"building":UI.GOLD,"locked":UI.LILAC,"mine":UI.MUTED,"none":UI.MUTED}
-		line.add_child(UI.label(str(words.get(n.status,n.status)),16,tints.get(n.status,UI.MUTED)))
-		line.add_child(UI.button("看链条",func(): guide_target="item:"+str(row.id); _redraw(true)))
-	body.add_child(UI.paragraph("提示：「需建厂」表示缺一座工厂；点「看链条」会把它拆到矿石和元素。",14,UI.MUTED))
+		var border_color=_guide_status_color(n.status)
+		var tile=PanelContainer.new()
+		var sty=UI.style(UI.INNER,10,border_color); sty.set_border_width_all(2)
+		tile.add_theme_stylebox_override("panel",sty)
+		tile.custom_minimum_size=Vector2(120,72)
+		var col=UI.column(tile,2)
+		var nm=UI.label(str(row.name),14,border_color); nm.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; col.add_child(nm)
+		var have_count=int(state.industry.items.get(str(row.id),0))
+		if have_count>0: col.add_child(UI.paragraph("库存 %d" % have_count,12,UI.MUTED))
+		# The whole tile acts as a button.
+		var btn=Button.new(); btn.flat=true; btn.text=""
+		btn.mouse_filter=Control.MOUSE_FILTER_PASS
+		btn.size_flags_horizontal=Control.SIZE_EXPAND_FILL; btn.size_flags_vertical=Control.SIZE_EXPAND_FILL
+		btn.pressed.connect(func(): guide_target="item:"+str(row.id); _redraw(true))
+		tile.add_child(btn)
+		grid.add_child(tile)
+
+## Render a guide node as indented rows with a colored left-indicator strip.
+func _guide_tree(parent: Node, n: Dictionary, depth: int) -> void:
+	if depth>5: return
+	var indent=depth*16
+	var color=_guide_status_color(n.status)
+	var row=UI.row(parent,4)
+	if indent>0:
+		var spacer=Control.new(); spacer.custom_minimum_size=Vector2(indent,0); row.add_child(spacer)
+	var bar=PanelContainer.new()
+	var bar_sty=StyleBoxFlat.new(); bar_sty.bg_color=color; bar_sty.set_corner_radius_all(2)
+	bar_sty.content_margin_left=3; bar_sty.content_margin_right=3; bar_sty.content_margin_top=0; bar_sty.content_margin_bottom=0
+	bar.add_theme_stylebox_override("panel",bar_sty); bar.custom_minimum_size=Vector2(4,0)
+	row.add_child(bar)
+	var info_col=UI.column(row,2); info_col.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	info_col.add_child(UI.label("%s   %d / %d" % [n.name,mini(n.have,n.need),n.need],15,color))
+	if n.get("detail","")!="": info_col.add_child(UI.paragraph(n.detail,13,UI.MUTED))
+	for child in n.get("children",[]):
+		_guide_tree(parent,child,depth+1)
+
+## Status → display color.
+func _guide_status_color(status: String) -> Color:
+	match status:
+		"make": return UI.MINT
+		"missing": return UI.GOLD
+		"building","locked": return UI.LILAC
+		"have": return UI.MUTED
+		_: return UI.MUTED
 
 func _guide_pick(kind: String) -> void:
 	if kind=="item":
-		for id in state.industry.rules().recipes:
-			var r: Dictionary=state.industry.rules().recipes[id]
-			for out in r.outputs: guide_target="item:"+str(out); _redraw(true); return
+		# v0.57: go to the grid overview instead of jumping to the first item.
+		guide_target="item:__grid"; _redraw(true); return
 	elif kind=="el":
 		for symbol in state.elements: guide_target="el:"+str(symbol); _redraw(true); return
 	else:

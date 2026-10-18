@@ -30,6 +30,12 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.57.0 "Craft UI" (工艺格)
+Full notes: [46-craft-ui.md](46-craft-ui.md).
+- **工艺路线 tab is now a 4-column icon-card grid**: each craftable item is a tile with a status-colored border (MINT = can make, GOLD = missing materials, LILAC = missing building, dim = locked / already have). Tapping a tile opens an inline tree drill-down with colored left-indicator strips and indented rows.
+- **Back button** returns from the drill-down to the full grid. The grid is now the default view; `_guide_pick("item")` goes to the grid rather than jumping to the first item.
+- `craft_guide.gd` logic is unchanged — only the rendering layer in `island_panel.gd` changed.
+
 ## v0.56.0 "Diplomacy" (议和外交)
 Full notes: [45-diplomacy.md](45-diplomacy.md).
 - **Third raider faction 铁骨部落** joins the rotation after two completed raids (5 warriors, 4 HP each, 12 food tribute). `_pick_faction()` filters by `min_cycle`.
