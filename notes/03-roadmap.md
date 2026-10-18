@@ -135,7 +135,8 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.55 "Clash II" (tag `v0.55.0`; see [44-clash2.md](44-clash2.md)): two raider factions (野营/猎火), supply-based abstract defense, one-day raid warning, trophy drops.
 - ✅ v0.56 "Diplomacy" (tag `v0.56.0`; see [45-diplomacy.md](45-diplomacy.md)): third faction 铁骨部落 (unlocks after 2 raid cycles), tribute system (pay food to delay next raid).
 - ✅ v0.57 "Craft UI" (tag `v0.57.0`; see [46-craft-ui.md](46-craft-ui.md)): 工艺路线 tab is now a 4-column icon-card grid with status-colored borders; inline tree drill-down with colored left-indicator strips replaces the plain list.
-- Next: further Clash content (faction events, rare drops), more eras, or crafting/lattice polish.
+- ✅ v0.58 "Faction Events" (tag `v0.58.0`; see [47-faction-events.md](47-faction-events.md)): faction-specific rare trophies (骨牙护符/火焰羽毛/铁骨臂章) and post-raid demand events; APK AtomAtelier-0.58.0-android.apk.
+- Next: more era progression, or crafting/lattice polish.
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal
   doors, windows, boards, bricks, roofs) → 盾构机 (bulk ore) → farm robots → airplane → spaceship → second planet.

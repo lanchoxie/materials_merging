@@ -27,6 +27,7 @@ starts from the `archive/v0.21.0-interiors-18` baseline.
 | [44-clash2.md](44-clash2.md) | v0.55: two raider factions (野营/猎火), supply-based abstract defense, one-day warning, trophy drops |
 | [45-diplomacy.md](45-diplomacy.md) | v0.56: third faction 铁骨部落 (min_cycle 2), tribute system (pay food to delay next raid) |
 | [46-craft-ui.md](46-craft-ui.md) | v0.57: 工艺路线 tab is now a 4-column icon-card grid with status-colored borders and inline tree drill-down |
+| [47-faction-events.md](47-faction-events.md) | v0.58: faction-specific rare trophies and post-raid demand events; APK 0.58.0 |
 | [42-editorfeel.md](42-editorfeel.md) | v0.53: the sandbox editor gains the preset editor's atom feedback — context, fit sentence and bar, rate, hover naming |
 | [41-lattice.md](41-lattice.md) | v0.52: cell angles and the lattice readout, periodic sites and snap-to-boundary, crystals that open as crystals, a phase for any structure |
 | [40-guidance.md](40-guidance.md) | v0.51: 工艺路线 tab (craftable list, chains to the ore, missing buildings), element sources and uses, caesium made findable |

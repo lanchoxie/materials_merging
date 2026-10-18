@@ -30,6 +30,12 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.58.0 "Faction Events" (派系事件)
+Full notes: [47-faction-events.md](47-faction-events.md).
+- **Faction-specific rare trophies**: 野营 drops 骨牙护符 (40%), 猎火 drops 火焰羽毛 (40%), 铁骨 drops 铁骨臂章 (50%), in addition to the common 战斧碎片.
+- **Post-raid demand events**: after an abstract raid, each faction may leave a resource demand (food/timber/stone) for 5 days; meeting it boosts friendship by 0.15. The chief panel shows the active demand with a fulfill button.
+- Save version bumped to 5; `restore()` accepts versions 1–5; `pending_demand` defaults to `{}` for older saves.
+
 ## v0.57.0 "Craft UI" (工艺格)
 Full notes: [46-craft-ui.md](46-craft-ui.md).
 - **工艺路线 tab is now a 4-column icon-card grid**: each craftable item is a tile with a status-colored border (MINT = can make, GOLD = missing materials, LILAC = missing building, dim = locked / already have). Tapping a tile opens an inline tree drill-down with colored left-indicator strips and indented rows.
