@@ -32,6 +32,7 @@ var next_warn_day=-1       # day of the pre-raid warning note (one day before th
 var current_faction_id=""  # id of the faction currently raiding
 var _last_faction_idx=-1   # alternates between eligible factions each raid cycle
 var raid_cycle=0           # counts completed raid events (used for min_cycle gating)
+var pending_demand: Dictionary={}  # v0.58: {faction_id, resource, amount, deadline_day, met_news, met_friendship}
 
 static func is_native(b: Dictionary) -> bool:
 	return str(b.get("source",""))==SOURCE
@@ -106,7 +107,7 @@ func setup(c) -> void:
 	for k in rules.start_stock: stock[k]=int(rules.start_stock[k])
 	friendship=0.0; built={}; job={}; day=-1; gifts=0; trades=0; pottery=0; news=["%s来到河湾附近，准备在这里安家" % rules.tribe.name]
 	era="neolithic"; copper_gifts=0; raiders=[]; next_raid_day=-1; next_warn_day=-1; current_faction_id=""
-	_last_faction_idx=0; raid_cycle=0
+	_last_faction_idx=0; raid_cycle=0; pending_demand={}
 
 func _note(text: String) -> void:
 	news.append(text)
@@ -150,6 +151,9 @@ func _new_day(now: int) -> void:
 			var fname=str(factions[next_idx].get("name","外族")) if not factions.is_empty() else "外族"
 			_note("侦察者回报：%s的人马明天会来袭" % fname)
 			next_warn_day=-1
+		# v0.58: expire an unmet demand silently when its deadline passes.
+		if not pending_demand.is_empty() and d>int(pending_demand.get("deadline_day",0)):
+			pending_demand={}
 	day=d; gifts=0; trades=0; pottery=0
 
 ## v0.54 Bronze: check whether the tribe should enter the Bronze era.
@@ -198,6 +202,14 @@ func _tick_clash(v,present: bool) -> void:
 		friendship=clampf(friendship+float(C.get("abstract_friendship_cost",-0.2)),-1.0,1.0)
 		_note(str(faction.get("abstract_news",str(C.get("abstract_news","夜里有外族人袭击了部落")))))
 		raid_cycle+=1
+		# v0.58: roll for a post-raid demand event (if no demand is already pending).
+		if pending_demand.is_empty():
+			var de: Dictionary=faction.get("demand_event",{})
+			if not de.is_empty() and randf()<float(de.get("chance",0.5)):
+				pending_demand={"faction_id":current_faction_id,"resource":str(de.resource),
+					"amount":int(de.amount),"deadline_day":day+int(de.days),
+					"met_news":str(de.met_news),"met_friendship":float(de.met_friendship)}
+				_note(str(de.news))
 	else:
 		# Spawn raiders as visible entities near the village.
 		raiders=[]
@@ -237,13 +249,18 @@ func _current_faction() -> Dictionary:
 func _award_trophy(field) -> String:
 	if field==null: return ""
 	var f=_current_faction()
+	var parts=""
 	var trophy=str(f.get("trophy",""))
-	if trophy=="": return ""
-	var chance=float(f.get("trophy_chance",1.0))
-	if randf()>chance: return ""
-	if not field.can_add(trophy,1): return " · 背包放不下战利品"
-	field.stock[trophy]=int(field.stock.get(trophy,0))+1; field.revision+=1
-	return " · 获得战斧碎片 ×1"
+	if trophy!="" and randf()<=float(f.get("trophy_chance",1.0)) and field.can_add(trophy,1):
+		field.stock[trophy]=int(field.stock.get(trophy,0))+1; field.revision+=1
+		parts+=" · 获得战斧碎片 ×1"
+	# v0.58: faction-specific rare trophy (骨牙护符 / 火焰羽毛 / 铁骨臂章).
+	var rare=str(f.get("rare_trophy",""))
+	if rare!="" and randf()<=float(f.get("rare_trophy_chance",0.0)) and field.can_add(rare,1):
+		var rname=str(field.rules.resources.get(rare,{}).get("name",rare))
+		field.stock[rare]=int(field.stock.get(rare,0))+1; field.revision+=1
+		parts+=" · 稀有战利品 %s ×1" % rname
+	return parts
 
 ## v0.56 Diplomacy: pay tribute to end the current real raid and delay the next one.
 ## Only works while raiders are actually on the field. Returns a message for the player.
@@ -270,6 +287,21 @@ func negotiate_tribute(field) -> String:
 	next_warn_day=next_raid_day-int(C.get("warning_days",1))
 	raid_cycle+=1
 	return "%s · 下次袭击推迟约%d天" % [str(f.get("tribute_news","外族人收下进贡后退走了")),delay]
+
+## v0.58 Faction Events: fulfill an active demand event — pay the resource to gain friendship.
+## Returns a message for the player. Clears the pending demand on success.
+func fulfill_demand(field) -> String:
+	if pending_demand.is_empty(): return "现在没有未满足的要求"
+	var res=str(pending_demand.get("resource","food"))
+	var amt=int(pending_demand.get("amount",4))
+	if int(field.stock.get(res,0))<amt:
+		var rname=str(field.rules.resources.get(res,{}).get("name",res))
+		return "需要 %s×%d，背包里不够" % [rname,amt]
+	field.stock[res]=int(field.stock[res])-amt; field.revision+=1
+	friendship=clampf(friendship+float(pending_demand.get("met_friendship",0.15)),-1.0,1.0)
+	_note(str(pending_demand.get("met_news","你满足了外族人的要求，友好度提升")))
+	pending_demand={}
+	return "成功满足要求 · 友好度 %d%%（%s）" % [roundi(friendship*100),mood()]
 
 ## A block they built is gone: someone took it. Friendship drops; it goes back on the build list.
 func _check_removed(c) -> void:
@@ -413,10 +445,11 @@ func attacked(member: Dictionary) -> String:
 
 # --- Save -----------------------------------------------------------------------------------------
 func serialize() -> Dictionary:
-	return {"version":4,"enabled":enabled,"home":[home.x,home.y] if home!=Vector2.INF else [],"members":members.duplicate(true),"stock":stock.duplicate(),
+	return {"version":5,"enabled":enabled,"home":[home.x,home.y] if home!=Vector2.INF else [],"members":members.duplicate(true),"stock":stock.duplicate(),
 		"friendship":friendship,"built":built.keys(),"day":day,"gifts":gifts,"trades":trades,"pottery":pottery,"news":news.duplicate(),
 		"era":era,"copper_gifts":copper_gifts,"next_raid_day":next_raid_day,"next_warn_day":next_warn_day,
-		"current_faction_id":current_faction_id,"last_faction_idx":_last_faction_idx,"raid_cycle":raid_cycle,"raiders":raiders.duplicate(true)}
+		"current_faction_id":current_faction_id,"last_faction_idx":_last_faction_idx,"raid_cycle":raid_cycle,
+		"pending_demand":pending_demand.duplicate(true),"raiders":raiders.duplicate(true)}
 
 static func _num(v,lo: float,hi: float,whole: bool=false) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
@@ -424,7 +457,7 @@ static func _num(v,lo: float,hi: float,whole: bool=false) -> bool:
 ## Checks the tribe and that every native block in the construction store is one of its blueprint
 ## cells with the right kind (no forged native blocks).
 func restore(data,c) -> bool:
-	if not data is Dictionary or (int(data.get("version",0)) not in [1,2,3,4]) or not data.get("enabled") is bool: return false
+	if not data is Dictionary or (int(data.get("version",0)) not in [1,2,3,4,5]) or not data.get("enabled") is bool: return false
 	var spot=data.get("home",[])
 	if not spot is Array or (spot.size()!=0 and spot.size()!=2): return false
 	var at=Vector2.INF
@@ -466,4 +499,5 @@ func restore(data,c) -> bool:
 	next_warn_day=int(data.get("next_warn_day",-1)); current_faction_id=str(data.get("current_faction_id",""))
 	_last_faction_idx=int(data.get("last_faction_idx",-1)); raid_cycle=int(data.get("raid_cycle",0))
 	raiders=[]; for r in data.get("raiders",[]): if r is Dictionary: raiders.append(r.duplicate())
+	var pd=data.get("pending_demand",{}); pending_demand=pd.duplicate() if pd is Dictionary else {}
 	return true

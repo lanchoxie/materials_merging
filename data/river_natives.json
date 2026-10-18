@@ -159,11 +159,22 @@
         "min_cycle": 0,
         "trophy": "trophy_axe",
         "trophy_chance": 1.0,
+        "rare_trophy": "trophy_bone",
+        "rare_trophy_chance": 0.4,
         "abstract_news": "夜里有一队外族人袭击了部落，他们奋力抵抗，损失了些存粮",
         "raid_news": "一队野营部落的战士向村子逼近！",
         "repel_news": "你帮助部落击退了野营部落的人，族长的眼神里多了些别的东西",
         "tribute_cost": { "food": 6 },
-        "tribute_news": "你送上食物，野营部落的首领打量了一番，点点头，带人离去了"
+        "tribute_news": "你送上食物，野营部落的首领打量了一番，点点头，带人离去了",
+        "demand_event": {
+          "chance": 0.5,
+          "resource": "food",
+          "amount": 4,
+          "days": 5,
+          "news": "野营部落在夜袭后留下记号，像是索要食物的意思",
+          "met_news": "你送去食物，野营部落没有再生事，友好度略有提升",
+          "met_friendship": 0.15
+        }
       },
       {
         "id": "猎火",
@@ -174,11 +185,22 @@
         "min_cycle": 0,
         "trophy": "trophy_axe",
         "trophy_chance": 1.0,
+        "rare_trophy": "trophy_feather",
+        "rare_trophy_chance": 0.4,
         "abstract_news": "猎火部落趁夜色袭来，抢走了不少存粮",
         "raid_news": "猎火部落的战士举着火把逼近村子！",
         "repel_news": "你与溪石部落并肩击退了猎火部落的袭击",
         "tribute_cost": { "food": 8 },
-        "tribute_news": "你送上食物，猎火部落的人互看了几眼，拿走后悻悻退走了"
+        "tribute_news": "你送上食物，猎火部落的人互看了几眼，拿走后悻悻退走了",
+        "demand_event": {
+          "chance": 0.5,
+          "resource": "timber",
+          "amount": 5,
+          "days": 5,
+          "news": "猎火部落撤退前折断了几根树枝，似乎在要木料",
+          "met_news": "你送去木料，猎火部落的哨探打了个手势离去，友好度略有提升",
+          "met_friendship": 0.15
+        }
       },
       {
         "id": "铁骨",
@@ -189,11 +211,22 @@
         "min_cycle": 2,
         "trophy": "trophy_axe",
         "trophy_chance": 1.0,
+        "rare_trophy": "trophy_badge",
+        "rare_trophy_chance": 0.5,
         "abstract_news": "铁骨部落的勇士如铁流般涌来，部落损失惨重",
         "raid_news": "铁骨部落的五名勇士逼近！他们比前两支人马更强！",
         "repel_news": "你击退了铁骨部落的精锐勇士，部落的孩子们都出来围观",
         "tribute_cost": { "food": 12 },
-        "tribute_news": "铁骨部落的头领掂了掂食物的重量，冷哼一声，转身带队撤离了"
+        "tribute_news": "铁骨部落的头领掂了掂食物的重量，冷哼一声，转身带队撤离了",
+        "demand_event": {
+          "chance": 0.6,
+          "resource": "stone",
+          "amount": 6,
+          "days": 5,
+          "news": "铁骨部落留下一块刻有痕迹的石头，要求石料作为战败的贡赋",
+          "met_news": "你送去石料，铁骨部落的信使点头离去，友好度略有提升",
+          "met_friendship": 0.15
+        }
       }
     ],
     "repel_friendship": 0.25,

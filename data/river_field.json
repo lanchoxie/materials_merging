@@ -63,6 +63,21 @@
       "name": "战斧碎片",
       "icon": "crate",
       "color": "8a7060"
+    },
+    "trophy_bone": {
+      "name": "骨牙护符",
+      "icon": "crate",
+      "color": "c8b89a"
+    },
+    "trophy_feather": {
+      "name": "火焰羽毛",
+      "icon": "crate",
+      "color": "e87a40"
+    },
+    "trophy_badge": {
+      "name": "铁骨臂章",
+      "icon": "crate",
+      "color": "7090b0"
     }
   },
   "garden": {

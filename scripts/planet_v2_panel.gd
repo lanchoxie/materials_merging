@@ -395,6 +395,13 @@ func _native_menu() -> void:
 			var cost_parts=[]
 			for k in tcost: cost_parts.append("%s×%d" % [v.field.rules.resources.get(k,{}).get("name",k),int(tcost[k])])
 			col.add_child(UI.button("🤝 进贡求和（%s → 延迟下次袭击）" % "＋".join(cost_parts),func(): _native_act("v2_native_tribute",{})))
+	# v0.58 Faction Events: show pending demand if one is active.
+	if not n.pending_demand.is_empty():
+		var res=str(n.pending_demand.get("resource","food")); var amt=int(n.pending_demand.get("amount",4))
+		var deadline=int(n.pending_demand.get("deadline_day",-1)); var days_left=maxi(0,deadline-n.day)
+		var rname=str(v.field.rules.resources.get(res,{}).get("name",res))
+		col.add_child(UI.paragraph("📜 外族要求：送上 %s×%d（还剩%d天）" % [rname,amt,days_left],14,UI.GOLD))
+		col.add_child(UI.button("满足要求（送出 %s×%d → 友好度提升）" % [rname,amt],func(): _native_act("v2_native_fulfill_demand",{})))
 	col.add_child(UI.paragraph("友好度 %d%%（%s） · 库存 木料%d 石块%d 食物%d\n%s" % [roundi(n.friendship*100),n.mood(),int(n.stock.timber),int(n.stock.stone),int(n.stock.food),"两座小屋还差 %d 块，工匠%s正在%s" % [left,n._builder().name,n._builder().task] if left>0 else "两座小屋都已建好，部落在这里安了家"],14))
 	if not n.news.is_empty(): col.add_child(UI.paragraph("近况：%s" % n.news.back(),13,UI.MUTED))
 	var row=UI.row(col,6)
