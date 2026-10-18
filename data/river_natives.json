@@ -3,26 +3,80 @@
   "note": "v0.49 Settlers: the first native tribe on Earth (present day). They live a few hundred metres from home, build two huts with the same block kit as the player (wood walls, fibre roofs, a stone campfire), repair what is taken away, gather each day, eat from their stock, and trade with the player. Game values.",
   "tribe": {
     "name": "溪石部落",
-    "search_start": [260, -180],
+    "search_start": [
+      260,
+      -180
+    ],
     "search_step": 8,
     "search_rings": 30
   },
   "members": [
-    {"id": 1, "name": "岩川", "role": "chief", "title": "族长"},
-    {"id": 2, "name": "苇生", "role": "builder", "title": "工匠"},
-    {"id": 3, "name": "阿栗", "role": "gatherer", "title": "采集者"},
-    {"id": 4, "name": "小溪", "role": "gatherer", "title": "采集者"}
+    {
+      "id": 1,
+      "name": "岩川",
+      "role": "chief",
+      "title": "族长"
+    },
+    {
+      "id": 2,
+      "name": "苇生",
+      "role": "builder",
+      "title": "工匠"
+    },
+    {
+      "id": 3,
+      "name": "阿栗",
+      "role": "gatherer",
+      "title": "采集者"
+    },
+    {
+      "id": 4,
+      "name": "小溪",
+      "role": "gatherer",
+      "title": "采集者"
+    }
   ],
-  "huts": [[-4, 0], [4, 0]],
-  "kit": ["block", "roof", "campfire"],
+  "huts": [
+    [
+      -4,
+      0
+    ],
+    [
+      4,
+      0
+    ]
+  ],
+  "kit": [
+    "block",
+    "roof",
+    "campfire"
+  ],
   "costs": {
-    "block": {"timber": 1},
-    "roof": {"timber": 1},
-    "campfire": {"stone": 2}
+    "block": {
+      "timber": 1
+    },
+    "roof": {
+      "timber": 1
+    },
+    "campfire": {
+      "stone": 2
+    }
   },
-  "start_stock": {"timber": 12, "stone": 4, "food": 8},
-  "caps": {"timber": 60, "stone": 30, "food": 40},
-  "gather_per_day": {"timber": 8, "stone": 3, "food": 6},
+  "start_stock": {
+    "timber": 12,
+    "stone": 4,
+    "food": 8
+  },
+  "caps": {
+    "timber": 60,
+    "stone": 30,
+    "food": 40
+  },
+  "gather_per_day": {
+    "timber": 8,
+    "stone": 3,
+    "food": 6
+  },
   "day_seconds": 60,
   "plan_seconds": 5,
   "build_seconds": 4,
@@ -37,7 +91,61 @@
     "trade_min": -0.2,
     "gift_back": 0.6
   },
-  "gift": {"food": ["grain", "fruit", "cooked_meat"], "food_amount": 2, "timber_amount": 4, "per_day": 3},
-  "trade": {"give": {"timber": 3, "fiber": 2}, "get": {"meat": 2}, "per_day": 3},
-  "pottery": {"resource": "pottery", "per_day": 1}
+  "gift": {
+    "food": [
+      "grain",
+      "fruit",
+      "cooked_meat"
+    ],
+    "food_amount": 2,
+    "timber_amount": 4,
+    "per_day": 3
+  },
+  "trade": {
+    "give": {
+      "timber": 3,
+      "fiber": 2
+    },
+    "get": {
+      "meat": 2
+    },
+    "per_day": 3
+  },
+  "pottery": {
+    "resource": "pottery",
+    "per_day": 1
+  },
+  "bronze": {
+    "note": "v0.54: tech diffusion. Trading / gifting copper items or ore pushes the tribe into the Bronze era.",
+    "trigger_trades": 6,
+    "copper_items": [
+      "bronze",
+      "malachite"
+    ],
+    "copper_elements": [
+      "Cu"
+    ],
+    "gather_bonus": {
+      "timber": 1,
+      "fiber": 1,
+      "food": 1
+    },
+    "news_event": "溪石部落的族长检视了你带来的铜器，和长老们商议了很久；三天后，他们开始铸造第一批铜斧和铜矛——青铜时代来了"
+  },
+  "clash": {
+    "note": "v0.54: tribal conflict. An event fires every N days when near another tribal territory.",
+    "interval_days": 25,
+    "raid_faction": "野营部落",
+    "abstract_friendship_cost": -0.2,
+    "abstract_stock_loss": {
+      "food": 2,
+      "timber": 1
+    },
+    "abstract_news": "夜里有一队外族人袭击了部落，他们奋力抵抗，损失了些存粮",
+    "repel_news": "你帮助部落击退了外族人，族长的眼神里多了些别的东西",
+    "repel_friendship": 0.25,
+    "raider_count": 3,
+    "raider_health": 2,
+    "raider_name": "野营战士"
+  }
 }

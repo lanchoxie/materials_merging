@@ -131,7 +131,8 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
   as crystals, and a labelled phase estimate for any structure.
 - ✅ v0.53 "Editor Feel" (tag `v0.53.0`; see [42-editorfeel.md](42-editorfeel.md)): the sandbox editor now
   matches the preset editor's atom feedback (context, fit sentence with stars and a tinted bar, rate, hover naming).
-- Next, from the user's 2026-10-14 list: Bronze (tech
+- ✅ v0.54 "Bronze" (tag `v0.54.0`; see [43-bronze.md](43-bronze.md)): tech diffusion (Cu gifts → Bronze era) and tribal raids (Clash I).
+- Next: more Clash content (multiple factions, supply logistics); or lattice/element/crafting polish.
   diffusion) and Clash (wars — abstract while you are away, real when you are there).
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal

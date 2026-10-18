@@ -1,11 +1,10 @@
 extends RefCounted
-## v0.49 Settlers (notes/06-planets.md L4 "Living natives"): the first native tribe, 溪石部落.
-## They settle a flat spot a few hundred metres from home and build two huts block by block with
-## the same block kit as the player (wood walls, fibre roofs, a stone campfire). Their blocks live in
-## the construction store with the source "native:tribe" (so collision, shelter, rendering and the
-## campfire's warmth all just work) but have their own cap and ledger: every one must be a cell of
-## the tribe's blueprint. A block the player takes away is noticed, costs friendship and is rebuilt.
-## Each game day they gather and eat; the player can talk, give gifts and trade with the chief.
+## v0.49 Settlers: the first native tribe, 溪石部落.
+## v0.54 Bronze: tech diffusion — gifting/trading Cu-bearing items pushes the tribe into the
+## Bronze era, boosting their gathering and triggering a tech-revolution news event.
+## v0.54 Clash: an event director fires tribal raids. While the player is away the clash resolves
+## abstractly (friendship and stock loss); when the player is present raiders appear as real
+## entities and the player can fight or help.
 const Shape=preload("res://scripts/planet_shape.gd")
 const SOURCE="native:tribe"
 var rules: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/river_natives.json"))
@@ -23,6 +22,12 @@ var pottery=0
 var news: Array=[]         # recent tribe news, newest last (≤ 8)
 var _blueprint: Array=[]
 var _plan_clock=0.0
+## v0.54 Bronze/Clash state
+var era="neolithic"        # "neolithic" | "bronze"
+var copper_gifts=0         # Cu-bearing items/ore the player has given or traded
+var raiders: Array=[]      # when the player is present: [{x,z,task,hp,id}]
+var next_raid_day=-1       # day the next raid is scheduled
+var first_person_active=false  # set by planet_v2 before tick() each step
 
 static func is_native(b: Dictionary) -> bool:
 	return str(b.get("source",""))==SOURCE
@@ -96,6 +101,7 @@ func setup(c) -> void:
 	stock={}
 	for k in rules.start_stock: stock[k]=int(rules.start_stock[k])
 	friendship=0.0; built={}; job={}; day=-1; gifts=0; trades=0; pottery=0; news=["%s来到河湾附近，准备在这里安家" % rules.tribe.name]
+	era="neolithic"; copper_gifts=0; raiders=[]; next_raid_day=-1
 
 func _note(text: String) -> void:
 	news.append(text)
@@ -110,15 +116,68 @@ func tick(v) -> void:
 	_check_removed(c)
 	_build(v)
 	_wander(now)
+	# v0.54 Bronze/Clash: era progression and raid events.
+	_tick_bronze()
+	# `first_person_active` is set by planet_v2 before calling tick, or we default to false.
+	_tick_clash(v, bool(first_person_active))
 
 func _new_day(now: int) -> void:
 	var d=now/int(rules.day_seconds)
 	if d==day: return
 	if day>=0:
-		for k in rules.gather_per_day: stock[k]=mini(int(rules.caps[k]),int(stock.get(k,0))+int(rules.gather_per_day[k]))
+		# v0.54 Bronze: gather bonus for the Bronze era.
+		var bonus: Dictionary=rules.get("bronze",{}).get("gather_bonus",{})
+		for k in rules.gather_per_day:
+			var base=int(rules.gather_per_day[k])
+			var extra=int(bonus.get(k,0)) if era=="bronze" else 0
+			stock[k]=mini(int(rules.caps[k]),int(stock.get(k,0))+base+extra)
 		stock.food=maxi(0,int(stock.food)-members.size())
 		friendship=move_toward(friendship,0.0,float(rules.friendship.daily_drift))
+		# v0.54 Clash: schedule the first raid once huts are done, then every N days.
+		if next_raid_day<0 and built.size()>=int(rules.max_blocks):
+			next_raid_day=d+int(rules.get("clash",{}).get("interval_days",25))
 	day=d; gifts=0; trades=0; pottery=0
+
+## v0.54 Bronze: check whether the tribe should enter the Bronze era.
+## This fires once and then stays — era never goes backwards.
+func _tick_bronze() -> void:
+	if era=="bronze": return
+	var B: Dictionary=rules.get("bronze",{})
+	if copper_gifts>=int(B.get("trigger_trades",6)):
+		era="bronze"
+		_note(str(B.get("news_event","部落进入了青铜时代")))
+func _tick_clash(v,present: bool) -> void:
+	if next_raid_day<0 or day<next_raid_day: return
+	next_raid_day=day+int(rules.get("clash",{}).get("interval_days",25))
+	var C: Dictionary=rules.get("clash",{})
+	if not present:
+		# Abstract resolution: the tribe defends alone, taking losses.
+		for k in C.get("abstract_stock_loss",{}):
+			stock[k]=maxi(0,int(stock.get(k,0))-int(C.abstract_stock_loss[k]))
+		friendship=clampf(friendship+float(C.get("abstract_friendship_cost",-0.2)),-1.0,1.0)
+		_note(str(C.get("abstract_news","夜里有外族人袭击了部落")))
+	else:
+		# Spawn raiders as visible entities near the village.
+		raiders=[]
+		for i in range(int(C.get("raider_count",3))):
+			var angle=float(i)*TAU/float(int(C.get("raider_count",3)))+0.4
+			raiders.append({"id":"raider_%d" % i,"name":str(C.get("raider_name","外族战士")),"x":home.x+cos(angle)*20.0,"z":home.y+sin(angle)*20.0,"task":"进攻","hp":int(C.get("raider_health",2))})
+		_note("一队外族人向村子逼近！")
+
+## v0.54 Clash: a raider is struck. Returns a message. When all raiders fall the raid ends.
+func strike_raider(raider_id: String) -> String:
+	var C: Dictionary=rules.get("clash",{})
+	for r in raiders:
+		if r.id!=raider_id: continue
+		r.hp=int(r.hp)-1
+		if int(r.hp)<=0:
+			raiders.erase(r)
+			if raiders.is_empty():
+				_note(str(C.get("repel_news","你帮助部落击退了外族人")))
+				friendship=clampf(friendship+float(C.get("repel_friendship",0.25)),-1.0,1.0)
+				return str(C.get("repel_news","击退了外族人")) + " · 友好度 %d%%" % roundi(friendship*100)
+			return "%s倒下了，还有%d人" % [r.name,raiders.size()]
+	return "没有找到这个目标"
 
 ## A block they built is gone: someone took it. Friendship drops; it goes back on the build list.
 func _check_removed(c) -> void:
@@ -209,14 +268,26 @@ func gift(field,kind: String) -> String:
 				stock.food=mini(int(rules.caps.food),int(stock.food)+int(G.food_amount)*2)
 				return _thank("%s×%d" % [field.rules.resources[id].name,int(G.food_amount)])
 		return "背包里没有可送的食物（谷穗、野果或烤肉各%d份）" % int(G.food_amount)
+	# v0.54 Bronze: gifting malachite or copper-bearing ore pushes the tribe toward the Bronze era.
+	if kind=="copper":
+		var B: Dictionary=rules.get("bronze",{})
+		for item_id in B.get("copper_items",["malachite"]):
+			var has_field=int(field.stock.get(item_id,0))>0
+			var has_minerals=field.has_method("minerals") and int(field.minerals.get(item_id,0))>0
+			if has_field:
+				field.stock[item_id]=int(field.stock[item_id])-1; field.revision+=1
+				return _thank("孔雀石×1",true)
+		return "背包里没有孔雀石（去地下 −8 米附近的铜矿层采挖）"
 	if int(field.stock.get("timber",0))<int(G.timber_amount): return "需要%d份木料" % int(G.timber_amount)
 	field.stock.timber=int(field.stock.timber)-int(G.timber_amount); field.revision+=1
 	stock.timber=mini(int(rules.caps.timber),int(stock.timber)+int(G.timber_amount))
 	return _thank("木料×%d" % int(G.timber_amount))
 
-func _thank(what: String) -> String:
+func _thank(what: String, copper: bool=false) -> String:
 	gifts+=1; friendship=clampf(friendship+float(rules.friendship.gift),-1.0,1.0)
 	_note("你送来%s" % what)
+	# v0.54 Bronze: copper-bearing gifts push the tribe towards the Bronze era.
+	if copper: copper_gifts+=1
 	var back=""
 	if friendship>=float(rules.friendship.gift_back) and pottery<int(rules.pottery.per_day): back="pottery"
 	return "%s收下了%s · 友好度 %d%%（%s）" % [chief().get("name","族长"),what,roundi(friendship*100),mood()]+("" if back=="" else " · 回赠一只部落陶罐")
@@ -250,8 +321,9 @@ func attacked(member: Dictionary) -> String:
 
 # --- Save -----------------------------------------------------------------------------------------
 func serialize() -> Dictionary:
-	return {"version":1,"enabled":enabled,"home":[home.x,home.y] if home!=Vector2.INF else [],"members":members.duplicate(true),"stock":stock.duplicate(),
-		"friendship":friendship,"built":built.keys(),"day":day,"gifts":gifts,"trades":trades,"pottery":pottery,"news":news.duplicate()}
+	return {"version":2,"enabled":enabled,"home":[home.x,home.y] if home!=Vector2.INF else [],"members":members.duplicate(true),"stock":stock.duplicate(),
+		"friendship":friendship,"built":built.keys(),"day":day,"gifts":gifts,"trades":trades,"pottery":pottery,"news":news.duplicate(),
+		"era":era,"copper_gifts":copper_gifts,"next_raid_day":next_raid_day,"raiders":raiders.duplicate(true)}
 
 static func _num(v,lo: float,hi: float,whole: bool=false) -> bool:
 	return (v is int or v is float) and is_finite(float(v)) and float(v)>=lo and float(v)<=hi and (not whole or float(v)==floor(float(v)))
@@ -259,7 +331,7 @@ static func _num(v,lo: float,hi: float,whole: bool=false) -> bool:
 ## Checks the tribe and that every native block in the construction store is one of its blueprint
 ## cells with the right kind (no forged native blocks).
 func restore(data,c) -> bool:
-	if not data is Dictionary or data.get("version")!=1 or not data.get("enabled") is bool: return false
+	if not data is Dictionary or (int(data.get("version",0)) not in [1,2]) or not data.get("enabled") is bool: return false
 	var spot=data.get("home",[])
 	if not spot is Array or (spot.size()!=0 and spot.size()!=2): return false
 	var at=Vector2.INF
@@ -297,4 +369,6 @@ func restore(data,c) -> bool:
 	for key in data.built:
 		if cells.has(str(key)): built[str(key)]=true
 	day=int(data.day); gifts=int(data.gifts); trades=int(data.trades); pottery=int(data.pottery); news=data.news.duplicate(); job={}
+	era=str(data.get("era","neolithic")); copper_gifts=int(data.get("copper_gifts",0)); next_raid_day=int(data.get("next_raid_day",-1))
+	raiders=[]; for r in data.get("raiders",[]): if r is Dictionary: raiders.append(r.duplicate())
 	return true

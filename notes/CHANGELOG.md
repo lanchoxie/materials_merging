@@ -30,6 +30,12 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.54.0 "Bronze" (青铜时代)
+Full notes: [43-bronze.md](43-bronze.md).
+- **The tribe enters the Bronze era** when the player gifts 6× 孔雀石. Gathering improves, the panel shows 🥉 青铜时代, and the news fires the tech-revolution event.
+- **Clash: tribal raids** fire every 25 days after the huts are finished. While you are away they resolve abstractly (stock/friendship loss). While you are present in first-person, 3 外族战士 spawn near the village and appear in the combat system — strike them to repel the raid and gain friendship.
+- **Also fixed:** the v0.53 APK was unsigned (missing META-INF signing block). Rebuilt with `build_android.ps1`; all future APK builds must use that script. `builds/AtomAtelier-0.53.0-android.apk` was replaced with the correctly signed version.
+
 ## v0.53.0 "Editor Feel" (手感一致)
 Full notes: [42-editorfeel.md](42-editorfeel.md).
 - **The sandbox editor now gives the same feedback the preset editor always had**: the selected atom's

@@ -39,6 +39,10 @@ func entities(v) -> Array:
 		for a in v.natives.members:
 			if Vector2(a.x,a.z).distance_to(observer)>70.0: continue
 			out.append({"key":"native:"+str(int(a.id)),"type":"native","row":a,"position":Vector2(a.x,a.z),"origin":Vector2.ZERO,"scale":1.0,"fish":false,"name":a.name,"height":1.62,"id":a.id})
+		# v0.54 Clash: raiders appear as hostile entities when the player is present.
+		for r in v.natives.raiders:
+			if Vector2(float(r.x),float(r.z)).distance_to(observer)>120.0: continue
+			out.append({"key":"raider:"+str(r.id),"type":"raider","row":r,"position":Vector2(float(r.x),float(r.z)),"origin":Vector2.ZERO,"scale":1.0,"fish":false,"name":str(r.name),"height":1.72,"id":r.id})
 	return out
 
 func busy(key: String) -> bool:
@@ -54,6 +58,8 @@ func strike(target: Dictionary,v) -> String:
 	var e: Dictionary=target.entity
 	# v0.49: the tribe's people dodge; it costs friendship, not health.
 	if e.type=="native": attack_left=float(rules.hit_cooldown); return v.natives.attacked(e.row)
+	# v0.54 Clash: striking a raider damages them and potentially ends the raid.
+	if e.type=="raider": attack_left=float(rules.hit_cooldown); return v.natives.strike_raider(str(e.id))
 	if e.row.get("health",1)<=0: return "目标已经离开"
 	if not records.has(e.key) and records.size()>=int(rules.max_records): return "遭遇记录已满，等待已有怒气消退"
 	v.ranch.attacked(e,int(v.world.elapsed))
