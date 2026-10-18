@@ -129,8 +129,9 @@ as a core pillar. Earth comes first. The full breakdown and release slicing is i
 - ✅ v0.52 "Lattice" (tag `v0.52.0`; see [41-lattice.md](41-lattice.md)): cell angles and the lattice
   readout, periodic-site classification (角点/棱心/面心/胞内) with snap-to-boundary, crystal baselines that open
   as crystals, and a labelled phase estimate for any structure.
-- Next, from the user's 2026-10-14 list: the atom-editing feedback gaps (hover highlight, ghost preview);
-  then Bronze (tech
+- ✅ v0.53 "Editor Feel" (tag `v0.53.0`; see [42-editorfeel.md](42-editorfeel.md)): the sandbox editor now
+  matches the preset editor's atom feedback (context, fit sentence with stars and a tinted bar, rate, hover naming).
+- Next, from the user's 2026-10-14 list: Bronze (tech
   diffusion) and Clash (wars — abstract while you are away, real when you are there).
 - Re-planned with the user (2026-10-11): globe world (wrap-around + curved horizon + globe view, no fixed regions/landmarks,
   oceans, mountains, caves, biome vegetation) → 星锻岛 as a real island → building materials (wood/stone/plastic/metal

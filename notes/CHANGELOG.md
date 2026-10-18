@@ -30,6 +30,13 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.53.0 "Editor Feel" (手感一致)
+Full notes: [42-editorfeel.md](42-editorfeel.md).
+- **The sandbox editor now gives the same feedback the preset editor always had**: the selected atom's
+  radius / oxidation state / coordination, a fit sentence with stars over a bar that shifts cold → warm → mint,
+  and the big 金币/秒 number.
+- **Hovering a ball names it** before you click, and lights it dimmer than the selected atom.
+
 ## v0.52.0 "Lattice" (晶格工作台)
 Full notes: [41-lattice.md](41-lattice.md).
 - **Cell angles and a lattice readout.** α/β/γ (30–150°) beside a/b/c, with the live sentence

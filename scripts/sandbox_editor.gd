@@ -37,6 +37,16 @@ var summary_label: Label
 var reference_label: Label
 var cost_label: Label
 var notice: Label
+## v0.53 (user: 和我们原有的默认的几种在调整原子时候的UI反馈还是很不一样): the preset editor (原子工坊的结构
+## 工作台) had a fit meter, a big 金币/秒 readout and the atom's radius/oxidation context. The sandbox
+## only had a floating one-line label. These bring the sandbox to the same standard.
+var fit_label: Label
+var rate_label: Label
+var context_label: Label
+var fit_bar: ProgressBar
+var fit_fill: StyleBoxFlat
+## The atom under the cursor, so aiming at a ball tells you what it is before you click.
+var hovered := -1
 var name_input: LineEdit
 var mode_choice: OptionButton
 var atom_list: HFlowContainer
@@ -220,6 +230,21 @@ func _build_tools() -> void:
 	selected_label = UI.label("", 18, UI.MINT)
 	selected_label.clip_text = true
 	body.add_child(selected_label)
+	# v0.53: the same feedback the preset editor gives — the atom's own context, a live fit sentence
+	# with a bar, and the big 金币/秒 number — so adjusting atoms feels the same in both places.
+	context_label = UI.paragraph("", 13, UI.MUTED)
+	body.add_child(context_label)
+	body.add_child(UI.label("实验室反馈", 15, UI.GOLD))
+	fit_label = UI.label("", 14, UI.MINT)
+	body.add_child(fit_label)
+	rate_label = UI.label("", 28)
+	body.add_child(rate_label)
+	fit_bar = ProgressBar.new()
+	fit_bar.custom_minimum_size.y = 8
+	fit_bar.show_percentage = false
+	fit_fill = UI.style(UI.MINT, 4)
+	fit_bar.add_theme_stylebox_override("fill", fit_fill)
+	body.add_child(fit_bar)
 	for axis in range(3):
 		var row := UI.row(body, 6)
 		var title := UI.label(["X · 左右", "Y · 上下", "Z · 深度"][axis], 14)
@@ -702,6 +727,7 @@ func _update_readout() -> void:
 	summary_label.text = "%s  ·  %d / 64 原子  ·  %d 连接%s" % [state.sandbox_formula(draft), draft.atoms.size(), draft.bonds.size(), phase_bit]
 	selected_label.text = "尚未选择原子" if selected < 0 else "%s #%02d    %.2f, %.2f, %.2f Å" % [draft.atoms[selected], selected + 1, draft.positions[selected][0], draft.positions[selected][1], draft.positions[selected][2]]
 	_update_lattice_readout()
+	_update_feedback()
 	delete_button.disabled = selected < 0 or composition_locked
 	replace_button.disabled = selected < 0 or composition_locked
 	undo_button.disabled = history.is_empty()
@@ -740,6 +766,43 @@ func _update_readout() -> void:
 		material.emission_enabled = i == selected
 		material.emission = material.albedo_color
 		material.emission_energy_multiplier = 0.55 if i == selected else 0.0
+
+## v0.53: the same feedback the preset editor gives while you adjust atoms — the selected atom's
+## radius / oxidation / coordination, a coloured fit sentence over a bar, and the big rate number.
+## The bar tints cold → warm → mint with the fit, so "am I close?" is readable at a glance.
+func _update_feedback() -> void:
+	if fit_label == null: return
+	if selected < 0 or draft.atoms.is_empty():
+		context_label.text = ""
+		fit_label.text = "选中一个原子开始调整。"
+		rate_label.text = ""
+		fit_bar.value = 0.0
+		return
+	var reference: Dictionary = state.sandbox_reference(draft)
+	var contexts: Array = reference.get("atom_contexts",[])
+	var text := "球径参考原子半径"
+	if selected < contexts.size():
+		var c: Dictionary = contexts[selected]
+		text = "半径 %.2f Å · %s" % [float(c.get("radius", 0.75)), str(c.get("radius_type", "参考值"))]
+		if c.get("oxidation_state", null) != null:
+			text += "　价态 %s · 配位数 %s" % [str(c.oxidation_state), str(c.get("coordination", "—"))]
+	context_label.text = text
+	var probe := _probe()
+	var info: Dictionary = state.structure_data(probe)
+	var q: float = state.quality(probe)
+	if bool(info.get("known", false)) or info.has("geometry_ref"):
+		# The same thresholds the preset editor uses (Codex.PERFECT_FIT / PREMIUM_FIT / GOOD_FIT).
+		var n := 3 if q >= 0.98 else 2 if q >= 0.93 else 1 if q >= 0.86 else 0
+		var stars := "★".repeat(n) + "☆".repeat(3 - n)
+		var word := "完美契合" if q >= 0.98 else "精品级" if q >= 0.93 else "平稳运转" if q > 0.8 else "继续探索"
+		fit_label.text = "几何匹配  %d%%   %s   ·   %s" % [roundi(q * 100), stars, word]
+	else:
+		fit_label.text = "探索作品 · 没有可比较的参考几何"
+	var tint := Color("ff8f7a").lerp(UI.GOLD, clampf(q / 0.8, 0.0, 1.0)) if q < 0.8 else UI.GOLD.lerp(UI.MINT, clampf((q - 0.8) / 0.18, 0.0, 1.0))
+	fit_label.add_theme_color_override("font_color", tint)
+	if fit_fill != null: fit_fill.bg_color = tint
+	fit_bar.value = clampf(q, 0.0, 1.0) * 100.0
+	rate_label.text = "%.2f  金币 / 秒" % state.income(probe)
 
 func _update_bond_text() -> void:
 	if bond_label == null: return
@@ -906,6 +969,7 @@ func _view_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion:
 		if event.button_mask & MOUSE_BUTTON_MASK_RIGHT: _orbit(-event.relative.x * 0.008, event.relative.y * 0.008)
 		elif dragging and event.button_mask & MOUSE_BUTTON_MASK_LEFT: _drag(_viewport_point(event.position))
+		else: _hover(_viewport_point(event.position))
 
 func _begin_drag(point: Vector2, radius: float) -> void:
 	dragging = false
@@ -946,6 +1010,26 @@ func _end_drag() -> void:
 	dragging = false
 	active_touch = -1
 	drag_saved = false
+
+## v0.53: aiming at a ball names it before you click it (the preset editor always showed the picked
+## site; the sandbox gave no hint of what was under the cursor).
+func _hover(point: Vector2) -> void:
+	var closest := 42.0
+	var found := -1
+	for i in range(balls.size()):
+		var distance := camera.unproject_position(balls[i].position).distance_to(point)
+		if distance < closest:
+			closest = distance; found = i
+	if found == hovered: return
+	hovered = found
+	for i in range(balls.size()):
+		var material: StandardMaterial3D = balls[i].material_override
+		var lit := i == selected or i == hovered
+		material.emission_enabled = lit
+		material.emission = material.albedo_color
+		material.emission_energy_multiplier = 0.55 if i == selected else (0.28 if i == hovered else 0.0)
+	if hovered >= 0 and selected != hovered:
+		_message("指向 %s #%02d（点击选中）" % [draft.atoms[hovered], hovered + 1])
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch and not event.pressed and event.index == active_touch: _end_drag()
