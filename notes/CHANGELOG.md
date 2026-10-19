@@ -30,6 +30,13 @@ These failures already existed and are not caused by the fun pass:
 Most of these are touch/click UI tests. They probably depend on real input timing or window focus that the
 batch runner doesn't provide. They are worth a dedicated fix pass later (see roadmap "Later").
 
+## v0.59.0 "Craft Tree" (合成树)
+Full notes: inline in commit.
+- **Real dependency tree**: 工艺路线 tab now shows all items as a card grid AND the selected item's full dependency tree with branch connectors (├─ └─ │) — the whole chain visible without drilling.
+- **APK version name bug fixed**: build_android.ps1 was only updating version/name when -VersionCode was passed; every APK since v0.36 showed "0.36.0-demo". Now always updates version/name.
+- **Touch scroll fixed**: island_panel.gd _card() PanelContainer now sets mouse_filter=PASS so touch drag reaches the ScrollContainer.
+- APK: AtomAtelier-0.59.0-android.apk.
+
 ## v0.58.0 "Faction Events" (派系事件)
 Full notes: [47-faction-events.md](47-faction-events.md).
 - **Faction-specific rare trophies**: 野营 drops 骨牙护符 (40%), 猎火 drops 火焰羽毛 (40%), 铁骨 drops 铁骨臂章 (50%), in addition to the common 战斧碎片.
