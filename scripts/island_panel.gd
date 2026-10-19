@@ -82,30 +82,19 @@ func _guide() -> void:
 		_mineral_detail(guide_target.get_slice(":",1)); return
 	_guide_list()
 
-## v0.57 Craft UI: icon-card grid — each item is a tile with a status-colored border.
-## Green = craftable now, amber = missing materials, violet = missing building,
-## dim = locked / already have. Tapping a tile opens the inline tree drill-down.
+## v0.59 Craft Tree: a real dependency tree with branch connector lines.
+## Top section = grid of all craftable items (status-colored tiles).
+## Tapping a tile opens the full tree: root item at top, each dependency
+## indented below with ├─ / └─ connectors, status badge inline.
+## The whole chain is visible without any drilling.
 func _guide_list() -> void:
-	# If a specific item is selected, show its tree instead of the full grid.
-	if guide_target.begins_with("item:") and guide_target != "item:__grid":
-		var id=guide_target.get_slice(":",1)
-		var n=guide.node("item:"+id)
-		var back_row=UI.row(body,8)
-		back_row.add_child(UI.button("← 返回成品格",func(): guide_target="item:__grid"; _redraw(true)))
-		var status_color=_guide_status_color(n.status)
-		var title_col=UI.column(body,4)
-		var hdr=UI.label("%s" % n.name,22,status_color)
-		title_col.add_child(hdr)
-		var words={"have":"✓ 已有","make":"✓ 可生产","missing":"✗ 缺料","building":"⚙ 需建厂","locked":"🔒 未解锁","mine":"⛏ 要采集","none":"？链条太深"}
-		title_col.add_child(UI.paragraph(str(words.get(n.status,"—")),15,status_color))
-		if n.get("detail","")!="": title_col.add_child(UI.paragraph(n.detail,15,UI.MUTED))
-		body.add_child(UI.label("合成链",18,UI.MINT))
-		_guide_tree(body,n,0)
-		return
-	# Full grid: 4 columns of tiles.
-	body.add_child(UI.paragraph("亮色边框 = 可生产 · 橙色 = 缺料 · 紫色 = 需建厂 · 暗色 = 未解锁或已有",14,UI.MUTED))
-	var grid=GridContainer.new(); grid.columns=4; grid.add_theme_constant_override("h_separation",8); grid.add_theme_constant_override("v_separation",8)
-	body.add_child(grid)
+	# --- Grid of all items ---
+	var grid_card=_card("可合成的成品")
+	grid_card.add_child(UI.paragraph("颜色=当前状态：绿色可立即合成，橙色缺料，紫色缺建筑，暗色已有或未解锁。点击查看合成树。",13,UI.MUTED))
+	var grid=GridContainer.new(); grid.columns=4
+	grid.add_theme_constant_override("h_separation",6); grid.add_theme_constant_override("v_separation",6)
+	grid.mouse_filter=Control.MOUSE_FILTER_PASS
+	grid_card.add_child(grid)
 	var rows=[]
 	for id in state.industry.rules().recipes:
 		var r: Dictionary=state.industry.rules().recipes[id]
@@ -114,41 +103,51 @@ func _guide_list() -> void:
 	rows.sort_custom(func(a,b): return str(a.name)<str(b.name))
 	for row in rows:
 		var n=guide.node("item:"+str(row.id))
-		var border_color=_guide_status_color(n.status)
-		var tile=PanelContainer.new()
-		var sty=UI.style(UI.INNER,10,border_color); sty.set_border_width_all(2)
-		tile.add_theme_stylebox_override("panel",sty)
-		tile.custom_minimum_size=Vector2(120,72)
+		var border=_guide_status_color(n.status)
+		var tile=PanelContainer.new(); tile.mouse_filter=Control.MOUSE_FILTER_PASS
+		var sty=UI.style(UI.INNER,8,border); sty.set_border_width_all(2)
+		tile.add_theme_stylebox_override("panel",sty); tile.custom_minimum_size=Vector2(110,60)
 		var col=UI.column(tile,2)
-		var nm=UI.label(str(row.name),14,border_color); nm.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; col.add_child(nm)
-		var have_count=int(state.industry.items.get(str(row.id),0))
-		if have_count>0: col.add_child(UI.paragraph("库存 %d" % have_count,12,UI.MUTED))
-		# The whole tile acts as a button.
+		var nm=UI.label(str(row.name),13,border); nm.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; col.add_child(nm)
+		var badge={"have":"✓ 已有","make":"● 可做","missing":"○ 缺料","building":"⚙ 需建","locked":"🔒 锁定","mine":"⛏ 采集","none":"…"}
+		col.add_child(UI.paragraph(str(badge.get(n.status,n.status)),11,border))
 		var btn=Button.new(); btn.flat=true; btn.text=""
 		btn.mouse_filter=Control.MOUSE_FILTER_PASS
 		btn.size_flags_horizontal=Control.SIZE_EXPAND_FILL; btn.size_flags_vertical=Control.SIZE_EXPAND_FILL
-		btn.pressed.connect(func(): guide_target="item:"+str(row.id); _redraw(true))
-		tile.add_child(btn)
-		grid.add_child(tile)
+		var item_id=str(row.id)
+		btn.pressed.connect(func(): guide_target="item:"+item_id; _redraw(false))
+		tile.add_child(btn); grid.add_child(tile)
+	# --- Tree for selected item ---
+	if guide_target.begins_with("item:") and guide_target!="item:__grid":
+		var id=guide_target.get_slice(":",1)
+		var n=guide.node("item:"+id)
+		var tree_card=_card("合成树  " + str(n.name))
+		var back=UI.button("← 收起",func(): guide_target="item:__grid"; _redraw(false))
+		tree_card.add_child(back)
+		_guide_tree_node(tree_card, n, "", true)
 
-## Render a guide node as indented rows with a colored left-indicator strip.
-func _guide_tree(parent: Node, n: Dictionary, depth: int) -> void:
-	if depth>5: return
-	var indent=depth*16
+## v0.59: recursive tree renderer using branch connector characters.
+## `prefix` is the indentation string accumulated by parent calls.
+## `is_last` controls whether to draw └─ or ├─ at this level.
+func _guide_tree_node(parent: Node, n: Dictionary, prefix: String, is_last: bool) -> void:
 	var color=_guide_status_color(n.status)
-	var row=UI.row(parent,4)
-	if indent>0:
-		var spacer=Control.new(); spacer.custom_minimum_size=Vector2(indent,0); row.add_child(spacer)
-	var bar=PanelContainer.new()
-	var bar_sty=StyleBoxFlat.new(); bar_sty.bg_color=color; bar_sty.set_corner_radius_all(2)
-	bar_sty.content_margin_left=3; bar_sty.content_margin_right=3; bar_sty.content_margin_top=0; bar_sty.content_margin_bottom=0
-	bar.add_theme_stylebox_override("panel",bar_sty); bar.custom_minimum_size=Vector2(4,0)
-	row.add_child(bar)
-	var info_col=UI.column(row,2); info_col.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	info_col.add_child(UI.label("%s   %d / %d" % [n.name,mini(n.have,n.need),n.need],15,color))
-	if n.get("detail","")!="": info_col.add_child(UI.paragraph(n.detail,13,UI.MUTED))
-	for child in n.get("children",[]):
-		_guide_tree(parent,child,depth+1)
+	var badge={"have":"✓","make":"●","missing":"○","building":"⚙","locked":"🔒","mine":"⛏","none":"？"}
+	var connector = "└─ " if is_last else "├─ "
+	var line_prefix = prefix + ("   " if is_last else "│  ")
+	var node_text = (prefix + connector if prefix!="" or not is_last else "") + str(badge.get(n.status,"?")) + " " + str(n.name)
+	if n.get("need",0)>0:
+		node_text += "  %d/%d" % [mini(int(n.have),int(n.need)),int(n.need)]
+	var label=UI.label(node_text,15,color)
+	label.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	parent.add_child(label)
+	if n.get("detail","")!="":
+		var detail_prefix = line_prefix + "   "
+		var dl=UI.paragraph(detail_prefix + str(n.get("detail","")),13,UI.MUTED)
+		dl.mouse_filter=Control.MOUSE_FILTER_IGNORE
+		parent.add_child(dl)
+	var children: Array=n.get("children",[])
+	for i in range(children.size()):
+		_guide_tree_node(parent, children[i], line_prefix, i==children.size()-1)
 
 ## Status → display color.
 func _guide_status_color(status: String) -> Color:
