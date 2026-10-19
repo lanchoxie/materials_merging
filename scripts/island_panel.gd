@@ -43,7 +43,7 @@ func _tab(id: String) -> void:
 	section=id; _redraw(true)
 
 func _card(title: String) -> VBoxContainer:
-	var panel=PanelContainer.new(); body.add_child(panel)
+	var panel=PanelContainer.new(); panel.mouse_filter=Control.MOUSE_FILTER_PASS; body.add_child(panel)
 	var col=UI.column(panel,10); col.add_child(UI.label(title,22,UI.MINT)); return col
 
 func _redraw(reset_scroll: bool=false) -> void:

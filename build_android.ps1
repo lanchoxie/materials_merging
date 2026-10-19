@@ -62,6 +62,12 @@ try {
         [IO.File]::WriteAllText($presetPath,$presetText,[Text.UTF8Encoding]::new($false))
         $projectText = [Text.Encoding]::UTF8.GetString($projectBytes) -replace '(?m)^config/version="[^"]+"', ('config/version="' + $Version + '"')
         [IO.File]::WriteAllText($projectPath,$projectText,[Text.UTF8Encoding]::new($false))
+    } else {
+        # Always update version/name even without an explicit VersionCode, so the APK manifest
+        # reflects the actual release version rather than a stale value from an old build.
+        $presetText = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($presetPath))
+        $presetText = $presetText -replace '(?m)^version/name="[^"]+"', ('version/name="' + $Version + '"')
+        [IO.File]::WriteAllText($presetPath,$presetText,[Text.UTF8Encoding]::new($false))
     }
     & $godot --headless --path $PSScriptRoot --export-debug Android $apk --log-file (Join-Path $PSScriptRoot 'artifacts/android-export.log')
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $apk) -or (Select-String -LiteralPath artifacts/android-export.log -Pattern 'SCRIPT ERROR:|Parse Error' -Quiet)) { throw 'Android export failed.' }
