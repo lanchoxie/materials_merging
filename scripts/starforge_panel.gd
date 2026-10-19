@@ -96,7 +96,7 @@ func _process(dt: float) -> void:
 	if not state.industry_notice.is_empty(): status.text=state.industry_notice; state.industry_notice=""
 
 func _card(title: String,color: Color=UI.MINT) -> VBoxContainer:
-	var p=PanelContainer.new(); body.add_child(p); var c=UI.column(p,6); c.add_child(UI.label(title,19,color)); return c
+	var p=PanelContainer.new(); p.mouse_filter=Control.MOUSE_FILTER_PASS; body.add_child(p); var c=UI.column(p,6); c.add_child(UI.label(title,19,color)); return c
 
 func _redraw() -> void:
 	fingerprint=_fingerprint(); bars=[]

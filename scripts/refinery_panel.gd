@@ -118,7 +118,7 @@ func _extractors() -> void:
 		var full=true
 		for symbol in ex.outputs:
 			if int(state.element_inventory.get(symbol,0))<r.extractor_cap(): full=false
-		var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(UI.INNER,12)); extractors.add_child(card)
+		var card=PanelContainer.new(); card.mouse_filter=Control.MOUSE_FILTER_PASS; card.add_theme_stylebox_override("panel",UI.style(UI.INNER,12)); extractors.add_child(card)
 		var c=UI.column(card,2)
 		c.add_child(UI.label("%s   → %s" % [ex.name,r.format(ex.outputs)],17,UI.MUTED if full else UI.TEXT))
 		c.add_child(UI.paragraph(ex.equation,13,UI.LILAC))
@@ -150,7 +150,7 @@ func _processes() -> void:
 	ids.sort_custom(func(a,b): return r.quote(state,a).ready and not r.quote(state,b).ready)
 	for id in ids:
 		var p: Dictionary=r.process(id); var q=r.quote(state,id)
-		var card=PanelContainer.new(); card.add_theme_stylebox_override("panel",UI.style(UI.INNER,12,UI.MINT if q.ready else UI.LINE)); processes.add_child(card)
+		var card=PanelContainer.new(); card.mouse_filter=Control.MOUSE_FILTER_PASS; card.add_theme_stylebox_override("panel",UI.style(UI.INNER,12,UI.MINT if q.ready else UI.LINE)); processes.add_child(card)
 		var c=UI.column(card,4)
 		var title=UI.label("%s · %s" % [p.name,p.method],18,UI.TEXT)
 		# v0.37: longer route names (Wöhler furnace, molten-salt calcium) wrap instead of widening the column.

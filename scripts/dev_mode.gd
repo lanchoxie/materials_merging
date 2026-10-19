@@ -58,6 +58,9 @@ func _ready() -> void:
 		queue_free()
 		return
 	print("[DEV MODE] 无限资源已激活 — 每秒顶满所有资源、解锁所有配方和工业品")
+	# Top up immediately on first frame so resources are available from the start.
+	await get_tree().process_frame
+	_top_up()
 
 func _process(delta: float) -> void:
 	_tick += delta

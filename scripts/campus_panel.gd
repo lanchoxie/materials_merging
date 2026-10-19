@@ -50,7 +50,7 @@ func _show(tab: String, keep_position: bool=false) -> void:
 	_update_live()
 
 func _card(heading: String) -> VBoxContainer:
-	var panel=PanelContainer.new(); body.add_child(panel)
+	var panel=PanelContainer.new(); panel.mouse_filter=Control.MOUSE_FILTER_PASS; body.add_child(panel)
 	var content=UI.column(panel,8); content.add_child(UI.paragraph(heading,22,UI.MINT)); return content
 
 func _overview() -> void:

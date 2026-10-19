@@ -672,7 +672,7 @@ func _amount(x: float) -> String:
 	return str(int(round(x))) if absf(x-round(x))<0.05 else "%.1f" % x
 
 func _card(title: String) -> VBoxContainer:
-	var p=PanelContainer.new(); body.add_child(p); var col=UI.column(p,7); col.add_child(UI.paragraph(title,19,UI.MINT)); return col
+	var p=PanelContainer.new(); p.mouse_filter=Control.MOUSE_FILTER_PASS; body.add_child(p); var col=UI.column(p,7); col.add_child(UI.paragraph(title,19,UI.MINT)); return col
 
 func _key() -> String:
 	var v=state.planet.v2; var r=v.world.regions[selected_region]; var stock=[]
