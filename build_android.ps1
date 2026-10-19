@@ -1,4 +1,8 @@
-param([switch]$SkipImport, [string]$Version = '0.20.0', [int]$VersionCode = 0, [switch]$Test)
+param([switch]$SkipImport, [string]$Version = '0.20.0', [int]$VersionCode = 0, [switch]$Test, [switch]$Dev)
+# v0.60: -Dev builds BOTH a player APK and a dev APK (infinite resources) in one run.
+# The dev APK has its own package id (org.atomatelier.demo.dev) and name suffix [DEV],
+# so it installs beside the player build. The dev build enables the `devbuild` feature,
+# which activates the DevMode autoload that tops up coins/credits/XP/materials every second.
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 foreach ($relative in @('.runtime/AppData','.runtime/LocalAppData','.runtime/Temp','.runtime/android','builds','artifacts')) {
@@ -37,47 +41,70 @@ if (-not $SkipImport) {
     & $godot --headless --path $PSScriptRoot --editor --import --quit --log-file (Join-Path $PSScriptRoot 'artifacts/android-import.log')
     if ($LASTEXITCODE -ne 0 -or (Select-String -LiteralPath artifacts/android-import.log -Pattern 'SCRIPT ERROR:' -Quiet)) { throw 'Godot import failed.' }
 }
-# -Test builds the test edition: its own app id and name (installs beside the normal game), the
-# `testbuild` feature that shows the test panel, and its own save file.
-$apk = Join-Path $PSScriptRoot ('builds/AtomAtelier-' + $Version + $(if ($Test) { '-test' } else { '' }) + '-android.apk')
+
 if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$' -or $VersionCode -lt 0) { throw 'Invalid Android version.' }
-if (Test-Path -LiteralPath $apk) { throw 'An APK with this name already exists; use a new version rather than replacing a delivered package.' }
-# A requested preview gets its own Android identity without advancing the formal source version.
-$presetPath = Join-Path $PSScriptRoot 'export_presets.cfg'
-$projectPath = Join-Path $PSScriptRoot 'project.godot'
-$presetBytes = [IO.File]::ReadAllBytes($presetPath)
-$projectBytes = [IO.File]::ReadAllBytes($projectPath)
-try {
-    if ($Test) {
-        $testText = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($presetPath))
-        $testText = ([regex]'(?m)^custom_features=""').Replace($testText,'custom_features="testbuild"',1)
-        $testText = $testText -replace '(?m)^package/unique_name="org\.atomatelier\.demo"', 'package/unique_name="org.atomatelier.demo.test"'
-        $testText = $testText -replace '(?m)^package/name="([^"]+)"', ('package/name="$1 ' + [string][char]0x6D4B + [char]0x8BD5 + [char]0x7248 + '"')
-        [IO.File]::WriteAllText($presetPath,$testText,[Text.UTF8Encoding]::new($false))
-    }
-    if ($VersionCode -gt 0) {
+
+# --- Helper: build one APK with a given feature/package/name-suffix ---------------------------
+function Build-OneApk {
+    param(
+        [string]$ApkLabel,       # file label, e.g. "" or "-dev"
+        [string]$Features,       # export custom_features value, e.g. "" or "devbuild"
+        [string]$PkgSuffix,      # package id suffix, e.g. "" or ".dev"
+        [string]$NameSuffix      # display name suffix, e.g. "" or " [DEV]"
+    )
+    $apk = Join-Path $PSScriptRoot ('builds/AtomAtelier-' + $Version + $ApkLabel + '-android.apk')
+    if (Test-Path -LiteralPath $apk) { throw ('An APK with this name already exists: ' + $apk) }
+    $presetPath = Join-Path $PSScriptRoot 'export_presets.cfg'
+    $projectPath = Join-Path $PSScriptRoot 'project.godot'
+    $presetBytes = [IO.File]::ReadAllBytes($presetPath)
+    $projectBytes = [IO.File]::ReadAllBytes($projectPath)
+    try {
         $presetText = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($presetPath))
-        $presetText = $presetText -replace '(?m)^version/code=\d+', ('version/code=' + $VersionCode)
+        # Apply custom_features
+        if ($Features -ne '') {
+            $presetText = ([regex]'(?m)^custom_features="[^"]*"').Replace($presetText, ('custom_features="' + $Features + '"'), 1)
+        }
+        # Apply package id suffix
+        if ($PkgSuffix -ne '') {
+            $presetText = $presetText -replace '(?m)^package/unique_name="org\.atomatelier\.demo"', ('package/unique_name="org.atomatelier.demo' + $PkgSuffix + '"')
+        }
+        # Apply display name suffix
+        if ($NameSuffix -ne '') {
+            $presetText = $presetText -replace '(?m)^package/name="([^"]+)"', ('package/name="$1' + $NameSuffix + '"')
+        }
+        # Always update version/name so the APK manifest reflects the real release version.
+        if ($VersionCode -gt 0) {
+            $presetText = $presetText -replace '(?m)^version/code=\d+', ('version/code=' + $VersionCode)
+        }
         $presetText = $presetText -replace '(?m)^version/name="[^"]+"', ('version/name="' + $Version + '"')
-        [IO.File]::WriteAllText($presetPath,$presetText,[Text.UTF8Encoding]::new($false))
-        $projectText = [Text.Encoding]::UTF8.GetString($projectBytes) -replace '(?m)^config/version="[^"]+"', ('config/version="' + $Version + '"')
-        [IO.File]::WriteAllText($projectPath,$projectText,[Text.UTF8Encoding]::new($false))
-    } else {
-        # Always update version/name even without an explicit VersionCode, so the APK manifest
-        # reflects the actual release version rather than a stale value from an old build.
-        $presetText = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($presetPath))
-        $presetText = $presetText -replace '(?m)^version/name="[^"]+"', ('version/name="' + $Version + '"')
-        [IO.File]::WriteAllText($presetPath,$presetText,[Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText($presetPath, $presetText, [Text.UTF8Encoding]::new($false))
+        & $godot --headless --path $PSScriptRoot --export-debug Android $apk --log-file (Join-Path $PSScriptRoot ('artifacts/android-export' + $ApkLabel + '.log'))
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $apk) -or (Select-String -LiteralPath ('artifacts/android-export' + $ApkLabel + '.log') -Pattern 'SCRIPT ERROR:|Parse Error' -Quiet)) { throw ('Android export failed for ' + $ApkLabel) }
+    } finally {
+        [IO.File]::WriteAllBytes($presetPath, $presetBytes)
+        [IO.File]::WriteAllBytes($projectPath, $projectBytes)
     }
-    & $godot --headless --path $PSScriptRoot --export-debug Android $apk --log-file (Join-Path $PSScriptRoot 'artifacts/android-export.log')
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $apk) -or (Select-String -LiteralPath artifacts/android-export.log -Pattern 'SCRIPT ERROR:|Parse Error' -Quiet)) { throw 'Android export failed.' }
-} finally {
-    [IO.File]::WriteAllBytes($presetPath,$presetBytes)
-    [IO.File]::WriteAllBytes($projectPath,$projectBytes)
+    & (Join-Path $buildTools 'apksigner.bat') verify --verbose --print-certs $apk | Tee-Object -FilePath (Join-Path $PSScriptRoot ('artifacts/android-signature' + $ApkLabel + '.txt'))
+    if ($LASTEXITCODE -ne 0) { throw ('APK signature verification failed for ' + $ApkLabel) }
+    & (Join-Path $buildTools 'aapt.exe') dump badging $apk | Set-Content -LiteralPath (Join-Path $PSScriptRoot ('artifacts/android-package' + $ApkLabel + '.txt'))
+    if ($LASTEXITCODE -ne 0) { throw ('APK metadata verification failed for ' + $ApkLabel) }
+    Get-FileHash -LiteralPath $apk -Algorithm SHA256 | Format-List | Out-String | Set-Content -LiteralPath ($apk.Replace('.apk','.sha256.txt'))
+    Get-Item -LiteralPath $apk | Select-Object Name,Length,LastWriteTime
 }
-& (Join-Path $buildTools 'apksigner.bat') verify --verbose --print-certs $apk | Tee-Object -FilePath (Join-Path $PSScriptRoot 'artifacts/android-signature.txt')
-if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
-& (Join-Path $buildTools 'aapt.exe') dump badging $apk | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'artifacts/android-package.txt')
-if ($LASTEXITCODE -ne 0) { throw 'APK metadata verification failed.' }
-Get-FileHash -LiteralPath $apk -Algorithm SHA256 | Format-List | Out-String | Set-Content -LiteralPath ($apk.Replace('.apk','.sha256.txt'))
-Get-Item -LiteralPath $apk | Select-Object Name,Length,LastWriteTime
+
+# --- Build the requested APK(s) ---------------------------------------------------------------
+# -Test builds the test edition (testbuild feature, own app id/name/save).
+# -Dev builds BOTH the player APK (normal) and the dev APK (devbuild feature, own app id/name,
+#   infinite resources via the DevMode autoload). -Dev overrides -Test.
+# (no flags) builds just the player APK.
+if ($Dev) {
+    Write-Host '=== Player build ==='
+    Build-OneApk -ApkLabel '' -Features '' -PkgSuffix '' -NameSuffix ''
+    Write-Host '=== Dev (infinite resources) build ==='
+    $devNameSuffix = ' [DEV]'
+    Build-OneApk -ApkLabel '-dev' -Features 'devbuild' -PkgSuffix '.dev' -NameSuffix $devNameSuffix
+} elseif ($Test) {
+    Build-OneApk -ApkLabel '-test' -Features 'testbuild' -PkgSuffix '.test' -NameSuffix ([string][char]0x6D4B + [char]0x8BD5 + [char]0x7248)
+} else {
+    Build-OneApk -ApkLabel '' -Features '' -PkgSuffix '' -NameSuffix ''
+}
