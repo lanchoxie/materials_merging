@@ -1,21 +1,52 @@
 extends Node
-## v0.60 Dev Build: when the export has the `devbuild` feature, keep all resources
-## pinned at comfortable maxima so every building and upgrade is always reachable.
-## Registered as autoload (DevMode) in project.godot. Immediately frees itself if the
-## feature is absent, so it has zero cost in the player build.
-##
-## The game state (lab_state) is a RefCounted held by main.gd's `state` var, NOT a
-## scene node. So we find the root node "AtomAtelier" and read its `.state` property
-## directly, then walk the state.planet / state.industry / state.refinery sub-objects.
+## v0.60 Dev Build: activated by the `devbuild` export feature or `--dev-mode` CLI flag.
+## Every second, unconditionally tops up ALL resources to large values.
+## lab_state is a RefCounted, not a Node — accessed via get_tree().current_scene.state.
 
-const COINS   := 99_000_000.0
-const CREDITS := 999_990
-const XP      := 999_990
-const MAT     := 999_990
-const ELEM    := 9_990
-const MINERAL := 9_990
-const FIELD   := 9_990
-const REFINERY_LEVEL := 5
+const BIG := 999_990        # generic "a lot" for counts / credits / xp
+const COINS := 99_000_000.0
+
+## All industry item ids from data/industry.json items block.
+const INDUSTRY_ITEMS := [
+	"steel_ingot","bronze_ingot","solder","duralumin","al_li","steel_bit",
+	"pe","pvc","ptfe","uf_resin","rubber","particleboard",
+	"chair_nova","desk_board","sofa_float","ptfe_pan",
+	"glass","cement","ceramic_tile","fertilizer",
+	"polysilicon","wafer","solar_panel","photoresist","epoxy",
+	"logic_chip","power_diode","led_chip","pcb","ic","control_board",
+	"headlamp","insulated_suit",
+	"lead_acid","lfp_cell","battery_pack","motor","power_drill",
+	"rover","tbm","plane","starship",
+]
+
+## All recipe output ids from data/industry.json recipes block.
+const RECIPE_OUTPUTS := [
+	"carbon_steel","bronze","solder","duralumin","al_li","steel_bit",
+	"polyethylene","pvc","ptfe","uf_resin","rubber","particleboard",
+	"chair_nova","desk_board","sofa_float","ptfe_pan","soda_lime_glass",
+	"cement","ceramic_tile","superphosphate","polysilicon","n_wafer",
+	"solar_panel","photoresist","epoxy","logic_chip","power_diode",
+	"led_chip","fr4_board","ic_package","control_board",
+	"headlamp","insulated_suit","lead_acid","lfp_cell","battery_pack",
+	"motor","power_drill","rover","tbm","plane","starship",
+]
+
+## Chemical formula keys used as recipe evidence (has_made check).
+## Written into index_found so every recipe's evidence is satisfied.
+const EVIDENCE_KEYS := [
+	"Al2Cu","C2F4","C2H3Cl","C2H4","C4H6","C6H6O","CH2O","CaO",
+	"Cl3HSi","CsPbBr3","Cu3Sn","Fe3C","H3O4P","LiAl","LiFePO4",
+	"PbSO4","Si",
+]
+
+## Campus research unlock keys.
+const CAMPUS_UNLOCKS := ["process_control","parallel_screening","laminate_design"]
+
+## River-field stock keys (river_field.json resources).
+const FIELD_KEYS := [
+	"timber","stone","fiber","fruit","grain","soil","meat","roasted_meat",
+	"porridge","hot_soup","pottery","trophy_axe","trophy_bone","trophy_feather","trophy_badge",
+]
 
 var _tick := 0.0
 
@@ -26,7 +57,7 @@ func _ready() -> void:
 	if not enabled():
 		queue_free()
 		return
-	print("[DEV MODE] 无限资源已激活")
+	print("[DEV MODE] 无限资源已激活 — 每秒顶满所有资源、解锁所有配方和工业品")
 
 func _process(delta: float) -> void:
 	_tick += delta
@@ -35,48 +66,56 @@ func _process(delta: float) -> void:
 	_top_up()
 
 func _top_up() -> void:
-	# Find the main scene root node (AtomAtelier) which holds the lab_state in `.state`.
-	var main = get_tree().current_scene
-	if main == null or not main.has_method("get"): return
-	var s = main.get("state")
+	var scene = get_tree().current_scene
+	if scene == null: return
+	var s = scene.get("state")
 	if s == null: return
-	# lab_state direct fields
-	if s.get("coins") != null and float(s.coins) < COINS * 0.5:
-		s.coins = COINS
+	_patch_lab(s)
+	var ind = s.get("industry"); if ind != null: _patch_industry(s, ind)
+	var ref = s.get("refinery"); if ref != null: _patch_refinery(ref)
+	var campus = s.get("campus"); if campus != null: _patch_campus(campus)
+	var planet = s.get("planet"); if planet != null: _patch_planet(planet)
+
+func _patch_lab(s: Object) -> void:
+	# Coins and star-materials
+	s.coins = COINS
 	if s.get("materials") is Array:
-		for i in s.materials.size():
-			if int(s.materials[i]) < MAT * 0.5:
-				s.materials[i] = MAT
+		for i in s.materials.size(): s.materials[i] = BIG
+	# All elements
 	if s.get("element_inventory") is Dictionary:
-		for sym in s.element_inventory:
-			if int(s.element_inventory[sym]) < ELEM * 0.5:
-				s.element_inventory[sym] = ELEM
-	# industry (Starforge Isle)
-	var ind = s.get("industry")
-	if ind != null:
-		if not ind.get("unlocked"): ind.set("unlocked", true)
-		if ind.get("credits") != null and int(ind.credits) < CREDITS * 0.5:
-			ind.credits = CREDITS
-		if ind.get("xp") != null and int(ind.xp) < XP * 0.5:
-			ind.xp = XP
-		if ind.get("plots") != null and int(ind.plots) < 36:
-			ind.plots = 36
-	# refinery
-	var ref = s.get("refinery")
-	if ref != null and ref.get("level") != null and int(ref.level) < REFINERY_LEVEL:
-		ref.level = REFINERY_LEVEL
-	# planet (minerals + river-field backpack)
-	var planet = s.get("planet")
-	if planet != null:
-		var v2 = planet.get("v2")
-		if v2 != null:
-			var nature = v2.get("nature")
-			if nature != null and nature.get("minerals") is Dictionary:
-				for mid in nature.minerals:
-					if int(nature.minerals[mid]) < MINERAL * 0.5:
-						nature.minerals[mid] = MINERAL
-			var field = v2.get("field")
-			if field != null and field.get("stock") is Dictionary:
-				for k in field.stock:
-					if int(field.stock[k]) < FIELD * 0.5:
-						field.stock[k] = FIELD
+		for sym in s.element_inventory: s.element_inventory[sym] = BIG
+	# index_found: write all evidence keys so has_made() returns true for every recipe
+	if s.get("index_found") is Dictionary:
+		for key in EVIDENCE_KEYS: s.index_found[key] = true
+
+func _patch_industry(s: Object, ind: Object) -> void:
+	ind.set("unlocked", true)
+	ind.credits = BIG
+	ind.xp = BIG
+	ind.plots = 36
+	# All industry items (buildings produce these) + recipe outputs
+	if ind.get("items") is Dictionary:
+		for id in INDUSTRY_ITEMS: ind.items[id] = BIG
+		for id in RECIPE_OUTPUTS: ind.items[id] = BIG
+
+func _patch_refinery(ref: Object) -> void:
+	ref.level = 5
+
+func _patch_campus(campus: Object) -> void:
+	if campus.get("unlocked_materials") is Array:
+		for key in CAMPUS_UNLOCKS:
+			if key not in campus.unlocked_materials:
+				campus.unlocked_materials.append(key)
+
+func _patch_planet(planet: Object) -> void:
+	var v2 = planet.get("v2"); if v2 == null: return
+	# Minerals
+	var nature = v2.get("nature")
+	if nature != null and nature.get("minerals") is Dictionary:
+		for mid in nature.minerals: nature.minerals[mid] = BIG
+	# River-field backpack
+	var field = v2.get("field")
+	if field != null and field.get("stock") is Dictionary:
+		for k in field.stock: field.stock[k] = BIG
+		# Also explicitly set the known field keys in case dict is sparse
+		for k in FIELD_KEYS: field.stock[k] = BIG
