@@ -535,14 +535,20 @@ func _cross_light_bridge() -> void:
 	light_bridge_busy=true; light_bridge.activate(); building_drag.cancel()
 	var veil=ColorRect.new(); veil.color=Color(0.60,0.88,0.96,0)
 	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); veil.mouse_filter=Control.MOUSE_FILTER_STOP; add_child(veil)
+	var loading_label=Label.new()
+	loading_label.text="正在进入河湾…"; loading_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	loading_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER; loading_label.add_theme_font_size_override("font_size",24)
+	loading_label.modulate=Color(0.1,0.2,0.25,0); loading_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	veil.add_child(loading_label)
 	var tween=create_tween(); tween.tween_property(veil,"color:a",1.0,0.3)
 	await tween.finished
+	create_tween().tween_property(loading_label,"modulate:a",1.0,0.15)
 	_show_planet_v2(); modal.enter_first_person(); veil.move_to_front()
-	# v0.64: yield a frame so the renderer can process the new scene before the fade-out starts.
-	# Without this, heavy 3D initialisation (plane mesh, far terrain) blocks the main thread and
-	# leaves the veil stuck at full opacity on mobile.
-	await get_tree().process_frame
-	tween=create_tween(); tween.tween_property(veil,"color:a",0.0,0.35)
+	# Yield several frames so the renderer can process the new 3D scene (terrain streaming,
+	# plane far-terrain build at 4 rows/frame) before starting the fade-out. On slow Android
+	# one frame is not enough — 0.5 s gives the scene time to settle visually.
+	await get_tree().create_timer(0.5).timeout
+	tween=create_tween(); tween.tween_property(veil,"color:a",0.0,0.4)
 	await tween.finished
 	veil.queue_free(); light_bridge_busy=false
 
