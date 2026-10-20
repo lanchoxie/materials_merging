@@ -235,6 +235,12 @@ func _primary() -> void:
 	else: _collect()
 
 func _attack() -> void:
+	# v0.63: F key handles vehicle enter/exit first, attack only when no vehicle is near.
+	if view.first_person and not is_instance_valid(backpack) and state.planet.v2.combat.player_health>0:
+		if view.driving or view.flying or view.boring:
+			if _toggle_rover() or _toggle_plane() or _toggle_tbm(): return
+		elif near_rover() or near_plane() or near_tbm():
+			if _toggle_plane() or _toggle_tbm() or _toggle_rover(): return
 	if not view.first_person or view.driving or is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
 	_update_actor()
 	var v=state.planet.v2; var target=v.Target.query(v)
@@ -626,12 +632,21 @@ func _aim() -> void:
 	if view.driving:
 		var r=view.rover
 		aim_label.text="越野车 · %d km/h · 电量 %d%% · 续航 %.1f km%s · E 下车" % [roundi(absf(r.speed)*3.6),roundi(100*float(r.state.charge)/maxf(1.0,float(r.state.cap))),r.range_km()," · 没电了，只能慢慢挪：回浮岛或停在太阳能方块旁充电" if float(r.state.charge)<=0.0 else (" · 撞到了" if r.bumped<0.6 else "")]
-		action_button.text="下车 E"
+		action_button.text="下车 E"; attack_button.text="下车 F"
 	elif near_rover():
 		aim_label.text="星球越野车 · 电量 %d%% · E 上车" % roundi(100*float(view.rover.state.charge)/maxf(1.0,float(view.rover.state.cap)))
-		action_button.text="上车 E"
-	attack_button.text="收拳中…" if v.combat.attack_left>0 else "攻击 F"
-	attack_button.disabled=v.combat.player_health<=0 or v.combat.attack_left>0
+		action_button.text="上车 E"; attack_button.text="上车 F"
+	elif view.flying:
+		attack_button.text="下机 F"
+	elif near_plane():
+		attack_button.text="登机 F"
+	elif view.boring:
+		attack_button.text="离开盾构机 F"
+	elif near_tbm():
+		attack_button.text="进入盾构机 F"
+	else:
+		attack_button.text="收拳中…" if v.combat.attack_left>0 else "攻击 F"
+	attack_button.disabled=v.combat.player_health<=0 or (v.combat.attack_left>0 and not view.driving and not view.flying and not view.boring and not near_rover() and not near_plane() and not near_tbm())
 
 func _tab(id: String) -> void:
 	if id=="bag": _open_backpack(); return
