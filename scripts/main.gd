@@ -538,6 +538,10 @@ func _cross_light_bridge() -> void:
 	var tween=create_tween(); tween.tween_property(veil,"color:a",1.0,0.3)
 	await tween.finished
 	_show_planet_v2(); modal.enter_first_person(); veil.move_to_front()
+	# v0.64: yield a frame so the renderer can process the new scene before the fade-out starts.
+	# Without this, heavy 3D initialisation (plane mesh, far terrain) blocks the main thread and
+	# leaves the veil stuck at full opacity on mobile.
+	await get_tree().process_frame
 	tween=create_tween(); tween.tween_property(veil,"color:a",0.0,0.35)
 	await tween.finished
 	veil.queue_free(); light_bridge_busy=false

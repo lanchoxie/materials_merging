@@ -49,6 +49,7 @@ var build_mode="observe"
 var play_bar: HBoxContainer
 var action_button: Button
 var attack_button: Button
+var vehicle_bar: HBoxContainer  # v0.64: per-vehicle enter/exit buttons for mobile
 var aim_label: Label
 var aim_clock=0.0
 var hotbar_slots=[]
@@ -121,6 +122,8 @@ func setup(model) -> void:
 		var tester=UI.button("测试",func(): test_requested.emit()); tester.focus_mode=Control.FOCUS_NONE; tester.position=Vector2(1150,108); tester.size=Vector2(80,40); add_child(tester)
 	map_button=UI.button("地图",_open_world_map); map_button.focus_mode=Control.FOCUS_NONE; map_button.size=Vector2(148,44); map_button.hide(); add_child(map_button)
 	attack_button=UI.button("攻击 F",_attack); attack_button.focus_mode=Control.FOCUS_NONE; attack_button.size=Vector2(148,44); attack_button.hide(); add_child(attack_button)
+	# v0.64: per-vehicle enter/exit buttons so mobile players don't have to fight with E.
+	vehicle_bar=HBoxContainer.new(); vehicle_bar.add_theme_constant_override("separation",6); vehicle_bar.hide(); add_child(vehicle_bar)
 	status=UI.paragraph("M前往采集坡 · 用手套采集原料 → 工艺车间加工 → 背包搭建、播种和浇水。",15,UI.GOLD); status.position=Vector2(32,853); status.size=Vector2(1370,35); add_child(status)
 	play_bar=UI.row(self,4); play_bar.position=Vector2(300,656)
 	for i in range(state.planet.v2.inventory.slots.size()):
@@ -184,6 +187,8 @@ func _exploration_layout() -> void:
 	inspect_button.visible=view.first_person; inspect_button.position.x=1240 if wide else 790
 	attack_button.visible=view.first_person; attack_button.position=Vector2(1240 if wide else 790,224)
 	map_button.visible=view.first_person; map_button.position=Vector2(1240 if wide else 790,278)
+	# v0.64: vehicle_bar floats just above the attack_button; populated each frame in _aim().
+	vehicle_bar.visible=view.first_person; vehicle_bar.position=Vector2(1240 if wide else 790,172)
 	inspect_button.text="收起面板" if show_details else "世界 / 远行"
 	play_bar.visible=view.first_person; aim_label.visible=view.first_person
 	play_bar.position.x=300 if wide else 56; aim_label.position.x=350 if wide else 220
@@ -647,6 +652,22 @@ func _aim() -> void:
 	else:
 		attack_button.text="收拳中…" if v.combat.attack_left>0 else "攻击 F"
 	attack_button.disabled=v.combat.player_health<=0 or (v.combat.attack_left>0 and not view.driving and not view.flying and not view.boring and not near_rover() and not near_plane() and not near_tbm())
+	# v0.64: vehicle_bar — dedicated per-vehicle enter/exit buttons so mobile players don't fight E.
+	for child in vehicle_bar.get_children(): child.queue_free()
+	if view.driving:
+		var b=UI.button("🚗 下车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+	elif view.flying:
+		var b=UI.button("✈️ 下机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+	elif view.boring:
+		var b=UI.button("⚙️ 离开盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+	else:
+		if near_plane():
+			var b=UI.button("✈️ 登机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+		if near_tbm():
+			var b=UI.button("⚙️ 进入盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+		if near_rover():
+			var b=UI.button("🚗 上车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+	vehicle_bar.visible=view.first_person and vehicle_bar.get_child_count()>0
 
 func _tab(id: String) -> void:
 	if id=="bag": _open_backpack(); return
