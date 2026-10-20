@@ -376,7 +376,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize(),"walk":walk_at.duplicate()}
+	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize(),"walk":walk_at.duplicate(),"driving":false,"flying":false,"boring":false}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -546,13 +546,13 @@ func restore(data) -> bool:
 	set_epoch(str(data.get("epoch","present")))
 	ship_at={}
 	if not ship.is_empty(): ship_at={"x":float(ship.x),"z":float(ship.z),"heading":float(ship.heading)}
-	rover_at={}; driving=false
+	rover_at={}; driving=bool(data.get("driving",false))
 	if not parked.is_empty(): rover_at={"x":float(parked.x),"z":float(parked.z),"heading":float(parked.heading)}
 	walk_at={}
 	if not stood.is_empty(): walk_at={"x":float(stood.x),"z":float(stood.z),"yaw":float(stood.yaw),"pitch":float(stood.pitch)}
-	plane_at={}; flying=false
+	plane_at={}; flying=bool(data.get("flying",false))
 	if not aircraft.is_empty(): plane_at={"x":float(aircraft.x),"z":float(aircraft.z),"heading":float(aircraft.heading)}
-	tbm_at={}; boring=false
+	tbm_at={}; boring=bool(data.get("boring",false))
 	if not machine.is_empty(): tbm_at={"x":int(machine.x),"y":int(machine.y),"z":int(machine.z),"facing":int(machine.facing),"grade":int(machine.grade)}
 	ranch.sync(self)
 	return true

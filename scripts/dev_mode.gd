@@ -90,6 +90,18 @@ func _patch_lab(s: Object) -> void:
 	# index_found: write all evidence keys so has_made() returns true for every recipe
 	if s.get("index_found") is Dictionary:
 		for key in EVIDENCE_KEYS: s.index_found[key] = true
+	# Ensure the player's inventory hotbar has the default tools (gloves, hammer, pick, scanner).
+	# inventory is held on planet.v2, not directly on lab_state.
+	var planet = s.get("planet"); if planet == null: return
+	var v2 = planet.get("v2"); if v2 == null: return
+	var inv = v2.get("inventory"); if inv == null: return
+	if inv.get("slots") is Array:
+		var defaults = ["tool:collect","tool:remove","tool:dig","tool:scan"]
+		for tool_id in defaults:
+			if tool_id not in inv.slots:
+				for i in inv.slots.size():
+					if inv.slots[i] == "" or inv.slots[i] == null:
+						inv.slots[i] = tool_id; break
 
 func _patch_industry(s: Object, ind: Object) -> void:
 	ind.set("unlocked", true)
@@ -112,13 +124,14 @@ func _patch_campus(campus: Object) -> void:
 
 func _patch_planet(planet: Object) -> void:
 	var v2 = planet.get("v2"); if v2 == null: return
-	# Minerals
+	# Minerals — capped at max_mineral_stock (default 999) so restore() passes validation.
 	var nature = v2.get("nature")
 	if nature != null and nature.get("minerals") is Dictionary:
-		for mid in nature.minerals: nature.minerals[mid] = BIG
-	# River-field backpack
+		var mcap: int = int(nature.get("rules",{}).get("max_mineral_stock",999))
+		for mid in nature.minerals: nature.minerals[mid] = mcap
+	# River-field backpack — capped at max_stock (999) so restore() passes validation.
+	# Only set keys that already exist in field.stock (validator rejects unknown keys).
 	var field = v2.get("field")
 	if field != null and field.get("stock") is Dictionary:
-		for k in field.stock: field.stock[k] = BIG
-		# Also explicitly set the known field keys in case dict is sparse
-		for k in FIELD_KEYS: field.stock[k] = BIG
+		var fcap: int = int(field.get("rules",{}).get("max_stock",999))
+		for k in field.stock: field.stock[k] = fcap
