@@ -320,6 +320,28 @@ func _sync_ship() -> void:
 func near_ship() -> bool:
 	return view.ship_parked and view.first_person and not view.driving and not view.flying and not view.boring and view.walker.position.distance_to(view.ship_at)<=6.0
 
+## v0.71: near the rocket+ship launchpad.
+func near_rocket() -> bool:
+	if not view.first_person or is_instance_valid(backpack): return false
+	var v=state.planet.v2; var ra=v.get("rocket_at")
+	if not ra is Dictionary or ra.is_empty(): return false
+	return view.walker.position.distance_to(Vector2(float(ra.get("x",0)),float(ra.get("z",0))))<=7.0
+
+## v0.71: sync rocket+ship launchpad from v2.rocket_at.
+func _sync_rocket() -> void:
+	var v=state.planet.v2; var ind=state.industry
+	if int(ind.items.get("rocket_stack",0))<1 and v.rocket_at.is_empty(): return
+	if not v.rocket_at.is_empty():
+		view.park_rocket(Vector2(float(v.rocket_at.x),float(v.rocket_at.z)))
+		return
+	if int(ind.items.get("rocket_stack",0))>0 and view.first_person and v.rocket_at.is_empty():
+		# Place the rocket behind and to the side of the player on first entry.
+		var f=Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw)); var side=Vector2(-f.y,f.x)
+		for offset in [f*12.0+side*5.0,f*12.0-side*5.0,f*15.0,side*12.0]:
+			var p=view.walker.position+offset
+			if view.terrain.inside(p,10) and not view.terrain.blocked(p,[]) and not view.terrain.water_at(p):
+				v.rocket_at={"x":p.x,"z":p.y}; view.park_rocket(p); return
+
 ## v0.47: the plane follows the deployed aircraft; it is parked beside the player the first time.
 func _sync_plane() -> void:
 	var v=state.planet.v2; var ind=state.industry
@@ -602,6 +624,8 @@ func _toggle_rover() -> bool:
 
 func _collect() -> void:
 	if is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
+	# v0.71: near rocket_stack → E triggers launch sequence.
+	if near_rocket(): message="🚀 登上火箭飞船 · 起飞！"; _live(); voyage_requested.emit(); return
 	if near_ship(): message="登上星际飞船 · 打开星图"; _live(); voyage_requested.emit(); return
 	# v0.66: vehicles are handled by F key only — E no longer enters/exits vehicles.
 	_update_actor()
@@ -1249,6 +1273,7 @@ func _sync() -> void:
 	_sync_tbm()
 	_sync_plane()
 	_sync_ship()
+	_sync_rocket()
 	view.remember_position()
 	_live(); _aim()
 

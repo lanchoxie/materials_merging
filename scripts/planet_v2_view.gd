@@ -81,6 +81,7 @@ var boring=false
 var tbm_parked=false
 var tbm_node: Node3D
 var tbm_fleet_nodes: Array=[]  # v0.69: extra mesh nodes for fleet units
+var rocket_node: Node3D       # v0.71: standing rocket+ship on the launchpad
 ## The planet model the TBM bores into (set by the panel).
 var v2
 ## v0.41 rover: parked or driven in first person, seen from a chase camera while driving.
@@ -461,6 +462,47 @@ func _pose_plane() -> void:
 func _ensure_tbm(spec: Dictionary) -> void:
 	if tbm!=null: return
 	tbm=Tbm.new(spec); tbm_node=_tbm_mesh(); add_child(tbm_node); tbm_node.hide()
+
+## v0.71: build the rocket+ship stack 3D model (stands ~14m tall).
+func _rocket_mesh() -> Node3D:
+	var G=preload("res://scripts/river_geometry.gd")
+	var root=Node3D.new()
+	var mat_steel=StandardMaterial3D.new(); mat_steel.albedo_color=Color("b8c8d0"); mat_steel.metallic=0.8
+	var mat_ship=StandardMaterial3D.new(); mat_ship.albedo_color=Color("d0d8e8"); mat_ship.metallic=0.6
+	var mat_engine=StandardMaterial3D.new(); mat_engine.albedo_color=Color("444444")
+	var mat_thruster=StandardMaterial3D.new(); mat_thruster.albedo_color=Color("ff6622")
+	mat_thruster.emission_enabled=true; mat_thruster.emission=Color("ff4400"); mat_thruster.emission_energy_multiplier=2.0
+	# Stage 1: main rocket body (wide, steel)
+	var s1=MeshInstance3D.new(); var s1m=CylinderMesh.new()
+	s1m.bottom_radius=1.4; s1m.top_radius=1.2; s1m.height=7.0
+	s1.mesh=s1m; s1.material_override=mat_steel; s1.position=Vector3(0,3.5,0); root.add_child(s1)
+	# Stage 1 engine nozzles (3 around the base)
+	for k in range(3):
+		var ang=k*TAU/3; var noz=MeshInstance3D.new(); var nzm=CylinderMesh.new()
+		nzm.bottom_radius=0.35; nzm.top_radius=0.2; nzm.height=1.2
+		noz.mesh=nzm; noz.material_override=mat_engine
+		noz.position=Vector3(cos(ang)*0.7,-0.6,sin(ang)*0.7); root.add_child(noz)
+	# Stage 2: smaller second stage
+	var s2=MeshInstance3D.new(); var s2m=CylinderMesh.new()
+	s2m.bottom_radius=1.0; s2m.top_radius=0.9; s2m.height=3.5
+	s2.mesh=s2m; s2.material_override=mat_steel; s2.position=Vector3(0,8.75,0); root.add_child(s2)
+	# Ship capsule on top
+	var ship=MeshInstance3D.new(); var shm=CylinderMesh.new()
+	shm.bottom_radius=0.8; shm.top_radius=0.15; shm.height=3.0
+	ship.mesh=shm; ship.material_override=mat_ship; ship.position=Vector3(0,12.0,0); root.add_child(ship)
+	# Fins (4 fins at base)
+	for k in range(4):
+		var ang=k*PI/2; var fin=MeshInstance3D.new(); var fm=BoxMesh.new(); fm.size=Vector3(0.15,2.5,1.4)
+		fin.mesh=fm; fin.material_override=mat_steel
+		fin.position=Vector3(cos(ang)*1.5,1.25,sin(ang)*1.5); fin.rotation.y=ang; root.add_child(fin)
+	root.set_meta("ship_node",ship)
+	return root
+
+## Park or hide the rocket+ship.
+func park_rocket(at: Vector2) -> void:
+	if rocket_node==null: rocket_node=_rocket_mesh(); add_child(rocket_node)
+	if at==Vector2.INF: rocket_node.hide(); return
+	var gy=terrain.ground(at); rocket_node.position=Vector3(at.x,gy,at.y); rocket_node.show()
 
 ## Park the TBM with its floor at cell `at` (or hide it when `at` is null).
 func park_tbm(at,face: int=0,grade: int=0) -> void:
