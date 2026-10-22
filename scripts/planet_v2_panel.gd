@@ -367,8 +367,15 @@ func _try_recall() -> bool:
 	match target_key:
 		"rover": item_id=ind.vehicle; ind.deploy_rover(""); v.rover_at={}; v.driving=false
 		"plane": item_id=ind.plane;   ind.deploy_plane(""); v.plane_at={}; v.flying=false
-		"tbm":   item_id=ind.tbm;     ind.deploy_tbm("");   v.tbm_at={}; v.boring=false
-		"ship":  item_id=ind.ship;    ind.deploy_ship(""); v.ship_at={}
+		"tbm":
+			# v0.68.9: remove last fleet unit first; only remove primary when fleet is empty.
+			if not v.tbm_fleet.is_empty():
+				v.tbm_fleet.pop_back()
+				item_id="tbm"; ind.items["tbm"]=int(ind.items.get("tbm",0))+1
+				message="已回收一台盾构机 · 剩余联合×%d" % (v.tbm_fleet.size()+1)
+				acted.emit(message); _refresh_hotbar(); _redraw(); _sync(); return true
+			item_id=ind.tbm; ind.deploy_tbm(""); v.tbm_at={}; v.boring=false; v.tbm_fleet.clear()
+		"ship":  item_id=ind.ship; ind.deploy_ship(""); v.ship_at={}
 	if item_id!="": ind.items[item_id]=int(ind.items.get(item_id,0))+1
 	message="已收纳到背包：%s" % item_id
 	acted.emit(message); _refresh_hotbar(); _redraw(); _sync(); return true
@@ -740,9 +747,20 @@ func _aim() -> void:
 		var gm=view.construction_view.ghost
 		gm.scale=vsize; gm.position=Vector3(place_p.x,ground_y+vsize.y*0.5,place_p.y)
 		var can_place=view.terrain.inside(place_p,3) and not view.terrain.blocked(place_p,[])
+		var hint_text=""
+		# TBM: if primary is deployed and player is close, show fleet-join preview.
+		if vid=="tbm" and state.industry.tbm!="" and view.tbm_parked:
+			var dist_to_primary=view.walker.position.distance_to(Vector2(view.tbm.cell.x,view.tbm.cell.z))
+			if dist_to_primary<=8.0:
+				can_place=v.tbm_fleet.size()<2
+				var fleet_n=v.tbm_fleet.size()+2
+				hint_text=" · 贴近主机可组成联合×%d" % fleet_n if can_place else " · 已达最大联合数量（3台）"
+				var side=Vector2(-fwd.y,fwd.x)
+				var offset_p=view.walker.position+side*float(v.tbm_fleet.size()+1)*3.5
+				gm.position=Vector3(offset_p.x,view.terrain.ground(offset_p)+vsize.y*0.5,offset_p.y)
 		view.construction_view.ghost_material.albedo_color=Color(0.4,0.95,0.7,0.28) if can_place else Color(1,0.5,0.4,0.28)
 		gm.show()
-		aim_label.text=("%s · 绿框是放置位置 · E 取出" if can_place else "%s · 红框：此处无法放置") % str(item.get("name","载具"))
+		aim_label.text=("%s · 绿框是放置位置 · E 取出%s" if can_place else "%s · 红框：此处无法放置%s") % [str(item.get("name","载具")),hint_text]
 	aim_label.text=InteractionHelp.prompt(v,item,target,aim_label.text)
 	action_button.text=InteractionHelp.button_text(action,target)
 	if view.driving:
