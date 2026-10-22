@@ -39,17 +39,19 @@ func _ready() -> void:
 	env.background_color=Color(0.005,0.006,0.015); env.ambient_light_source=Environment.AMBIENT_SOURCE_SKY
 	env.fog_enabled=false; var we=WorldEnvironment.new(); we.environment=env; root.add_child(we)
 	camera=Camera3D.new(); camera.fov=70; camera.far=50000; root.add_child(camera)
-	# --- Starfield (procedural points) ---
-	var star_mesh=ImmediateMesh.new()
-	var st=SurfaceTool.new(); st.begin(Mesh.PRIMITIVE_POINTS)
+	# --- Starfield (small cubes via MultiMesh) ---
 	var rng=RandomNumberGenerator.new(); rng.seed=7777
-	for i in range(800):
-		var dir=Vector3(rng.randf_range(-1,1),rng.randf_range(-1,1),rng.randf_range(-1,1)).normalized()
-		st.add_vertex(dir*rng.randf_range(8000,15000))
-	star_mesh.add_surface_from_arrays(Mesh.ARRAY_POINTS,st.commit_to_arrays())
-	var stars=MeshInstance3D.new(); stars.mesh=star_mesh
+	var mm=MultiMesh.new(); mm.transform_format=MultiMesh.TRANSFORM_3D
+	var star_cube=BoxMesh.new(); star_cube.size=Vector3(8,8,8); mm.mesh=star_cube
+	mm.instance_count=600
 	var star_mat=StandardMaterial3D.new(); star_mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
-	star_mat.vertex_color_use_as_albedo=true; stars.material_override=star_mat; root.add_child(stars)
+	star_mat.albedo_color=Color(1,1,1,0.9)
+	star_cube.surface_set_material(0,star_mat)
+	for i in range(600):
+		var dir=Vector3(rng.randf_range(-1,1),rng.randf_range(-1,1),rng.randf_range(-1,1)).normalized()
+		var t=Transform3D(); t.origin=dir*rng.randf_range(8000,14000)
+		mm.set_instance_transform(i,t)
+	var stars=MultiMeshInstance3D.new(); stars.multimesh=mm; root.add_child(stars)
 	# --- Sun ---
 	var sun=MeshInstance3D.new(); var sun_m=SphereMesh.new(); sun_m.radius=120; sun_m.height=240; sun.mesh=sun_m
 	var sun_mat=StandardMaterial3D.new(); sun_mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -90,7 +92,7 @@ func _build_ship() -> Node3D:
 	var body=MeshInstance3D.new(); var bm=BoxMesh.new(); bm.size=Vector3(3,3,8)
 	body.mesh=bm; var bmat=StandardMaterial3D.new(); bmat.albedo_color=Color("aaccdd"); bmat.metallic=0.7
 	body.material_override=bmat; s.add_child(body)
-	var nose=MeshInstance3D.new(); var nm=ConeMesh.new(); nm.bottom_radius=1.5; nm.top_radius=0.2; nm.height=4
+	var nose=MeshInstance3D.new(); var nm=CylinderMesh.new(); nm.bottom_radius=1.5; nm.top_radius=0.05; nm.height=4
 	nose.mesh=nm; nose.position=Vector3(0,0,-6); nose.material_override=bmat; s.add_child(nose)
 	# Engine glow
 	var eng=OmniLight3D.new(); eng.light_color=Color("4488ff"); eng.light_energy=1.5; eng.omni_range=30
