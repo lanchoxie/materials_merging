@@ -62,6 +62,8 @@ var flying=false
 var equipped: Dictionary={}
 ## v0.68: player-placed map waypoints [{x, z, label}] — shown on globe, navigated in first person.
 var waypoints: Array=[]
+## v0.68: mods installed on each vehicle {"rover":["solar_panel","battery_pack",...], ...}
+var vehicle_mods: Dictionary={"rover":[],"plane":[],"tbm":[],"ship":[]}
 
 func _init() -> void:
 	world=fresh()
@@ -382,7 +384,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"tbm_fleet":tbm_fleet.duplicate(true),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize(),"walk":walk_at.duplicate(),"driving":false,"flying":false,"boring":false,"equipped":equipped.duplicate(),"waypoints":waypoints.duplicate(true)}
+	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"tbm_fleet":tbm_fleet.duplicate(true),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize(),"walk":walk_at.duplicate(),"driving":false,"flying":false,"boring":false,"equipped":equipped.duplicate(),"waypoints":waypoints.duplicate(true),"vehicle_mods":vehicle_mods.duplicate(true)}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -576,5 +578,14 @@ func restore(data) -> bool:
 	for wp in data.get("waypoints",[]):
 		if wp is Dictionary and _number(wp.get("x"),-8192,8192) and _number(wp.get("z"),-7600,7600) and wp.get("label") is String:
 			waypoints.append({"x":float(wp.x),"z":float(wp.z),"label":str(wp.label).left(32)})
+	# v0.68: restore vehicle mods.
+	vehicle_mods={"rover":[],"plane":[],"tbm":[],"ship":[]}
+	var vm=data.get("vehicle_mods",{})
+	if vm is Dictionary:
+		for vid in vehicle_mods:
+			var arr=vm.get(vid,[])
+			if arr is Array:
+				for mid in arr:
+					if mid is String and mid.length()<64: vehicle_mods[vid].append(mid)
 	ranch.sync(self)
 	return true

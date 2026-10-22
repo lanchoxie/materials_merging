@@ -342,6 +342,48 @@ func _sync_plane() -> void:
 func near_plane() -> bool:
 	return view.plane_parked and not view.flying and view.walker.position.distance_to(view.plane.position)<=4.5
 
+## v0.68: open the vehicle mod install panel — shows installed mods and lets you add/remove from backpack.
+func _open_vehicle_mods(vid: String) -> void:
+	if is_instance_valid(backpack): _close_backpack()
+	explore_input.set_walking(false)
+	var v=state.planet.v2
+	var mods: Array=v.vehicle_mods.get(vid,[])
+	var ind=state.industry
+	var solar_count=mods.count("solar_panel")
+	var battery_count=mods.count("battery_pack")
+	var panel=preload("res://scripts/ui.gd")
+	var dlg=ColorRect.new(); dlg.color=Color(0.02,0.06,0.09,0.86); dlg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dlg.mouse_filter=Control.MOUSE_FILTER_STOP; add_child(dlg)
+	var box=UI.box(dlg,Rect2(300,150,780,480)); var col=UI.column(box,12)
+	col.add_child(UI.label("载具外设 · %s" % vid,24,UI.MINT))
+	col.add_child(UI.paragraph("已安装：太阳能板 ×%d · 电池包 ×%d" % [solar_count,battery_count],15,UI.GOLD))
+	col.add_child(UI.paragraph("太阳能板：白天在星球上自动充电（每块 8 Wh/s）。电池包：扩容 1200 Wh。",14))
+	# Install buttons (consumes from ind.items inventory).
+	var has_solar=int(ind.items.get("solar_panel",0))
+	var has_battery=int(ind.items.get("battery_pack",0))
+	var row=UI.row(col,10)
+	var btn_solar=UI.button("+ 太阳能板（背包 %d）" % has_solar,func():
+		if has_solar<1: return
+		if solar_count>=4: return
+		mods.append("solar_panel"); v.vehicle_mods[vid]=mods; ind.items["solar_panel"]=has_solar-1
+		_open_vehicle_mods(vid); dlg.queue_free())
+	btn_solar.disabled=has_solar<1 or solar_count>=4
+	row.add_child(btn_solar)
+	var btn_battery=UI.button("+ 电池包（背包 %d）" % has_battery,func():
+		if has_battery<1: return
+		if battery_count>=4: return
+		mods.append("battery_pack"); v.vehicle_mods[vid]=mods; ind.items["battery_pack"]=has_battery-1
+		_open_vehicle_mods(vid); dlg.queue_free())
+	btn_battery.disabled=has_battery<1 or battery_count>=4
+	row.add_child(btn_battery)
+	# Remove last mod (returns it to backpack).
+	if not mods.is_empty():
+		col.add_child(UI.button("− 卸下最后一个外设（退回背包）",func():
+			var last=mods.pop_back(); v.vehicle_mods[vid]=mods
+			ind.items[last]=int(ind.items.get(last,0))+1
+			_open_vehicle_mods(vid); dlg.queue_free()))
+	col.add_child(UI.button("关闭",func(): dlg.queue_free(); if view.first_person: explore_input.set_walking(true); explore_input.show()))
+
 ## v0.68: hammer the remove tool on a parked vehicle 3 times to stow it back in the backpack.
 ## Returns true if a vehicle was targeted (caller skips the normal dismantle path).
 func _try_recall() -> bool:
@@ -794,10 +836,13 @@ func _aim() -> void:
 	else:
 		if near_plane():
 			var b=UI.button("✈️ 登机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+			var mb=UI.button("🔧 安装外设",func(): _open_vehicle_mods("plane")); mb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(mb)
 		if near_tbm():
 			var b=UI.button("⚙️ 进入盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+			var mb=UI.button("🔧 安装外设",func(): _open_vehicle_mods("tbm")); mb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(mb)
 		if near_rover():
 			var b=UI.button("🚗 上车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+			var mb=UI.button("🔧 安装外设",func(): _open_vehicle_mods("rover")); mb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(mb)
 	vehicle_bar.visible=view.first_person and vehicle_bar.get_child_count()>0
 	# v0.68: waypoint navigation — show nearest waypoint direction + distance on aim_label.
 	if view.first_person and not view.driving and not view.flying and not view.boring:

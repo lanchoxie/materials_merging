@@ -731,9 +731,37 @@ func tick(delta: float):
 	elif not planet.v2.driving and not planet.v2.rover_at.is_empty():
 		var at=Vector2(float(planet.v2.rover_at.x),float(planet.v2.rover_at.z)); var R=planet.v2.construction.terrain.rules.rover
 		if planet.v2.construction.count_kind("solar",at,float(R.park_solar_radius))>0: industry.recharge_rover(delta,float(R.park_charge_seconds))
+	# v0.68: vehicle solar panels and battery packs — charge when on planet, scale cap from battery packs.
+	_apply_vehicle_mods(delta)
 	if not made.is_empty(): industry_notice="星锻岛："+"；".join(made)
 	visitor_cooldown = maxf(0.0, visitor_cooldown - delta)
 	_produce(delta)
+
+## v0.68: apply solar-panel charging and battery-pack cap scaling for vehicle mods.
+func _apply_vehicle_mods(delta: float) -> void:
+	var mods=planet.v2.get("vehicle_mods")
+	if not mods is Dictionary: return
+	const SOLAR_WH_PER_SEC=8.0   # per solar panel per second in full sun
+	const BATTERY_WH=1200.0       # extra Wh per battery pack
+	# Rough sun factor: use world elapsed to estimate day phase.
+	var elapsed=float(planet.v2.world.get("elapsed",0))
+	var sun_factor=clampf(sin(elapsed/60.0*TAU)*0.5+0.5,0.0,1.0)
+	var pairs=[["rover",industry.rover_state],["plane",industry.plane_state],
+			   ["tbm",industry.tbm_state],["ship",industry.ship_state]]
+	for pair in pairs:
+		var vid=pair[0]; var st=pair[1]
+		var vid_mods: Array=mods.get(vid,[])
+		if vid_mods.is_empty(): continue
+		var solar_count=vid_mods.count("solar_panel")
+		var battery_count=vid_mods.count("battery_pack")
+		# Extend cap from battery packs (additive on base cap, recalculated each tick).
+		var base_cap=float(st.get("base_cap",float(st.cap)))
+		if not st.has("base_cap"): st["base_cap"]=float(st.cap)
+		var new_cap=base_cap+battery_count*BATTERY_WH
+		if absf(float(st.cap)-new_cap)>0.1: st.cap=new_cap; st.charge=minf(float(st.charge),new_cap)
+		# Solar charging only on planet and only in daylight.
+		if planet.v2.active and solar_count>0 and sun_factor>0.05:
+			st.charge=minf(float(st.cap),float(st.charge)+solar_count*SOLAR_WH_PER_SEC*sun_factor*delta)
 
 ## Reactor construction and output for `delta` seconds (shared by live ticks and offline catch-up).
 func _produce(delta: float) -> void:
