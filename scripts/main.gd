@@ -543,11 +543,19 @@ func _cross_light_bridge() -> void:
 	var tween=create_tween(); tween.tween_property(veil,"color:a",1.0,0.3)
 	await tween.finished
 	create_tween().tween_property(loading_label,"modulate:a",1.0,0.15)
+	# Temporarily park the plane so the panel initialises without the aircraft stepping in
+	# _camera() every frame. The flying branch sets camera.far=3200, drives far_terrain.want()
+	# and far_terrain.set_origin() synchronously — on slow Android that stalls the tween and
+	# makes the transition freeze indefinitely. Restore after the veil fades out so the next
+	# _sync() tick places the plane normally.
+	var _saved_plane: String=state.industry.plane
+	var _saved_flying: bool=bool(state.planet.v2.get("flying",false))
+	state.industry.plane=""; state.planet.v2.flying=false
 	_show_planet_v2(); modal.enter_first_person(); veil.move_to_front()
-	# Yield several frames so the renderer can process the new 3D scene (terrain streaming,
-	# plane far-terrain build at 4 rows/frame) before starting the fade-out. On slow Android
-	# one frame is not enough — 0.5 s gives the scene time to settle visually.
+	# Give the renderer one pass to process the 3D scene before revealing it.
 	await get_tree().create_timer(0.5).timeout
+	# Restore plane state — _sync() (runs every 0.5 s) will call _sync_plane() and park it.
+	state.industry.plane=_saved_plane; state.planet.v2.flying=_saved_flying
 	tween=create_tween(); tween.tween_property(veil,"color:a",0.0,0.4)
 	await tween.finished
 	veil.queue_free(); light_bridge_busy=false

@@ -423,7 +423,7 @@ func _plane_mesh() -> Node3D:
 		var n=MeshInstance3D.new(); var b=BoxMesh.new(); b.size=size; n.mesh=b; n.position=at; n.material_override=material; parent.add_child(n); return n
 	var white=mat.call("eef2f5"); var blue=mat.call("2f6f93"); var dark=mat.call("2a3038",0.5)
 	add.call(root,Vector3(1.0,1.0,5.2),Vector3(0,1.5,0.1),white)
-	add.call(root,Vector3(0.82,0.5,1.3),Vector3(0,2.1,-0.9),mat.call("7fd8ff",0.1,true))
+	add.call(root,Vector3(0.82,0.5,1.3),Vector3(0,2.1,-0.9),mat.call("7fd8ff",0.1))
 	add.call(root,Vector3(9.0,0.12,1.4),Vector3(0,2.05,-0.3),white)
 	add.call(root,Vector3(9.02,0.13,0.25),Vector3(0,2.06,-0.95),blue)
 	add.call(root,Vector3(3.2,0.1,0.9),Vector3(0,1.75,2.4),white)

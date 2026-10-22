@@ -308,9 +308,11 @@ func _sync_plane() -> void:
 			var p=view.walker.position+offset
 			if view.terrain.inside(p,6) and not view.terrain.blocked(p,view.walker.barriers):
 				v.plane_at={"x":p.x,"z":p.y,"heading":view.walker.yaw}; break
-	if v.plane_at.is_empty(): view.park_plane(null); return
+	if v.plane_at.is_empty(): view.park_plane(null); v.flying=false; return
 	var at=Vector2(float(v.plane_at.x),float(v.plane_at.z))
 	if not view.plane_parked or view.plane.position.distance_to(at)>0.5: view.park_plane(at,float(v.plane_at.heading))
+	# View is not flying here; clear the saved flag so HUD and serialise stay in sync.
+	v.flying=false
 
 func near_plane() -> bool:
 	return view.plane_parked and not view.flying and view.walker.position.distance_to(view.plane.position)<=4.5
