@@ -101,6 +101,38 @@
       "name": "河畔小兽",
       "mature_days": 3.0,
       "max_population": 12
+    },
+    {
+      "id": "sand_scorpion",
+      "name": "沙蝎",
+      "mature_days": 1.5,
+      "max_population": 8,
+      "planet": "ember",
+      "hostile": true
+    },
+    {
+      "id": "desert_lizard",
+      "name": "荒漠蜥蜴",
+      "mature_days": 2.5,
+      "max_population": 10,
+      "planet": "ember",
+      "hostile": false
+    },
+    {
+      "id": "frost_bear",
+      "name": "冰熊",
+      "mature_days": 4.0,
+      "max_population": 4,
+      "planet": "glacier",
+      "hostile": true
+    },
+    {
+      "id": "ice_crawler",
+      "name": "冰虫",
+      "mature_days": 1.0,
+      "max_population": 14,
+      "planet": "glacier",
+      "hostile": true
     }
   ],
   "crops": [

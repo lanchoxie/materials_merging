@@ -115,7 +115,18 @@ func begin_epoch(id: String) -> void:
 	if planet!="earth":
 		for r in world.regions.values():
 			r.animals=[]; r.crops=[]; r.buildings={}; r.enclosed=false
-		settlement=Settlement.new()   # fresh settlement, no carried-over residents
+		settlement=Settlement.new()
+		# Spawn planet-specific creatures across all regions.
+		var planet_species=rules.species.filter(func(s): return str(s.get("planet",""))==planet)
+		if not planet_species.is_empty():
+			var regions=world.regions.values()
+			var nid=int(world.next_animal)
+			for spec in planet_species:
+				var count=mini(int(spec.get("max_population",4)),3)  # 3 per species per region start
+				for reg in regions:
+					for i in range(count):
+						reg.animals.append(_animal(str(spec.id),nid,0,randf()*0.8)); nid+=1
+			world.next_animal=nid
 
 ## Weather for this timeline: the 冰河期 has its own list and odds, all year round.
 func incident_kinds() -> Array:

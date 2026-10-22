@@ -13,9 +13,9 @@ var felt=20.0
 ## v0.41.2 hot food: extra felt warmth for a while.
 var food_warmth=0.0
 var food_left=0.0
-const WILD_NAMES={"woodland_boar":"林地野猪","meadow_herbivore":"林间小鹿","mammoth":"猛犸象","woolly_rhino":"披毛犀"}
-const WILD_HEIGHT={"mammoth":3.0,"woolly_rhino":1.8}
-const FIGHTERS=["woodland_boar","mammoth","woolly_rhino"]
+const WILD_NAMES={"woodland_boar":"林地野猪","meadow_herbivore":"林间小鹿","mammoth":"猛犸象","woolly_rhino":"披毛犀","sand_scorpion":"沙蝎","desert_lizard":"荒漠蜥蜴","frost_bear":"冰熊","ice_crawler":"冰虫"}
+const WILD_HEIGHT={"mammoth":3.0,"woolly_rhino":1.8,"frost_bear":1.6,"sand_scorpion":0.5,"ice_crawler":0.4,"desert_lizard":0.6}
+const FIGHTERS=["woodland_boar","mammoth","woolly_rhino","sand_scorpion","frost_bear","ice_crawler"]
 
 func entities(v) -> Array:
 	var out=[]; var t=v.construction.terrain

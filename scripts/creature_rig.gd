@@ -8,7 +8,11 @@ static var _cache: Dictionary={}
 ## Whole-creature bounds (legs and tail included) for hitboxes and culling.
 const BOUNDS={"meadow_herbivore":AABB(Vector3(-0.2,0,-0.56),Vector3(0.4,0.9,0.9)),"woodland_boar":AABB(Vector3(-0.28,0,-0.76),Vector3(0.56,0.78,1.16)),
 	"marsh_fish":AABB(Vector3(-0.12,-0.1,-0.22),Vector3(0.24,0.25,0.62)),
-	"mammoth":AABB(Vector3(-0.9,0,-2.0),Vector3(1.8,3.3,3.6)),"woolly_rhino":AABB(Vector3(-0.6,0,-1.9),Vector3(1.2,1.9,3.2)),"person":AABB(Vector3(-0.32,0,-0.26),Vector3(0.64,1.62,0.52))}
+	"mammoth":AABB(Vector3(-0.9,0,-2.0),Vector3(1.8,3.3,3.6)),"woolly_rhino":AABB(Vector3(-0.6,0,-1.9),Vector3(1.2,1.9,3.2)),"person":AABB(Vector3(-0.32,0,-0.26),Vector3(0.64,1.62,0.52)),
+	"sand_scorpion":AABB(Vector3(-0.28,0,-0.4),Vector3(0.56,0.5,0.7)),
+	"desert_lizard":AABB(Vector3(-0.18,0,-0.5),Vector3(0.36,0.38,0.9)),
+	"frost_bear":AABB(Vector3(-0.45,0,-0.8),Vector3(0.9,1.5,1.4)),
+	"ice_crawler":AABB(Vector3(-0.22,0,-0.35),Vector3(0.44,0.4,0.6))}
 
 static func _key(kind: String,part: String,material: Material) -> String:
 	return "%s:%s:%d" % [kind,part,material.get_instance_id()]
@@ -120,6 +124,45 @@ static func _mesh(kind: String,part: String,material: Material) -> ArrayMesh:
 		"marsh_fish:tail":
 			G.cube(st,Vector3(0,0,0.05),Vector3(0.06,0.09,0.1),Color("e9b56e"))
 			G.cube(st,Vector3(0,0,0.13),Vector3(0.025,0.18,0.1),Color("e0a761"))
+		# v0.69 non-Earth creatures — reuse blocky geometry, planet-tinted.
+		"sand_scorpion:body":
+			G.cube(st,Vector3.ZERO,Vector3(0.36,0.18,0.6),Color("8a5028"))
+			G.cube(st,Vector3(0,0.12,-0.25),Vector3(0.18,0.12,0.22),Color("a06535"))
+			for side in [-1,1]: G.cube(st,Vector3(side*0.22,0.08,-0.2),Vector3(0.05,0.04,0.3),Color("6a3a1a"))
+			G.cube(st,Vector3(0,0.16,0.28),Vector3(0.08,0.05,0.4),Color("8a5028"))
+			G.cube(st,Vector3(0,0.2,0.55),Vector3(0.05,0.04,0.1),Color("d4a050"))
+		"sand_scorpion:leg":
+			G.cube(st,Vector3(0,-0.1,0),Vector3(0.04,0.2,0.05),Color("6a3a1a"))
+		"sand_scorpion:tail":
+			G.cube(st,Vector3(0,0,0.05),Vector3(0.06,0.06,0.25),Color("8a5028"))
+			G.cube(st,Vector3(0,0.04,0.2),Vector3(0.04,0.04,0.06),Color("d4a050"))
+		"desert_lizard:body":
+			G.cube(st,Vector3.ZERO,Vector3(0.22,0.16,0.5),Color("c89048"))
+			G.cube(st,Vector3(0,0.1,0.02),Vector3(0.14,0.06,0.4),Color("d8a458"))
+			for side in [-1,1]: G.cube(st,Vector3(side*0.13,0.06,0.1),Vector3(0.02,0.03,0.06),Color("2a2a2a"))
+		"desert_lizard:leg":
+			G.cube(st,Vector3(0,-0.06,0),Vector3(0.06,0.12,0.06),Color("a87838"))
+		"desert_lizard:tail":
+			G.cube(st,Vector3(0,0,0.05),Vector3(0.05,0.05,0.3),Color("c89048"))
+			G.cube(st,Vector3(0,0,0.3),Vector3(0.03,0.03,0.12),Color("a87838"))
+		"frost_bear:body":
+			G.cube(st,Vector3.ZERO,Vector3(0.6,0.7,1.1),Color("d8e0e8"))
+			G.cube(st,Vector3(0,0.5,0.1),Vector3(0.5,0.25,0.9),Color("c0ccd8"))
+			G.cube(st,Vector3(0,0.55,-0.55),Vector3(0.36,0.36,0.36),Color("e8eef4"))
+			G.cube(st,Vector3(0,0.45,-0.7),Vector3(0.16,0.16,0.12),Color("2a2a3a"))
+			for side in [-1,1]: G.cube(st,Vector3(side*0.1,0.5,-0.62),Vector3(0.04,0.03,0.03),Color("1a1a2a"))
+		"frost_bear:leg":
+			G.cube(st,Vector3(0,-0.3,0),Vector3(0.2,0.6,0.24),Color("c0ccd8"))
+		"frost_bear:tail":
+			G.cube(st,Vector3(0,0,0.1),Vector3(0.08,0.12,0.18),Color("d8e0e8"))
+		"ice_crawler:body":
+			G.cube(st,Vector3.ZERO,Vector3(0.3,0.2,0.4),Color("8acce0"))
+			G.cube(st,Vector3(0,0.12,0),Vector3(0.2,0.08,0.3),Color("a8d8e8"))
+			for side in [-1,1]: G.cube(st,Vector3(side*0.16,0.06,0.12),Vector3(0.02,0.04,0.04),Color("2a4a6a"))
+		"ice_crawler:leg":
+			G.cube(st,Vector3(0,-0.08,0),Vector3(0.05,0.16,0.05),Color("6ab8d0"))
+		"ice_crawler:tail":
+			G.cube(st,Vector3(0,0,0.05),Vector3(0.04,0.04,0.2),Color("8acce0"))
 	var mesh: ArrayMesh=st.commit()
 	if part=="body" and BOUNDS.has(kind): mesh.custom_aabb=BOUNDS[kind]
 	_cache[key]=mesh
@@ -132,11 +175,15 @@ static func make(kind: String,material: Material) -> MeshInstance3D:
 	var hips={"meadow_herbivore":[Vector3(-0.1,0.31,-0.2),Vector3(0.1,0.31,-0.2),Vector3(-0.1,0.31,0.2),Vector3(0.1,0.31,0.2)],
 		"woodland_boar":[Vector3(-0.17,0.24,-0.24),Vector3(0.17,0.24,-0.24),Vector3(-0.17,0.24,0.24),Vector3(0.17,0.24,0.24)],
 		"mammoth":[Vector3(-0.5,1.12,-0.65),Vector3(0.5,1.12,-0.65),Vector3(-0.5,1.12,0.8),Vector3(0.5,1.12,0.8)],
-		"woolly_rhino":[Vector3(-0.32,0.65,-0.6),Vector3(0.32,0.65,-0.6),Vector3(-0.32,0.65,0.75),Vector3(0.32,0.65,0.75)]}
+		"woolly_rhino":[Vector3(-0.32,0.65,-0.6),Vector3(0.32,0.65,-0.6),Vector3(-0.32,0.65,0.75),Vector3(0.32,0.65,0.75)],
+		"sand_scorpion":[Vector3(-0.2,0.09,-0.16),Vector3(0.2,0.09,-0.16),Vector3(-0.2,0.09,0.1),Vector3(0.2,0.09,0.1),Vector3(-0.22,0.09,-0.06),Vector3(0.22,0.09,-0.06)],
+		"desert_lizard":[Vector3(-0.16,0.08,-0.2),Vector3(0.16,0.08,-0.2),Vector3(-0.16,0.08,0.16),Vector3(0.16,0.08,0.16)],
+		"frost_bear":[Vector3(-0.26,0.35,-0.32),Vector3(0.26,0.35,-0.32),Vector3(-0.26,0.35,0.36),Vector3(0.26,0.35,0.36)],
+		"ice_crawler":[Vector3(-0.18,0.1,-0.14),Vector3(0.18,0.1,-0.14),Vector3(-0.18,0.1,0.06),Vector3(0.18,0.1,0.06),Vector3(-0.2,0.1,-0.05),Vector3(0.2,0.1,-0.05)]}
 	for at in hips.get(kind,[]):
 		var leg=MeshInstance3D.new(); leg.mesh=_mesh(kind,"leg",material); leg.position=at; node.add_child(leg); legs.append(leg)
 	var tail=MeshInstance3D.new(); tail.mesh=_mesh(kind,"tail",material)
-	tail.position={"meadow_herbivore":Vector3(0,0.53,0.29),"woodland_boar":Vector3(0,0.56,0.37),"marsh_fish":Vector3(0,0,0.2),"mammoth":Vector3(0,2.2,1.27),"woolly_rhino":Vector3(0,1.3,1.16)}.get(kind,Vector3.ZERO)
+	tail.position={"meadow_herbivore":Vector3(0,0.53,0.29),"woodland_boar":Vector3(0,0.56,0.37),"marsh_fish":Vector3(0,0,0.2),"mammoth":Vector3(0,2.2,1.27),"woolly_rhino":Vector3(0,1.3,1.16),"sand_scorpion":Vector3(0,0.1,0.28),"desert_lizard":Vector3(0,0.08,0.22),"frost_bear":Vector3(0,0.4,0.5),"ice_crawler":Vector3(0,0.1,0.18)}.get(kind,Vector3.ZERO)
 	node.add_child(tail)
 	node.set_meta("legs",legs); node.set_meta("tail",tail); node.set_meta("gait",randf()*TAU); node.set_meta("kind",kind); node.set_meta("bounds",BOUNDS.get(kind,node.mesh.get_aabb()))
 	return node
