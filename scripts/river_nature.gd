@@ -72,19 +72,24 @@ func chop(id: String,field,t) -> String:
 	if tree.is_empty() or tree.cut: return "这棵树已经砍倒了"
 	if tree.growth<0.99: return "这棵幼树还没长成，先照顾它"
 	var D: Dictionary=rules.drops
-	if not field.can_add("timber",int(D.timber[1])) or seeds[tree.species]>=int(rules.max_seed_stock): return "木料或树种已满，先整理背包"
 	if not trees.has(id) and trees.size()>=int(rules.max_trees): return "林木记录已满"
 	tree.hits+=1; trees[id]=tree
 	if tree.hits<int(rules.chop_hits): touch(Vector2(tree.x,tree.z),t); return "%s · 砍伐 %d/%d" % [rules.species[tree.species].name,tree.hits,rules.chop_hits]
 	tree.cut=true; tree.hits=0
 	# v0.41.2: drops are rolled per tree (deterministic by its id), and the tree is gone entirely.
+	# v0.67: drops clamp to available space so a full backpack never blocks chopping (Minecraft-style).
 	var Field=field.get_script(); var gen=int(tree.get("gen",0)); var key=id+":"+str(gen)
 	var got=[]
-	var timber=Field.span(D.timber,Field.roll(key,1)); field.stock.timber+=timber; got.append("木料 ×%d" % timber)
-	if Field.roll(key,2)<float(D.seed): seeds[tree.species]+=1; got.append("%s ×1" % rules.species[tree.species].seed)
-	if Field.roll(key,3)<float(D.fiber.chance) and field.can_add("fiber",int(D.fiber.amount[1])):
-		var fiber=Field.span(D.fiber.amount,Field.roll(key,4)); field.stock.fiber+=fiber; got.append("植物纤维 ×%d" % fiber)
-	if Field.roll(key,5)<float(D.fruit.get(tree.species,0.0)) and field.can_add("fruit",1): field.stock.fruit+=1; got.append("野果 ×1")
+	var timber_want=Field.span(D.timber,Field.roll(key,1))
+	var timber_room=maxi(0,int(rules.max_stock)-int(field.stock.timber))
+	var timber=mini(timber_want,timber_room); if timber>0: field.stock.timber+=timber; got.append("木料 ×%d" % timber)
+	if timber_want>timber_room and timber_room<timber_want: got.append("（背包满，木料丢弃 ×%d）" % (timber_want-timber_room))
+	if Field.roll(key,2)<float(D.seed) and seeds[tree.species]<int(rules.max_seed_stock): seeds[tree.species]+=1; got.append("%s ×1" % rules.species[tree.species].seed)
+	if Field.roll(key,3)<float(D.fiber.chance):
+		var fiber_want=Field.span(D.fiber.amount,Field.roll(key,4))
+		var fiber_room=maxi(0,int(rules.max_stock)-int(field.stock.fiber))
+		var fiber=mini(fiber_want,fiber_room); if fiber>0: field.stock.fiber+=fiber; got.append("植物纤维 ×%d" % fiber)
+	if Field.roll(key,5)<float(D.fruit.get(tree.species,0.0)) and int(field.stock.fruit)<int(rules.max_stock): field.stock.fruit+=1; got.append("野果 ×1")
 	field.revision+=1; touch(Vector2(tree.x,tree.z),t)
 	return "%s倒下了：%s" % [rules.species[tree.species].name,"，".join(got)]
 
