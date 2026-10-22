@@ -61,13 +61,11 @@ static func _level(terrain,p: Vector2) -> bool:
 	if not terrain.inside(p,40) or absf(p.x-terrain.river_x(p.y))<30.0: return false
 	var h=floori(terrain.natural_height(p))
 	if terrain.natural_height(p)<0.45: return false   # sea and shore are below 0.3
-	# Corners first: most candidates fail there, before the full footprint scan.
-	for q in [p+Vector2(-7,-4),p+Vector2(7,-4),p+Vector2(-7,5),p+Vector2(7,5)]:
-		if floori(terrain.natural_height(q))!=h: return false
-	for dx in range(-7,8):
-		for dz in range(-4,6):
+	# v0.70: allow ±1 height variation so the tribe can settle on gently sloped ground.
+	for dx in range(-6,7):
+		for dz in range(-3,5):
 			var q=p+Vector2(dx,dz)
-			if floori(terrain.natural_height(q))!=h or terrain.water_at(q) or terrain.river_cell(q) or terrain.blocked(q,[]): return false
+			if absi(floori(terrain.natural_height(q))-h)>1 or terrain.water_at(q) or terrain.river_cell(q): return false
 	return true
 
 ## Every cell they mean to build, bottom-up: per hut a ring of walls with a doorway at the front,
