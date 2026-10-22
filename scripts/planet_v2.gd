@@ -56,6 +56,8 @@ var walk_at: Dictionary={}
 ## v0.47 小飞机: where it is parked ({x, z, heading}) and whether the player is flying it.
 var plane_at: Dictionary={}
 var flying=false
+## v0.68: wearable equipment currently active (headlamp, insulated_suit → key present = equipped).
+var equipped: Dictionary={}
 
 func _init() -> void:
 	world=fresh()
@@ -376,7 +378,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize(),"walk":walk_at.duplicate(),"driving":false,"flying":false,"boring":false}
+	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize(),"walk":walk_at.duplicate(),"driving":false,"flying":false,"boring":false,"equipped":equipped.duplicate()}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -554,5 +556,11 @@ func restore(data) -> bool:
 	if not aircraft.is_empty(): plane_at={"x":float(aircraft.x),"z":float(aircraft.z),"heading":float(aircraft.heading)}
 	tbm_at={}; boring=bool(data.get("boring",false))
 	if not machine.is_empty(): tbm_at={"x":int(machine.x),"y":int(machine.y),"z":int(machine.z),"facing":int(machine.facing),"grade":int(machine.grade)}
+	# v0.68: restore equipped wearables (headlamp, insulated_suit etc.)
+	equipped={}
+	var eq=data.get("equipped",{})
+	if eq is Dictionary:
+		for k in eq:
+			if k is String and k.length()<64: equipped[k]=true
 	ranch.sync(self)
 	return true

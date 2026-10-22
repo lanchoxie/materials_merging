@@ -58,6 +58,8 @@
     "supplies": "补给",
     "trees": "树种",
     "minerals": "矿物",
-    "miniatures": "作品"
+    "miniatures": "作品",
+    "vehicles": "载具",
+    "equipment": "装备"
   }
 }

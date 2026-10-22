@@ -86,6 +86,22 @@ func entries(state) -> Dictionary:
 		result[key]=_item(key,str(batch.formula),"samples","sample",int(batch.quantity),description,action)
 	for key in sample_cache.keys():
 		if not live_batches.has(key): sample_cache.erase(key)
+	# v0.68: vehicles tab — rover, tbm, plane, starship from industry.items.
+	var ind=state.industry
+	if ind!=null:
+		var vspec={"rover":{"name":"星球越野车","desc":"越野车 · 从背包取出后停在你身边，F上车；拆卸锤×3收回。"},"tbm":{"name":"盾构机","desc":"盾构机 · 从背包取出后停在你身边，F进入；拆卸锤×3收回。"},"plane":{"name":"水陆两栖小飞机","desc":"小飞机 · 从背包取出后停在你身边，F登机；拆卸锤×3收回。"},"starship":{"name":"星际飞船","desc":"星际飞船 · 从背包取出后停在你身边，F登船；拆卸锤×3收回。"}}
+		for vid in vspec:
+			var qty=int(ind.items.get(vid,0))
+			var vkey="vehicle:"+vid
+			if qty>0 or vkey in slots:
+				result[vkey]=_item(vkey,vspec[vid].name,"vehicles","bit",qty,vspec[vid].desc,{"type":"deploy_vehicle","vehicle_id":vid})
+		# Equipment tab — headlamp, insulated_suit from industry.items.
+		var espec={"headlamp":{"name":"探照灯头盔","desc":"夜间和洞穴自动照亮前方。装到装备栏生效。"},"insulated_suit":{"name":"隔热绝缘服","desc":"高温环境和极寒保护。装到装备栏生效。"}}
+		for eid in espec:
+			var qty=int(ind.items.get(eid,0))
+			var ekey="equip:"+eid
+			if qty>0 or ekey in slots:
+				result[ekey]=_item(ekey,espec[eid].name,"equipment","bit",qty,espec[eid].desc,{"type":"equip","item_id":eid})
 	return result
 
 func _item(id: String,title: String,category: String,icon: String,quantity: int,description: String,action: Dictionary) -> Dictionary:
@@ -114,7 +130,7 @@ func restore(data) -> bool:
 		if not id is String or id.length()>160: return false
 		if id.is_empty(): continue
 		if seen.has(id): return false
-		if not (id.begins_with("solution:") or id.begins_with("recipe:") or id.begins_with("sample:") or id.begins_with("raw:") or id.begins_with("tree:") or id.begins_with("mini:") or id.begins_with("rock:") or id=="seed:grain" or id=="food" or (id.begins_with("tool:") and rules.tools.has(id.trim_prefix("tool:")))): return false
+		if not (id.begins_with("solution:") or id.begins_with("recipe:") or id.begins_with("sample:") or id.begins_with("raw:") or id.begins_with("tree:") or id.begins_with("mini:") or id.begins_with("rock:") or id.begins_with("vehicle:") or id.begins_with("equip:") or id=="seed:grain" or id=="food" or (id.begins_with("tool:") and rules.tools.has(id.trim_prefix("tool:")))): return false
 		seen[id]=true
 	slots=data.slots.duplicate(); selected=int(n)
 	# v0.26: hand the new pick and analyser to pre-Bedrock hotbars once, in free slots only.

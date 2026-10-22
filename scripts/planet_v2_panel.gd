@@ -533,7 +533,28 @@ func _use_item(id: String,alternate: String="") -> void:
 	if action.is_empty(): message="这件物品目前不能直接在星球使用。"; _live(); return
 	var type=str(action.type)
 	if type=="strike": _attack(); return
+	# v0.68: equip wearable item (headlamp, insulated_suit) — stored on v2.equipped.
+	if type=="equip":
+		var eid=str(action.get("item_id",""))
+		if eid.is_empty(): message="装备数据缺失"; _live(); return
+		var equipped=state.planet.v2.get("equipped")
+		if equipped is Dictionary:
+			if equipped.has(eid): equipped.erase(eid); message="已卸下："+item.name; _refresh_hotbar(); _redraw(); _live(); return
+			equipped[eid]=true; message="已装备："+item.name
+		_refresh_hotbar(); _redraw(); _live(); return
 	var target=state.planet.v2.Target.query(state.planet.v2)
+	# v0.68: deploy a vehicle from the backpack onto the planet surface.
+	if type=="deploy_vehicle":
+		var vid=str(action.get("vehicle_id",""))
+		if vid.is_empty(): message="载具数据缺失"; _live(); return
+		var ind=state.industry
+		var msg=""
+		match vid:
+			"rover":    msg=ind.deploy_rover(vid); state.planet.v2.rover_at={}
+			"tbm":      msg=ind.deploy_tbm(vid); state.planet.v2.tbm_at={}
+			"plane":    msg=ind.deploy_plane(vid); state.planet.v2.plane_at={}
+			"starship": msg=ind.deploy_ship(vid); state.planet.v2.ship_at={}
+		message=msg; _refresh_hotbar(); _redraw(); _sync(); _live(); return
 	if alternate=="pantry": _act("v2_field_pantry",{"resource":action.get("resource","")}); return
 	if alternate=="eat" or type=="eat": _act("v2_eat",{"resource":action.get("resource","")}); return
 	if target.get("type")=="depot" and type in ["collect","feed","sample","product","plant"]:
