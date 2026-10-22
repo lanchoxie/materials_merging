@@ -95,8 +95,8 @@ func entries(state) -> Dictionary:
 			var vkey="vehicle:"+vid
 			if qty>0 or vkey in slots:
 				result[vkey]=_item(vkey,vspec[vid].name,"vehicles","bit",qty,vspec[vid].desc,{"type":"deploy_vehicle","vehicle_id":vid})
-		# Equipment tab — headlamp, insulated_suit from industry.items.
-		var espec={"headlamp":{"name":"探照灯头盔","desc":"夜间和洞穴自动照亮前方。装到装备栏生效。"},"insulated_suit":{"name":"隔热绝缘服","desc":"高温环境和极寒保护。装到装备栏生效。"}}
+		# Equipment tab — headlamp, insulated_suit, power_drill from industry.items.
+		var espec={"headlamp":{"name":"探照灯头盔","desc":"夜间和洞穴自动照亮前方。装到装备栏生效。"},"insulated_suit":{"name":"隔热绝缘服","desc":"高温环境和极寒保护。装到装备栏生效。"},"power_drill":{"name":"电钻","desc":"采矿时减少敲击次数，可替代采掘镐。装到装备栏生效。"}}
 		for eid in espec:
 			var qty=int(ind.items.get(eid,0))
 			var ekey="equip:"+eid

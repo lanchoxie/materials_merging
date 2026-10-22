@@ -213,8 +213,8 @@ func _exploration_layout() -> void:
 	inspect_button.visible=view.first_person; inspect_button.position.x=1240 if wide else 790
 	attack_button.visible=view.first_person; attack_button.position=Vector2(1240 if wide else 790,224)
 	map_button.visible=view.first_person; map_button.position=Vector2(1240 if wide else 790,278)
-	# v0.64: vehicle_bar floats just above the attack_button; populated each frame in _aim().
-	vehicle_bar.visible=view.first_person; vehicle_bar.position=Vector2(1240 if wide else 790,172)
+	# v0.68.7: vehicle_bar sits below the fixed buttons (map ends at y≈322) so it never overlaps them.
+	vehicle_bar.visible=view.first_person; vehicle_bar.position=Vector2(1240 if wide else 790,390)
 	inspect_button.text="收起面板" if show_details else "世界 / 远行"
 	play_bar.visible=view.first_person; aim_label.visible=view.first_person
 	play_bar.position.x=300 if wide else 56; aim_label.position.x=350 if wide else 220
