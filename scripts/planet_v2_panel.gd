@@ -352,10 +352,15 @@ func _sync_plane() -> void:
 	if view.flying: v.plane_at={"x":view.plane.position.x,"z":view.plane.position.y,"heading":view.plane.heading}; return
 	if v.plane_at.is_empty() and view.first_person:
 		var f=Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw)); var side=Vector2(-f.y,f.x)
-		for offset in [f*7.0+side*3.0,f*7.0-side*3.0,side*7.0,-side*7.0,f*10.0]:
+		# v0.72: use only terrain.inside + water check (not barriers) to avoid freeze on mobile.
+		for offset in [f*7.0+side*3.0,f*7.0-side*3.0,side*7.0,-side*7.0,f*10.0,f*5.0,side*5.0,-side*5.0]:
 			var p=view.walker.position+offset
-			if view.terrain.inside(p,6) and not view.terrain.blocked(p,view.walker.barriers):
+			if view.terrain.inside(p,6) and not view.terrain.water_at(p) and not view.terrain.deep_water(p):
 				v.plane_at={"x":p.x,"z":p.y,"heading":view.walker.yaw}; break
+		# Fallback: place directly in front even if not ideal
+		if v.plane_at.is_empty():
+			var fp=view.walker.position+Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw))*6.0
+			v.plane_at={"x":fp.x,"z":fp.y,"heading":view.walker.yaw}
 	if v.plane_at.is_empty(): view.park_plane(null); v.flying=false; return
 	var at=Vector2(float(v.plane_at.x),float(v.plane_at.z))
 	if not view.plane_parked or view.plane.position.distance_to(at)>0.5: view.park_plane(at,float(v.plane_at.heading))
