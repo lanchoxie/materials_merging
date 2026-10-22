@@ -77,6 +77,18 @@ func chunk_trees(key: Vector2i) -> Array[Vector2]:
 	_trunks[key]=[int(nature.revision),result]
 	return result
 
+## Returns the nature ids of all mature trees within `radius` of `p` (used by TBM to clear the path).
+func trees_near(p: Vector2, radius: float=1.8) -> Array:
+	if nature==null: return []
+	var result=[]
+	var key=chunk_at(p)
+	for dz in range(-1,2):
+		for dx in range(-1,2):
+			for tree in nature.records(key+Vector2i(dx,dz),self):
+				if not tree.cut and tree.growth>=0.99 and Vector2(tree.x,tree.z).distance_to(p)<=radius:
+					result.append(tree.id)
+	return result
+
 func tree_records(key: Vector2i) -> Array:
 	if nature!=null: return nature.records(key,self)
 	var result=[]

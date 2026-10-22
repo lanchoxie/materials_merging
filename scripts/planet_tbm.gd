@@ -94,7 +94,11 @@ func survey(v) -> Dictionary:
 		var id: String=t.material(x)
 		if id=="": continue
 		if id=="bedrock": return {"error":"前方是基岩：换个方向，或切到「上爬」","next":next}
-		if x.y>=ceili(t.height_at(p))-1 and t.blocked(p,c.obstacles): return {"error":"前方地表有树或设施：先砍掉或移开","next":next}
+		if x.y>=ceili(t.height_at(p))-1 and t.blocked(p,c.obstacles):
+			# Trees are cleared automatically; only buildings block the TBM.
+			var nearby_trees=t.trees_near(p,1.8)
+			if nearby_trees.is_empty(): return {"error":"前方地表有建筑，盾构机不会挖穿它","next":next}
+			for tid in nearby_trees: v.nature.chop(tid,v.field,t)
 		cut.append([x,id]); hits+=int(Geology.info(id).get("hits",3))
 	var below: Vector3i=next+Vector3i.DOWN
 	if t.material(below)=="" and c.occupant(below).is_empty(): return {"error":"前方脚下悬空，盾构机不能开出悬崖","next":next}
