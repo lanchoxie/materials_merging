@@ -564,8 +564,8 @@ func _rocket_launch_sequence(destination_id: String) -> void:
 	t4.tween_property(sub,"modulate:a",1.0,0.4)
 	await t4.finished
 	await get_tree().create_timer(1.2).timeout
-	# Phase 3: load new planet and fade out
-	_show_planet_v2()
+	# Phase 3: load new planet behind the veil, then fade out.
+	_show_planet_v2(); veil.move_to_front()
 	var t5=create_tween(); t5.tween_property(veil,"color:a",0.0,0.8)
 	await t5.finished
 	veil.queue_free()
