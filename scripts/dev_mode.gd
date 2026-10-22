@@ -49,6 +49,7 @@ const FIELD_KEYS := [
 ]
 
 var _tick := 0.0
+var _save_tick: float=0.0
 
 static func enabled() -> bool:
 	return OS.has_feature("devbuild") or "--dev-mode" in OS.get_cmdline_user_args()
@@ -58,12 +59,8 @@ func _ready() -> void:
 		queue_free()
 		return
 	print("[DEV MODE] 无限资源已激活 — 每秒顶满所有资源、解锁所有配方和工业品")
-	# Top up immediately on first frame so resources are available from the start.
 	await get_tree().process_frame
 	_top_up()
-
-var _tick: float=0.0
-var _save_tick: float=0.0  # v0.72: auto-save every 30s on Android to prevent progress loss
 
 func _process(delta: float) -> void:
 	_tick += delta
