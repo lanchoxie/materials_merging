@@ -55,6 +55,9 @@ static func natural(c: Vector3i,top: float,river: bool,p: Dictionary={}) -> Stri
 		if _blob(c,Vector3i(3,3,3),101,0.05*float(p.get("hematite",1.0))): return "hematite"
 		return "granite"
 	if _blob(c,Vector3i(3,3,3),111,0.06*float(p.get("hematite",1.0))): return "hematite"
+	# v0.69: planet-unique deep ores keyed by profile flags.
+	if p.get("desert_ore","")!="" and _blob(c,Vector3i(4,4,4),131,0.04): return str(p.desert_ore)
+	if p.get("ice_ore","")!="" and _blob(c,Vector3i(3,3,3),141,0.035): return str(p.ice_ore)
 	return "basalt"
 
 static func describe(id: String) -> String:

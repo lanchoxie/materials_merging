@@ -20,13 +20,14 @@
     "ember": {
       "name": "赤砂星",
       "title": "红色荒漠行星",
-      "description": "更热、更干：陆地连成大片荒漠，海洋只剩零星的内海；山脉更高更陡。地壳富含赤铁矿，是炼铁的好去处。",
+      "description": "更热、更干：陆地连成大片荒漠，海洋只剩零星的内海；山脉更高更陡。地壳富含赤铁矿，深埋稀有锡石，是炼铁的好去处。",
       "phase": [2.4, 4.1, 1.3, 0.8],
       "sea_bias": -0.18,
       "mountain": 85.0,
       "temperature": 9.0,
       "water": -0.22,
       "hematite": 4.0,
+      "desert_ore": "cassiterite",
       "soil_tint": "c2643c",
       "sky_tint": "e8a878",
       "globe_tint": "b65a36"
@@ -34,13 +35,14 @@
     "glacier": {
       "name": "寒冰星",
       "title": "冰封星球",
-      "description": "全球冰盖覆盖，海洋藏在冰层之下。地表少见植被，地下有冰层湖泊和稀有矿物。极寒环境需要隔热装备。",
+      "description": "全球冰盖覆盖，海洋藏在冰层之下。地表少见植被，地下有冰层湖泊和稀有锂辉石。极寒环境需要隔热装备。",
       "phase": [1.2, 5.7, 3.0, 2.5],
       "sea_bias": 0.05,
       "mountain": 70.0,
       "temperature": -18.0,
       "water": 0.30,
       "hematite": 0.6,
+      "ice_ore": "spodumene",
       "soil_tint": "c8d6e0",
       "sky_tint": "b0c8d8",
       "globe_tint": "a8c0d0"
