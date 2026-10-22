@@ -8,7 +8,7 @@ extends RefCounted
 const Geology=preload("res://scripts/planet_geology.gd")
 const Field=preload("res://scripts/river_field.gd")
 const FACING=[Vector2i(0,-1),Vector2i(1,0),Vector2i(0,1),Vector2i(-1,0)]
-const GRADES={-1:"下潜",0:"水平",1:"上爬"}
+const GRADES={-2:"垂直向上",-1:"下潜",0:"水平",1:"上爬",2:"垂直向下"}
 var cell=Vector3i.ZERO     # floor cell under the middle of the machine
 var facing=0               # 0 −z, 1 +x, 2 +z, 3 −x
 var grade=0                # −1 dive, 0 level, +1 climb
@@ -46,6 +46,8 @@ func facing_yaw() -> float:
 	return [0.0,-PI/2,PI,PI/2][facing]
 
 func dir() -> Vector3i:
+	if grade==2: return Vector3i(0,-1,0)   # shaft down
+	if grade==-2: return Vector3i(0,1,0)   # shaft up
 	var f=FACING[facing]; return Vector3i(f.x,0,f.y)
 
 func side() -> Vector3i:
@@ -60,10 +62,14 @@ func stop() -> void:
 func look(delta: Vector2,sensitivity: float) -> void:
 	look_yaw=clampf(look_yaw-delta.x*sensitivity,-1.2,1.2); look_pitch=clampf(look_pitch-delta.y*sensitivity,-0.6,0.4)
 
-## Space cycles the grade: level → dive → climb → level.
+## Space cycles the grade: level → dive → climb → shaft-down → shaft-up → level.
 func jump() -> bool:
-	grade={0:-1,-1:1,1:0}[grade]; message="掘进方向：%s" % GRADES[grade]
+	grade={0:-1,-1:1,1:2,2:-2,-2:0}[grade]; message="掘进方向：%s" % GRADES[grade]
 	return true
+
+## True when boring a vertical shaft (grade ±2).
+func is_shaft() -> bool:
+	return grade==2 or grade==-2
 
 func centre_of(c: Vector3i) -> Vector3:
 	return Vector3(c.x,c.y+1.5,c.z)
@@ -76,17 +82,25 @@ func centre() -> Vector3:
 func eye() -> Vector3:
 	return centre()+Vector3(0,0.4,0)
 
-## The nine cells of the section with its floor at `floor`.
-func section(floor: Vector3i) -> Array:
+## The nine cells of the cutting face.
+## Horizontal boring: 3 wide × 3 tall cross-section.
+## Vertical shaft: 3×3 horizontal slab.
+func section(next: Vector3i) -> Array:
 	var cells=[]
-	for l in [-1,0,1]:
-		for h in [0,1,2]: cells.append(floor+side()*l+Vector3i(0,h,0))
+	if is_shaft():
+		for dx in [-1,0,1]:
+			for dz in [-1,0,1]: cells.append(next+Vector3i(dx,0,dz))
+	else:
+		for l in [-1,0,1]:
+			for h in [0,1,2]: cells.append(next+side()*l+Vector3i(0,h,0))
 	return cells
 
 ## What lies in the next metre: {cells:[[cell,id]], hits, error}.
 func survey(v) -> Dictionary:
 	var t=v.construction.terrain; var c=v.construction
-	var next: Vector3i=cell+dir()+Vector3i(0,grade,0); var cut=[]; var hits=0
+	# In shaft mode dir() already points up/down; horizontal modes add the grade offset.
+	var next: Vector3i=cell+dir()+(Vector3i(0,grade,0) if not is_shaft() else Vector3i.ZERO)
+	var cut=[]; var hits=0
 	for x in section(next):
 		var p=Vector2(x.x,x.z)
 		if not t.inside(p,3): return {"error":"前方超出探索区","next":next}

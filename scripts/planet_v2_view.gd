@@ -673,8 +673,13 @@ func _camera(dt: float) -> void:
 	if first_person and boring:
 		if v2!=null: tbm.step(dt,v2)
 		var ctr: Vector3=tbm.centre()
-		# The seat carries the walker along (targeting, the trail and the map follow the machine).
 		walker.position=Vector2(ctr.x,ctr.z); walker.feet_y=ctr.y-1.5; walker.last_position=walker.position; walker.yaw=tbm.facing_yaw()
+		if tbm.is_shaft():
+			# Vertical shaft: camera looks straight down from above the machine.
+			var above=ctr+Vector3(0,6.0,0)
+			camera.position=above; camera.look_at(ctr+Vector3(0,-1,0)); hands.hide(); marker.hide()
+			_pose_tbm()
+			return
 		var ang=tbm.facing_yaw()+tbm.look_yaw; var back=Vector3(sin(ang),0,cos(ang))
 		# Chase camera behind the machine, pulled in closer when rock is behind (after a turn).
 		var want=ctr+Vector3(0,0.6-tbm.look_pitch*1.5,0)

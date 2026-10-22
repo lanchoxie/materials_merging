@@ -430,7 +430,7 @@ func restore(data) -> bool:
 	if not machine.is_empty():
 		for k in ["x","z"]:
 			if not _number(machine.get(k),-8192,8192,true): return false
-		if not _number(machine.get("y"),-31,120,true) or not _number(machine.get("facing"),0,3,true) or not _number(machine.get("grade"),-1,1,true): return false
+		if not _number(machine.get("y"),-31,120,true) or not _number(machine.get("facing"),0,3,true) or not _number(machine.get("grade"),-2,2,true): return false
 	var w: Dictionary=data.world
 	if w.get("version")!=1 or not w.get("paused") is bool or not _number(w.get("speed"),1,8,true): return false
 	if int(w.speed) not in [1,4,8]: return false
