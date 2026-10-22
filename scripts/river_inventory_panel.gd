@@ -39,8 +39,18 @@ func setup(s) -> void:
 	var box=UI.box(self,Rect2(875,184,325,410))
 	detail_scroll=ScrollContainer.new(); detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; box.add_child(detail_scroll)
 	detail=UI.column(detail_scroll,10); detail.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	# v0.69: equipment rack — shows currently worn items and lets you remove them.
+	# v0.69: equipment rack — shows currently worn items on a 3D figure and lets you remove them.
 	var rack_title=UI.label("装备中的外设",16,UI.MINT); detail.add_child(rack_title)
+	# 3D figure preview via SubViewport.
+	var svc=SubViewportContainer.new(); svc.custom_minimum_size=Vector2(140,180); svc.stretch=true
+	detail.add_child(svc)
+	var vp=SubViewport.new(); vp.size=Vector2i(140,180); vp.render_target_update_mode=SubViewport.UPDATE_ALWAYS; svc.add_child(vp)
+	var fig_root=Node3D.new(); vp.add_child(fig_root)
+	var fig_cam=Camera3D.new(); fig_cam.position=Vector3(0,0.9,3.2); fig_cam.fov=28; fig_root.add_child(fig_cam)
+	var fig_env=Environment.new(); fig_env.background_mode=Environment.BG_COLOR; fig_env.background_color=Color(0.08,0.10,0.13)
+	var fig_we=WorldEnvironment.new(); fig_we.environment=fig_env; fig_root.add_child(fig_we)
+	var fig_light=DirectionalLight3D.new(); fig_light.position=Vector3(2,3,2); fig_light.look_at(Vector3.ZERO); fig_root.add_child(fig_light)
+	_build_figure(fig_root)
 	var equipped=state.planet.v2.get("equipped")
 	if equipped is Dictionary and not equipped.is_empty():
 		for eid in equipped:
@@ -55,6 +65,37 @@ func setup(s) -> void:
 			detail.add_child(row)
 	else:
 		detail.add_child(UI.paragraph("（未装备任何外设。装备栏会显示头盔、绝缘服、电钻等穿戴效果。）",13,UI.MUTED))
+
+## v0.71: build a blocky 3D figure showing equipped wearables.
+func _build_figure(root: Node3D) -> void:
+	var skin=Color("d8a878"); var cloth=Color("3a4a5a")
+	var mat=StandardMaterial3D.new(); mat.albedo_color=cloth
+	var body=MeshInstance3D.new(); var bm=BoxMesh.new(); bm.size=Vector3(0.5,0.7,0.28)
+	body.mesh=bm; body.material_override=mat; body.position=Vector3(0,0.45,0); root.add_child(body)
+	var head_mat=StandardMaterial3D.new(); head_mat.albedo_color=skin
+	var head=MeshInstance3D.new(); var hm=BoxMesh.new(); hm.size=Vector3(0.28,0.3,0.28)
+	head.mesh=hm; head.material_override=head_mat; head.position=Vector3(0,1.0,0); root.add_child(head)
+	# Legs
+	for side in [-1,1]:
+		var leg=MeshInstance3D.new(); var lm=BoxMesh.new(); lm.size=Vector3(0.16,0.5,0.18)
+		leg.mesh=lm; leg.material_override=mat; leg.position=Vector3(side*0.13,0.0,0); root.add_child(leg)
+	# Arms
+	for side in [-1,1]:
+		var arm=MeshInstance3D.new(); var am=BoxMesh.new(); am.size=Vector3(0.14,0.55,0.16)
+		arm.mesh=am; arm.material_override=mat; arm.position=Vector3(side*0.32,0.5,0); root.add_child(arm)
+	# Equipped wearables
+	var eq=state.planet.v2.get("equipped")
+	if eq is Dictionary:
+		if eq.has("headlamp"):
+			var lamp=MeshInstance3D.new(); var lmesh=BoxMesh.new(); lmesh.size=Vector3(0.24,0.08,0.1)
+			lamp.mesh=lmesh; lamp.material_override=StandardMaterial3D.new()
+			lamp.material_override.albedo_color=Color("ffd040"); lamp.position=Vector3(0,1.12,0.12); root.add_child(lamp)
+		if eq.has("insulated_suit"):
+			body.material_override.albedo_color=Color("e8e8f0")
+		if eq.has("power_drill"):
+			var drill=MeshInstance3D.new(); var dm=BoxMesh.new(); dm.size=Vector3(0.06,0.2,0.06)
+			drill.mesh=dm; drill.material_override=StandardMaterial3D.new()
+			drill.material_override.albedo_color=Color("88aabb"); drill.position=Vector3(0.42,0.25,0.15); root.add_child(drill)
 	feedback=UI.paragraph("点选物品，再点下方格子装备；电脑也可直接拖入。",15,UI.GOLD); feedback.position=Vector2(238,611); feedback.size=Vector2(960,40); add_child(feedback)
 	shortcuts=UI.row(self,7); shortcuts.position=Vector2(238,657)
 	var clear=UI.button("清空\n当前格",_clear_slot); clear.position=Vector2(1010,657); clear.size=Vector2(90,80); add_child(clear)
