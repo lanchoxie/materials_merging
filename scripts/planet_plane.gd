@@ -76,7 +76,10 @@ func step(dt: float) -> void:
 	elif movement.y>0.3: throttle=maxf(0.0,throttle-dt*0.6)
 	if float(state.charge)<=0.0 and throttle>0.0: throttle=0.0; message="电量耗尽：滑翔下降，尽快找地方降落"
 	var target=throttle*float(R.max_speed)
-	speed=move_toward(speed,target,float(R.accel)*dt*(1.0 if speed<target else (0.5 if airborne else 1.6)))
+	# Ground reverse: when throttle is zero and S is held, allow slow backward taxi.
+	var reverse_speed: float=0.0
+	if not airborne and throttle<=0.0 and movement.y>0.3: reverse_speed=-4.0
+	speed=move_toward(speed,target+reverse_speed,float(R.accel)*dt*(1.0 if speed<target else (0.5 if airborne else 1.6)))
 	# Steering: bank and turn in the air, nose-wheel style on the ground (slower).
 	var steer=-movement.x
 	bank=lerpf(bank,steer*0.5 if airborne else 0.0,minf(1.0,dt*3.0))
