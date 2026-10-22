@@ -721,6 +721,8 @@ func _aim() -> void:
 		var b=UI.button("✈️ 下机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
 	elif view.boring:
 		var b=UI.button("⚙️ 离开盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+		# Mobile: space key is hidden while boring, so add a direction-toggle button.
+		var dir_b=UI.button("方向：%s ␣" % view.tbm.GRADES[view.tbm.grade],func(): view.tbm.jump()); dir_b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(dir_b)
 	else:
 		if near_plane():
 			var b=UI.button("✈️ 登机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)

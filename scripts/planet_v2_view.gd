@@ -676,8 +676,10 @@ func _camera(dt: float) -> void:
 		walker.position=Vector2(ctr.x,ctr.z); walker.feet_y=ctr.y-1.5; walker.last_position=walker.position; walker.yaw=tbm.facing_yaw()
 		if tbm.is_shaft():
 			# Vertical shaft: camera looks straight down from above the machine.
+			# Use facing direction as up-vector to avoid gimbal lock when looking straight down.
 			var above=ctr+Vector3(0,6.0,0)
-			camera.position=above; camera.look_at(ctr+Vector3(0,-1,0)); hands.hide(); marker.hide()
+			var fwd=Vector3(sin(tbm.facing_yaw()),0,cos(tbm.facing_yaw()))
+			camera.position=above; camera.look_at(ctr, fwd); hands.hide(); marker.hide()
 			_pose_tbm()
 			return
 		var ang=tbm.facing_yaw()+tbm.look_yaw; var back=Vector3(sin(ang),0,cos(ang))
