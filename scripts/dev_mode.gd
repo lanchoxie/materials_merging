@@ -108,10 +108,11 @@ func _patch_industry(s: Object, ind: Object) -> void:
 	ind.credits = BIG
 	ind.xp = BIG
 	ind.plots = 36
-	# All industry items (buildings produce these) + recipe outputs
+	# Industry items are capped at 9999 by the save validator (industry.gd _num check).
+	# Exceeding this causes save() to fail → dev progress is lost on exit.
 	if ind.get("items") is Dictionary:
-		for id in INDUSTRY_ITEMS: ind.items[id] = BIG
-		for id in RECIPE_OUTPUTS: ind.items[id] = BIG
+		for id in INDUSTRY_ITEMS: ind.items[id] = 9999
+		for id in RECIPE_OUTPUTS: ind.items[id] = 9999
 
 func _patch_refinery(ref: Object) -> void:
 	ref.level = 5

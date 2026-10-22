@@ -49,7 +49,7 @@ var build_mode="observe"
 var play_bar: HBoxContainer
 var action_button: Button
 var attack_button: Button
-var vehicle_bar: HBoxContainer  # v0.64: per-vehicle enter/exit buttons for mobile
+var vehicle_bar: VBoxContainer  # v0.64: per-vehicle enter/exit buttons for mobile
 var aim_label: Label
 var aim_clock=0.0
 var hotbar_slots=[]
@@ -123,7 +123,8 @@ func setup(model) -> void:
 	map_button=UI.button("地图",_open_world_map); map_button.focus_mode=Control.FOCUS_NONE; map_button.size=Vector2(148,44); map_button.hide(); add_child(map_button)
 	attack_button=UI.button("攻击 F",_attack); attack_button.focus_mode=Control.FOCUS_NONE; attack_button.size=Vector2(148,44); attack_button.hide(); add_child(attack_button)
 	# v0.64: per-vehicle enter/exit buttons so mobile players don't have to fight with E.
-	vehicle_bar=HBoxContainer.new(); vehicle_bar.add_theme_constant_override("separation",6); vehicle_bar.hide(); add_child(vehicle_bar)
+	# v0.66: VBoxContainer (vertical) so multiple buttons don't overflow the screen width.
+	vehicle_bar=VBoxContainer.new(); vehicle_bar.add_theme_constant_override("separation",4); vehicle_bar.hide(); add_child(vehicle_bar)
 	status=UI.paragraph("M前往采集坡 · 用手套采集原料 → 工艺车间加工 → 背包搭建、播种和浇水。",15,UI.GOLD); status.position=Vector2(32,853); status.size=Vector2(1370,35); add_child(status)
 	play_bar=UI.row(self,4); play_bar.position=Vector2(300,656)
 	for i in range(state.planet.v2.inventory.slots.size()):
@@ -463,10 +464,7 @@ func _toggle_rover() -> bool:
 func _collect() -> void:
 	if is_instance_valid(backpack) or state.planet.v2.combat.player_health<=0: return
 	if near_ship(): message="登上星际飞船 · 打开星图"; _live(); voyage_requested.emit(); return
-	if _toggle_plane(): return
-	if _toggle_tbm(): return
-	if _toggle_rover(): return
-	# v0.41.2: E at a campfire opens the cooking menu.
+	# v0.66: vehicles are handled by F key only — E no longer enters/exits vehicles.
 	_update_actor()
 	var aimed=state.planet.v2.Target.query(state.planet.v2)
 	if aimed.get("kind","")=="campfire": _cook_menu(); return
