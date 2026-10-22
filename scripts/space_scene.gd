@@ -25,6 +25,8 @@ var hud: Label
 var aim_label: Label
 var close_btn: Button
 var view_btn: Button
+## v0.71: key state tracking (SubViewportContainer blocks Input.is_key_pressed)
+var keys_held: Dictionary={}
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -118,15 +120,14 @@ func _build_hud() -> void:
 func _process(dt: float) -> void:
 	if ship==null or camera==null: return
 	var fwd=Vector3.FORWARD.rotated(Vector3.UP,ship_yaw).rotated(Vector3.RIGHT.rotated(Vector3.UP,ship_yaw),ship_pitch)
-	var right=Vector3.RIGHT.rotated(Vector3.UP,ship_yaw)
 	# Throttle
-	if Input.is_key_pressed(KEY_SHIFT): speed=minf(speed+80*dt,400)
-	elif Input.is_key_pressed(KEY_SPACE): speed=maxf(speed-80*dt,0)
+	if keys_held.get(KEY_SHIFT,false): speed=minf(speed+80*dt,400)
+	elif keys_held.get(KEY_SPACE,false): speed=maxf(speed-80*dt,0)
 	# Yaw/pitch from WASD
-	if Input.is_key_pressed(KEY_A): ship_yaw+=1.2*dt
-	if Input.is_key_pressed(KEY_D): ship_yaw-=1.2*dt
-	if Input.is_key_pressed(KEY_W): ship_pitch-=0.8*dt
-	if Input.is_key_pressed(KEY_S): ship_pitch+=0.8*dt
+	if keys_held.get(KEY_A,false): ship_yaw+=1.2*dt
+	if keys_held.get(KEY_D,false): ship_yaw-=1.2*dt
+	if keys_held.get(KEY_W,false): ship_pitch-=0.8*dt
+	if keys_held.get(KEY_S,false): ship_pitch+=0.8*dt
 	ship_pitch=clampf(ship_pitch,-1.2,1.2)
 	# Apply velocity
 	ship_vel=fwd*speed
@@ -158,6 +159,16 @@ func _process(dt: float) -> void:
 	hud.text="速度 %d m/s · 坐标 (%.0f, %.0f, %.0f)" % [roundi(speed),ship_pos.x,ship_pos.y,ship_pos.z]
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.physical_keycode==KEY_V: cockpit_mode=not cockpit_mode
-		if event.physical_keycode==KEY_ESCAPE: dismissed.emit(); queue_free()
+	if event is InputEventKey:
+		var code=event.physical_keycode if event.physical_keycode!=0 else event.keycode
+		if event.pressed: keys_held[code]=true
+		else: keys_held.erase(code)
+		if event.pressed and not event.echo:
+			if code==KEY_V: cockpit_mode=not cockpit_mode
+			if code==KEY_L:
+				var nearest=""; var nearest_dist=1e9
+				for pid in planets:
+					var p=planets[pid]; var d=ship_pos.distance_to(p.pos as Vector3)-float(p.radius)
+					if d<nearest_dist: nearest_dist=d; nearest=pid
+				if nearest_dist<500 and nearest!="": landed.emit(nearest); queue_free()
+			if code==KEY_ESCAPE: dismissed.emit(); queue_free()

@@ -16,7 +16,7 @@ const INDUSTRY_ITEMS := [
 	"logic_chip","power_diode","led_chip","pcb","ic","control_board",
 	"headlamp","insulated_suit",
 	"lead_acid","lfp_cell","battery_pack","motor","power_drill",
-	"rover","tbm","plane","starship",
+	"rover","tbm","plane","starship","rocket_stack",
 ]
 
 ## All recipe output ids from data/industry.json recipes block.
