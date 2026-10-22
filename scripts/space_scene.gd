@@ -18,7 +18,7 @@ var ship_yaw: float=0.0
 var ship_pitch: float=0.0
 var ship_roll: float=0.0
 var cockpit_mode: bool=false
-var speed: float=0.0
+var speed: float=80.0  # always moving forward; Shift boosts, Space slows
 var here: String=""
 var state
 var hud: Label
@@ -93,14 +93,34 @@ func _ready() -> void:
 
 func _build_ship() -> Node3D:
 	var s=Node3D.new()
-	var body=MeshInstance3D.new(); var bm=BoxMesh.new(); bm.size=Vector3(3,3,8)
-	body.mesh=bm; var bmat=StandardMaterial3D.new(); bmat.albedo_color=Color("aaccdd"); bmat.metallic=0.7
-	body.material_override=bmat; s.add_child(body)
-	var nose=MeshInstance3D.new(); var nm=CylinderMesh.new(); nm.bottom_radius=1.5; nm.top_radius=0.05; nm.height=4
-	nose.mesh=nm; nose.position=Vector3(0,0,-6); nose.material_override=bmat; s.add_child(nose)
-	# Engine glow
-	var eng=OmniLight3D.new(); eng.light_color=Color("4488ff"); eng.light_energy=1.5; eng.omni_range=30
-	eng.position=Vector3(0,0,5); s.add_child(eng)
+	var bmat=StandardMaterial3D.new(); bmat.albedo_color=Color("aaccdd"); bmat.metallic=0.7; bmat.roughness=0.3
+	var wmat=StandardMaterial3D.new(); wmat.albedo_color=Color("223344"); wmat.metallic=0.5
+	var engmat=StandardMaterial3D.new(); engmat.albedo_color=Color("224466"); engmat.emission_enabled=true
+	engmat.emission=Color("2244aa"); engmat.emission_energy_multiplier=1.2
+	# Main hull — horizontal saucer-ish box
+	var hull=MeshInstance3D.new(); var hm=BoxMesh.new(); hm.size=Vector3(6,1.2,10)
+	hull.mesh=hm; hull.material_override=bmat; s.add_child(hull)
+	# Raised bridge on top
+	var bridge=MeshInstance3D.new(); var brm=BoxMesh.new(); brm.size=Vector3(2.5,1.0,3.5)
+	bridge.mesh=brm; bridge.material_override=bmat; bridge.position=Vector3(0,1.1,-1.0); s.add_child(bridge)
+	# Left / right engine pods
+	for side in [-1,1]:
+		var pod=MeshInstance3D.new(); var pm=BoxMesh.new(); pm.size=Vector3(1.0,0.8,4.0)
+		pod.mesh=pm; pod.material_override=bmat; pod.position=Vector3(side*3.8,0,1.0); s.add_child(pod)
+		# Engine glow at rear of each pod
+		var glow=MeshInstance3D.new(); var gm=CylinderMesh.new()
+		gm.bottom_radius=0.4; gm.top_radius=0.4; gm.height=0.3
+		glow.mesh=gm; glow.material_override=engmat; glow.position=Vector3(side*3.8,0,3.2); glow.rotation.x=PI/2; s.add_child(glow)
+	# Centre rear engine
+	var ceng=MeshInstance3D.new(); var cem=CylinderMesh.new()
+	cem.bottom_radius=0.6; cem.top_radius=0.6; cem.height=0.4
+	ceng.mesh=cem; ceng.material_override=engmat; ceng.position=Vector3(0,0,5.2); ceng.rotation.x=PI/2; s.add_child(ceng)
+	# Cockpit windows
+	var win=MeshInstance3D.new(); var wm=BoxMesh.new(); wm.size=Vector3(1.8,0.4,0.2)
+	win.mesh=wm; win.material_override=wmat; win.position=Vector3(0,1.6,-2.6); s.add_child(win)
+	# Small white point light (no colored glow)
+	var eng_light=OmniLight3D.new(); eng_light.light_color=Color("aaccff"); eng_light.light_energy=0.8; eng_light.omni_range=20
+	eng_light.position=Vector3(0,0,5); s.add_child(eng_light)
 	return s
 
 func _build_hud() -> void:
