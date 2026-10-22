@@ -1088,7 +1088,9 @@ func deploy_ship(id: String) -> String:
 
 func update_ship() -> void:
 	if ship!="" and int(items.get(ship,0))<1: ship=""
-	ship_state.cap=float(rules().ship.cap_wh) if ship!="" else 0.0
+	# v0.71: rocket_stack also charges ship_state so launches work without a separate ship.
+	var has_rocket=ship=="" and int(items.get("rocket_stack",0))>0
+	ship_state.cap=float(rules().ship.cap_wh) if (ship!="" or has_rocket) else 0.0
 	ship_state.charge=clampf(float(ship_state.charge),0.0,float(ship_state.cap))
 
 func recharge_ship(dt: float,seconds: float=-1.0) -> void:
