@@ -21,6 +21,11 @@ var cockpit_mode: bool=false
 var speed: float=80.0  # always moving forward; Shift boosts, Space slows
 var here: String=""
 var state
+## v0.71: orbital approach state machine.
+## "free" = normal flight, "approach" = auto-decelerating toward planet, "landing" = done
+var flight_state: String="free"
+var approach_target: String=""
+var approach_timer: float=0.0
 var hud: Label
 var aim_label: Label
 var close_btn: Button
@@ -162,21 +167,38 @@ func _process(dt: float) -> void:
 		var cam_back=fwd*25+Vector3(0,5,0)
 		camera.position=ship_pos-cam_back
 		camera.look_at(ship_pos)
-	# Check planet proximity
+	# Check planet proximity and orbital approach state machine
 	var nearest=""; var nearest_dist=1e9
 	for pid in planets:
-		var p=planets[pid]; var d=ship_pos.distance_to(p.pos)-p.radius
+		var p=planets[pid]; var d=ship_pos.distance_to(p.pos as Vector3)-float(p.radius)
 		if d<nearest_dist: nearest_dist=d; nearest=pid
-	if nearest_dist<300 and nearest!="":
-		var pinfo=planets[nearest].info
-		aim_label.text="靠近 %s · 按 L 降落" % str(pinfo.name)
-		if Input.is_key_pressed(KEY_L):
-			landed.emit(nearest); queue_free(); return
-	elif nearest_dist<800 and nearest!="":
-		aim_label.text="接近 %s 轨道" % str(planets[nearest].info.name)
-	else:
-		aim_label.text=""
-	hud.text="速度 %d m/s · 坐标 (%.0f, %.0f, %.0f)" % [roundi(speed),ship_pos.x,ship_pos.y,ship_pos.z]
+	if flight_state=="free":
+		if nearest_dist<600 and nearest!="" and nearest!=here:
+			flight_state="approach"; approach_target=nearest; approach_timer=0.0
+			aim_label.text="进入 %s 轨道 · 自动减速中…" % str(planets[nearest].info.name)
+		elif nearest_dist<300 and nearest==here:
+			aim_label.text="你在 %s 轨道 · 按 L 起飞到另一轨道" % str(planets[nearest].info.name)
+		elif nearest!="" and nearest_dist<1200:
+			aim_label.text="接近 %s · %d km" % [str(planets[nearest].info.name),roundi(nearest_dist/100)]
+		else:
+			aim_label.text="WASD 转向 · Shift 加速 · Space 减速 · V 切视角 · L 降落"
+	elif flight_state=="approach":
+		approach_timer+=dt
+		# Auto-decelerate and steer toward planet
+		var target_p=planets[approach_target].pos as Vector3
+		var toward=(target_p-ship_pos).normalized()
+		ship_yaw=lerpf(ship_yaw,atan2(-toward.x,-toward.z),minf(1.0,dt*0.8))
+		ship_pitch=lerpf(ship_pitch,atan2(-toward.y,Vector2(toward.x,toward.z).length()),minf(1.0,dt*0.8))
+		speed=lerpf(speed,15.0,minf(1.0,dt*0.6))
+		aim_label.text="减速进入轨道 · %d m/s · %.0f km" % [roundi(speed),nearest_dist/100]
+		if nearest_dist<float(planets[approach_target].radius)+80.0 or approach_timer>12.0:
+			flight_state="landing"
+			aim_label.text="即将降落 %s…" % str(planets[approach_target].info.name)
+	elif flight_state=="landing":
+		approach_timer+=dt
+		if approach_timer>2.0:
+			landed.emit(approach_target); queue_free(); return
+	hud.text="速度 %d m/s · %s" % [roundi(speed), "座舱视角" if cockpit_mode else "追踪视角"]
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:

@@ -16,6 +16,8 @@ var rocket_y: float=0.0
 var rocket_vy: float=0.0
 var camera_dist: float=30.0
 var camera_angle: float=0.3
+var cockpit_mode: bool=false
+var cockpit_overlay: Control=null
 var label: Label
 var sub_label: Label
 var veil: ColorRect
@@ -62,6 +64,40 @@ func _ready() -> void:
 	sub_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); sub_label.offset_top=60; add_child(sub_label)
 	veil=ColorRect.new(); veil.color=Color(0,0,0,0); veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	veil.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(veil)
+	# Build cockpit overlay (hidden by default; V key shows it)
+	cockpit_overlay=_build_cockpit_overlay(); add_child(cockpit_overlay); cockpit_overlay.hide()
+	# Hint
+	var hint=Label.new(); hint.text="V 键切换座舱/第三人称 · ESC 跳过"
+	hint.add_theme_font_size_override("font_size",13); hint.add_theme_color_override("font_color",Color("667788"))
+	hint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); hint.offset_top=get_viewport().get_visible_rect().size.y-30
+	hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; add_child(hint)
+
+func _build_cockpit_overlay() -> Control:
+	var vw=get_viewport().get_visible_rect().size
+	var ov=Control.new(); ov.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ov.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	# Dark cabin background
+	var cabin=ColorRect.new(); cabin.color=Color(0.04,0.06,0.08); cabin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cabin.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(cabin)
+	# Seat & belt
+	var seat=ColorRect.new(); seat.color=Color(0.12,0.14,0.16); seat.position=Vector2(0,vw.y*0.72); seat.size=Vector2(vw.x,vw.y*0.28)
+	seat.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(seat)
+	for dx in [-220,220]:
+		var belt=ColorRect.new(); belt.color=Color(0.55,0.45,0.22); belt.size=Vector2(28,vw.y*0.38)
+		belt.position=Vector2(vw.x*0.5+dx-14,vw.y*0.55); belt.rotation=0.38*(1 if dx>0 else -1)
+		belt.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(belt)
+	# Porthole window — glow color updated in _process
+	var port_rect=Rect2(vw*0.5-Vector2(160,110),Vector2(320,220))
+	var pbg=ColorRect.new(); pbg.color=Color(0.02,0.04,0.10); pbg.position=port_rect.position; pbg.size=port_rect.size
+	pbg.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(pbg)
+	var port_glow=ColorRect.new(); port_glow.color=Color(0.10,0.20,0.50,0.7)
+	port_glow.position=port_rect.position+Vector2(14,14); port_glow.size=Vector2(292,192)
+	port_glow.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(port_glow); ov.set_meta("port_glow",port_glow)
+	# Window frame bars
+	for bar in [[Vector2(0,0),Vector2(320,14)],[Vector2(0,206),Vector2(320,14)],[Vector2(0,0),Vector2(14,220)],[Vector2(306,0),Vector2(14,220)]]:
+		var fr=ColorRect.new(); fr.color=Color(0.18,0.20,0.22); fr.position=port_rect.position+bar[0]; fr.size=bar[1]
+		fr.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(fr)
+	return ov
 
 func _build_rocket() -> Node3D:
 	var r=Node3D.new()
@@ -119,16 +155,26 @@ func _process(dt: float) -> void:
 		if ship_capsule!=null:
 			root.add_child(ship_capsule); ship_capsule.position=Vector3(0,rocket_y+3,0)
 	rocket.position=Vector3(0,rocket_y,0)
-	# Camera follows from the side, pulling back as rocket rises
-	camera_dist=lerpf(camera_dist,30.0+rocket_y*0.3,minf(1.0,dt*2.0))
-	camera.position=Vector3(cos(camera_angle)*camera_dist,rocket_y+5,sin(camera_angle)*camera_dist)
-	camera.look_at(Vector3(0,rocket_y+5,0))
 	# Background fades to space as altitude increases
 	var sky_t=clampf(rocket_y/300.0,0.0,1.0)
-	if viewport.get_child(0)!=null:
-		var env_node=viewport.get_child(0).get_node_or_null("WorldEnvironment")
-		if env_node and env_node.environment:
-			env_node.environment.background_color=Color(0.15,0.25,0.45).lerp(Color(0.005,0.006,0.015),sky_t)
+	if root.get_child_count()>0:
+		var we=root.get_node_or_null("WorldEnvironment")
+		if we and we.environment:
+			we.environment.background_color=Color(0.15,0.25,0.45).lerp(Color(0.005,0.006,0.015),sky_t)
+	# Camera: cockpit or third-person
+	if cockpit_mode and is_instance_valid(cockpit_overlay):
+		cockpit_overlay.show()
+		# Camera inside the ship capsule looking down at departing planet
+		camera.position=Vector3(0,rocket_y+11.5,0)
+		camera.rotation=Vector3(deg_to_rad(80),0,0)  # looking down out the window
+		# Update port glow color to match sky phase
+		var pg=cockpit_overlay.get_meta("port_glow") as ColorRect
+		if pg: pg.color=Color(0.10,0.20,0.50,0.7).lerp(Color(0.005,0.006,0.015,0.9),sky_t)
+	else:
+		if is_instance_valid(cockpit_overlay): cockpit_overlay.hide()
+		camera_dist=lerpf(camera_dist,30.0+rocket_y*0.3,minf(1.0,dt*2.0))
+		camera.position=Vector3(cos(camera_angle)*camera_dist,rocket_y+5,sin(camera_angle)*camera_dist)
+		camera.look_at(Vector3(0,rocket_y+5,0))
 	# Advance phase
 	if phase_time>=float(ph.dur):
 		phase+=1; phase_time=0.0
@@ -139,5 +185,6 @@ func _process(dt: float) -> void:
 			sequence_done.emit(); queue_free()
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.physical_keycode==KEY_ESCAPE:
-		sequence_done.emit(); queue_free()
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.physical_keycode==KEY_V: cockpit_mode=not cockpit_mode
+		if event.physical_keycode==KEY_ESCAPE: sequence_done.emit(); queue_free()
