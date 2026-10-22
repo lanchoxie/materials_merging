@@ -114,8 +114,11 @@ func survey(v) -> Dictionary:
 			if nearby_trees.is_empty(): return {"error":"前方地表有建筑，盾构机不会挖穿它","next":next}
 			for tid in nearby_trees: v.nature.chop(tid,v.field,t)
 		cut.append([x,id]); hits+=int(Geology.info(id).get("hits",3))
-	var below: Vector3i=next+Vector3i.DOWN
-	if t.material(below)=="" and c.occupant(below).is_empty(): return {"error":"前方脚下悬空，盾构机不能开出悬崖","next":next}
+	# Cliff check only matters in horizontal mode; in a shaft the floor below the next cell
+	# is the cell we just left (already empty), so it would falsely block shaft-up.
+	if not is_shaft():
+		var below: Vector3i=next+Vector3i.DOWN
+		if t.material(below)=="" and c.occupant(below).is_empty(): return {"error":"前方脚下悬空，盾构机不能开出悬崖","next":next}
 	return {"cells":cut,"hits":hits,"next":next,"error":""}
 
 ## Bore one metre: cut, collect, move. Returns a message.
@@ -134,7 +137,15 @@ func advance(v) -> String:
 	for row in s.cells:
 		nature.set_voxel(row[0],"",t)
 		var kept=_collect(v,str(row[1]))
+		# Full backpack never blocks digging — overflow is lost but the cell is always cleared.
 		if kept!="": got[kept]=int(got.get(kept,0))+1
+		# v0.68: tree loses support when its ground cell is removed → auto-fell it.
+		var above_p=Vector2(row[0].x,row[0].z)
+		var surface_y=ceili(t.height_at(above_p))-1
+		if row[0].y>=surface_y-1:
+			for tid in t.trees_near(above_p,1.2):
+				var chop_msg=nature.chop(tid,v.field,t)
+				if "倒下了" in chop_msg: got["timber_bonus"]=int(got.get("timber_bonus",0))+1
 	if not s.cells.is_empty(): nature.touch(Vector2(s.next.x,s.next.z),t)
 	from=centre(); cell=s.next; length=float(rules.base_seconds)+float(rules.seconds_per_hit)*float(s.hits); busy=length; metres+=1; cut_cells+=s.cells.size()
 	if s.cells.is_empty(): return "前进1米"
