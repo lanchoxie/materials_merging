@@ -55,7 +55,8 @@ var aim_clock=0.0
 ## v0.68: recall counter — how many hammer hits have landed on each vehicle (key: "rover"/"plane"/"tbm"/"ship").
 var recall_hits: Dictionary={}
 var recall_clock: float=0.0
-var pin_mode: bool=false  # when true, globe clicks place/remove waypoints instead of selecting regions
+var pin_mode: bool=false
+var cockpit_overlay: Control=null  # v0.69: glass frame shown in cockpit view
 var hotbar_slots=[]
 var inventory_items={}
 var backpack=null
@@ -383,6 +384,30 @@ func _open_vehicle_mods(vid: String) -> void:
 			ind.items[last]=int(ind.items.get(last,0))+1
 			_open_vehicle_mods(vid); dlg.queue_free()))
 	col.add_child(UI.button("关闭",func(): dlg.queue_free(); if view.first_person: explore_input.set_walking(true); explore_input.show()))
+
+## v0.69: build a cockpit glass overlay (window frames + tinted glass) over the SubViewport.
+func _build_cockpit_overlay() -> void:
+	if is_instance_valid(cockpit_overlay): cockpit_overlay.queue_free()
+	cockpit_overlay=Control.new(); cockpit_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cockpit_overlay.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(cockpit_overlay); cockpit_overlay.move_to_front()
+	var vp=viewport_box
+	# Tinted glass (slightly blue, very transparent)
+	var glass=ColorRect.new(); glass.color=Color(0.48,0.72,0.88,0.10)
+	glass.position=vp.position; glass.size=vp.size; glass.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	cockpit_overlay.add_child(glass)
+	# Window frame bars — simulate aircraft window surrounds.
+	var frame_color=Color(0.15,0.18,0.20,0.88)
+	var bars=[
+		Rect2(vp.position,Vector2(vp.size.x,18)),                              # top
+		Rect2(vp.position+Vector2(0,vp.size.y-18),Vector2(vp.size.x,18)),      # bottom
+		Rect2(vp.position,Vector2(18,vp.size.y)),                              # left
+		Rect2(vp.position+Vector2(vp.size.x-18,0),Vector2(18,vp.size.y)),      # right
+		Rect2(vp.position+Vector2(vp.size.x*0.5-8,0),Vector2(16,vp.size.y)),   # centre strut
+		Rect2(vp.position+Vector2(0,vp.size.y*0.45),Vector2(vp.size.x,12)),    # horizontal strut
+	]
+	for r in bars:
+		var bar=ColorRect.new(); bar.color=frame_color; bar.position=r.position; bar.size=r.size
+		bar.mouse_filter=Control.MOUSE_FILTER_IGNORE; cockpit_overlay.add_child(bar)
 
 ## v0.68: hammer the remove tool on a parked vehicle 3 times to stow it back in the backpack.
 ## Returns true if a vehicle was targeted (caller skips the normal dismantle path).
@@ -755,7 +780,16 @@ func _aim() -> void:
 	# v0.45: while boring the dashboard takes the hotbar's place.
 	play_bar.visible=not view.boring and not view.flying; aim_label.position.y=520.0 if view.boring or view.flying else 606.0
 	if view.boring: aim_label.text=_tbm_text(); view.construction_view.ghost.hide(); return
-	if view.flying: play_bar.visible=false; aim_label.position.y=520.0; aim_label.text=_plane_text(); view.construction_view.ghost.hide(); return
+	if view.flying:
+		play_bar.visible=false; aim_label.position.y=520.0; aim_label.text=_plane_text(); view.construction_view.ghost.hide()
+		# v0.69: show/hide cockpit glass overlay.
+		if view.plane_cockpit:
+			if not is_instance_valid(cockpit_overlay): _build_cockpit_overlay()
+			cockpit_overlay.show()
+		else:
+			if is_instance_valid(cockpit_overlay): cockpit_overlay.hide()
+		return
+	if is_instance_valid(cockpit_overlay): cockpit_overlay.hide()
 	var v=state.planet.v2
 	var id=str(v.inventory.slots[v.inventory.selected]); var item: Dictionary=inventory_items.get(id,{})
 	var action: Dictionary=item.get("action",{})
@@ -828,6 +862,7 @@ func _aim() -> void:
 	for child in vehicle_bar.get_children(): child.queue_free()
 	if view.driving:
 		var b=UI.button("🚗 下车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+		var vb=UI.button("👁 视角 V",func(): view.rover_cockpit=not view.rover_cockpit); vb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(vb)
 	elif view.flying:
 		var b=UI.button("✈️ 下机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
 		var vb=UI.button("👁 视角 V",func(): view.plane_cockpit=not view.plane_cockpit); vb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(vb)

@@ -68,6 +68,7 @@ var plane
 var flying=false
 var plane_parked=false
 var plane_cockpit=false  # v0.70: true = first-person cockpit view, false = third-person chase
+var rover_cockpit=false  # v0.69: true = first-person cabin view for rover
 var plane_node: Node3D
 var far_terrain
 ## v0.49: the native tribe's people and woodpile.
@@ -79,6 +80,7 @@ var tbm
 var boring=false
 var tbm_parked=false
 var tbm_node: Node3D
+var tbm_fleet_nodes: Array=[]  # v0.69: extra mesh nodes for fleet units
 ## The planet model the TBM bores into (set by the panel).
 var v2
 ## v0.41 rover: parked or driven in first person, seen from a chase camera while driving.
@@ -531,6 +533,30 @@ func _pose_tbm() -> void:
 	tbm_node.position=tbm.centre()
 	tbm_node.rotation=Vector3(0.14*tbm.grade,lerp_angle(tbm_node.rotation.y,tbm.facing_yaw(),0.25),0)
 	tbm_node.get_meta("cutter").rotation.z=tbm.spin
+	# v0.69: pose fleet unit meshes beside the primary.
+	_pose_tbm_fleet()
+
+## v0.69: ensure each fleet unit has a mesh, positioned alongside the primary TBM.
+func _pose_tbm_fleet() -> void:
+	if v2==null: return
+	var fleet=v2.get("tbm_fleet")
+	if not fleet is Array: return
+	# Grow node pool to match fleet size.
+	while tbm_fleet_nodes.size()<fleet.size():
+		var node=_tbm_mesh(); add_child(node); tbm_fleet_nodes.append(node)
+	# Hide extras when fleet shrinks.
+	while tbm_fleet_nodes.size()>fleet.size():
+		var extra=tbm_fleet_nodes.pop_back(); if is_instance_valid(extra): extra.queue_free()
+	for i in fleet.size():
+		var node: Node3D=tbm_fleet_nodes[i]
+		var f=fleet[i]
+		# Offset each fleet unit sideways by (i+1)*3.5 cells from the primary cell.
+		var primary_facing=tbm.facing_yaw()
+		var side_off=Vector3(cos(primary_facing),0,-sin(primary_facing))*(i+1)*3.5
+		var fc=Vector3i(int(f.x),int(f.y),int(f.z))
+		node.position=Vector3(fc.x+side_off.x,fc.y+1.5,fc.z+side_off.z)
+		node.rotation=Vector3(0.14*int(f.get("grade",0)),float(f.get("facing",0))*PI/2.0,0)
+		node.visible=tbm_parked and not boring
 
 func _ensure_rover() -> void:
 	if rover!=null: return
@@ -702,8 +728,16 @@ func _camera(dt: float) -> void:
 	if first_person and driving:
 		rover.construction=walker.construction; rover.barriers=walker.barriers
 		rover.step(dt)
-		# The seat carries the walker along, so observers, the trail and targeting follow the rover.
 		walker.position=rover.position; walker.feet_y=rover.body_y+0.45; walker.last_position=walker.position; walker.yaw=rover.heading
+		if rover_cockpit:
+			# v0.69: first-person cabin — camera sits inside the rover looking forward.
+			var eye=Vector3(rover.position.x,rover.body_y+1.2,rover.position.y)
+			var fwd=Vector3(-sin(rover.heading),0,-cos(rover.heading))
+			camera.position=eye; camera.look_at(eye+fwd*20.0); hands.hide(); marker.hide()
+			_pose_rover()
+			var id2=terrain.region_at(rover.position)
+			if id2!=selected: selected=id2; region_selected.emit(id2)
+			return
 		var ang=rover.heading+rover.look_yaw
 		var target=Vector3(rover.position.x,rover.body_y+1.3,rover.position.y)
 		var want=target+Vector3(sin(ang),0,cos(ang))*7.0+Vector3(0,2.4-rover.look_pitch*5.0,0)

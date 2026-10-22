@@ -105,8 +105,9 @@ func _input(event: InputEvent) -> void:
 			elif code==KEY_F: attack_requested.emit()
 			elif code in [KEY_B,KEY_TAB]: build_requested.emit()
 			elif code==KEY_V:
-				# v0.70: toggle cockpit/chase camera while flying.
+				# v0.70: toggle cockpit/chase camera while flying or driving.
 				if view.flying: view.plane_cockpit=not view.plane_cockpit
+				elif view.driving: view.rover_cockpit=not view.rover_cockpit
 			else: view.pilot().jump()
 			get_viewport().set_input_as_handled()
 		if code in [KEY_W,KEY_A,KEY_S,KEY_D,KEY_UP,KEY_LEFT,KEY_DOWN,KEY_RIGHT,KEY_SHIFT]:
