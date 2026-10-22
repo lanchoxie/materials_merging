@@ -62,11 +62,22 @@ func _ready() -> void:
 	await get_tree().process_frame
 	_top_up()
 
+var _tick: float=0.0
+var _save_tick: float=0.0  # v0.72: auto-save every 30s on Android to prevent progress loss
+
 func _process(delta: float) -> void:
 	_tick += delta
 	if _tick < 1.0: return
 	_tick = 0.0
 	_top_up()
+	# v0.72: auto-save every 30s on Android/Web where abrupt exit is common.
+	if OS.get_name() in ["Android","Web"]:
+		_save_tick+=1.0
+		if _save_tick>=30.0:
+			_save_tick=0.0
+			var scene=get_tree().current_scene; if scene==null: return
+			var s=scene.get("state"); if s==null: return
+			if s.has_method("save_game"): s.save_game()
 
 func _top_up() -> void:
 	var scene = get_tree().current_scene
