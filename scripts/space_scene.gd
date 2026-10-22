@@ -48,17 +48,20 @@ func _ready() -> void:
 	env.ambient_light_color=Color(0.05,0.06,0.08); env.ambient_light_energy=0.2
 	var we=WorldEnvironment.new(); we.environment=env; root.add_child(we)
 	camera=Camera3D.new(); camera.fov=70; camera.far=50000; root.add_child(camera)
-	# --- Starfield (small cubes via MultiMesh) ---
+	# --- Starfield (visible emissive spheres via MultiMesh) ---
 	var rng=RandomNumberGenerator.new(); rng.seed=7777
 	var mm=MultiMesh.new(); mm.transform_format=MultiMesh.TRANSFORM_3D
-	var star_cube=BoxMesh.new(); star_cube.size=Vector3(8,8,8); mm.mesh=star_cube
-	mm.instance_count=600
+	var star_sphere=SphereMesh.new(); star_sphere.radius=40; star_sphere.height=80; star_sphere.radial_segments=6; star_sphere.rings=4
+	mm.mesh=star_sphere; mm.instance_count=500
 	var star_mat=StandardMaterial3D.new(); star_mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
-	star_mat.albedo_color=Color(1,1,1,0.9)
-	star_cube.surface_set_material(0,star_mat)
-	for i in range(600):
+	star_mat.albedo_color=Color(1,1,1,1); star_mat.emission_enabled=true
+	star_mat.emission=Color(1,1,1); star_mat.emission_energy_multiplier=2.0
+	star_sphere.surface_set_material(0,star_mat)
+	for i in range(500):
 		var dir=Vector3(rng.randf_range(-1,1),rng.randf_range(-1,1),rng.randf_range(-1,1)).normalized()
-		var t=Transform3D(); t.origin=dir*rng.randf_range(8000,14000)
+		var t=Transform3D(); t.origin=dir*rng.randf_range(6000,12000)
+		# Random scale variation
+		var s=rng.randf_range(0.3,1.5); t=t.scaled(Vector3(s,s,s))
 		mm.set_instance_transform(i,t)
 	var stars=MultiMeshInstance3D.new(); stars.multimesh=mm; root.add_child(stars)
 	# --- Sun ---

@@ -1,185 +1,194 @@
 extends Control
-## v0.71: 3D rocket launch cinematics — ignition, liftoff, stage separation,
-## atmospheric entry, ship separation. Then hands off to space flight.
+## v0.72: 3D rocket launch — ground launch, staged separation, earth receding.
 signal sequence_done
 
 var viewport: SubViewport
 var camera: Camera3D
 var root: Node3D
-var rocket: Node3D
-var stage1: Node3D
-var stage2: Node3D
-var ship_capsule: Node3D
-var phase: int=0
-var phase_time: float=0.0
+var rocket_root: Node3D   # entire stack (moves up)
+var s1_node: Node3D       # stage 1 body (separates and falls)
+var s2_node: Node3D       # stage 2 body (separates later)
+var cap_node: Node3D      # ship capsule (stays)
+var earth_node: Node3D    # planet sphere far below
+var s1_sep: bool=false; var s1_vel: float=0.0; var s1_y: float=0.0
+var s2_sep: bool=false; var s2_vel: float=0.0; var s2_y: float=0.0
 var rocket_y: float=0.0
 var rocket_vy: float=0.0
-var camera_dist: float=30.0
-var camera_angle: float=0.3
+var phase: int=0
+var phase_time: float=0.0
 var cockpit_mode: bool=false
 var cockpit_overlay: Control=null
 var label: Label
-var sub_label: Label
 var veil: ColorRect
+var world_env: WorldEnvironment
 
 const PHASES=[
-	{"name":"倒计时 3… 2… 1…","dur":2.0,"thrust":false},
-	{"name":"🚀 点火！","dur":1.5,"thrust":true},
-	{"name":"升空中…","dur":2.5,"thrust":true},
-	{"name":"一级分离","dur":1.5,"thrust":true,"separate1":true},
-	{"name":"二级推进","dur":2.0,"thrust":true},
-	{"name":"穿越大气层","dur":2.0,"thrust":true},
-	{"name":"进入亚轨道","dur":1.5,"thrust":true,"separate2":true},
-	{"name":"舰船分离","dur":1.5,"thrust":false,"separate_ship":true},
-	{"name":"进入太空","dur":1.0,"thrust":false},
+	{"name":"倒计时 3… 2… 1…","dur":2.2,"thrust":false},
+	{"name":"🚀 点火！","dur":1.2,"thrust":true},
+	{"name":"升空…","dur":3.0,"thrust":true},
+	{"name":"一级分离","dur":2.0,"thrust":true,"sep1":true},
+	{"name":"二级点火","dur":3.0,"thrust":true},
+	{"name":"穿越大气层","dur":2.5,"thrust":true},
+	{"name":"进入轨道","dur":2.0,"thrust":true,"sep2":true},
+	{"name":"舰船分离","dur":1.5,"thrust":false},
+	{"name":"进入深空","dur":1.0,"thrust":false},
 ]
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter=Control.MOUSE_FILTER_STOP
-	var svc=SubViewportContainer.new(); svc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); svc.stretch=true; add_child(svc)
-	viewport=SubViewport.new(); viewport.size=Vector2i(1280,720); viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; svc.add_child(viewport)
+	var svc=SubViewportContainer.new(); svc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	svc.stretch=true; add_child(svc)
+	viewport=SubViewport.new(); viewport.size=Vector2i(1280,720)
+	viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; svc.add_child(viewport)
 	root=Node3D.new(); viewport.add_child(root)
+	# Environment
 	var env=Environment.new(); env.background_mode=Environment.BG_COLOR
-	env.background_color=Color(0.15,0.25,0.45); env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color=Color(0.3,0.4,0.5); env.ambient_light_energy=0.5
-	var we=WorldEnvironment.new(); we.environment=env; root.add_child(we)
-	camera=Camera3D.new(); camera.fov=60; camera.far=20000; root.add_child(camera)
-	# Ground plane
-	var ground=MeshInstance3D.new(); var gm=BoxMesh.new(); gm.size=Vector3(200,1,200)
-	ground.mesh=gm; var gmat=StandardMaterial3D.new(); gmat.albedo_color=Color("4a5a3a")
-	ground.material_override=gmat; ground.position=Vector3(0,-0.5,0); root.add_child(ground)
-	# Directional light (sun)
-	var sun=DirectionalLight3D.new(); sun.position=Vector3(50,80,50); sun.look_at(Vector3.ZERO)
-	sun.light_energy=1.2; root.add_child(sun)
-	# Build the rocket stack
-	rocket=_build_rocket(); root.add_child(rocket)
+	env.background_color=Color(0.18,0.32,0.55)
+	env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color=Color(0.4,0.5,0.6); env.ambient_light_energy=0.6
+	world_env=WorldEnvironment.new(); world_env.environment=env; root.add_child(world_env)
+	camera=Camera3D.new(); camera.fov=55; camera.far=80000; root.add_child(camera)
+	# Sun
+	var sun=DirectionalLight3D.new(); sun.position=Vector3(300,400,200)
+	root.add_child(sun); sun.look_at(Vector3.ZERO); sun.light_energy=1.4
+	# Ground
+	var gnd=MeshInstance3D.new(); var gm=BoxMesh.new(); gm.size=Vector3(600,2,600)
+	gnd.mesh=gm; var gmat=StandardMaterial3D.new(); gmat.albedo_color=Color("3a4a2a")
+	gnd.material_override=gmat; gnd.position=Vector3(0,-1,0); root.add_child(gnd)
+	# Launch pad
+	var pad=MeshInstance3D.new(); var pm=CylinderMesh.new(); pm.bottom_radius=8; pm.top_radius=8; pm.height=0.5
+	pad.mesh=pm; var pmat=StandardMaterial3D.new(); pmat.albedo_color=Color("888888")
+	pad.material_override=pmat; root.add_child(pad)
+	# Earth sphere (large, far below horizon — visible as rocket climbs)
+	earth_node=MeshInstance3D.new(); var em=SphereMesh.new(); em.radius=6200; em.height=12400; em.radial_segments=32; em.rings=16
+	earth_node.mesh=em; var emat=StandardMaterial3D.new(); emat.albedo_color=Color("2255aa"); emat.roughness=0.9
+	earth_node.material_override=emat; earth_node.position=Vector3(0,-6400,0); root.add_child(earth_node)
+	# Build rocket stack
+	rocket_root=Node3D.new(); root.add_child(rocket_root)
+	_build_stack()
 	# HUD
 	label=Label.new(); label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size",28); label.add_theme_color_override("font_color",Color("ffffff"))
-	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(label)
-	sub_label=Label.new(); sub_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	sub_label.add_theme_font_size_override("font_size",16); sub_label.add_theme_color_override("font_color",Color("aaccee"))
-	sub_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); sub_label.offset_top=60; add_child(sub_label)
+	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); label.offset_bottom=-200; add_child(label)
 	veil=ColorRect.new(); veil.color=Color(0,0,0,0); veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	veil.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(veil)
-	# Build cockpit overlay (hidden by default; V key shows it)
-	cockpit_overlay=_build_cockpit_overlay(); add_child(cockpit_overlay); cockpit_overlay.hide()
-	# Hint
+	cockpit_overlay=_build_cockpit(); add_child(cockpit_overlay); cockpit_overlay.hide()
 	var hint=Label.new(); hint.text="V 键切换座舱/第三人称 · ESC 跳过"
 	hint.add_theme_font_size_override("font_size",13); hint.add_theme_color_override("font_color",Color("667788"))
-	hint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); hint.offset_top=get_viewport().get_visible_rect().size.y-30
-	hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; add_child(hint)
+	hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	hint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hint.offset_top=get_viewport().get_visible_rect().size.y-32; add_child(hint)
 
-func _build_cockpit_overlay() -> Control:
+func _build_stack() -> void:
+	var mat_w=StandardMaterial3D.new(); mat_w.albedo_color=Color("e8eef0"); mat_w.metallic=0.6; mat_w.roughness=0.35
+	var mat_g=StandardMaterial3D.new(); mat_g.albedo_color=Color("c8d4dc"); mat_g.metallic=0.8; mat_g.roughness=0.3
+	var mat_d=StandardMaterial3D.new(); mat_d.albedo_color=Color("333840"); mat_d.metallic=0.7; mat_d.roughness=0.5
+	var mat_n=StandardMaterial3D.new(); mat_n.albedo_color=Color("1a1a20"); mat_n.metallic=0.5
+	# Stage 1 (lowest): 8m tall, wide body + fins + 3 nozzles
+	s1_node=Node3D.new(); rocket_root.add_child(s1_node)
+	var s1b=MeshInstance3D.new(); var s1m=CylinderMesh.new(); s1m.bottom_radius=1.6; s1m.top_radius=1.3; s1m.height=8
+	s1b.mesh=s1m; s1b.material_override=mat_g; s1b.position=Vector3(0,4,0); s1_node.add_child(s1b)
+	# Engine band
+	var s1band=MeshInstance3D.new(); var s1bm=CylinderMesh.new(); s1bm.bottom_radius=1.7; s1bm.top_radius=1.6; s1bm.height=0.6
+	s1band.mesh=s1bm; s1band.material_override=mat_d; s1band.position=Vector3(0,0.3,0); s1_node.add_child(s1band)
+	# 3 nozzles
+	for k in range(3):
+		var ang=k*TAU/3; var nz=MeshInstance3D.new(); var nzm=CylinderMesh.new()
+		nzm.bottom_radius=0.45; nzm.top_radius=0.25; nzm.height=1.2; nz.mesh=nzm; nz.material_override=mat_n
+		nz.position=Vector3(cos(ang)*0.7,-0.4,sin(ang)*0.7); s1_node.add_child(nz)
+	# Fins
+	for k in range(4):
+		var ang=k*PI/2; var fin=MeshInstance3D.new(); var fm=BoxMesh.new(); fm.size=Vector3(0.18,3.0,1.8)
+		fin.mesh=fm; fin.material_override=mat_g
+		fin.position=Vector3(cos(ang)*1.6,1.5,sin(ang)*1.6); fin.rotation.y=ang; s1_node.add_child(fin)
+	# Stage 2: 4m tall, narrower
+	s2_node=Node3D.new(); rocket_root.add_child(s2_node); s2_node.position.y=8.0
+	var s2b=MeshInstance3D.new(); var s2m=CylinderMesh.new(); s2m.bottom_radius=1.1; s2m.top_radius=0.95; s2m.height=4
+	s2b.mesh=s2m; s2b.material_override=mat_w; s2b.position=Vector3(0,2,0); s2_node.add_child(s2b)
+	# Interstage ring
+	var s2ring=MeshInstance3D.new(); var s2rm=CylinderMesh.new(); s2rm.bottom_radius=1.15; s2rm.top_radius=1.15; s2rm.height=0.3
+	s2ring.mesh=s2rm; s2ring.material_override=mat_d; s2ring.position=Vector3(0,-0.15,0); s2_node.add_child(s2ring)
+	# Ship capsule: sits on top, 3m, conical
+	cap_node=Node3D.new(); rocket_root.add_child(cap_node); cap_node.position.y=12.0
+	var capb=MeshInstance3D.new(); var cm=CylinderMesh.new(); cm.bottom_radius=0.9; cm.top_radius=0.12; cm.height=3.2
+	capb.mesh=cm; capb.material_override=mat_w; capb.position=Vector3(0,1.6,0); cap_node.add_child(capb)
+	# Window strip on capsule
+	var win=MeshInstance3D.new(); var wm=CylinderMesh.new(); wm.bottom_radius=0.85; wm.top_radius=0.85; wm.height=0.3
+	win.mesh=wm; win.material_override=mat_n; win.position=Vector3(0,1.5,0); cap_node.add_child(win)
+	# Solar panel wings on capsule
+	for side in [-1,1]:
+		var pw=MeshInstance3D.new(); var pwm=BoxMesh.new(); pwm.size=Vector3(3.0,0.05,1.2)
+		pw.mesh=pwm; var pmat=StandardMaterial3D.new(); pmat.albedo_color=Color("224488"); pmat.metallic=0.6
+		pw.material_override=pmat; pw.position=Vector3(side*2.2,1.5,0); cap_node.add_child(pw)
+
+func _build_cockpit() -> Control:
 	var vw=get_viewport().get_visible_rect().size
 	var ov=Control.new(); ov.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ov.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	# Dark cabin background
-	var cabin=ColorRect.new(); cabin.color=Color(0.04,0.06,0.08); cabin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var cabin=ColorRect.new(); cabin.color=Color(0.04,0.06,0.09); cabin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cabin.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(cabin)
-	# Seat & belt
-	var seat=ColorRect.new(); seat.color=Color(0.12,0.14,0.16); seat.position=Vector2(0,vw.y*0.72); seat.size=Vector2(vw.x,vw.y*0.28)
+	# Seat + belts
+	var seat=ColorRect.new(); seat.color=Color(0.10,0.12,0.16); seat.position=Vector2(0,vw.y*0.68); seat.size=Vector2(vw.x,vw.y*0.32)
 	seat.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(seat)
-	for dx in [-220,220]:
-		var belt=ColorRect.new(); belt.color=Color(0.55,0.45,0.22); belt.size=Vector2(28,vw.y*0.38)
-		belt.position=Vector2(vw.x*0.5+dx-14,vw.y*0.55); belt.rotation=0.38*(1 if dx>0 else -1)
+	for dx in [-200,200]:
+		var belt=ColorRect.new(); belt.color=Color(0.50,0.40,0.20); belt.size=Vector2(24,vw.y*0.36)
+		belt.position=Vector2(vw.x*0.5+dx-12,vw.y*0.52); belt.rotation=0.36*(1 if dx>0 else -1)
 		belt.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(belt)
-	# Porthole window — glow color updated in _process
-	var port_rect=Rect2(vw*0.5-Vector2(160,110),Vector2(320,220))
-	var pbg=ColorRect.new(); pbg.color=Color(0.02,0.04,0.10); pbg.position=port_rect.position; pbg.size=port_rect.size
+	# Porthole
+	var pr=Rect2(vw*0.5-Vector2(170,120),Vector2(340,240))
+	var pbg=ColorRect.new(); pbg.color=Color(0.02,0.04,0.08); pbg.position=pr.position; pbg.size=pr.size
 	pbg.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(pbg)
-	var port_glow=ColorRect.new(); port_glow.color=Color(0.10,0.20,0.50,0.7)
-	port_glow.position=port_rect.position+Vector2(14,14); port_glow.size=Vector2(292,192)
-	port_glow.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(port_glow); ov.set_meta("port_glow",port_glow)
-	# Window frame bars
-	for bar in [[Vector2(0,0),Vector2(320,14)],[Vector2(0,206),Vector2(320,14)],[Vector2(0,0),Vector2(14,220)],[Vector2(306,0),Vector2(14,220)]]:
-		var fr=ColorRect.new(); fr.color=Color(0.18,0.20,0.22); fr.position=port_rect.position+bar[0]; fr.size=bar[1]
+	var pg=ColorRect.new(); pg.color=Color(0.12,0.28,0.55,0.6); pg.position=pr.position+Vector2(16,16); pg.size=Vector2(308,208)
+	pg.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(pg); ov.set_meta("pg",pg)
+	# Frame
+	for bar in [[Vector2(0,0),Vector2(340,14)],[Vector2(0,226),Vector2(340,14)],[Vector2(0,0),Vector2(14,240)],[Vector2(326,0),Vector2(14,240)],[Vector2(0,112),Vector2(340,10)]]:
+		var fr=ColorRect.new(); fr.color=Color(0.16,0.18,0.20); fr.position=pr.position+bar[0]; fr.size=bar[1]
 		fr.mouse_filter=Control.MOUSE_FILTER_IGNORE; ov.add_child(fr)
 	return ov
-
-func _build_rocket() -> Node3D:
-	var r=Node3D.new()
-	var mat_steel=StandardMaterial3D.new(); mat_steel.albedo_color=Color("c8d0d8"); mat_steel.metallic=0.8
-	var mat_ship=StandardMaterial3D.new(); mat_ship.albedo_color=Color("e0e8f0"); mat_ship.metallic=0.6
-	# Stage 1
-	stage1=Node3D.new(); r.add_child(stage1)
-	var s1=MeshInstance3D.new(); var s1m=CylinderMesh.new()
-	s1m.bottom_radius=1.4; s1m.top_radius=1.2; s1m.height=7.0
-	s1.mesh=s1m; s1.material_override=mat_steel; s1.position=Vector3(0,3.5,0); stage1.add_child(s1)
-	for k in range(3):
-		var ang=k*TAU/3; var noz=MeshInstance3D.new(); var nzm=CylinderMesh.new()
-		nzm.bottom_radius=0.35; nzm.top_radius=0.2; nzm.height=1.2
-		noz.mesh=nzm; noz.material_override=StandardMaterial3D.new(); noz.material_override.albedo_color=Color("333333")
-		noz.position=Vector3(cos(ang)*0.7,-0.6,sin(ang)*0.7); stage1.add_child(noz)
-	# Fins
-	for k in range(4):
-		var ang=k*PI/2; var fin=MeshInstance3D.new(); var fm=BoxMesh.new(); fm.size=Vector3(0.15,2.5,1.4)
-		fin.mesh=fm; fin.material_override=mat_steel
-		fin.position=Vector3(cos(ang)*1.5,1.25,sin(ang)*1.5); fin.rotation.y=ang; stage1.add_child(fin)
-	# Stage 2
-	stage2=Node3D.new(); r.add_child(stage2)
-	var s2=MeshInstance3D.new(); var s2m=CylinderMesh.new()
-	s2m.bottom_radius=1.0; s2m.top_radius=0.9; s2m.height=3.5
-	s2.mesh=s2m; s2.material_override=mat_steel; s2.position=Vector3(0,8.75,0); stage2.add_child(s2)
-	# Ship capsule
-	ship_capsule=Node3D.new(); r.add_child(ship_capsule)
-	var ship=MeshInstance3D.new(); var shm=CylinderMesh.new()
-	shm.bottom_radius=0.8; shm.top_radius=0.15; shm.height=3.0
-	ship.mesh=shm; ship.material_override=mat_ship; ship.position=Vector3(0,12.0,0); ship_capsule.add_child(ship)
-	return r
 
 func _process(dt: float) -> void:
 	if root==null: return
 	phase_time+=dt
-	var ph=PHASES[phase]
-	label.text=ph.name
-	# Physics: thrust accelerates the rocket upward
+	var ph=PHASES[phase]; label.text=ph.name
+	# Thrust
 	if ph.get("thrust",false):
-		rocket_vy+=25.0*dt
-		rocket_vy=minf(rocket_vy,120.0)
+		rocket_vy=minf(rocket_vy+30*dt,150)
 		rocket_y+=rocket_vy*dt
-	# Stage 1 separation: drop stage1 behind
-	if ph.get("separate1",false) and phase_time<0.3:
-		if stage1!=null:
-			var drop=Node3D.new(); drop.add_child(stage1)
-			stage1.position=Vector3(0,-rocket_y,0)
-			root.add_child(stage1)
-			stage1=stage1  # keep reference but it now falls
-	if ph.get("separate2",false) and phase_time<0.3:
-		if stage2!=null:
-			root.add_child(stage2); stage2.position=Vector3(0,rocket_y-1,0)
-	# Ship separation: capsule flies free
-	if ph.get("separate_ship",false) and phase_time<0.3:
-		if ship_capsule!=null:
-			root.add_child(ship_capsule); ship_capsule.position=Vector3(0,rocket_y+3,0)
-	rocket.position=Vector3(0,rocket_y,0)
-	# Background fades to space as altitude increases
-	var sky_t=clampf(rocket_y/300.0,0.0,1.0)
-	if root.get_child_count()>0:
-		var we=root.get_node_or_null("WorldEnvironment")
-		if we and we.environment:
-			we.environment.background_color=Color(0.15,0.25,0.45).lerp(Color(0.005,0.006,0.015),sky_t)
-	# Camera: cockpit or third-person
+	# Stage 1 separation: detach and fall
+	if ph.get("sep1",false) and not s1_sep:
+		s1_sep=true; s1_y=rocket_y; s1_vel=rocket_vy
+		root.add_child(s1_node); s1_node.position=Vector3(0,s1_y,0)
+	# Stage 2 separation
+	if ph.get("sep2",false) and not s2_sep:
+		s2_sep=true; s2_y=rocket_y; s2_vel=rocket_vy
+		root.add_child(s2_node); s2_node.position=Vector3(0,s2_y,0)
+	# Animate separated stages (gravity pulls them down relative to camera)
+	if s1_sep:
+		s1_vel-=8*dt; s1_y+=s1_vel*dt; s1_node.position.y=s1_y
+	if s2_sep:
+		s2_vel-=5*dt; s2_y+=s2_vel*dt; s2_node.position.y=s2_y
+	# Main rocket (remaining capsule) rises
+	rocket_root.position.y=rocket_y
+	# Sky fade
+	var sky_t=clampf(rocket_y/600,0,1)
+	world_env.environment.background_color=Color(0.18,0.32,0.55).lerp(Color(0.005,0.006,0.015),sky_t)
+	# Camera
 	if cockpit_mode and is_instance_valid(cockpit_overlay):
 		cockpit_overlay.show()
-		# Camera inside the ship capsule looking down at departing planet
-		camera.position=Vector3(0,rocket_y+11.5,0)
-		camera.rotation=Vector3(deg_to_rad(80),0,0)  # looking down out the window
-		# Update port glow color to match sky phase
-		var pg=cockpit_overlay.get_meta("port_glow") as ColorRect
-		if pg: pg.color=Color(0.10,0.20,0.50,0.7).lerp(Color(0.005,0.006,0.015,0.9),sky_t)
+		camera.position=Vector3(0,rocket_y+13.5,0.5)
+		camera.rotation=Vector3(deg_to_rad(85),0,0)
+		var pg=cockpit_overlay.get_meta("pg") as ColorRect
+		if pg: pg.color=Color(0.12,0.28,0.55,0.6).lerp(Color(0.005,0.006,0.015,0.9),sky_t)
 	else:
 		if is_instance_valid(cockpit_overlay): cockpit_overlay.hide()
-		camera_dist=lerpf(camera_dist,30.0+rocket_y*0.3,minf(1.0,dt*2.0))
-		camera.position=Vector3(cos(camera_angle)*camera_dist,rocket_y+5,sin(camera_angle)*camera_dist)
-		camera.look_at(Vector3(0,rocket_y+5,0))
+		var cam_d=lerpf(35,25+rocket_y*0.08,minf(1,dt*1.5))
+		camera.position=Vector3(cam_d*0.7,rocket_y+6,cam_d*0.7)
+		camera.look_at(Vector3(0,rocket_y+6,0))
 	# Advance phase
 	if phase_time>=float(ph.dur):
-		phase+=1; phase_time=0.0
+		phase+=1; phase_time=0
 		if phase>=PHASES.size():
-			# Fade out and signal done
 			var tw=create_tween(); tw.tween_property(veil,"color:a",1.0,0.8)
 			await tw.finished
 			sequence_done.emit(); queue_free()
