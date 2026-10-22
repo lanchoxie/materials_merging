@@ -729,6 +729,20 @@ func _aim() -> void:
 		var found: Dictionary=preload("res://scripts/river_miniatures.gd").plan(v.construction,str(action.get("id","")),v.actor)
 		view.construction_view.preview_cells(found)
 		aim_label.text=found.error if not found.error.is_empty() else "%s · 绿框是展开位置 · E 展开" % str(item.get("name","作品"))
+	elif action.get("type")=="deploy_vehicle":
+		# v0.68: ghost preview for vehicle placement — shows footprint in front of the player.
+		var vid=str(action.get("vehicle_id",""))
+		const VSIZES={"rover":Vector3(3,2,4),"tbm":Vector3(3,3,4),"plane":Vector3(9,3,6),"starship":Vector3(5,8,5)}
+		var vsize=VSIZES.get(vid,Vector3(3,3,3))
+		var fwd=Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw))
+		var place_p=view.walker.position+fwd*maxf(vsize.x,vsize.z)*0.7
+		var ground_y=view.terrain.ground(place_p)
+		var gm=view.construction_view.ghost
+		gm.scale=vsize; gm.position=Vector3(place_p.x,ground_y+vsize.y*0.5,place_p.y)
+		var can_place=view.terrain.inside(place_p,3) and not view.terrain.blocked(place_p,[])
+		view.construction_view.ghost_material.albedo_color=Color(0.4,0.95,0.7,0.28) if can_place else Color(1,0.5,0.4,0.28)
+		gm.show()
+		aim_label.text=("%s · 绿框是放置位置 · E 取出" if can_place else "%s · 红框：此处无法放置") % str(item.get("name","载具"))
 	aim_label.text=InteractionHelp.prompt(v,item,target,aim_label.text)
 	action_button.text=InteractionHelp.button_text(action,target)
 	if view.driving:
@@ -767,6 +781,19 @@ func _aim() -> void:
 		if near_rover():
 			var b=UI.button("🚗 上车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
 	vehicle_bar.visible=view.first_person and vehicle_bar.get_child_count()>0
+	# v0.68: waypoint navigation — show nearest waypoint direction + distance on aim_label.
+	if view.first_person and not view.driving and not view.flying and not view.boring:
+		var wps=v.waypoints
+		if not wps.is_empty():
+			var here=view.walker.position; var best_idx=-1; var best_dist=1e9
+			for i in wps.size():
+				var d=here.distance_to(Vector2(wps[i].x,wps[i].z))
+				if d<best_dist: best_dist=d; best_idx=i
+			if best_idx>=0:
+				var wp=wps[best_idx]; var dir=Vector2(wp.x,wp.z)-here
+				var angle=atan2(-dir.x,-dir.y)-view.walker.yaw
+				var compass=["北","东北","东","东南","南","西南","西","西北"][posmod(roundi(angle/(PI/4)),8)]
+				aim_label.text+="\n📍 %s · %s · %d米" % [wp.label,compass,roundi(best_dist)]
 
 func _tab(id: String) -> void:
 	if id=="bag": _open_backpack(); return
