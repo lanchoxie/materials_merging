@@ -31,14 +31,30 @@ func setup(s) -> void:
 	var title=UI.label("行囊",30,UI.MINT); title.position=Vector2(238,122); add_child(title)
 	var sub=UI.label("与浮岛共享库存 · 从材料到一片新世界",15,UI.MUTED); sub.position=Vector2(322,135); add_child(sub)
 	var close=UI.button("返回世界  B",_close); close.position=Vector2(1050,119); close.size=Vector2(150,44); add_child(close)
-	var tabs=GridContainer.new(); tabs.columns=5; tabs.position=Vector2(238,176); tabs.add_theme_constant_override("h_separation",6); tabs.add_theme_constant_override("v_separation",4); add_child(tabs)
+	var tabs=GridContainer.new(); tabs.columns=6; tabs.position=Vector2(238,176); tabs.add_theme_constant_override("h_separation",4); tabs.add_theme_constant_override("v_separation",4); add_child(tabs)
 	for id in model.rules.categories:
-		var tab=UI.button(str(model.rules.categories[id]),func(): category=id; refresh(true)); tab.custom_minimum_size=Vector2(100,30); tab.add_theme_font_size_override("font_size",14); tabs.add_child(tab)
-	scroll=ScrollContainer.new(); scroll.position=Vector2(238,280); scroll.size=Vector2(614,314); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; add_child(scroll)
+		var tab=UI.button(str(model.rules.categories[id]),func(): category=id; refresh(true)); tab.custom_minimum_size=Vector2(86,28); tab.add_theme_font_size_override("font_size",13); tabs.add_child(tab)
+	scroll=ScrollContainer.new(); scroll.position=Vector2(238,290); scroll.size=Vector2(614,304); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; add_child(scroll)
 	grid=GridContainer.new(); grid.mouse_filter=Control.MOUSE_FILTER_PASS; grid.columns=7; grid.add_theme_constant_override("h_separation",7); grid.add_theme_constant_override("v_separation",7); scroll.add_child(grid)
 	var box=UI.box(self,Rect2(875,184,325,410))
 	detail_scroll=ScrollContainer.new(); detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; box.add_child(detail_scroll)
 	detail=UI.column(detail_scroll,10); detail.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	# v0.69: equipment rack — shows currently worn items and lets you remove them.
+	var rack_title=UI.label("装备中的外设",16,UI.MINT); detail.add_child(rack_title)
+	var equipped=state.planet.v2.get("equipped")
+	if equipped is Dictionary and not equipped.is_empty():
+		for eid in equipped:
+			var names={"headlamp":"探照灯头盔","insulated_suit":"隔热绝缘服","power_drill":"电钻"}
+			var row=UI.row(detail,8)
+			row.add_child(UI.label(names.get(eid,eid),15))
+			var rm=UI.button("卸下",func():
+				var equipped2=state.planet.v2.get("equipped")
+				if equipped2 is Dictionary: equipped2.erase(eid)
+				refresh())
+			rm.add_theme_font_size_override("font_size",13); row.add_child(rm)
+			detail.add_child(row)
+	else:
+		detail.add_child(UI.paragraph("（未装备任何外设。装备栏会显示头盔、绝缘服、电钻等穿戴效果。）",13,UI.MUTED))
 	feedback=UI.paragraph("点选物品，再点下方格子装备；电脑也可直接拖入。",15,UI.GOLD); feedback.position=Vector2(238,611); feedback.size=Vector2(960,40); add_child(feedback)
 	shortcuts=UI.row(self,7); shortcuts.position=Vector2(238,657)
 	var clear=UI.button("清空\n当前格",_clear_slot); clear.position=Vector2(1010,657); clear.size=Vector2(90,80); add_child(clear)
