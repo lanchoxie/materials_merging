@@ -549,7 +549,7 @@ func _cross_light_bridge() -> void:
 	# makes the transition freeze indefinitely. Restore after the veil fades out so the next
 	# _sync() tick places the plane normally.
 	var _saved_plane: String=state.industry.plane
-	var _saved_flying: bool=bool(state.planet.v2.get("flying",false))
+	var _saved_flying: bool=state.planet.v2.flying
 	state.industry.plane=""; state.planet.v2.flying=false
 	_show_planet_v2(); modal.enter_first_person(); veil.move_to_front()
 	# Give the renderer one pass to process the 3D scene before revealing it.
