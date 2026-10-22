@@ -1956,10 +1956,11 @@ func sync_gear() -> void:
 	if industry.suit!="" and int(industry.items.get(industry.suit,0))<1: industry.suit=""
 	planet.v2.combat.suit_warmth=industry.suit_warmth()
 	industry.update_drill(); planet.v2.nature.drill=industry.drill_state if industry.drill!="" else {}
-	# v0.69: backpack-equipped power_drill also activates drilling speed bonus.
+	# v0.69: backpack-equipped power_drill activates drilling speed bonus without island drill.
 	var eq=planet.v2.get("equipped")
 	if eq is Dictionary and eq.has("power_drill") and industry.drill=="":
-		industry.update_drill(); planet.v2.nature.drill=industry.drill_state if float(industry.drill_state.get("cap",0))>0 else {"charge":1.0,"cap":1.0,"wh":0.0,"factor":float(Industry.rules().get("drill",{}).get("factor",0.5))}
+		var drill_rules=Industry.rules().get("drill",{})
+		planet.v2.nature.drill={"charge":1000.0,"cap":1000.0,"wh":0.0,"factor":float(drill_rules.get("factor",0.5))}
 	industry.update_rover(); industry.update_tbm(); industry.update_plane(); industry.update_ship()
 
 func _queue_install(r: Dictionary, payload: Dictionary, quote: Dictionary) -> String:

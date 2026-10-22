@@ -29,15 +29,17 @@ var view_btn: Button
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter=Control.MOUSE_FILTER_STOP
-	# --- 3D viewport ---
+	# --- 3D viewport via SubViewportContainer ---
+	var svc=SubViewportContainer.new(); svc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	svc.stretch=true; add_child(svc)
 	viewport=SubViewport.new(); viewport.size=Vector2i(1280,720)
-	viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
-	viewport.display_to_window=true; add_child(viewport)
+	viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS; svc.add_child(viewport)
 	var root=Node3D.new(); viewport.add_child(root)
 	# World environment
 	var env=Environment.new(); env.background_mode=Environment.BG_COLOR
-	env.background_color=Color(0.005,0.006,0.015); env.ambient_light_source=Environment.AMBIENT_SOURCE_SKY
-	env.fog_enabled=false; var we=WorldEnvironment.new(); we.environment=env; root.add_child(we)
+	env.background_color=Color(0.005,0.006,0.015); env.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color=Color(0.05,0.06,0.08); env.ambient_light_energy=0.2
+	var we=WorldEnvironment.new(); we.environment=env; root.add_child(we)
 	camera=Camera3D.new(); camera.fov=70; camera.far=50000; root.add_child(camera)
 	# --- Starfield (small cubes via MultiMesh) ---
 	var rng=RandomNumberGenerator.new(); rng.seed=7777
@@ -114,7 +116,7 @@ func _build_hud() -> void:
 	view_btn.position=Vector2(150,get_viewport().get_visible_rect().size.y-50); view_btn.size=Vector2(100,36); add_child(view_btn)
 
 func _process(dt: float) -> void:
-	# Ship controls: WASD steers, Shift/Space throttle
+	if ship==null or camera==null: return
 	var fwd=Vector3.FORWARD.rotated(Vector3.UP,ship_yaw).rotated(Vector3.RIGHT.rotated(Vector3.UP,ship_yaw),ship_pitch)
 	var right=Vector3.RIGHT.rotated(Vector3.UP,ship_yaw)
 	# Throttle
