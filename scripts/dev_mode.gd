@@ -113,6 +113,14 @@ func _patch_industry(s: Object, ind: Object) -> void:
 	if ind.get("items") is Dictionary:
 		for id in INDUSTRY_ITEMS: ind.items[id] = 9999
 		for id in RECIPE_OUTPUTS: ind.items[id] = 9999
+	# Keep vehicle batteries full so the dev build never shows "no charge" in 星锻岛.
+	# update_*() recalculates cap from the deployed item, then we top charge up to cap.
+	for fname in ["update_rover","update_plane","update_ship"]:
+		if ind.has_method(fname): ind.call(fname)
+	for state_key in ["rover_state","plane_state","ship_state","tbm_state","drill_state"]:
+		var vs = ind.get(state_key)
+		if vs is Dictionary and float(vs.get("cap",0.0)) > 0.0:
+			vs["charge"] = vs["cap"]
 
 func _patch_refinery(ref: Object) -> void:
 	ref.level = 5
