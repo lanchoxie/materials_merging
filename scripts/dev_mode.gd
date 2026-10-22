@@ -128,11 +128,11 @@ func _patch_planet(planet: Object) -> void:
 	# Minerals — capped at max_mineral_stock (default 999) so restore() passes validation.
 	var nature = v2.get("nature")
 	if nature != null and nature.get("minerals") is Dictionary:
-		var mcap: int = int(nature.get("rules",{}).get("max_mineral_stock",999))
+		var mcap: int = int(nature.rules.get("max_mineral_stock", 999))
 		for mid in nature.minerals: nature.minerals[mid] = mcap
 	# River-field backpack — capped at max_stock (999) so restore() passes validation.
 	# Only set keys that already exist in field.stock (validator rejects unknown keys).
 	var field = v2.get("field")
 	if field != null and field.get("stock") is Dictionary:
-		var fcap: int = int(field.get("rules",{}).get("max_stock",999))
+		var fcap: int = int(field.rules.get("max_stock", 999))
 		for k in field.stock: field.stock[k] = fcap
