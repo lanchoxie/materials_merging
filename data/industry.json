@@ -1096,6 +1096,27 @@
       "seconds": 240,
       "equation": "星际跃迁（游戏设定）：电池储能驱动跃迁引擎，一次跃迁到另一颗星球的轨道",
       "source": "polmear2017"
+    },
+    "rocket_stack": {
+      "name": "火箭+飞船",
+      "building": "vehicle_assembly",
+      "method": "碳钢箭体 + 硬铝飞船头 + 4 电机 + 8 电池包 + 2 控制板 + 逻辑芯片 + 玻璃舷窗",
+      "inputs": {
+        "item:steel_ingot": 20,
+        "item:duralumin": 10,
+        "item:motor": 4,
+        "item:battery_pack": 8,
+        "item:control_board": 2,
+        "item:logic_chip": 2,
+        "item:glass": 3
+      },
+      "evidence": [],
+      "outputs": {
+        "rocket_stack": 1
+      },
+      "seconds": 300,
+      "equation": "多级火箭（游戏设定）：一级推进穿越大气层，二级进入亚轨道，舰船分离后自由飞行",
+      "source": "polmear2017"
     }
   },
   "items": {
@@ -1443,6 +1464,14 @@
       "sell": 42000,
       "xp": 600,
       "ship": true
+    },
+    "rocket_stack": {
+      "name": "火箭+飞船",
+      "icon": "bit",
+      "color": "d8d8e8",
+      "sell": 58000,
+      "xp": 800,
+      "rocket": true
     }
   },
   "sources": [

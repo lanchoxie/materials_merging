@@ -89,7 +89,7 @@ func entries(state) -> Dictionary:
 	# v0.68: vehicles tab — rover, tbm, plane, starship from industry.items.
 	var ind=state.industry
 	if ind!=null:
-		var vspec={"rover":{"name":"星球越野车","desc":"越野车 · 从背包取出后停在你身边，F上车；拆卸锤×3收回。"},"tbm":{"name":"盾构机","desc":"盾构机 · 从背包取出后停在你身边，F进入；拆卸锤×3收回。"},"plane":{"name":"水陆两栖小飞机","desc":"小飞机 · 从背包取出后停在你身边，F登机；拆卸锤×3收回。"},"starship":{"name":"星际飞船","desc":"星际飞船 · 从背包取出后停在你身边，F登船；拆卸锤×3收回。"}}
+		var vspec={"rover":{"name":"星球越野车","desc":"越野车 · 从背包取出后停在你身边，F上车；拆卸锤×3收回。"},"tbm":{"name":"盾构机","desc":"盾构机 · 从背包取出后停在你身边，F进入；拆卸锤×3收回。"},"plane":{"name":"水陆两栖小飞机","desc":"小飞机 · 从背包取出后停在你身边，F登机；拆卸锤×3收回。"},"starship":{"name":"星际飞船","desc":"星际飞船 · 从背包取出后停在你身边，F登船；拆卸锤×3收回。"},"rocket_stack":{"name":"火箭+飞船","desc":"火箭飞船 · 放置在地面后靠近按E起飞；起飞后三级分离进入太空。"}}
 		for vid in vspec:
 			var qty=int(ind.items.get(vid,0))
 			var vkey="vehicle:"+vid
