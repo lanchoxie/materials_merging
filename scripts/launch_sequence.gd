@@ -148,7 +148,7 @@ func _build_cockpit() -> Control:
 	return ov
 
 func _process(dt: float) -> void:
-	if root==null: return
+	if root==null or phase>=PHASES.size(): return
 	phase_time+=dt
 	var ph=PHASES[phase]; label.text=ph.name
 	# Thrust

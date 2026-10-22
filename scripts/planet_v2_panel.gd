@@ -329,18 +329,13 @@ func near_rocket() -> bool:
 
 ## v0.71: sync rocket+ship launchpad from v2.rocket_at.
 func _sync_rocket() -> void:
-	var v=state.planet.v2; var ind=state.industry
-	if int(ind.items.get("rocket_stack",0))<1 and v.rocket_at.is_empty(): return
-	if not v.rocket_at.is_empty():
-		view.park_rocket(Vector2(float(v.rocket_at.x),float(v.rocket_at.z)))
+	var v=state.planet.v2
+	# v0.72: only show rocket if player explicitly placed it (rocket_at non-empty).
+	# Never auto-place from inventory — that caused unwanted rockets on every planet entry.
+	if v.rocket_at.is_empty():
+		if is_instance_valid(view.rocket_node): view.rocket_node.hide()
 		return
-	if int(ind.items.get("rocket_stack",0))>0 and view.first_person and v.rocket_at.is_empty():
-		# Place the rocket behind and to the side of the player on first entry.
-		var f=Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw)); var side=Vector2(-f.y,f.x)
-		for offset in [f*12.0+side*5.0,f*12.0-side*5.0,f*15.0,side*12.0]:
-			var p=view.walker.position+offset
-			if view.terrain.inside(p,10) and not view.terrain.blocked(p,[]) and not view.terrain.water_at(p):
-				v.rocket_at={"x":p.x,"z":p.y}; view.park_rocket(p); return
+	view.park_rocket(Vector2(float(v.rocket_at.x),float(v.rocket_at.z)))
 
 ## v0.47: the plane follows the deployed aircraft; it is parked beside the player the first time.
 func _sync_plane() -> void:
