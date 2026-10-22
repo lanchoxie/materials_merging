@@ -880,6 +880,8 @@ func _aim() -> void:
 		if near_rover():
 			var b=UI.button("🚗 上车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
 			var mb=UI.button("🔧 安装外设",func(): _open_vehicle_mods("rover")); mb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(mb)
+		if near_ship():
+			var sb=UI.button("🚀 起飞",func(): voyage_requested.emit()); sb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(sb)
 	vehicle_bar.visible=view.first_person and vehicle_bar.get_child_count()>0
 	# v0.68: waypoint navigation — show nearest waypoint direction + distance on aim_label.
 	if view.first_person and not view.driving and not view.flying and not view.boring:

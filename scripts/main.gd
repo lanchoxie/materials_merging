@@ -657,6 +657,9 @@ func _rocket_launch_sequence(destination_id: String) -> void:
 	var t5=create_tween(); t5.tween_property(veil,"color:a",0.0,0.9)
 	await t5.finished
 	veil.queue_free()
+	# v0.70: auto-enter first person at the landing site and notify.
+	if is_instance_valid(modal) and modal.has_method("enter_first_person"):
+		modal.enter_first_person()
 	_toast("已抵达 %s" % dest_name)
 
 func _through_gate(id: String) -> void:
