@@ -524,49 +524,79 @@ func _launch(id: String) -> void:
 	_rocket_launch_sequence(id)
 
 ## v0.69: animated rocket launch sequence before arriving at the destination planet.
+## v0.70: upgraded with cockpit interior — window tint, seat straps, vibration shake.
 func _rocket_launch_sequence(destination_id: String) -> void:
 	var veil=ColorRect.new(); veil.color=Color(0,0,0,0)
 	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	veil.mouse_filter=Control.MOUSE_FILTER_STOP; add_child(veil)
-	# Build the launch CG overlay.
-	var label=Label.new()
-	label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size",28)
-	label.modulate=Color(1,1,1,0)
-	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	veil.add_child(label)
-	var sub=Label.new()
-	sub.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_font_size_override("font_size",16)
-	sub.add_theme_color_override("font_color",Color("88bbcc"))
-	sub.modulate=Color(1,1,1,0)
-	sub.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	sub.offset_top=80; veil.add_child(sub)
+	var vw=get_viewport().get_visible_rect().size
+	# --- Cockpit interior background ---
+	var cabin=ColorRect.new(); cabin.color=Color(0.06,0.08,0.10); cabin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); veil.add_child(cabin)
+	# Seat panel (dark grey strip at bottom)
+	var seat=ColorRect.new(); seat.color=Color(0.12,0.14,0.16); seat.position=Vector2(0,vw.y*0.72); seat.size=Vector2(vw.x,vw.y*0.28); veil.add_child(seat)
+	# Safety belt straps (two diagonal stripes)
+	var belt_color=Color(0.55,0.45,0.22)
+	for dx in [-220,220]:
+		var belt=ColorRect.new(); belt.color=belt_color; belt.size=Vector2(28,vw.y*0.38)
+		belt.position=Vector2(vw.x*0.5+dx-14,vw.y*0.55); belt.rotation=0.38*(1 if dx>0 else -1); veil.add_child(belt)
+	# Porthole window (circular mask via outer black rect + inner view rect)
+	var port_rect=Rect2(vw*0.5-Vector2(110,90),Vector2(220,180))
+	var port_bg=ColorRect.new(); port_bg.color=Color(0.02,0.04,0.08); port_bg.position=port_rect.position; port_bg.size=port_rect.size; veil.add_child(port_bg)
+	# Window frame
+	for side in [[Vector2(0,0),Vector2(220,14)],[Vector2(0,166),Vector2(220,14)],[Vector2(0,0),Vector2(14,180)],[Vector2(206,0),Vector2(14,180)]]:
+		var fr=ColorRect.new(); fr.color=Color(0.18,0.20,0.22); fr.position=port_rect.position+side[0]; fr.size=side[1]; veil.add_child(fr)
+	# Window glow (changes color per phase)
+	var port_glow=ColorRect.new(); port_glow.color=Color(0.08,0.14,0.28,0.6); port_glow.position=port_rect.position+Vector2(14,14); port_glow.size=Vector2(192,152); veil.add_child(port_glow)
+	# Instrument row at bottom
+	for i in range(5):
+		var lamp=ColorRect.new(); lamp.color=Color(0.1,0.55,0.1); lamp.position=Vector2(vw.x*0.5-120+i*52,vw.y*0.82); lamp.size=Vector2(28,12); veil.add_child(lamp)
+	# Status label
+	var label=Label.new(); label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size",26); label.modulate=Color(1,1,1,0)
+	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); label.offset_bottom=-vw.y*0.22; veil.add_child(label)
+	var sub=Label.new(); sub.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_font_size_override("font_size",15); sub.add_theme_color_override("font_color",Color("88bbcc"))
+	sub.modulate=Color(1,1,1,0); sub.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	sub.offset_top=vw.y*0.12; veil.add_child(sub)
 	var Shape=preload("res://scripts/planet_shape.gd")
 	var dest_info: Dictionary=Shape.profile_of(destination_id)
 	var dest_name=str(dest_info.get("name","目标星球"))
-	# Phase 1: fade to black (0.6s)
-	var tw=create_tween(); tw.tween_property(veil,"color:a",1.0,0.6)
+	# Phase 1: fade in cockpit (0.5s)
+	var tw=create_tween(); tw.tween_property(veil,"color:a",1.0,0.5)
 	await tw.finished
-	# Phase 2: launch countdown text
-	for line in ["🚀  点火！","火箭升空……","大气层穿越中……","进入轨道。","飞船与火箭分离。","巡航至 %s……" % dest_name]:
+	# Phase 2: launch sequence with window colour changes and shake
+	var phases=[
+		["🚀  点火！", Color(0.55,0.22,0.06,0.8), 1.8],           # engine glow — orange
+		["火箭升空……", Color(0.42,0.16,0.04,0.7), 1.5],
+		["大气层穿越中……", Color(0.72,0.32,0.08,0.9), 1.4],       # reentry red
+		["进入轨道。", Color(0.02,0.02,0.06,0.95), 1.2],           # space black
+		["飞船与火箭分离。", Color(0.02,0.02,0.06,0.6), 1.0],
+		["巡航至 %s……" % dest_name, Color(0.04,0.08,0.20,0.5), 1.0],
+	]
+	for ph in phases:
+		var line: String=ph[0]; var win_color: Color=ph[1]; var dur: float=ph[2]
+		port_glow.color=win_color
 		label.text=line; label.modulate=Color(1,1,1,0)
-		var t2=create_tween(); t2.tween_property(label,"modulate:a",1.0,0.25)
+		var t2=create_tween(); t2.tween_property(label,"modulate:a",1.0,0.2)
 		await t2.finished
-		await get_tree().create_timer(0.55).timeout
-		var t3=create_tween(); t3.tween_property(label,"modulate:a",0.0,0.2)
+		# Shake: quick offset tween for vibration feeling
+		if line in ["🚀  点火！","火箭升空……","大气层穿越中……"]:
+			var sh=create_tween(); sh.tween_property(cabin,"position",Vector2(randf_range(-4,4),randf_range(-3,3)),0.05)
+			sh.tween_property(cabin,"position",Vector2.ZERO,0.05)
+		await get_tree().create_timer(dur).timeout
+		var t3=create_tween(); t3.tween_property(label,"modulate:a",0.0,0.18)
 		await t3.finished
-	# Show destination name
+	# Phase 3: arrival card
+	port_glow.color=Color(dest_info.get("sky_tint","2244aa") if dest_info.get("sky_tint","")!="" else "2244aa")
 	label.text="已抵达  %s" % dest_name; sub.text=str(dest_info.get("title",""))
 	var t4=create_tween()
 	t4.tween_property(label,"modulate:a",1.0,0.4)
 	t4.tween_property(sub,"modulate:a",1.0,0.4)
 	await t4.finished
 	await get_tree().create_timer(1.2).timeout
-	# Phase 3: load new planet behind the veil, then fade out.
+	# Phase 4: load new planet behind the veil, then fade out.
 	_show_planet_v2(); veil.move_to_front()
-	var t5=create_tween(); t5.tween_property(veil,"color:a",0.0,0.8)
+	var t5=create_tween(); t5.tween_property(veil,"color:a",0.0,0.9)
 	await t5.finished
 	veil.queue_free()
 	_toast("已抵达 %s" % dest_name)
