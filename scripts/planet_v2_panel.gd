@@ -52,6 +52,9 @@ var attack_button: Button
 var vehicle_bar: VBoxContainer  # v0.64: per-vehicle enter/exit buttons for mobile
 var aim_label: Label
 var aim_clock=0.0
+## v0.68: recall counter — how many hammer hits have landed on each vehicle (key: "rover"/"plane"/"tbm"/"ship").
+var recall_hits: Dictionary={}
+var recall_clock: float=0.0
 var hotbar_slots=[]
 var inventory_items={}
 var backpack=null
@@ -317,6 +320,37 @@ func _sync_plane() -> void:
 func near_plane() -> bool:
 	return view.plane_parked and not view.flying and view.walker.position.distance_to(view.plane.position)<=4.5
 
+## v0.68: hammer the remove tool on a parked vehicle 3 times to stow it back in the backpack.
+## Returns true if a vehicle was targeted (caller skips the normal dismantle path).
+func _try_recall() -> bool:
+	var ind=state.industry; var v=state.planet.v2
+	# Find nearest parked vehicle and its key.
+	var target_key=""
+	if near_rover() and not view.driving: target_key="rover"
+	elif near_plane() and not view.flying: target_key="plane"
+	elif near_tbm() and not view.boring: target_key="tbm"
+	elif near_ship() and not view.flying and not view.driving and not view.boring: target_key="ship"
+	if target_key.is_empty(): return false
+	# Accumulate hits; reset after 4 seconds of inactivity via the clock below.
+	recall_hits[target_key]=int(recall_hits.get(target_key,0))+1
+	var hits=recall_hits[target_key]
+	view.hands.swing()
+	const RECALL_HITS=3
+	if hits<RECALL_HITS:
+		message="拆卸锤 · 收纳 %d/%d · 再敲 %d 下收回背包" % [hits,RECALL_HITS,RECALL_HITS-hits]
+		_live(); return true
+	# Third hit: stow the vehicle.
+	recall_hits.erase(target_key)
+	var item_id=""
+	match target_key:
+		"rover": item_id=ind.vehicle; ind.deploy_rover(""); v.rover_at={}; v.driving=false
+		"plane": item_id=ind.plane;   ind.deploy_plane(""); v.plane_at={}; v.flying=false
+		"tbm":   item_id=ind.tbm;     ind.deploy_tbm("");   v.tbm_at={}; v.boring=false
+		"ship":  item_id=ind.ship;    ind.deploy_ship(""); v.ship_at={}
+	if item_id!="": ind.items[item_id]=int(ind.items.get(item_id,0))+1
+	message="已收纳到背包：%s" % item_id
+	acted.emit(message); _refresh_hotbar(); _redraw(); _sync(); return true
+
 func _toggle_plane() -> bool:
 	var v=state.planet.v2
 	if view.flying:
@@ -482,6 +516,12 @@ func _collect() -> void:
 	_update_actor()
 	var id=str(state.planet.v2.inventory.slots[state.planet.v2.inventory.selected])
 	if id.is_empty(): message="这一格是空的，按 B 从背包装备物品。"; _live(); return
+	# v0.68: remove tool + nearby parked vehicle → recall (3 hits to stow).
+	var items_ref=state.planet.v2.inventory.entries(state)
+	var held_item: Dictionary=items_ref.get(id,{})
+	if held_item.get("action",{}).get("type","")=="remove":
+		var recalled=_try_recall()
+		if recalled: return
 	_use_item(id)
 
 func _use_item(id: String,alternate: String="") -> void:
@@ -1036,6 +1076,11 @@ func _process(dt: float) -> void:
 	else: faint_button.hide()
 	aim_clock+=dt
 	if aim_clock>=0.12: aim_clock=0; _aim()
+	# Reset recall hit counter after 4 s of inactivity so a mis-hit doesn't carry over.
+	if not recall_hits.is_empty():
+		recall_clock+=dt
+		if recall_clock>=4.0: recall_hits.clear(); recall_clock=0.0
+	else: recall_clock=0.0
 	refresh+=dt
 	if refresh<0.5: return
 	refresh=0
