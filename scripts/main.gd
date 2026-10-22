@@ -501,79 +501,19 @@ func _show_time_gate() -> void:
 
 ## v0.48 星图: every planet with its globe map; the current one is marked. Launching jumps the ship
 ## (Wh from its battery), swaps the world and reopens the planet view in orbit over the destination.
-## v0.70: open space exploration — player flies their ship across a 2D starfield.
-## Planets are shown as labelled circles; approaching one triggers landing.
+## v0.71: open 3D space scene — player pilots ship between solid planet spheres.
 func _show_voyage() -> void:
-	var Shape=preload("res://scripts/planet_shape.gd")
-	var ind=state.industry; var here=str(state.planet.v2.planet)
+	var ind=state.industry
 	if float(ind.ship_state.charge)<float(ind.rules().ship.jump_wh):
 		_toast("飞船电量不足（需要 %.0f Wh），先回星锻岛充电" % float(ind.rules().ship.jump_wh)); return
 	_close_modal()
-	var space=Control.new(); space.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	space.mouse_filter=Control.MOUSE_FILTER_STOP; add_child(space); modal=space
-	var vw=get_viewport().get_visible_rect().size
-	# --- Starfield background ---
-	var bg=ColorRect.new(); bg.color=Color(0.01,0.01,0.03); bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); space.add_child(bg)
-	var rng=RandomNumberGenerator.new(); rng.seed=12345
-	for i in range(220):
-		var star=ColorRect.new(); star.color=Color(1,1,1,rng.randf_range(0.3,0.9))
-		var sz=rng.randf_range(1.0,2.5); star.size=Vector2(sz,sz)
-		star.position=Vector2(rng.randf_range(0,vw.x),rng.randf_range(0,vw.y)); space.add_child(star)
-	# --- Sun / star (bright white-yellow circle) ---
-	var sun=ColorRect.new(); sun.color=Color(1.0,0.96,0.72,0.95)
-	sun.size=Vector2(48,48); sun.position=Vector2(vw.x*0.5-24,vw.y*0.5-24); space.add_child(sun)
-	var sun_label=Label.new(); sun_label.text="☀ 恒星"; sun_label.add_theme_color_override("font_color",Color("ffeeaa"))
-	sun_label.add_theme_font_size_override("font_size",13); sun_label.position=Vector2(vw.x*0.5-28,vw.y*0.5+30); space.add_child(sun_label)
-	# --- Planet positions spread around the sun ---
-	var order=Shape.planets().order
-	var planet_nodes: Dictionary={}
-	for i in order.size():
-		var pid=order[i]; var info=Shape.profile_of(pid)
-		var angle=TAU*float(i)/float(order.size())-PI*0.25
-		var radius=180.0+i*95.0
-		var px=vw.x*0.5+cos(angle)*radius; var py=vw.y*0.5+sin(angle)*radius
-		var tint=Color(str(info.get("globe_tint","4488bb"))) if str(info.get("globe_tint",""))!="" else Color("4488bb")
-		var pc=ColorRect.new(); pc.color=tint; var psz=36.0 if pid=="earth" else 28.0
-		pc.size=Vector2(psz,psz); pc.position=Vector2(px-psz/2,py-psz/2); space.add_child(pc)
-		var pl=Label.new(); pl.text=str(info.name)+("  ← 你在这里" if pid==here else "")
-		pl.add_theme_color_override("font_color",Color("c8e0ff") if pid!=here else Color("88ffcc"))
-		pl.add_theme_font_size_override("font_size",14); pl.position=Vector2(px-40,py+psz/2+4); space.add_child(pl)
-		planet_nodes[pid]={"pos":Vector2(px,py),"size":psz}
-	# --- Player ship icon ---
-	var here_pos: Vector2=planet_nodes.get(here,{}).get("pos",Vector2(vw.x*0.5+280,vw.y*0.5)) as Vector2
-	var ship=Label.new(); ship.text="🚀"; ship.add_theme_font_size_override("font_size",26)
-	ship.position=here_pos-Vector2(13,13); space.add_child(ship)
-	var ship_pos: Vector2=here_pos
-	# --- Info bar ---
-	var info_bar=Label.new(); info_bar.text="拖动飞船移动 · 靠近星球降落 · 当前电量 %.0f / %.0f Wh" % [float(ind.ship_state.charge),float(ind.ship_state.cap)]
-	info_bar.add_theme_color_override("font_color",Color("aaccee")); info_bar.add_theme_font_size_override("font_size",14)
-	info_bar.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; info_bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	info_bar.offset_bottom=-(vw.y-50); space.add_child(info_bar)
-	var close_btn=UI.button("返回",func(): _close_modal()); close_btn.position=Vector2(vw.x-120,16); close_btn.size=Vector2(100,36); space.add_child(close_btn)
-	# --- Interactive drag to move ship and auto-land ---
-	var drag_state={"dragging":false}
-	space.gui_input.connect(func(ev):
-		if ev is InputEventMouseButton:
-			drag_state.dragging=ev.pressed
-		elif ev is InputEventMouseMotion and drag_state.dragging:
-			ship_pos+=ev.relative; ship.position=ship_pos-Vector2(13,13)
-			# Check proximity to each planet
-			for pid in planet_nodes:
-				if pid==here: continue
-				var pinfo=planet_nodes[pid]
-				var dist=ship_pos.distance_to(pinfo.pos as Vector2)
-				if dist<=(pinfo.size as float)+30.0:
-					space.queue_free(); modal=null
-					_launch(pid); return
-			info_bar.text="飞向星球 · 当前位置 (%.0f, %.0f)" % [ship_pos.x-vw.x*0.5,ship_pos.y-vw.y*0.5])
-	# Touch support: tap near a planet to fly there directly
-	space.gui_input.connect(func(ev2):
-		if not (ev2 is InputEventMouseButton and not ev2.pressed): return
-		for pid in planet_nodes:
-			if pid==here: continue
-			var pinfo=planet_nodes[pid]
-			if ev2.position.distance_to(pinfo.pos as Vector2)<55.0:
-				space.queue_free(); modal=null; _launch(pid); return)
+	var scene=preload("res://scripts/space_scene.gd").new()
+	scene.state=state; add_child(scene); modal=scene
+	scene.landed.connect(func(pid: String):
+		if is_instance_valid(modal) and modal==scene: modal=null
+		_launch(pid))
+	scene.dismissed.connect(func():
+		if is_instance_valid(modal) and modal==scene: modal=null)
 
 func _launch(id: String) -> void:
 	var message: String=state.planet.voyage(state,id)
