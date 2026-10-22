@@ -826,6 +826,15 @@ func pick(at: Vector2) -> String:
 		if terrain.inside(ground) and p.y<=terrain.ground(ground): return terrain.region_at(ground)
 	return ""
 
+## v0.68: same ray-cast as pick() but returns the world (x,z) coordinate instead of a region id.
+func pick_position(at: Vector2) -> Vector2:
+	if first_person or globe_shown: return Vector2.INF
+	var origin=camera.project_ray_origin(at); var ray=camera.project_ray_normal(at)
+	for i in range(600):
+		var p=origin+ray*i*0.25; var ground=Vector2(p.x,p.z)
+		if terrain.inside(ground) and p.y<=terrain.ground(ground): return ground
+	return Vector2.INF
+
 func _process(dt: float) -> void:
 	if camera==null or snapshot.is_empty(): return
 	_camera(dt)

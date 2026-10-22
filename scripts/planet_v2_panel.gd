@@ -55,6 +55,7 @@ var aim_clock=0.0
 ## v0.68: recall counter — how many hammer hits have landed on each vehicle (key: "rover"/"plane"/"tbm"/"ship").
 var recall_hits: Dictionary={}
 var recall_clock: float=0.0
+var pin_mode: bool=false  # when true, globe clicks place/remove waypoints instead of selecting regions
 var hotbar_slots=[]
 var inventory_items={}
 var backpack=null
@@ -107,6 +108,7 @@ func setup(model) -> void:
 	camera_bar.add_child(UI.button("－",func(): view.zoom=clampf(view.zoom+0.15,0.65,1.4)))
 	camera_bar.add_child(UI.button("环境图",toggle_earth_map))
 	camera_bar.add_child(UI.button("世界地图",_open_world_map))
+	var pin_btn=UI.button("📍标点",_toggle_pin_mode); pin_btn.tooltip_text="切换标点模式：在地球仪上点击放置/删除导航点"; camera_bar.add_child(pin_btn)
 	var time_box=UI.box(self,Rect2(28,748,928,91))
 	var time_row=UI.row(time_box,10)
 	pause_button=UI.button("暂停",func(): _act("v2_pause",{"paused":not state.planet.v2.world.paused})); time_row.add_child(pause_button)
@@ -158,11 +160,31 @@ func toggle_earth_map() -> void:
 	if earth_map.visible: earth_map.move_to_front()
 
 func _map_click(at: Vector2) -> void:
-	# Only the map's GUI layer owns selection; its coordinates are always local.
-	# A first-person click must never become a region/respawn command.
 	if view.first_person or view.globe_shown: return
+	# v0.68: pin mode — click places/removes a waypoint at the globe position.
+	if pin_mode:
+		var world_at=view.pick_position(at*Vector2(viewport.size)/explore_input.size)
+		if world_at!=Vector2.INF: _toggle_waypoint(world_at)
+		return
 	var id=view.pick(at*Vector2(viewport.size)/explore_input.size)
 	if not id.is_empty(): _select_region(id)
+
+## v0.68: toggle a waypoint at the given world position (add if none nearby, remove if close to one).
+func _toggle_waypoint(at: Vector2) -> void:
+	if at.length()<1.0: message="无法在此标点"; _live(); return
+	var wps=state.planet.v2.waypoints
+	for i in wps.size():
+		if Vector2(wps[i].x,wps[i].z).distance_to(at)<20.0:
+			wps.remove_at(i); message="已删除标记"; _live(); return
+	if wps.size()>=12: message="最多12个标记，先删除一些"; _live(); return
+	var label="标记 #%d" % (wps.size()+1)
+	wps.append({"x":at.x,"z":at.y,"label":label})
+	message="已标记：%s (%.0f, %.0f)" % [label,at.x,at.y]; _live()
+
+func _toggle_pin_mode() -> void:
+	pin_mode=not pin_mode
+	if pin_mode: hint.text="标点模式：点击地球仪放置导航标记 · 再次点击标记可删除 · 再按📍标点退出"
+	else: hint.text="拖动转动地球仪 · 滚轮缩放 · 第一人称走进去"
 
 func _select_region(id: String) -> void:
 	selected_region=id; message=state.planet.command(state,"v2_enter",{"region_id":id})
@@ -356,6 +378,8 @@ func _toggle_plane() -> bool:
 	if view.flying:
 		if view.exit_plane():
 			v.flying=false; v.plane_at={"x":view.plane.position.x,"z":view.plane.position.y,"heading":view.plane.heading}
+			# Write landing position so re-entering first person resumes here, not at spawn.
+			v.walk_at={"x":view.walker.position.x,"z":view.walker.position.y,"yaw":view.walker.yaw,"pitch":view.walker.pitch}
 			message="下机 · 小飞机停在原地，电量 %d%%" % roundi(100*float(view.plane.state.charge)/maxf(1.0,float(view.plane.state.cap)))
 		elif view.plane.airborne: message="还在空中：先降落（收油门、机头略抬，慢慢接近地面或水面）"
 		else: message="先停稳再下机（S 收油门）"
@@ -403,6 +427,7 @@ func _toggle_tbm() -> bool:
 	if view.boring:
 		if view.exit_tbm():
 			v.boring=false; v.tbm_at=_tbm_record()
+			v.walk_at={"x":view.walker.position.x,"z":view.walker.position.y,"yaw":view.walker.yaw,"pitch":view.walker.pitch}
 			message="离开盾构机 · "+view.tbm.haul_text()
 		else: message="周围没有能站的地方，先后退一点"
 		_live(); return true
@@ -490,6 +515,7 @@ func _toggle_rover() -> bool:
 	if view.driving:
 		if view.exit_rover():
 			v.driving=false; v.rover_at={"x":view.rover.position.x,"z":view.rover.position.y,"heading":view.rover.heading}
+			v.walk_at={"x":view.walker.position.x,"z":view.walker.position.y,"yaw":view.walker.yaw,"pitch":view.walker.pitch}
 			message="下车了 · 越野车停在原地，电量 %d%%" % roundi(100*float(view.rover.state.charge)/maxf(1.0,float(view.rover.state.cap)))
 		else: message="四周没有下车的空地，往开阔处开一点"
 		_live(); return true
@@ -556,9 +582,10 @@ func _use_item(id: String,alternate: String="") -> void:
 			"plane":    msg=ind.deploy_plane(vid); v.plane_at={}
 			"starship": msg=ind.deploy_ship(vid); v.ship_at={}
 			"tbm":
-				# v0.68: if primary TBM already deployed, add to fleet (up to 2 extra).
-				if ind.tbm!="" and not v.tbm_at.is_empty() and v.tbm_fleet.size()<2:
-					v.tbm_fleet.append({"x":int(v.tbm_at.x),"y":int(v.tbm_at.y),"z":int(v.tbm_at.z),"facing":int(v.tbm_at.facing),"grade":int(v.tbm_at.grade)})
+				# v0.68: if a TBM is already deployed, add to fleet (up to 2 extra).
+				if ind.tbm!="" and v.tbm_fleet.size()<2:
+					var base=v.tbm_at if not v.tbm_at.is_empty() else {"x":int(view.walker.position.x),"y":floori(view.terrain.ground(view.walker.position)),"z":int(view.walker.position.y),"facing":0,"grade":0}
+					v.tbm_fleet.append({"x":int(base.x),"y":int(base.y),"z":int(base.z),"facing":int(base.get("facing",0)),"grade":int(base.get("grade",0))})
 					ind.items["tbm"]=int(ind.items.get("tbm",0))-1
 					msg="联合盾构机 ×%d：并排掘进，效率提升" % (v.tbm_fleet.size()+1)
 				else:

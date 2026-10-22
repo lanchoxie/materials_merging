@@ -80,16 +80,17 @@ func chop(id: String,field,t) -> String:
 	# v0.67: drops clamp to available space so a full backpack never blocks chopping (Minecraft-style).
 	var Field=field.get_script(); var gen=int(tree.get("gen",0)); var key=id+":"+str(gen)
 	var got=[]
+	var max_stock=int(field.rules.max_stock)
 	var timber_want=Field.span(D.timber,Field.roll(key,1))
-	var timber_room=maxi(0,int(rules.max_stock)-int(field.stock.timber))
+	var timber_room=maxi(0,max_stock-int(field.stock.timber))
 	var timber=mini(timber_want,timber_room); if timber>0: field.stock.timber+=timber; got.append("木料 ×%d" % timber)
-	if timber_want>timber_room and timber_room<timber_want: got.append("（背包满，木料丢弃 ×%d）" % (timber_want-timber_room))
+	if timber_want>timber_room: got.append("（背包满，木料丢弃 ×%d）" % (timber_want-timber_room))
 	if Field.roll(key,2)<float(D.seed) and seeds[tree.species]<int(rules.max_seed_stock): seeds[tree.species]+=1; got.append("%s ×1" % rules.species[tree.species].seed)
 	if Field.roll(key,3)<float(D.fiber.chance):
 		var fiber_want=Field.span(D.fiber.amount,Field.roll(key,4))
-		var fiber_room=maxi(0,int(rules.max_stock)-int(field.stock.fiber))
+		var fiber_room=maxi(0,max_stock-int(field.stock.fiber))
 		var fiber=mini(fiber_want,fiber_room); if fiber>0: field.stock.fiber+=fiber; got.append("植物纤维 ×%d" % fiber)
-	if Field.roll(key,5)<float(D.fruit.get(tree.species,0.0)) and int(field.stock.fruit)<int(rules.max_stock): field.stock.fruit+=1; got.append("野果 ×1")
+	if Field.roll(key,5)<float(D.fruit.get(tree.species,0.0)) and int(field.stock.fruit)<max_stock: field.stock.fruit+=1; got.append("野果 ×1")
 	field.revision+=1; touch(Vector2(tree.x,tree.z),t)
 	return "%s倒下了：%s" % [rules.species[tree.species].name,"，".join(got)]
 
