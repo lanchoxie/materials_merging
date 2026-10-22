@@ -49,7 +49,7 @@ func setup(s) -> void:
 	var fig_cam=Camera3D.new(); fig_cam.position=Vector3(0,0.9,3.2); fig_cam.fov=28; fig_root.add_child(fig_cam)
 	var fig_env=Environment.new(); fig_env.background_mode=Environment.BG_COLOR; fig_env.background_color=Color(0.08,0.10,0.13)
 	var fig_we=WorldEnvironment.new(); fig_we.environment=fig_env; fig_root.add_child(fig_we)
-	var fig_light=DirectionalLight3D.new(); fig_light.position=Vector3(2,3,2); fig_light.look_at(Vector3.ZERO); fig_root.add_child(fig_light)
+	var fig_light=DirectionalLight3D.new(); fig_light.position=Vector3(2,3,2); fig_root.add_child(fig_light); fig_light.look_at(Vector3.ZERO)
 	_build_figure(fig_root)
 	var equipped=state.planet.v2.get("equipped")
 	if equipped is Dictionary and not equipped.is_empty():
