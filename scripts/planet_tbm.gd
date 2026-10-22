@@ -147,6 +147,19 @@ func advance(v) -> String:
 				var chop_msg=nature.chop(tid,v.field,t)
 				if "倒下了" in chop_msg: got["timber_bonus"]=int(got.get("timber_bonus",0))+1
 	if not s.cells.is_empty(): nature.touch(Vector2(s.next.x,s.next.z),t)
+	# v0.68: fleet units dig their own offset sections (±side * (i+1) cells).
+	var fleet=v.get("tbm_fleet")
+	if fleet is Array and not fleet.is_empty():
+		for fi in fleet.size():
+			var offset=side()*(fi+1)
+			for row in s.cells:
+				var fc=row[0]+offset
+				var fid: String=t.material(fc)
+				if fid=="" or fid=="bedrock": continue
+				nature.set_voxel(fc,"",t)
+				var kept=_collect(v,fid)
+				if kept!="": got[kept]=int(got.get(kept,0))+1
+			nature.touch(Vector2(s.next.x+offset.x,s.next.z+offset.z),t)
 	from=centre(); cell=s.next; length=float(rules.base_seconds)+float(rules.seconds_per_hit)*float(s.hits); busy=length; metres+=1; cut_cells+=s.cells.size()
 	if s.cells.is_empty(): return "前进1米"
 	var parts=[]

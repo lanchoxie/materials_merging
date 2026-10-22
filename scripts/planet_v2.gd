@@ -44,6 +44,8 @@ var driving=false
 ## player is in its seat.
 var tbm_at: Dictionary={}
 var boring=false
+## v0.68: additional TBM units deployed alongside the primary one (up to 2 extra).
+var tbm_fleet: Array=[]  # [{x,y,z,facing,grade}, ...]
 ## v0.48: which planet this world is (data/planets.json), and the 星际飞船 parked here ({} = not
 ## here). The ship travels with the player between planets.
 var planet="earth"
@@ -378,7 +380,7 @@ func deploy(region_id: String,recipe_id: String,receipt: Dictionary) -> String:
 
 func serialize() -> Dictionary:
 	organics.prune_empty(construction)
-	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize(),"walk":walk_at.duplicate(),"driving":false,"flying":false,"boring":false,"equipped":equipped.duplicate()}
+	return {"version":1,"epoch":epoch,"world":world.duplicate(true),"population":population.serialize(),"construction":construction.serialize(),"settlement":settlement.serialize(),"inventory":inventory.serialize(),"field":field.serialize(),"nature":nature.serialize(),"combat":combat.serialize(),"ranch":ranch.serialize(),"organics":organics.serialize(),"journey":journey.serialize(),"environment":environment.serialize(),"terrain":construction.terrain.pads_serialize(),"incidents":incidents.serialize(),"specimens":specimens.serialize(),"rover":rover_at.duplicate(),"tbm":tbm_at.duplicate(),"tbm_fleet":tbm_fleet.duplicate(true),"plane":plane_at.duplicate(),"planet":planet,"ship":ship_at.duplicate(),"natives":natives.serialize(),"walk":walk_at.duplicate(),"driving":false,"flying":false,"boring":false,"equipped":equipped.duplicate()}
 
 ## Every x/z an old save placed something at: built blocks and edited voxels.
 func _legacy_points(data: Dictionary) -> Array:
@@ -556,6 +558,11 @@ func restore(data) -> bool:
 	if not aircraft.is_empty(): plane_at={"x":float(aircraft.x),"z":float(aircraft.z),"heading":float(aircraft.heading)}
 	tbm_at={}; boring=bool(data.get("boring",false))
 	if not machine.is_empty(): tbm_at={"x":int(machine.x),"y":int(machine.y),"z":int(machine.z),"facing":int(machine.facing),"grade":int(machine.grade)}
+	# v0.68: restore fleet units (ignore malformed entries silently).
+	tbm_fleet=[]
+	for m in data.get("tbm_fleet",[]):
+		if m is Dictionary and _number(m.get("x"),-8192,8192,true) and _number(m.get("y"),-31,120,true) and _number(m.get("z"),-7600,7600,true) and _number(m.get("facing"),0,3,true) and _number(m.get("grade"),-2,2,true):
+			tbm_fleet.append({"x":int(m.x),"y":int(m.y),"z":int(m.z),"facing":int(m.facing),"grade":int(m.grade)})
 	# v0.68: restore equipped wearables (headlamp, insulated_suit etc.)
 	equipped={}
 	var eq=data.get("equipped",{})

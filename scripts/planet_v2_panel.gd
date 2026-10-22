@@ -416,7 +416,9 @@ func _toggle_tbm() -> bool:
 func _tbm_text() -> String:
 	var t=view.tbm; var c: Vector3i=t.cell
 	var depth=floori(view.terrain.ground(Vector2(c.x,c.z)))-c.y
-	return "盾构机 · %s · %s · 电量 %d%%\n%s\n%s%s" % [t.GRADES[t.grade],"地下 %d 米" % depth if depth>0 else "地面",roundi(100.0*float(t.state.charge)/maxf(1.0,float(t.state.cap))),t.preview(view.v2),t.haul_text()," · "+t.message if t.message!="" else ""]
+	var fleet_size=state.planet.v2.tbm_fleet.size()
+	var fleet_str=" · 联合×%d" % (fleet_size+1) if fleet_size>0 else ""
+	return "盾构机 · %s · %s · 电量 %d%%%s\n%s\n%s%s" % [t.GRADES[t.grade],"地下 %d 米" % depth if depth>0 else "地面",roundi(100.0*float(t.state.charge)/maxf(1.0,float(t.state.cap))),fleet_str,t.preview(view.v2),t.haul_text()," · "+t.message if t.message!="" else ""]
 
 ## v0.49: talk with 溪石部落 — what they are building, their stock, friendship; gifts and trade.
 var native_box: PanelContainer
@@ -547,13 +549,20 @@ func _use_item(id: String,alternate: String="") -> void:
 	if type=="deploy_vehicle":
 		var vid=str(action.get("vehicle_id",""))
 		if vid.is_empty(): message="载具数据缺失"; _live(); return
-		var ind=state.industry
+		var ind=state.industry; var v=state.planet.v2
 		var msg=""
 		match vid:
-			"rover":    msg=ind.deploy_rover(vid); state.planet.v2.rover_at={}
-			"tbm":      msg=ind.deploy_tbm(vid); state.planet.v2.tbm_at={}
-			"plane":    msg=ind.deploy_plane(vid); state.planet.v2.plane_at={}
-			"starship": msg=ind.deploy_ship(vid); state.planet.v2.ship_at={}
+			"rover":    msg=ind.deploy_rover(vid); v.rover_at={}
+			"plane":    msg=ind.deploy_plane(vid); v.plane_at={}
+			"starship": msg=ind.deploy_ship(vid); v.ship_at={}
+			"tbm":
+				# v0.68: if primary TBM already deployed, add to fleet (up to 2 extra).
+				if ind.tbm!="" and not v.tbm_at.is_empty() and v.tbm_fleet.size()<2:
+					v.tbm_fleet.append({"x":int(v.tbm_at.x),"y":int(v.tbm_at.y),"z":int(v.tbm_at.z),"facing":int(v.tbm_at.facing),"grade":int(v.tbm_at.grade)})
+					ind.items["tbm"]=int(ind.items.get("tbm",0))-1
+					msg="联合盾构机 ×%d：并排掘进，效率提升" % (v.tbm_fleet.size()+1)
+				else:
+					msg=ind.deploy_tbm(vid); v.tbm_at={}
 		message=msg; _refresh_hotbar(); _redraw(); _sync(); _live(); return
 	if alternate=="pantry": _act("v2_field_pantry",{"resource":action.get("resource","")}); return
 	if alternate=="eat" or type=="eat": _act("v2_eat",{"resource":action.get("resource","")}); return
