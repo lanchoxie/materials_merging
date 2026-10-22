@@ -521,7 +521,55 @@ func _launch(id: String) -> void:
 	var message: String=state.planet.voyage(state,id)
 	if not message.begins_with("跃迁完成"): _toast(message); return
 	_close_all(); state.sync_gear()
-	_show_planet_v2(); _toast(message)
+	_rocket_launch_sequence(id)
+
+## v0.69: animated rocket launch sequence before arriving at the destination planet.
+func _rocket_launch_sequence(destination_id: String) -> void:
+	var veil=ColorRect.new(); veil.color=Color(0,0,0,0)
+	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	veil.mouse_filter=Control.MOUSE_FILTER_STOP; add_child(veil)
+	# Build the launch CG overlay.
+	var label=Label.new()
+	label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size",28)
+	label.modulate=Color(1,1,1,0)
+	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	veil.add_child(label)
+	var sub=Label.new()
+	sub.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_font_size_override("font_size",16)
+	sub.add_theme_color_override("font_color",Color("88bbcc"))
+	sub.modulate=Color(1,1,1,0)
+	sub.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	sub.offset_top=80; veil.add_child(sub)
+	var Shape=preload("res://scripts/planet_shape.gd")
+	var dest_info: Dictionary=Shape.profile_of(destination_id)
+	var dest_name=str(dest_info.get("name","目标星球"))
+	# Phase 1: fade to black (0.6s)
+	var tw=create_tween(); tw.tween_property(veil,"color:a",1.0,0.6)
+	await tw.finished
+	# Phase 2: launch countdown text
+	for line in ["🚀  点火！","火箭升空……","大气层穿越中……","进入轨道。","飞船与火箭分离。","巡航至 %s……" % dest_name]:
+		label.text=line; label.modulate=Color(1,1,1,0)
+		var t2=create_tween(); t2.tween_property(label,"modulate:a",1.0,0.25)
+		await t2.finished
+		await get_tree().create_timer(0.55).timeout
+		var t3=create_tween(); t3.tween_property(label,"modulate:a",0.0,0.2)
+		await t3.finished
+	# Show destination name
+	label.text="已抵达  %s" % dest_name; sub.text=str(dest_info.get("title",""))
+	var t4=create_tween()
+	t4.tween_property(label,"modulate:a",1.0,0.4)
+	t4.tween_property(sub,"modulate:a",1.0,0.4)
+	await t4.finished
+	await get_tree().create_timer(1.2).timeout
+	# Phase 3: load new planet and fade out
+	_show_planet_v2()
+	var t5=create_tween(); t5.tween_property(veil,"color:a",0.0,0.8)
+	await t5.finished
+	veil.queue_free()
+	_toast("已抵达 %s" % dest_name)
 
 func _through_gate(id: String) -> void:
 	_close_modal()
