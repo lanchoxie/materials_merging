@@ -111,6 +111,11 @@ func begin_epoch(id: String) -> void:
 	if not bool(epoch_info().get("crops",true)):
 		for r in world.regions.values(): r.crops=[]
 	world.events=[{"time":0,"text":str(epoch_info().get("story","河湾已苏醒。"))}]
+	# v0.69: non-Earth planets start barren — no animals, crops, or buildings.
+	if planet!="earth":
+		for r in world.regions.values():
+			r.animals=[]; r.crops=[]; r.buildings={}; r.enclosed=false
+		settlement=Settlement.new()   # fresh settlement, no carried-over residents
 
 ## Weather for this timeline: the 冰河期 has its own list and odds, all year round.
 func incident_kinds() -> Array:
