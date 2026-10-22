@@ -506,6 +506,19 @@ func _show_voyage() -> void:
 	var ind=state.industry
 	if float(ind.ship_state.charge)<float(ind.rules().ship.jump_wh):
 		_toast("飞船电量不足（需要 %.0f Wh），先回星锻岛充电" % float(ind.rules().ship.jump_wh)); return
+	# v0.71: if rocket_stack is deployed on the planet, play launch sequence first.
+	var v2=state.planet.v2
+	if v2 and not v2.rocket_at.is_empty() and int(state.industry.items.get("rocket_stack",0))>0:
+		_close_modal()
+		var seq=preload("res://scripts/launch_sequence.gd").new()
+		add_child(seq); modal=seq
+		seq.sequence_done.connect(func():
+			if is_instance_valid(modal) and modal==seq: modal=null
+			_open_space_scene())
+		return
+	_open_space_scene()
+
+func _open_space_scene() -> void:
 	_close_modal()
 	var scene=preload("res://scripts/space_scene.gd").new()
 	scene.state=state; add_child(scene); modal=scene
