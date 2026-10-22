@@ -99,11 +99,14 @@ func _input(event: InputEvent) -> void:
 		var code=event.physical_keycode if event.physical_keycode!=0 else event.keycode
 		if event.pressed and not event.echo and code>=KEY_1 and code<=KEY_9:
 			slot_requested.emit(code-KEY_1); get_viewport().set_input_as_handled()
-		if event.pressed and not event.echo and code in [KEY_M,KEY_E,KEY_F,KEY_SPACE,KEY_B,KEY_TAB]:
+		if event.pressed and not event.echo and code in [KEY_M,KEY_E,KEY_F,KEY_SPACE,KEY_B,KEY_TAB,KEY_V]:
 			if code==KEY_M: journey_requested.emit()
 			elif code==KEY_E: collect_requested.emit()
 			elif code==KEY_F: attack_requested.emit()
 			elif code in [KEY_B,KEY_TAB]: build_requested.emit()
+			elif code==KEY_V:
+				# v0.70: toggle cockpit/chase camera while flying.
+				if view.flying: view.plane_cockpit=not view.plane_cockpit
 			else: view.pilot().jump()
 			get_viewport().set_input_as_handled()
 		if code in [KEY_W,KEY_A,KEY_S,KEY_D,KEY_UP,KEY_LEFT,KEY_DOWN,KEY_RIGHT,KEY_SHIFT]:

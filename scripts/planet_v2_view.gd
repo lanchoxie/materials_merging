@@ -67,6 +67,7 @@ const Aircraft=preload("res://scripts/planet_plane.gd")
 var plane
 var flying=false
 var plane_parked=false
+var plane_cockpit=false  # v0.70: true = first-person cockpit view, false = third-person chase
 var plane_node: Node3D
 var far_terrain
 ## v0.49: the native tribe's people and woodpile.
@@ -652,6 +653,20 @@ func _camera(dt: float) -> void:
 		plane.construction=walker.construction
 		plane.step(dt)
 		walker.position=plane.position; walker.feet_y=plane.altitude+0.6; walker.last_position=walker.position; walker.yaw=plane.heading
+		camera.far=3200.0
+		# Far terrain below, bent by the planet's curvature around the plane; the flat sea plane
+		# would show through the curved far sea, so it hides while flying.
+		far_terrain.env=terrain.environment; far_terrain.want(plane.position)
+		far_terrain.visible=far_terrain.mesh!=null; sea_node.visible=not far_terrain.visible
+		far_terrain.set_origin(Vector3(plane.position.x,0,plane.position.y))
+		stream.visible=plane.height_above_ground()<=25.0
+		if plane_cockpit:
+			# v0.70: first-person cockpit — camera sits inside the plane looking forward.
+			var eye=Vector3(plane.position.x,plane.altitude+1.5,plane.position.y)
+			var fwd3=Vector3(-sin(plane.heading),-sin(plane.pitch),-cos(plane.heading))
+			camera.position=eye; camera.look_at(eye+fwd3*20.0, Vector3.UP)
+			hands.hide(); marker.hide(); _pose_plane()
+			return
 		var ang=plane.heading+plane.look_yaw; var back=Vector3(sin(ang),0,cos(ang))
 		var target=Vector3(plane.position.x,plane.altitude+1.8,plane.position.y)
 		var want=target+back*13.0+Vector3(0,4.0-plane.pitch*6.0,0)
@@ -659,14 +674,6 @@ func _camera(dt: float) -> void:
 		camera.position=want if not chase_ready else camera.position.lerp(want,minf(1.0,dt*5.0))
 		chase_ready=true
 		camera.look_at(target-back*12.0); hands.hide(); marker.hide()
-		camera.far=3200.0
-		# Far terrain below, bent by the planet's curvature around the plane; the flat sea plane
-		# would show through the curved far sea, so it hides while flying.
-		far_terrain.env=terrain.environment; far_terrain.want(plane.position)
-		far_terrain.visible=far_terrain.mesh!=null; sea_node.visible=not far_terrain.visible
-		far_terrain.set_origin(Vector3(plane.position.x,0,plane.position.y))
-		# High up the flat near chunks would float out of place over the curved far terrain.
-		stream.visible=plane.height_above_ground()<=25.0
 		_pose_plane()
 		return
 	if plane_node!=null: _pose_plane()

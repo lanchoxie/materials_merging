@@ -442,7 +442,8 @@ func _toggle_plane() -> bool:
 ## The flight panel (replaces the aim line while flying).
 func _plane_text() -> String:
 	var p=view.plane
-	return "小飞机 · %s · 速度 %d km/h · 高度 %d 米 · 油门 %d%% · 电量 %d%%\n%s · 航向 %s%s" % ["飞行中" if p.airborne else ("水面滑行" if view.terrain.water_at(p.position) or view.terrain.deep_water(p.position) else "地面滑跑"),roundi(p.speed*3.6),roundi(p.height_above_ground()),roundi(p.throttle*100),roundi(100.0*float(p.state.charge)/maxf(1.0,float(p.state.cap))),Shape.coordinates(p.position),["北","东北","东","东南","南","西南","西","西北"][posmod(roundi(-p.heading/(PI/4)),8)]," · "+p.message if p.message!="" else ""]
+	var view_hint=" · V 切换座舱视角" if not view.plane_cockpit else " · V 切换追踪视角"
+	return "小飞机 · %s · 速度 %d km/h · 高度 %d 米 · 油门 %d%% · 电量 %d%%%s\n%s · 航向 %s%s" % ["飞行中" if p.airborne else ("水面滑行" if view.terrain.water_at(p.position) or view.terrain.deep_water(p.position) else "地面滑跑"),roundi(p.speed*3.6),roundi(p.height_above_ground()),roundi(p.throttle*100),roundi(100.0*float(p.state.charge)/maxf(1.0,float(p.state.cap))),view_hint,Shape.coordinates(p.position),["北","东北","东","东南","南","西南","西","西北"][posmod(roundi(-p.heading/(PI/4)),8)]," · "+p.message if p.message!="" else ""]
 
 ## v0.45: the 盾构机 follows the deployed machine; it appears in front of the player the first time.
 func _sync_tbm() -> void:
@@ -829,6 +830,7 @@ func _aim() -> void:
 		var b=UI.button("🚗 下车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
 	elif view.flying:
 		var b=UI.button("✈️ 下机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+		var vb=UI.button("👁 视角 V",func(): view.plane_cockpit=not view.plane_cockpit); vb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(vb)
 	elif view.boring:
 		var b=UI.button("⚙️ 离开盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
 		# Mobile: space key is hidden while boring, so add a direction-toggle button.
