@@ -211,11 +211,14 @@ func _exploration_layout() -> void:
 	explore_input.size=viewport_box.size
 	encounter_hud.size=viewport_box.size; encounter_hud.visible=view.first_person
 	right_panel.visible=not wide; camera_bar.visible=not view.first_person
-	inspect_button.visible=view.first_person; inspect_button.position.x=1240 if wide else 790
-	attack_button.visible=view.first_person; attack_button.position=Vector2(1240 if wide else 790,224)
-	map_button.visible=view.first_person; map_button.position=Vector2(1240 if wide else 790,278)
-	# v0.68.7: vehicle_bar sits below the fixed buttons (map ends at y≈322) so it never overlaps them.
-	vehicle_bar.visible=view.first_person; vehicle_bar.position=Vector2(1240 if wide else 790,390)
+	# v0.72: use actual screen width so buttons don't overflow on mobile (screen may be 720px wide).
+	var sw=get_viewport().get_visible_rect().size.x
+	var btn_x=minf(sw-160, 1240 if wide else 790)
+	inspect_button.visible=view.first_person; inspect_button.position.x=btn_x
+	attack_button.visible=view.first_person; attack_button.position=Vector2(btn_x,224)
+	map_button.visible=view.first_person; map_button.position=Vector2(btn_x,278)
+	# vehicle_bar below fixed buttons; also constrained to screen width.
+	vehicle_bar.visible=view.first_person; vehicle_bar.position=Vector2(btn_x,334)
 	inspect_button.text="收起面板" if show_details else "世界 / 远行"
 	play_bar.visible=view.first_person; aim_label.visible=view.first_person
 	play_bar.position.x=300 if wide else 56; aim_label.position.x=350 if wide else 220

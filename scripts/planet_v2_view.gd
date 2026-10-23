@@ -397,7 +397,9 @@ func _ensure_plane(spec: Dictionary) -> void:
 func park_plane(at,facing: float=0.0) -> void:
 	if plane==null: return
 	if at==null: plane_parked=false; flying=false; plane_node.hide(); return
-	plane.construction=walker.construction; plane.place(at,facing); plane_parked=true; _pose_plane()
+	# v0.72: guard against null construction on mobile (walker may not be ready yet).
+	if walker!=null and walker.construction!=null: plane.construction=walker.construction
+	plane.place(at,facing); plane_parked=true; _pose_plane()
 
 func enter_plane() -> void:
 	if not plane_parked: return
