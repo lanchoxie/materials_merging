@@ -393,7 +393,12 @@ func pilot():
 func _ensure_plane(spec: Dictionary) -> void:
 	if plane!=null: return
 	plane=Aircraft.new(spec); plane.terrain=terrain
-	# v0.72: build mesh deferred so OpenGL shader compile doesn't block the render thread on mobile.
+	# v0.72: build the mesh on the next frame so the first OpenGL shader compile
+	# (which is synchronous in Compatibility mode) doesn't freeze the render thread.
+	call_deferred("_build_plane_mesh_deferred", spec)
+
+func _build_plane_mesh_deferred(_spec) -> void:
+	if plane==null: return
 	plane_node=_plane_mesh(); add_child(plane_node); plane_node.hide()
 
 func park_plane(at,facing: float=0.0) -> void:

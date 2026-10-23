@@ -683,6 +683,19 @@ func _use_item(id: String,alternate: String="") -> void:
 			"rover":    msg=ind.deploy_rover(vid); v.rover_at={}
 			"plane":    msg=ind.deploy_plane(vid); v.plane_at={}
 			"starship": msg=ind.deploy_ship(vid); v.ship_at={}
+			"rocket_stack":
+				# v0.71: place the rocket+ship stack near the player.
+				if int(ind.items.get("rocket_stack",0))<1: msg="没有火箭+飞船"; break
+				ind.items["rocket_stack"]=int(ind.items.get("rocket_stack",0))-1
+				var f=Vector2(-sin(view.walker.yaw),-cos(view.walker.yaw))
+				var placed=false
+				for offset in [f*12.0,f*10.0,f*8.0,f*15.0]:
+					var p=view.walker.position+offset
+					if view.terrain.inside(p,8) and not view.terrain.water_at(p):
+						v.rocket_at={"x":p.x,"z":p.y}; view.park_rocket(p); placed=true; break
+				if not placed:
+					var p=view.walker.position+f*10.0; v.rocket_at={"x":p.x,"z":p.y}; view.park_rocket(p)
+				msg="🚀 火箭发射台已部署 · 靠近按 E 起飞"
 			"tbm":
 				# v0.68: if a TBM is already deployed, add to fleet (up to 2 extra).
 				if ind.tbm!="" and v.tbm_fleet.size()<2:
