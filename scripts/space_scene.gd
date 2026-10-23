@@ -145,16 +145,16 @@ func _build_hud() -> void:
 	close_btn.position=Vector2(20,vy-50); close_btn.size=Vector2(120,36); add_child(close_btn)
 	view_btn=UI.button("视角 V",func(): cockpit_mode=not cockpit_mode)
 	view_btn.position=Vector2(150,vy-50); view_btn.size=Vector2(100,36); add_child(view_btn)
-	# v0.72: mobile flight buttons — hold to steer, tap to accelerate.
+	# v0.72: mobile flight buttons — positions relative to viewport size.
+	var vx=get_viewport().get_visible_rect().size.x
 	var mb_up=UI.button("↑",func(): keys_held[KEY_W]=true; keys_held.erase(KEY_S))
-	mb_up.position=Vector2(1100,vy-180); mb_up.size=Vector2(70,50); add_child(mb_up)
+	mb_up.position=Vector2(vx-170,vy-180); mb_up.size=Vector2(70,50); add_child(mb_up)
 	var mb_down=UI.button("↓",func(): keys_held[KEY_S]=true; keys_held.erase(KEY_W))
-	mb_down.position=Vector2(1100,vy-120); mb_down.size=Vector2(70,50); add_child(mb_down)
+	mb_down.position=Vector2(vx-170,vy-120); mb_down.size=Vector2(70,50); add_child(mb_down)
 	var mb_left=UI.button("←",func(): keys_held[KEY_A]=true; keys_held.erase(KEY_D))
-	mb_left.position=Vector2(1020,vy-120); mb_left.size=Vector2(70,50); add_child(mb_left)
+	mb_left.position=Vector2(vx-250,vy-120); mb_left.size=Vector2(70,50); add_child(mb_left)
 	var mb_right=UI.button("→",func(): keys_held[KEY_D]=true; keys_held.erase(KEY_A))
-	mb_right.position=Vector2(1180,vy-120); mb_right.size=Vector2(70,50); add_child(mb_right)
-	# Accelerate / decelerate
+	mb_right.position=Vector2(vx-90,vy-120); mb_right.size=Vector2(70,50); add_child(mb_right)
 	var mb_acc=UI.button("加速",func(): keys_held[KEY_SHIFT]=true; keys_held.erase(KEY_SPACE))
 	mb_acc.position=Vector2(20,vy-180); mb_acc.size=Vector2(80,44); add_child(mb_acc)
 	var mb_dec=UI.button("减速",func(): keys_held[KEY_SPACE]=true; keys_held.erase(KEY_SHIFT))
