@@ -140,12 +140,26 @@ func overlaps(p: Vector2, feet: float, height: float) -> bool:
 	return false
 
 func floor_at(p: Vector2, ceiling: float) -> float:
+	if not p.is_finite() or is_nan(ceiling) or ceiling==-INF: return -INF
 	var radius := float(terrain.rules.player_radius)
 	var h := -INF
 	for x in range(floori(p.x-radius+0.5),floori(p.x+radius+0.5)+1):
 		for z in range(floori(p.y-radius+0.5),floori(p.y+radius+0.5)+1):
 			h=maxf(h,terrain.floor_below(x,z,ceiling))
 	if terrain.bridge(p) and terrain.ground(p) <= ceiling+0.001: h=maxf(h,terrain.ground(p))
+	if not is_finite(h): return h
+	# Aircraft placement asks for the highest surface with ceiling=INF. Converting
+	# INF to an integer is platform-dependent and can start a near-endless loop on
+	# ARM. For high/unbounded queries inspect actual blocks, never empty sky cells.
+	if ceiling>h+float(rules.height_limit)+2.0:
+		var min_x=floori(p.x-radius+0.5); var max_x=floori(p.x+radius+0.5)
+		var min_z=floori(p.y-radius+0.5); var max_z=floori(p.y+radius+0.5)
+		for b in blocks.values():
+			if int(b.x)<min_x or int(b.x)>max_x or int(b.z)<min_z or int(b.z)>max_z: continue
+			var height=solid_height(b,cell(b),p)
+			var top=float(b.y)+height
+			if height>0.0 and top<=ceiling+0.001: h=maxf(h,top)
+		return h
 	for x in range(floori(p.x-radius+0.5),floori(p.x+radius+0.5)+1):
 		for z in range(floori(p.y-radius+0.5),floori(p.y+radius+0.5)+1):
 			for y in range(floori(ceiling), floori(h)-1, -1):

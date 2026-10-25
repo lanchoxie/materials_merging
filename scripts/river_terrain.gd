@@ -186,9 +186,14 @@ func natural_material(c: Vector3i) -> String:
 
 ## Highest standing surface in one column at or below `ceiling`.
 func floor_below(x: int,z: int,ceiling: float) -> float:
+	if is_nan(ceiling) or ceiling==-INF: return -INF
+	# top_at includes caves and terrain edits. Above it, including an INF query,
+	# the answer is already known; never cast the unbounded ceiling to an integer.
+	var top=top_at(x,z)
+	if top<=ceiling+0.001: return top
+	if ceiling<float(Geology.bedrock_y()+1): return -INF
 	if not _edited(x,z) and not column_has_cave(x,z):
-		var top=natural_height(Vector2(x,z))
-		return top if top<=ceiling+0.001 else float(floori(ceiling+0.001))
+		return float(floori(ceiling+0.001))
 	if not _edited(x,z):
 		var y=floori(ceiling+0.001)
 		while y>Geology.bedrock_y():

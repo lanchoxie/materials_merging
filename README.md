@@ -4,7 +4,7 @@
 
 把分子装进透明的反应釜，看它们慢慢生产。用收获的材料扩建工坊、招募伙伴，或走过光桥，去林地里种树、搭屋，再把自己的作品带回家。
 
-**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-interiors-18)** · [更新了什么](docs/RESIDENCE-INTERIORS-18.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
+**[下载 Android 试玩版](https://github.com/lanchoxie/materials_merging/releases/tag/v0.73.2)** · [更新了什么](docs/PLANE-FIX-0.73.2.md) · [反馈问题与想法](https://github.com/lanchoxie/materials_merging/issues)
 
 ![透明反应釜里转动的分子，与周围的浮岛小屋](docs/screenshots/reactors.png)
 
@@ -80,7 +80,7 @@
 
 ## 开始试玩
 
-在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.21.0-interiors-18) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.21.0-interiors-18 开发预览**；Android 真机体验仍待验证。
+在 [下载页](https://github.com/lanchoxie/materials_merging/releases/tag/v0.73.2) 选择以 `.apk` 结尾的文件，安装后横屏游玩。支持 Android 7.0 及以上的 ARM64 / ARMv7 设备。当前为 **0.73.2 开发预览**；Android 真机体验仍待验证。普通游玩选不带 `-dev` 的安装包，开发测试选带 `-dev` 的版本。
 
 | 操作 | 电脑 | 手机 |
 | --- | --- | --- |
