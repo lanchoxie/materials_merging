@@ -399,7 +399,14 @@ func _ensure_plane(spec: Dictionary) -> void:
 
 func _build_plane_mesh_deferred(_spec) -> void:
 	if plane==null: return
-	plane_node=_plane_mesh(); add_child(plane_node); plane_node.hide()
+	plane_node=_plane_mesh(); add_child(plane_node)
+	# v0.72.7: show for one frame so OpenGL compiles the shader NOW (at load),
+	# not later when the player places the plane (which froze the screen on Android).
+	plane_node.show()
+	call_deferred("_prewarm_hide_plane")
+
+func _prewarm_hide_plane() -> void:
+	if is_instance_valid(plane_node): plane_node.hide()
 
 func park_plane(at,facing: float=0.0) -> void:
 	if plane==null: return
@@ -725,6 +732,7 @@ func orbit(amount: float) -> void:
 	yaw+=amount
 
 func _camera(dt: float) -> void:
+	if has_meta("launching"): return  # v0.72.8: launch CG owns the camera
 	if first_person: _show_globe(false)
 	if first_person and flying:
 		plane.construction=walker.construction

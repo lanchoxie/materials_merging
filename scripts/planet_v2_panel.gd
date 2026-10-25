@@ -819,7 +819,15 @@ func _aim() -> void:
 	if not view.first_person or is_instance_valid(backpack): return
 	# v0.45: while boring the dashboard takes the hotbar's place.
 	play_bar.visible=not view.boring and not view.flying; aim_label.position.y=520.0 if view.boring or view.flying else 606.0
-	if view.boring: aim_label.text=_tbm_text(); view.construction_view.ghost.hide(); return
+	if view.boring:
+		aim_label.text=_tbm_text(); view.construction_view.ghost.hide()
+		# v0.72.7: fill vehicle_bar while boring (so mobile direction button appears).
+		var v=state.planet.v2
+		for child in vehicle_bar.get_children(): child.queue_free()
+		var b=UI.button("⚙️ 离开盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+		var dir_b=UI.button("方向：%s ␣" % view.tbm.GRADES[view.tbm.grade],func(): view.tbm.jump()); dir_b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(dir_b)
+		vehicle_bar.visible=true
+		return
 	if view.flying:
 		play_bar.visible=false; aim_label.position.y=520.0; aim_label.text=_plane_text(); view.construction_view.ghost.hide()
 		# v0.69: show/hide cockpit glass overlay.

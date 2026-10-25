@@ -508,9 +508,12 @@ func _show_voyage() -> void:
 		_toast("飞船电量不足（需要 %.0f Wh），先回星锻岛充电" % float(ind.rules().ship.jump_wh)); return
 	# v0.71: if rocket_stack is deployed on the planet, play launch sequence first.
 	var v2=state.planet.v2
-	if v2 and not v2.rocket_at.is_empty() and int(state.industry.items.get("rocket_stack",0))>0:
+	# v0.72.7: trigger launch CG whenever rocket is deployed, regardless of item count.
+	if v2 and not v2.rocket_at.is_empty():
 		_close_modal()
 		var seq=preload("res://scripts/launch_sequence.gd").new()
+		seq.view=modal.view if modal is PlanetV2Panel else null
+		seq.state=state
 		add_child(seq); modal=seq
 		seq.sequence_done.connect(func():
 			if is_instance_valid(modal) and modal==seq: modal=null
