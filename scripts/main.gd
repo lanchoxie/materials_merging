@@ -508,16 +508,13 @@ func _show_voyage() -> void:
 		_toast("飞船电量不足（需要 %.0f Wh），先回星锻岛充电" % float(ind.rules().ship.jump_wh)); return
 	# v0.71: if rocket_stack is deployed on the planet, play launch sequence first.
 	var v2=state.planet.v2
-	# v0.72.7: trigger launch CG whenever rocket is deployed, regardless of item count.
+	## v0.72.9: rocket CG runs inside the planet panel (over its own SubViewport).
+	## Panel emits launch_sequence_done when CG finishes; we then open space_scene.
 	if v2 and not v2.rocket_at.is_empty():
-		_close_modal()
-		var seq=preload("res://scripts/launch_sequence.gd").new()
-		seq.view=modal.view if modal is PlanetV2Panel else null
-		seq.state=state
-		add_child(seq); modal=seq
-		seq.sequence_done.connect(func():
-			if is_instance_valid(modal) and modal==seq: modal=null
-			_open_space_scene())
+		if modal is PlanetV2Panel:
+			if not modal.launch_sequence_done.is_connected(_open_space_scene):
+				modal.launch_sequence_done.connect(_open_space_scene,CONNECT_ONE_SHOT)
+			modal._start_launch_sequence()
 		return
 	_open_space_scene()
 
@@ -535,7 +532,8 @@ func _launch(id: String) -> void:
 	var message: String=state.planet.voyage(state,id)
 	if not message.begins_with("跃迁完成"): _toast(message); return
 	_close_all(); state.sync_gear()
-	_rocket_launch_sequence(id)
+	# v0.73: skip old 2D cabin animation — go straight to planet.
+	_show_planet_v2(); modal.enter_first_person()
 
 ## v0.69: animated rocket launch sequence before arriving at the destination planet.
 ## v0.70: upgraded with cockpit interior — window tint, seat straps, vibration shake.

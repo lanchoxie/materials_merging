@@ -6,6 +6,7 @@ signal synthesis_requested
 signal test_requested
 ## v0.48: E at the starship opens the star map (handled by main: launching swaps the world).
 signal voyage_requested
+signal launch_sequence_done   # v0.72.9: emitted after rocket CG finishes
 const UI=preload("res://scripts/ui.gd")
 const View=preload("res://scripts/planet_v2_view.gd")
 const ExplorationInput=preload("res://scripts/river_exploration_input.gd")
@@ -55,6 +56,7 @@ var aim_clock=0.0
 ## v0.68: recall counter — how many hammer hits have landed on each vehicle (key: "rover"/"plane"/"tbm"/"ship").
 var recall_hits: Dictionary={}
 var recall_clock: float=0.0
+var _vehicle_bar_state: String=""   # v0.73: cache key to avoid rebuilding buttons every 0.12s
 var pin_mode: bool=false
 var cockpit_overlay: Control=null  # v0.69: glass frame shown in cockpit view
 var hotbar_slots=[]
@@ -333,11 +335,11 @@ func near_rocket() -> bool:
 ## v0.71: sync rocket+ship launchpad from v2.rocket_at.
 func _sync_rocket() -> void:
 	var v=state.planet.v2
-	# v0.72: only show rocket if player explicitly placed it (rocket_at non-empty).
-	# Never auto-place from inventory — that caused unwanted rockets on every planet entry.
 	if v.rocket_at.is_empty():
 		if is_instance_valid(view.rocket_node): view.rocket_node.hide()
 		return
+	# v0.73: don't show/re-show the ground rocket during launch CG
+	if view.has_meta("launching"): return
 	view.park_rocket(Vector2(float(v.rocket_at.x),float(v.rocket_at.z)))
 
 ## v0.47: the plane follows the deployed aircraft; it is parked beside the player the first time.
@@ -821,11 +823,13 @@ func _aim() -> void:
 	play_bar.visible=not view.boring and not view.flying; aim_label.position.y=520.0 if view.boring or view.flying else 606.0
 	if view.boring:
 		aim_label.text=_tbm_text(); view.construction_view.ghost.hide()
-		# v0.72.7: fill vehicle_bar while boring (so mobile direction button appears).
-		var v=state.planet.v2
-		for child in vehicle_bar.get_children(): child.queue_free()
-		var b=UI.button("⚙️ 离开盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
-		var dir_b=UI.button("方向：%s ␣" % view.tbm.GRADES[view.tbm.grade],func(): view.tbm.jump()); dir_b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(dir_b)
+		# v0.73: only rebuild when grade changes (avoids high-freq flicker)
+		var new_state="boring:%d" % view.tbm.grade
+		if _vehicle_bar_state!=new_state:
+			_vehicle_bar_state=new_state
+			for child in vehicle_bar.get_children(): child.queue_free()
+			var b=UI.button("⚙️ 离开盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+			var dir_b=UI.button("方向：%s ␣" % view.tbm.GRADES[view.tbm.grade],func(): view.tbm.jump()); dir_b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(dir_b)
 		vehicle_bar.visible=true
 		return
 	if view.flying:
@@ -906,31 +910,37 @@ func _aim() -> void:
 	else:
 		attack_button.text="收拳中…" if v.combat.attack_left>0 else "攻击 F"
 	attack_button.disabled=v.combat.player_health<=0 or (v.combat.attack_left>0 and not view.driving and not view.flying and not view.boring and not near_rover() and not near_plane() and not near_tbm())
-	# v0.64: vehicle_bar — dedicated per-vehicle enter/exit buttons so mobile players don't fight E.
-	for child in vehicle_bar.get_children(): child.queue_free()
-	if view.driving:
-		var b=UI.button("🚗 下车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
-		var vb=UI.button("👁 视角 V",func(): view.rover_cockpit=not view.rover_cockpit); vb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(vb)
-	elif view.flying:
-		var b=UI.button("✈️ 下机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
-		var vb=UI.button("👁 视角 V",func(): view.plane_cockpit=not view.plane_cockpit); vb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(vb)
-	elif view.boring:
-		var b=UI.button("⚙️ 离开盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
-		# Mobile: space key is hidden while boring, so add a direction-toggle button.
-		var dir_b=UI.button("方向：%s ␣" % view.tbm.GRADES[view.tbm.grade],func(): view.tbm.jump()); dir_b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(dir_b)
+	# v0.73: cache vehicle_bar state to avoid rebuilding buttons every 0.12s (causes flicker)
+	var near_state="dr:%s|fl:%s|nr:%s|np:%s|nt:%s|ns:%s|gr:%d" % [
+		str(view.driving),str(view.flying),str(near_rover()),str(near_plane()),str(near_tbm()),str(near_ship()),
+		view.tbm.grade if view.tbm!=null else 0]
+	if _vehicle_bar_state==near_state:
+		vehicle_bar.visible=view.first_person and vehicle_bar.get_child_count()>0
 	else:
-		if near_plane():
-			var b=UI.button("✈️ 登机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
-			var mb=UI.button("🔧 安装外设",func(): _open_vehicle_mods("plane")); mb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(mb)
-		if near_tbm():
-			var b=UI.button("⚙️ 进入盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
-			var mb=UI.button("🔧 安装外设",func(): _open_vehicle_mods("tbm")); mb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(mb)
-		if near_rover():
-			var b=UI.button("🚗 上车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
-			var mb=UI.button("🔧 安装外设",func(): _open_vehicle_mods("rover")); mb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(mb)
-		if near_ship():
-			var sb=UI.button("🚀 起飞",func(): voyage_requested.emit()); sb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(sb)
-	vehicle_bar.visible=view.first_person and vehicle_bar.get_child_count()>0
+		_vehicle_bar_state=near_state
+		for child in vehicle_bar.get_children(): child.queue_free()
+		if view.driving:
+			var b=UI.button("🚗 下车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+			var vb=UI.button("👁 视角 V",func(): view.rover_cockpit=not view.rover_cockpit); vb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(vb)
+		elif view.flying:
+			var b=UI.button("✈️ 下机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+			var vb=UI.button("👁 视角 V",func(): view.plane_cockpit=not view.plane_cockpit); vb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(vb)
+		elif view.boring:
+			var b=UI.button("⚙️ 离开盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+			var dir_b=UI.button("方向：%s ␣" % view.tbm.GRADES[view.tbm.grade],func(): view.tbm.jump()); dir_b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(dir_b)
+		else:
+			if near_plane():
+				var b=UI.button("✈️ 登机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+				var mb=UI.button("🔧 安装外设",func(): _open_vehicle_mods("plane")); mb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(mb)
+			if near_tbm():
+				var b=UI.button("⚙️ 进入盾构机 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+				var mb=UI.button("🔧 安装外设",func(): _open_vehicle_mods("tbm")); mb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(mb)
+			if near_rover():
+				var b=UI.button("🚗 上车 F",_attack); b.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(b)
+				var mb=UI.button("🔧 安装外设",func(): _open_vehicle_mods("rover")); mb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(mb)
+			if near_ship():
+				var sb=UI.button("🚀 起飞",func(): voyage_requested.emit()); sb.focus_mode=Control.FOCUS_NONE; vehicle_bar.add_child(sb)
+		vehicle_bar.visible=view.first_person and vehicle_bar.get_child_count()>0
 	# v0.68: waypoint navigation — show nearest waypoint direction + distance on aim_label.
 	if view.first_person and not view.driving and not view.flying and not view.boring:
 		var wps=v.waypoints
@@ -1337,6 +1347,16 @@ func handle_back() -> bool:
 
 func enter_first_person() -> void:
 	if not view.first_person: _enter()
+
+## v0.73: launch CG runs inside this panel (over the planet SubViewport).
+func _start_launch_sequence() -> void:
+	explore_input.set_walking(false)
+	var seq=preload("res://scripts/launch_sequence.gd").new()
+	seq.view=view; seq.state=state
+	add_child(seq)
+	seq.sequence_done.connect(func():
+		seq.queue_free()
+		launch_sequence_done.emit())
 
 ## Step aside for the workshop or reactor and come back to the same spot and view (main.gd return stack).
 func set_editor_open(open: bool) -> void:

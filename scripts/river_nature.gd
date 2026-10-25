@@ -177,7 +177,8 @@ func dig(aim: Dictionary,v) -> String:
 	if not voxels.has(c) and voxels.size()>=int(rules.max_voxels): return "改造记录已满，先把一些方块放回原处"
 	var spec: Dictionary=Geology.info(id); var soil=str(spec.get("yield",""))=="soil"
 	if soil and not v.field.can_add("soil",1): return "土方格已满"
-	if not soil and int(minerals.get(id,0))>=int(rules.max_mineral_stock): return "%s已装满，先放置或带回一些" % spec.name
+	# v0.73: mineral full → allow dig but yield 0 (don't block the player)
+	var mineral_full=(not soil) and int(minerals.get(id,0))>=int(rules.max_mineral_stock)
 	if mining.get("cell")!=c: mining={"cell":c,"hits":0}
 	mining.hits+=1
 	# v0.30: a pick softer than the rock needs more hits (hardness compared on the Vickers scale).
@@ -196,9 +197,13 @@ func dig(aim: Dictionary,v) -> String:
 	# v0.50 (user): a mined block gives a random 1-5 of its mineral (and of building stone for rock).
 	# The roll is keyed by the cell, so the same block always yields the same amount.
 	var Field=v.field.get_script(); var key="dig:%d:%d:%d" % [c.x,c.y,c.z]
-	var got=mini(Field.span(rules.ore_yield,Field.roll(key,1)),maxi(0,int(rules.max_mineral_stock)-int(minerals.get(id,0))))
-	minerals[id]=int(minerals.get(id,0))+maxi(got,0)
-	var haul=" ×%d" % maxi(got,0)
+	var got: int
+	if mineral_full:
+		got=0  # v0.73: full → dig succeeds but yields nothing; block still removed
+	else:
+		got=mini(Field.span(rules.ore_yield,Field.roll(key,1)),maxi(0,int(rules.max_mineral_stock)-int(minerals.get(id,0))))
+	minerals[id]=int(minerals.get(id,0))+got
+	var haul=" ×%d" % got if got>0 else "（%s已满，矿物丢弃）" % spec.name
 	# v0.41.2: quarrying rock also leaves building stone (石料), the old 散石 piles' job.
 	var rubble=""
 	if id in rules.get("rubble_rocks",[]):

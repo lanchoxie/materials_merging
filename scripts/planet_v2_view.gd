@@ -410,7 +410,10 @@ func _prewarm_hide_plane() -> void:
 
 func park_plane(at,facing: float=0.0) -> void:
 	if plane==null: return
-	if at==null: plane_parked=false; flying=false; plane_node.hide(); return
+	if at==null or not (at is Vector2):
+		plane_parked=false; flying=false
+		if is_instance_valid(plane_node): plane_node.hide()
+		return
 	# v0.72: guard against null construction on mobile (walker may not be ready yet).
 	if walker!=null and walker.construction!=null: plane.construction=walker.construction
 	plane.place(at,facing); plane_parked=true; _pose_plane()
@@ -479,39 +482,58 @@ func _ensure_tbm(spec: Dictionary) -> void:
 	if tbm!=null: return
 	tbm=Tbm.new(spec); tbm_node=_tbm_mesh(); add_child(tbm_node); tbm_node.hide()
 
-## v0.71: build the rocket+ship stack 3D model (stands ~14m tall).
+## v0.73: build the rocket+ship stack — colorful (white+orange S1, Dragon capsule).
 func _rocket_mesh() -> Node3D:
-	var G=preload("res://scripts/river_geometry.gd")
 	var root=Node3D.new()
-	var mat_steel=StandardMaterial3D.new(); mat_steel.albedo_color=Color("b8c8d0"); mat_steel.metallic=0.8
-	var mat_ship=StandardMaterial3D.new(); mat_ship.albedo_color=Color("d0d8e8"); mat_ship.metallic=0.6
-	var mat_engine=StandardMaterial3D.new(); mat_engine.albedo_color=Color("444444")
-	var mat_thruster=StandardMaterial3D.new(); mat_thruster.albedo_color=Color("ff6622")
-	mat_thruster.emission_enabled=true; mat_thruster.emission=Color("ff4400"); mat_thruster.emission_energy_multiplier=2.0
-	# Stage 1: main rocket body (wide, steel)
-	var s1=MeshInstance3D.new(); var s1m=CylinderMesh.new()
-	s1m.bottom_radius=1.4; s1m.top_radius=1.2; s1m.height=7.0
-	s1.mesh=s1m; s1.material_override=mat_steel; s1.position=Vector3(0,3.5,0); root.add_child(s1)
-	# Stage 1 engine nozzles (3 around the base)
-	for k in range(3):
-		var ang=k*TAU/3; var noz=MeshInstance3D.new(); var nzm=CylinderMesh.new()
-		nzm.bottom_radius=0.35; nzm.top_radius=0.2; nzm.height=1.2
-		noz.mesh=nzm; noz.material_override=mat_engine
-		noz.position=Vector3(cos(ang)*0.7,-0.6,sin(ang)*0.7); root.add_child(noz)
-	# Stage 2: smaller second stage
-	var s2=MeshInstance3D.new(); var s2m=CylinderMesh.new()
-	s2m.bottom_radius=1.0; s2m.top_radius=0.9; s2m.height=3.5
-	s2.mesh=s2m; s2.material_override=mat_steel; s2.position=Vector3(0,8.75,0); root.add_child(s2)
-	# Ship capsule on top
-	var ship=MeshInstance3D.new(); var shm=CylinderMesh.new()
-	shm.bottom_radius=0.8; shm.top_radius=0.15; shm.height=3.0
-	ship.mesh=shm; ship.material_override=mat_ship; ship.position=Vector3(0,12.0,0); root.add_child(ship)
-	# Fins (4 fins at base)
-	for k in range(4):
-		var ang=k*PI/2; var fin=MeshInstance3D.new(); var fm=BoxMesh.new(); fm.size=Vector3(0.15,2.5,1.4)
-		fin.mesh=fm; fin.material_override=mat_steel
-		fin.position=Vector3(cos(ang)*1.5,1.25,sin(ang)*1.5); fin.rotation.y=ang; root.add_child(fin)
-	root.set_meta("ship_node",ship)
+	var white=StandardMaterial3D.new(); white.albedo_color=Color("f0f3f6"); white.metallic=0.35; white.roughness=0.40
+	var orange=StandardMaterial3D.new(); orange.albedo_color=Color("e8621a"); orange.metallic=0.25; orange.roughness=0.50
+	var dark=StandardMaterial3D.new(); dark.albedo_color=Color("242c34"); dark.metallic=0.70; dark.roughness=0.35
+	var grey=StandardMaterial3D.new(); grey.albedo_color=Color("6a7882"); grey.metallic=0.65; grey.roughness=0.40
+	var black=StandardMaterial3D.new(); black.albedo_color=Color("181c20"); black.metallic=0.30; black.roughness=0.55
+	var glass=StandardMaterial3D.new(); glass.albedo_color=Color("7fcce8"); glass.metallic=0.05; glass.roughness=0.10
+	var glow_o=StandardMaterial3D.new(); glow_o.albedo_color=Color("ff7700"); glow_o.emission_enabled=true; glow_o.emission=Color("ff7700"); glow_o.emission_energy_multiplier=2.2
+	var blue_p=StandardMaterial3D.new(); blue_p.albedo_color=Color("1a3a8c"); blue_p.metallic=0.4; blue_p.roughness=0.3
+	var red_t=StandardMaterial3D.new(); red_t.albedo_color=Color("cc2020"); red_t.metallic=0.2; red_t.roughness=0.5
+	var _cyl=func(br:float,tr:float,h:float,pos:Vector3,mat:Material,seg:int=24)->MeshInstance3D:
+		var n=MeshInstance3D.new(); var m=CylinderMesh.new()
+		m.bottom_radius=br; m.top_radius=tr; m.height=h; m.radial_segments=seg
+		n.mesh=m; n.position=pos; n.material_override=mat; root.add_child(n); return n
+	var _box=func(sz:Vector3,pos:Vector3,mat:Material,roty:float=0.0)->MeshInstance3D:
+		var n=MeshInstance3D.new(); var m=BoxMesh.new(); m.size=sz
+		n.mesh=m; n.position=pos; n.rotation.y=roty; n.material_override=mat; root.add_child(n); return n
+	# S1 barrel
+	_cyl.call(1.5,1.32,9.0,Vector3(0,4.5,0),white,32)
+	_cyl.call(1.34,1.34,0.6,Vector3(0,7.6,0),orange,32)  # LOX stripe
+	_cyl.call(1.58,1.58,0.7,Vector3(0,0.35,0),dark,32)   # engine ring
+	# 9 nozzles
+	for row in range(3):
+		for col in range(3):
+			var nx=(col-1)*0.72; var nz=(row-1)*0.72
+			_cyl.call(0.28,0.14,0.9,Vector3(nx,-0.45,nz),dark,10)
+			_cyl.call(0.10,0.10,0.06,Vector3(nx,-0.92,nz),glow_o,8)
+	# Grid fins
+	for k in range(4): _box.call(Vector3(0.12,1.9,1.5),Vector3(cos(k*PI/2)*1.54,7.2,sin(k*PI/2)*1.54),grey,k*PI/2)
+	# Landing legs
+	for k in range(4): _box.call(Vector3(0.10,2.5,0.18),Vector3(cos(k*PI/2)*1.54,1.25,sin(k*PI/2)*1.54),white,k*PI/2)
+	# Interstage
+	_cyl.call(1.32,1.13,1.0,Vector3(0,9.5,0),dark,32)
+	# S2 (center at y=13 so bottom connects at y=10 where S1 interstage ends)
+	_cyl.call(1.12,1.0,6.0,Vector3(0,13.0,0),white,32)
+	_cyl.call(1.01,1.01,0.4,Vector3(0,15.5,0),orange,32)
+	_cyl.call(0.94,0.26,1.8,Vector3(0,9.4,0),grey,20)   # vacuum bell below interstage
+	_cyl.call(1.0,1.0,0.3,Vector3(0,16.15,0),dark,32)   # S2→fairing ring
+	# Fairing (simple cone approximation, center at y=19)
+	_cyl.call(1.0,0.16,4.4,Vector3(0,19.0,0),white,24)
+	_cyl.call(0.16,0.0,0.6,Vector3(0,21.5,0),white,16)
+	# Capsule (Dragon-style, inside fairing)
+	_cyl.call(0.85,0.84,2.2,Vector3(0,18.2,0),grey,24)  # trunk
+	_cyl.call(0.82,0.12,2.8,Vector3(0,20.4,0),white,28)  # capsule cone
+	_cyl.call(0.84,0.84,0.22,Vector3(0,18.7,0),black,24)  # heat shield
+	_cyl.call(0.74,0.74,0.26,Vector3(0,20.3,0),glass,24)  # windows
+	# Abort tower
+	_cyl.call(0.04,0.04,1.4,Vector3(0,22.8,0),red_t,6)
+	_cyl.call(0.18,0.04,0.35,Vector3(0,23.6,0),red_t,6)
+	root.set_meta("ship_node",root)
 	return root
 
 ## Park or hide the rocket+ship.
