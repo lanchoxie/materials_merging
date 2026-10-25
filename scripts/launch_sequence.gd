@@ -432,16 +432,11 @@ func _process(dt: float) -> void:
 	var cam=_get_camera()
 	if is_instance_valid(cam):
 		match cam_mode:
-			0:  # Side-tracking: snap to correct position immediately
-				var progress=clampf((rocket_y-ground_y)/300.0,0.0,1.0)
-				var side_d=lerpf(36.0,24.0,progress)
-				var pitch_angle=lerpf(-0.12,0.65,progress)  # goes higher as rocket climbs
-				var look_from=Vector3(
-					rocket_pos.x+cos(pitch_angle)*side_d,
-					cam_target_pos.y-sin(pitch_angle)*side_d*0.5,
-					rocket_pos.y+side_d*0.35)
-				cam.position=look_from
-				cam.look_at(cam_target_pos)
+			0:  # Side-tracking — restored from v0.72.8, only raise cam_target offset at end
+				var ship_wp=Vector3(rocket_pos.x, cam_target_pos.y, rocket_pos.y)
+				var side_d=lerpf(30.0,20.0,minf(1.0,(rocket_y-ground_y)/80.0))
+				cam.position=Vector3(rocket_pos.x+side_d, rocket_y+8.0+shake*0.25, rocket_pos.y+side_d*0.4)
+				cam.look_at(ship_wp-Vector3(0,4.0,0))
 			1:  # Cockpit — camera sits just outside the capsule nose, NOT inside geometry
 				# We use a 2D cockpit overlay (built in _build_hud) + camera from outside at a distance
 				var ship_front: Vector3
